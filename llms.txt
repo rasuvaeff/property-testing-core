@@ -1,0 +1,236 @@
+# rasuvaeff/property-testing-core
+
+Framework-agnostic property-based testing engine for PHP 8.3+: generators with
+integrated shrinking, a structured property runner, a regression corpus,
+lifecycle events, and stateful/model-based testing. No test-framework
+dependency. Adapters: `rasuvaeff/property-testing-testo` (Testo `#[Property]`),
+`rasuvaeff/property-testing-phpunit` (PHPUnit trait). Conflicts with the frozen
+`rasuvaeff/property-testing` 2.x (same namespace).
+
+## Install
+
+```
+composer require --dev rasuvaeff/property-testing-core
+```
+
+Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`.
+
+## Rules
+
+- The runner NEVER reads environment variables, never prints, never exits, and
+  never throws to report a property outcome — it returns a structured
+  `PropertyResult`. `PROPERTY_RUNS`/`PROPERTY_SEED`/`PROPERTY_VERBOSE`/
+  `PROPERTY_DB` are adapter conventions; the only env helper here is
+  `FilesystemCorpus::fromEnv()` (reads `PROPERTY_DB` when YOU call it).
+- Sequential-only: `Classify` and the in-body draw tape are process-local
+  statics armed/drained around each body execution. Do not run properties
+  concurrently in one process.
+- A listener exception ABORTS the run (infrastructure failure, deliberately not
+  caught); a listener can never change a property's outcome.
+- Configuration errors (`runs < 1`, missing generator, mismatched parameter
+  names) throw; property verdicts come back as results.
+- `Random` uses an object-scoped MT19937 engine (`\Random\Randomizer`) — same
+  seed, same sequence, regardless of other random calls. NOT cryptographic.
+- A generator NEVER yields an out-of-domain value: `Gen::filter()` and sized
+  collections throw `GenerationExhausted` when they cannot satisfy their
+  predicate/minimum. Construct dependent values with `Gen::flatMap()` /
+  `Gen::draw()` instead of filtering broadly.
+- `runs` means successful checks; `Assume::that(false)` discards the attempt.
+  Discards are capped by `maxDiscards` (default `runs * 10`) -> `GaveUp`.
+- Shrinking is integrated: `generate(Random)` returns a `Shrinkable` (value +
+  lazy tree of smaller candidates). There is NO `shrink(mixed)` method. Greedy
+  per-parameter descent; best-effort minimal.
+- Corpus format is byte-compatible with `rasuvaeff/property-testing` 2.8
+  (`FORMAT_VERSION` 1): one JSON file per property, max 8 values + 2 seed
+  entries. Seed entries are fenced off by `FilesystemCorpus::SEQUENCE_EPOCH`.
+- Results serialize natively when traces carry no argument values
+  (`zend.exception_ignore_args=1`); the portable format is
+  `CounterExample::toArray()` / `toJson()`.
+
+## Core API
+
+### Running a property
+
+```php
+use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
+use Rasuvaeff\PropertyTesting\Runner\Falsified;
+use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
+use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
+use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
+
+$definition = new PropertyDefinition(
+    id: 'suite::name',              // keys events and the corpus
+    name: 'name',                   // display name in failure messages
+    generators: ['x' => Gen::int()],// one ArbitraryInterface per parameter
+    parameterNames: ['x'],          // declaration order
+    config: new PropertyConfig(
+        runs: 100,          // successful checks (>= 1)
+        seed: null,         // null -> random, reported on failure
+        maxShrinks: null,   // cap on ACCEPTED shrink steps; 0 = no shrinking
+        maxDiscards: null,  // null -> runs * 10
+        timeoutMs: null,    // per-run wall-clock deadline
+        budgetMs: null,     // whole-random-phase wall-clock budget
+    ),
+    examples: [],               // list of positional tuples, run FIRST, unshrunk
+    replayRegressions: true,    // adapters pass false when the seed is pinned
+);
+
+$result = (new PropertyRunner())->run(
+    $definition,
+    new CallableTrialExecutor(static function (int $x): void {
+        // return = pass; Assume::that() = discard; any throwable = failure
+    }),
+    listeners: [],   // iterable<PropertyListener>
+    corpus: null,    // ?Corpus — null means no replay, no filesystem access
+);
+```
+
+`PropertyRunner::__construct(?Clock $clock = null)` — inject a `Clock` fake for
+deterministic deadline/budget tests; `MonotonicClock` is the default.
+
+### Results (closed hierarchy, `Runner\` namespace)
+
+Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
+
+- `Passed` — carries `RunStatistics` ($attempts, $discards, $checks,
+  $classifications per label).
+- `Falsified` — carries `PropertyViolationException`;
+  `counterExample(): CounterExample` (`seed`, `runsBeforeFailure`,
+  `originalArguments`, `shrunkArguments`, `shrinkSteps`, `shrinkTrials`,
+  `skips`, `failure`, `toArray()`, `toJson()`, `toExamplesCode()`).
+- `GaveUp` — `GaveUpException` + `RunStatistics` (discard budget exhausted).
+- `CoverageFailed` — `CoverageViolationException` + `RunStatistics`
+  (a `Classify::cover()` requirement missed although every run passed).
+- `DeadlineExceeded` — `DeadlineExceededException` (one run overran timeoutMs).
+- `TimeBudgetExceeded` — `TimeBudgetExceededException` + `RunStatistics`.
+- `GenerationFailed` — `GenerationExhausted`.
+- `ExampleFailed` — `ExampleViolationException` (explicit example failed).
+- `RegressionFailed` — `RegressionViolationException` (`getArguments()`,
+  `getSeed()`) — a corpus values entry still fails.
+
+Executor seam: implement `TrialExecutor` (`execute(array $arguments):
+TrialOutcome`) to adapt any framework; `TrialOutcome::passed() / failed($e) /
+discarded()`. `CallableTrialExecutor` is the standalone implementation.
+
+### Corpus (`Runner\` namespace)
+
+```php
+interface Corpus {
+    /** @return list<CorpusEntry> */
+    public function recall(string $id, array $parameterNames): array;
+    public function remember(string $id, CounterExample $ce, array $parameterNames): void;
+    public function prune(string $id, CorpusEntry $entry): void;
+}
+
+new FilesystemCorpus('/path/to/dir');   // 2.8-compatible JSON storage
+FilesystemCorpus::fromEnv();            // ?self from PROPERTY_DB
+```
+
+Values entries (data-representable minimised input) replay as ONE run; seed
+entries (objects/closures/draws in the counterexample) re-run the whole random
+phase and are dropped when `SEQUENCE_EPOCH` changes.
+
+### Events (`Event\` namespace, all implement `PropertyEvent`)
+
+`PropertyStarted(propertyId, seed, runs)`, `ExampleStarted/ExampleFinished`,
+`RunStarted(attempt, arguments)`, `RunPassed(labels, elapsedNs)`,
+`RunDiscarded`, `RunFailed(failure, elapsedNs)`, `ShrinkTried(parameter,
+candidate, accepted)`, `ShrinkAccepted(step, parameter, before, after)`,
+`CorpusReplayed/CorpusPruned/CorpusStored`, `PropertyFinished(?failure)`.
+
+```php
+interface PropertyListener { public function onEvent(PropertyEvent $event): void; }
+```
+
+### Static facade: `Gen`
+
+```php
+use Rasuvaeff\PropertyTesting\Gen;
+
+Gen::int()                              // IntArbitrary, PHP_INT_MIN..PHP_INT_MAX, shrinks to 0
+Gen::intBetween(int $min, int $max)     // IntArbitrary, [$min, $max]
+Gen::intPositive()                      // IntArbitrary, 1..PHP_INT_MAX
+Gen::float()                            // FloatArbitrary, [0.0, 1.0)
+Gen::floatBetween(float $min, float $max)  // FloatArbitrary, [$min, $max]
+Gen::bool()                             // BoolArbitrary
+Gen::string()                           // StringArbitrary, Unicode, len 0..100
+Gen::stringAscii()                      // StringArbitrary, printable ASCII
+Gen::stringOf(int $minLen, int $maxLen) // StringArbitrary, bounded length
+Gen::stringFrom(string $alphabet, int $minLen = 0, int $maxLen = 100) // CharsetStringArbitrary
+Gen::bytes(int $minLen = 0, int $maxLen = 100)  // BytesArbitrary, raw bytes
+Gen::arrayOf(ArbitraryInterface $el, int $min = 0, int $max = 100)  // ArrayArbitrary
+Gen::nonEmptyArrayOf(ArbitraryInterface $el, int $max = 100)        // ArrayArbitrary, >= 1
+Gen::uniqueArrayOf(ArbitraryInterface $el, int $min = 0, int $max = 100) // UniqueArrayArbitrary
+Gen::subset(array $values, int $minSize = 0, ?int $maxSize = null)  // SubsetArbitrary: subsets of a fixed ordered set; source duplicates rejected (InvalidArgumentException); size uniform over [min, max] (null max = full size); keeps source order; shrinks size first, then elements toward earlier source positions; no discards
+Gen::dictOf(ArbitraryInterface $key, ArbitraryInterface $value, int $min = 0, int $max = 100) // DictionaryArbitrary
+Gen::record(array $shape)               // RecordArbitrary, fixed-shape map
+Gen::oneOf(mixed ...$values)            // OneOfArbitrary
+Gen::elements(array $values)            // OneOfArbitrary (array form)
+Gen::enum(SomeEnum::class)              // OneOfArbitrary over enum cases
+Gen::constant(mixed $value)             // ConstantArbitrary
+Gen::char()                             // StringArbitrary, one ASCII char
+Gen::uuid()                             // UuidArbitrary, v4 UUIDs
+Gen::datetime(?DateTimeImmutable $min, ?DateTimeImmutable $max) // DateTimeArbitrary, UTC
+Gen::floatSpecial()                     // OneOfArbitrary over NAN/±INF/-0.0/float edges
+Gen::intRange(int $min, int $max)       // FlatMappedArbitrary: ordered [lo, hi]
+Gen::recursive(ArbitraryInterface $leaf, Closure $wrap, int $maxDepth = 3)
+Gen::nullable(ArbitraryInterface $inner)        // NullableArbitrary
+Gen::map(ArbitraryInterface $inner, Closure $fn)     // MappedArbitrary
+Gen::flatMap(ArbitraryInterface $inner, Closure $fn) // FlatMappedArbitrary, dependent domains
+Gen::filter(ArbitraryInterface $inner, Closure $p)   // FilteredArbitrary, 100 retries then GenerationExhausted
+Gen::tuple(ArbitraryInterface ...$elements)          // TupleArbitrary
+Gen::frequency(iterable $pairs)                      // FrequencyArbitrary, [weight, arb] pairs
+Gen::commands(mixed $initialModel, array $commandGenerators, int $minLen = 0, int $maxLen = 100) // CommandSequenceArbitrary
+Gen::ipv4()  Gen::email()  Gen::url()
+Gen::json(int $maxDepth = 3)  Gen::jsonString(int $maxDepth = 3)
+Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compiled to combinators
+Gen::stringMatching(string $pattern, int $maxRepeat = 8) // alias of regex()
+Gen::draw(ArbitraryInterface $arb)      // in-body dependent draw; ONLY inside a running property body
+Gen::sample(ArbitraryInterface $arb, int $count = 10, int $seed = 0)        // eager debug helper
+Gen::sampleShrinks(ArbitraryInterface $arb, int $seed = 0, int $limit = 10) // value + first shrink candidates
+```
+
+Numeric generators are boundary-biased (~1 in 5 draws returns an in-range edge
+value). Sized generators never go below their minimum.
+
+### Shrink trees: `Shrinkable`
+
+```php
+Shrinkable::leaf(mixed $value): Shrinkable   // terminal node
+Shrinkable::of(mixed $value, Closure(): iterable<Shrinkable> $shrinks): Shrinkable
+$s->value; $s->shrinks(); $s->map($fn);
+```
+
+Custom generators implement `ArbitraryInterface::generate(Random): Shrinkable`.
+Draw randomness only via the injected `Random` (`int()`, `float()`, `bytes()`).
+Keep every branch finite; never yield a candidate equal to its parent.
+
+### Body helpers
+
+```php
+Assume::that(bool $condition): void   // throws AssumptionSkipped -> discard
+Classify::label(string $label): void
+Classify::when(bool $condition, string $label): void
+Classify::cover(bool $condition, string $label, float $minPercent): void // -> CoverageFailed
+Gen::draw(ArbitraryInterface $arb): mixed  // recorded on the replay tape, shrunk like a parameter
+```
+
+### Stateful / model-based (`StateMachine\` namespace)
+
+```php
+interface Command extends \Stringable {
+    public function preCondition(mixed $model): bool;
+    public function nextState(mixed $model): mixed;          // pure, returns NEW model
+    public function run(mixed $model, mixed $system): mixed; // execute against the SUT
+    public function postCondition(mixed $model, mixed $result): bool; // false/throw = falsify
+}
+
+// In the body:
+StateMachine::check(CommandSequence $sequence, Closure $systemFactory): void;
+// throws PostconditionViolation naming the failing step
+```
+
+`Gen::commands()` builds valid-by-construction sequences; shrinking drops
+command blocks then simplifies each command's parameters; replay skips commands
+whose precondition a dropped step invalidated.

@@ -8,7 +8,7 @@ namespace Rasuvaeff\PropertyTesting\Runner;
  * One recorded regression in a property's corpus: either the minimised failing
  * input itself (a "values" entry — replayed as a single run, immune to changes in
  * the generation sequence) or the seed of the run that failed (a "seed" entry —
- * the fallback for inputs no {@see ValueCodec} can represent, replayed by
+ * the fallback for inputs no {@see \Rasuvaeff\PropertyTesting\Internal\ValueCodec} can represent, replayed by
  * re-running the whole random phase).
  *
  * @api

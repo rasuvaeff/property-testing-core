@@ -47,7 +47,17 @@ final readonly class FloatArbitrary implements ArbitraryInterface
             return $this->tree($boundaries[$random->int(0, count($boundaries) - 1)]);
         }
 
-        return $this->tree($this->min + $random->float() * ($this->max - $this->min));
+        $span = $this->max - $this->min;
+        $fraction = $random->float();
+
+        if (!is_finite($span)) {
+            // A range wider than a float can hold (e.g. -PHP_FLOAT_MAX..PHP_FLOAT_MAX)
+            // overflows the subtraction to INF, and INF * 0.0 would hand the
+            // property a NAN; interpolate the two endpoints separately instead.
+            return $this->tree($this->min * (1.0 - $fraction) + $this->max * $fraction);
+        }
+
+        return $this->tree($this->min + $fraction * $span);
     }
 
     /** @return Shrinkable<float> */

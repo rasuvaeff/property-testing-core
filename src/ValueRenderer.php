@@ -162,7 +162,12 @@ final class ValueRenderer
         // keep their string form unquoted so the trace reads naturally, but apply
         // the same escaping and length bound as ordinary strings.
         if ($value instanceof \Stringable) {
-            return self::stringable((string) $value);
+            try {
+                return self::stringable((string) $value);
+            } catch (\Throwable) {
+                // Diagnostics for an already-failing run must not be displaced
+                // by a throwing __toString(); fall through to the property dump.
+            }
         }
 
         $id = spl_object_id($value);
@@ -278,7 +283,11 @@ final class ValueRenderer
         }
 
         if (!is_array($value) && !is_object($value)) {
-            return is_resource($value) ? get_debug_type($value) : $value;
+            // is_resource() is false for a CLOSED resource, which json_encode()
+            // still cannot encode — detect both through the debug type.
+            $type = get_debug_type($value);
+
+            return str_starts_with($type, 'resource') ? $type : $value;
         }
 
         if (is_array($value)) {
@@ -312,7 +321,11 @@ final class ValueRenderer
         );
 
         if ($value instanceof \Stringable) {
-            $properties['__string'] = (string) $value;
+            try {
+                $properties['__string'] = (string) $value;
+            } catch (\Throwable) {
+                // A throwing __toString() must not break corpus persistence.
+            }
         }
 
         return [

@@ -99,8 +99,10 @@ final readonly class PropertyRunner
         }
 
         // Opt-in regression replay: re-run every recorded past failure first
-        // (unless the adapter pinned the seed). A reproduced failure is
-        // reported immediately; an entry that no longer fails is pruned.
+        // (unless the adapter pinned the seed). A replay that fails again — in
+        // any way — is reported immediately; only an entry whose replay passes
+        // cleanly is pruned. An inconclusive replay must not delete the
+        // recorded regression.
         if ($corpus instanceof Corpus && $property->replayRegressions) {
             foreach ($corpus->recall($property->id, $property->parameterNames) as $entry) {
                 if ($entry->isValues()) {
@@ -114,7 +116,7 @@ final readonly class PropertyRunner
                     $this->emit($listeners, new CorpusReplayed($property->id, isValues: false, arguments: [], seed: $entry->seed));
                     $replay = $this->runPhase($property, $executor, new Random($entry->seed), $entry->seed, $runs, $maxDiscards, $listeners);
 
-                    if ($replay instanceof Falsified) {
+                    if ($replay->failure() instanceof \Throwable) {
                         return $this->finish($listeners, $property->id, $replay);
                     }
                 }
@@ -289,14 +291,13 @@ final readonly class PropertyRunner
                 )));
             }
 
-            $this->emit($listeners, new RunPassed($property->id, $attempts, $arguments, $this->drawArguments($draws), $labels, $runElapsedNs));
-
             // A passing but overlong run is a failure in its own right: the
             // input is pathological for the code under test. Checked after the
             // falsification branch so an assertion failure (more actionable)
-            // wins when both happen. Reported unshrunk — shrink acceptance
-            // would have to re-measure wall time, and timing noise makes that
-            // descent non-deterministic.
+            // wins when both happen, but before RunPassed — a timed-out run
+            // must not be announced as successful. Reported unshrunk — shrink
+            // acceptance would have to re-measure wall time, and timing noise
+            // makes that descent non-deterministic.
             if ($timeoutMs !== null && $runElapsedNs > $timeoutMs * 1_000_000) {
                 Classify::flushRequirements();
 
@@ -307,6 +308,8 @@ final readonly class PropertyRunner
                     timeoutMs: $timeoutMs,
                 ));
             }
+
+            $this->emit($listeners, new RunPassed($property->id, $attempts, $arguments, $this->drawArguments($draws), $labels, $runElapsedNs));
 
             foreach ($labels as $label) {
                 $classifications[$label] = ($classifications[$label] ?? 0) + 1;

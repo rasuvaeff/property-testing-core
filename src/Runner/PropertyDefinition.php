@@ -44,5 +44,16 @@ final readonly class PropertyDefinition
                 ));
             }
         }
+
+        foreach ($examples as $index => $example) {
+            if (count($example) !== count($parameterNames)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Example #%d must contain exactly %d value(s), got %d',
+                    $index,
+                    count($parameterNames),
+                    count($example),
+                ));
+            }
+        }
     }
 }

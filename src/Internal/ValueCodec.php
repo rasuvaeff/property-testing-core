@@ -47,7 +47,9 @@ final readonly class ValueCodec
         }
 
         if (is_float($value)) {
-            return [self::encodeFloat($value)];
+            $encoded = self::encodeFloat($value);
+
+            return $encoded === null ? null : [$encoded];
         }
 
         if (is_string($value)) {
@@ -102,9 +104,9 @@ final readonly class ValueCodec
      * emits a PHP warning for NAN, and a token no numeric literal and no
      * `var_export()` output can collide with keeps the decoder unambiguous.
      *
-     * @return array<string, string>
+     * @return ?array<string, string>
      */
-    private static function encodeFloat(float $value): array
+    private static function encodeFloat(float $value): ?array
     {
         $text = match (true) {
             is_nan($value) => self::FLOAT_NAN,
@@ -112,6 +114,14 @@ final readonly class ValueCodec
             $value === -INF => self::FLOAT_NEGATIVE_INF,
             default => var_export($value, return: true),
         };
+
+        // A host with serialize_precision below the shortest round-trip digit
+        // count makes var_export() emit a rounded string; storing it would
+        // replay a different float. Refuse instead — the caller falls back to
+        // the seed entry.
+        if (is_finite($value) && (float) $text !== $value) {
+            return null;
+        }
 
         return [self::TAG => self::TAG_FLOAT, 'v' => $text];
     }

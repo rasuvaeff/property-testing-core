@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Added `MIGRATION.md`: the guide from the frozen `rasuvaeff/property-testing`
+  2.x to this family — one Composer command for Testo projects, plus the
+  custom-harness path (including where the `@internal` classes a harness used
+  to reach for now live) and the PHPUnit path.
+- CI: added the `Adapter contract suite` job — both adapter packages are
+  checked out at their default branch, pointed at the core under review
+  through a path repository, and their test suites run. Documentation and CI
+  only; no library changes.
+
 ## 0.1.0 — 2026-08-09
 
 - Extracted the framework-agnostic engine from `rasuvaeff/property-testing`

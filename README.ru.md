@@ -31,7 +31,10 @@ Framework-agnostic **движок** property-based тестирования дл
 > `rasuvaeff/property-testing` (2.x) — оба поставляют классы в namespace
 > `Rasuvaeff\PropertyTesting`, поэтому Composer откажется ставить их вместе.
 > Мигрируете с 2.x? Замените dev-зависимость на адаптер вашего фреймворка;
-> импорты в коде не меняются.
+> импорты в коде не меняются. Полное руководство —
+> [MIGRATION.md](MIGRATION.md) (на английском): две composer-команды и ни
+> одной правки PHP для проектов на Testo плюс пути для своего harness и
+> PHPUnit.
 
 ## Требования
 

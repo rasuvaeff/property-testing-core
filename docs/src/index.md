@@ -36,7 +36,7 @@ features:
     details: Generate whole sequences of Commands, run them against a model, shrink the sequence to the shortest failing one.
     link: /guide/state-machine/concepts
   - title: Pick your framework
-    details: The same #[Property] surface on Testo, a fluent trait on PHPUnit, or drive the engine directly with no framework at all.
+    details: "The same #[Property] surface on Testo, a fluent trait on PHPUnit, or drive the engine directly with no framework at all."
     link: /adapters/testo
 ---
 
@@ -44,9 +44,9 @@ features:
 
 ## Three packages, one engine
 
-- **[`property-testing-core`](https://github.com/rasuvaeff/property-testing-core)** — the framework-agnostic engine: generators, shrinking, the regression corpus, events. Depends on nothing but PHP.
-- **[`property-testing-testo`](https://github.com/rasuvaeff/property-testing-testo)** — the `#[Property]` attribute, self-registering with [Testo](https://php-testo.github.io/)'s interceptor discovery.
-- **[`property-testing-phpunit`](https://github.com/rasuvaeff/property-testing-phpunit)** — a fluent trait for PHPUnit test cases.
+- <img src="/logo-mark.svg" width="20" height="20" alt="" style="display: inline-block; vertical-align: middle; border-radius: 4px; margin-right: 4px;" /> **[`property-testing-core`](https://github.com/rasuvaeff/property-testing-core)** — the framework-agnostic engine: generators, shrinking, the regression corpus, events. Depends on nothing but PHP.
+- <img src="/adapters/testo/logo-mark.svg" width="20" height="20" alt="" style="display: inline-block; vertical-align: middle; border-radius: 4px; margin-right: 4px;" /> **[`property-testing-testo`](/adapters/testo)** — the `#[Property]` attribute, self-registering with [Testo](https://php-testo.github.io/)'s interceptor discovery.
+- <img src="/adapters/phpunit/logo-mark.svg" width="20" height="20" alt="" style="display: inline-block; vertical-align: middle; border-radius: 4px; margin-right: 4px;" /> **[`property-testing-phpunit`](/adapters/phpunit)** — a fluent `forAll()->check()` trait for PHPUnit test cases.
 
 Install core plus exactly the adapter your test suite already uses; `composer why testo/testo`
 stays empty if you never asked for it.

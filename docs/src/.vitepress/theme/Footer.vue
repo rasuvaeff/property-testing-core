@@ -69,7 +69,7 @@ function href(link: string): string {
         </div>
       </div>
       <div class="site-footer-bottom">
-        <span>© {{ year }} <a href="https://github.com/rasuvaeff">Victor Razuvaev</a> · BSD-3-Clause</span>
+        <span>© {{ year }} <a href="https://github.com/rasuvaeff">Victor Razuvaev</a> &amp; Claude Code · BSD-3-Clause</span>
         <span>Built with <a href="https://vitepress.dev/" target="_blank" rel="noreferrer">VitePress</a></span>
       </div>
     </div>

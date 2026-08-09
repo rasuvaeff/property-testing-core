@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="property-testing-core">
+  <title>property-testing-core</title>
+  <g fill="currentColor">
+    <rect x="24" y="25" width="74" height="12" rx="6"/>
+    <rect x="24" y="45" width="54" height="12" rx="6"/>
+    <rect x="24" y="65" width="38" height="12" rx="6"/>
+    <rect x="24" y="85" width="20" height="12" rx="6" opacity="0.45"/>
+  </g>
+</svg>

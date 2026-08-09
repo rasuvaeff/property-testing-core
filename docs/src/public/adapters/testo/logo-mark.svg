@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="property-testing-testo">
+  <title>property-testing-testo</title>
+  <path fill-rule="evenodd" fill="#12796A" d="M30 0 H90 A30 30 0 0 1 120 30 V90 A30 30 0 0 1 90 120 H30 A30 30 0 0 1 0 90 V30 A30 30 0 0 1 30 0 Z M120 45 A15 15 0 0 0 120 75 Z"/>
+  <rect x="24" y="25" width="74" height="12" rx="6" fill="#FFFFFF"/>
+  <rect x="24" y="45" width="54" height="12" rx="6" fill="#FFFFFF"/>
+  <rect x="24" y="65" width="38" height="12" rx="6" fill="#FFFFFF"/>
+  <rect x="24" y="85" width="20" height="12" rx="6" fill="#F79A6B"/>
+</svg>

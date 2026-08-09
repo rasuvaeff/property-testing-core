@@ -74,6 +74,7 @@ Full runnable script:
 
 ## Runner output
 
+<!-- case-study-output: regex-anchor -->
 ```
 Buggy $-anchored validator falsified:
 

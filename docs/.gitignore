@@ -3,3 +3,7 @@ src/.vitepress/dist/
 src/.vitepress/cache/
 .api-workspace/vendor/
 .api-workspace/composer.lock
+
+# Downloaded by `vale sync` from the Packages= line in ../.vale.ini.
+# .vale/styles/config/ (our own Vocab) IS committed.
+.vale/styles/Microsoft/

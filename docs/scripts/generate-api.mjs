@@ -11,30 +11,13 @@ const docsDir = join(scriptsDir, '..')
 const apiDir = join(docsDir, 'src', 'api')
 const classesDir = join(apiDir, 'classes')
 
-const NAMESPACE_PREFIX = 'Rasuvaeff\\PropertyTesting\\'
+import { NAMESPACE_PREFIX, pageLink, relativePath, shortName } from './api-pages.mjs'
 
 const ROOT_LABEL = { core: 'core', testo: 'testo adapter', phpunit: 'PHPUnit adapter' }
 const ROOT_REPO = {
     core: 'https://github.com/rasuvaeff/property-testing-core',
     testo: 'https://github.com/rasuvaeff/property-testing-testo',
     phpunit: 'https://github.com/rasuvaeff/property-testing-phpunit',
-}
-
-function shortName(className) {
-    const parts = className.split('\\')
-    return parts[parts.length - 1]
-}
-
-// Mirrors the class's own sub-namespace under classes/ instead of a flat
-// shortName — Testo\VerboseListener and PhpUnit\VerboseListener share a
-// short name (found live 2026-08-09 building this generator), so a flat
-// layout would have the second root silently overwrite the first's page.
-function relativePath(className) {
-    return className.startsWith(NAMESPACE_PREFIX) ? className.slice(NAMESPACE_PREFIX.length).replaceAll('\\', '/') : className.replaceAll('\\', '/')
-}
-
-function pageLink(className) {
-    return `/api/classes/${relativePath(className)}`
 }
 
 function shortenType(type) {
@@ -312,6 +295,14 @@ function renderClass(entry, apiPagesByClass) {
             }
             if (method.summary) {
                 lines.push(renderProse(method.summary, apiPagesByClass))
+                lines.push('')
+            }
+            // reflect-api.php fills an #[Override] implementation's empty
+            // docblock fields from the declaration it implements. Saying so
+            // on the page is not decoration: the reader has to know the text
+            // describes the contract, not this implementation's specifics.
+            if (method.inheritedFrom) {
+                lines.push(`*Documentation inherited from ${linkType('\\' + method.inheritedFrom, apiPagesByClass)}.*`)
                 lines.push('')
             }
             const documentedParams = method.params.filter((p) => p.description !== '')

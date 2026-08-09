@@ -21,3 +21,8 @@ description: "MonotonicClock — class in the property-testing API reference (co
 nanoseconds(): int
 ```
 
+Current reading of a monotonic clock, in nanoseconds. Only differences
+between two readings are meaningful.
+
+*Documentation inherited from [`Runner\Clock`](/api/classes/Runner/Clock).*
+

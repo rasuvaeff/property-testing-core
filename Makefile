@@ -3,7 +3,13 @@ DOCKER_HOST := docker run --rm --network host -v "$(PWD)":/app -w /app
 PCOV_BOOTSTRAP := apk add --no-cache $$PHPIZE_DEPS >/dev/null && pecl install pcov >/dev/null && docker-php-ext-enable pcov
 
 .PHONY: build cs cs-fix psalm test mutation rector rector-fix install normalize require-checker \
-       test-coverage test-coverage-ci update-deps release-check bc-check audit-package
+       test-coverage test-coverage-ci update-deps release-check bc-check audit-package \
+       docs-api docs-build docs-dev docs-cookbook docs-links docs-vale
+
+# Prose lint runs over the hand-written sections only: docs/src/api/** is
+# generated from docblocks, and a style linter on it reports nothing that can
+# be fixed on the site (plan §I.3).
+VALE_PATHS := docs/src/index.md docs/src/guide docs/src/cookbook docs/src/adapters
 
 install:
 	$(DOCKER) composer install --no-interaction --no-progress --prefer-dist
@@ -80,6 +86,39 @@ help:
 	@echo "  update-deps      composer update + normalize"
 	@echo "  bc-check         check backward compatibility against latest tag"
 	@echo "  release-check    build + rector + bc-check + mutation"
+	@echo ""
+	@echo "Documentation site (docs/):"
+	@echo "  docs-api         install the API workspace, re-reflect, regenerate api/ pages"
+	@echo "  docs-build       generate + integrity check + vitepress build + anchor check"
+	@echo "  docs-dev         local dev server"
+	@echo "  docs-cookbook    run examples/case-studies/ and diff against the cookbook pages"
+	@echo "  docs-links       check external links (network)"
+	@echo "  docs-vale        prose lint the hand-written pages (needs vale on PATH)"
+
+# --- documentation site (docs/, plan §I) -------------------------------------
+# Node runs on the host; PHP does not. Only docs-api and docs-cookbook need
+# PHP, and both reach it through the same composer:2 image as everything else.
+
+docs-api:
+	$(DOCKER) sh -c 'cd docs/.api-workspace && composer install --no-interaction --no-progress -q'
+	$(DOCKER) php docs/scripts/reflect-api.php > docs/scripts/api-snapshot.json
+	cd docs && npm run docs:api
+
+docs-build:
+	cd docs && npm run docs:build
+
+docs-dev:
+	cd docs && npm run docs:dev
+
+docs-cookbook:
+	PHP_BIN="docker run --rm -v $(PWD):/app -w /app composer:2 php" node docs/scripts/check-cookbook.mjs
+
+docs-links:
+	node docs/scripts/check-links.mjs
+
+docs-vale:
+	vale sync
+	vale $(VALE_PATHS)
 
 audit-package:
 	@if [ -f ../bin/package-audit ]; then bash ../bin/package-audit "$(CURDIR)"; else echo "package-audit: available only inside the monorepo"; fi

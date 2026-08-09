@@ -41,7 +41,7 @@ how a value *shrinks*. Both arbitraries shrink toward the same target
 regardless of how a value was produced — `IntArbitrary` by halving the
 distance to `max($min, min($max, 0))`, `FloatArbitrary` with the single
 candidate `max($min, min($max, 0.0))`. A boundary-biased draw and a
-uniformly-sampled draw with the same value produce identical shrink trees.
+uniformly sampled draw with the same value produce identical shrink trees.
 
 ## Why this matters for property design
 

@@ -72,7 +72,7 @@ many steps, regardless of how deep or wide the tree is.
 ## Writing your own tree
 
 `Shrinkable` gives you three constructors: `leaf($value)` for a value with no
-smaller candidates, `of($value, $closure)` for a value with a lazily-computed
+smaller candidates, `of($value, $closure)` for a value with a lazily computed
 list of candidates, and `map($fn)` to transform an entire existing tree.
 Building one from scratch — including the exact discipline the termination
 invariant requires — is covered with a worked example in

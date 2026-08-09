@@ -291,6 +291,102 @@ function typeToString(?ReflectionType $type): ?string
     return $type?->__toString();
 }
 
+/**
+ * The interface/parent declaration a method implements, or null when it
+ * declares itself. `getPrototype()` throws instead of returning null when
+ * there is none.
+ */
+function prototypeOf(ReflectionMethod $method): ?ReflectionMethod
+{
+    try {
+        return $method->getPrototype();
+    } catch (ReflectionException) {
+        return null;
+    }
+}
+
+/**
+ * Fills a `#[Override]` implementation's empty documentation from the
+ * declaration it implements, per-field.
+ *
+ * This codebase documents the contract on the interface and leaves the
+ * implementations bare — twenty `Arbitrary\*::generate()` methods carry no
+ * docblock at all because `ArbitraryInterface::generate()` says everything.
+ * Without inheritance those pages render a bare signature, and the
+ * completeness gate reports twenty findings whose only honest fix is
+ * copy-pasting one docblock twenty times.
+ *
+ * Per-field, not all-or-nothing: an implementation that adds its own summary
+ * but no `@param` descriptions keeps its summary and inherits the parameters.
+ *
+ * @param array<string, mixed> $own
+ * @param array<string, mixed> $inherited
+ * @return array<string, mixed>
+ */
+function inheritDoc(array $own, array $inherited): array
+{
+    if ($own['summary'] === '') {
+        $own['summary'] = $inherited['summary'];
+    }
+    if ($own['description'] === '') {
+        $own['description'] = $inherited['description'];
+    }
+    if ($own['throws'] === []) {
+        $own['throws'] = $inherited['throws'];
+    }
+
+    foreach ($inherited['params'] as $name => $param) {
+        if (($own['params'][$name]['description'] ?? '') === '') {
+            $own['params'][$name] = [
+                'type' => $own['params'][$name]['type'] ?? $param['type'],
+                'description' => $param['description'],
+            ];
+        }
+    }
+
+    return $own;
+}
+
+/**
+ * Whether the method's own source contains a `throw` — the input to the
+ * completeness gate's "a method that throws documents `@throws`" rule
+ * (docs/scripts/check-integrity.mjs). Reflection cannot answer this, and the
+ * docblock cannot either: a missing `@throws` is exactly what the gate looks
+ * for.
+ *
+ * Token-based, not a regex over the source slice: "throw" occurs in comments
+ * and in message strings all over this codebase, and `T_THROW` is the only
+ * occurrence that is a statement. Deliberately includes throws inside nested
+ * closures — a closure a method hands to the runner still surfaces its
+ * exception through that call, and the alternative (tracking closure scope)
+ * would need a parser for a checker whose finding is "write a docblock line".
+ */
+function bodyThrows(ReflectionMethod $method): bool
+{
+    $file = $method->getFileName();
+    $start = $method->getStartLine();
+    $end = $method->getEndLine();
+
+    if ($file === false || $start === false || $end === false) {
+        return false; // internal or eval'd — nothing to read
+    }
+
+    $lines = file($file);
+    if ($lines === false) {
+        return false;
+    }
+
+    $source = '<?php ' . implode('', array_slice($lines, $start - 1, $end - $start + 1));
+
+    foreach (token_get_all($source) as $token) {
+        if (is_array($token) && $token[0] === T_THROW) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function defaultValueLiteral(ReflectionParameter $param): ?string
 {
     if (!$param->isDefaultValueAvailable()) {
@@ -379,6 +475,17 @@ foreach (roots($coreDir, $workspaceDir, $coreVersion, $testoVersion, $phpunitVer
 
             $methodDoc = parseDocBlock($factory, $contextFactory, $method);
 
+            $inheritedFrom = null;
+            $prototype = prototypeOf($method);
+            if ($prototype !== null) {
+                $prototypeDoc = parseDocBlock($factory, $contextFactory, $prototype);
+                $merged = inheritDoc($methodDoc, $prototypeDoc);
+                if ($merged !== $methodDoc) {
+                    $inheritedFrom = $prototype->getDeclaringClass()->getName();
+                    $methodDoc = $merged;
+                }
+            }
+
             $params = [];
             foreach ($method->getParameters() as $param) {
                 $params[] = [
@@ -398,6 +505,8 @@ foreach (roots($coreDir, $workspaceDir, $coreVersion, $testoVersion, $phpunitVer
                 'summary' => $methodDoc['summary'],
                 'description' => $methodDoc['description'],
                 'throws' => $methodDoc['throws'],
+                'throwsInBody' => bodyThrows($method),
+                'inheritedFrom' => $inheritedFrom,
                 'see' => $methodDoc['see'],
                 'deprecated' => $methodDoc['deprecated'],
                 'attributes' => array_map(static fn(ReflectionAttribute $a): string => $a->getName(), $method->getAttributes()),

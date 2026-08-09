@@ -52,8 +52,8 @@ draw on a replay tape; when the property fails, it shrinks each recorded draw
 through its own tree and re-runs the body with the tape replayed by position.
 A shrunk parameter can change the body's control flow: draws past the tape's
 end are generated anew, and draws the smaller run no longer reaches are
-dropped. Counterexamples report draws as `draw#1`, `draw#2`, ... next to the
-named parameters (and `PROPERTY_VERBOSE` logs them per run).
+dropped. Counterexamples report each draw as `draw#1`, `draw#2`, `draw#3` next to
+the named parameters (and `PROPERTY_VERBOSE` logs them per run).
 
 Two things to know:
 

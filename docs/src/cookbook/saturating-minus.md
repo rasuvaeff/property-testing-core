@@ -65,6 +65,7 @@ Full runnable script:
 
 ## Runner output
 
+<!-- case-study-output: saturating-minus -->
 ```
 Buggy Duration::minus() falsified:
 

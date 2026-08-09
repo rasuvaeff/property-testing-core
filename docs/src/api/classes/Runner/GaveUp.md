@@ -37,3 +37,9 @@ __construct(
 failure(): Throwable
 ```
 
+The engine exception describing the failure — the same type and message
+the package has always reported ([`PropertyViolationException`](/api/classes/PropertyViolationException)
+for a falsification, and so on). Null for a pass.
+
+*Documentation inherited from [`Runner\PropertyResult`](/api/classes/Runner/PropertyResult).*
+

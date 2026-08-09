@@ -84,8 +84,9 @@ final class Trees
 
     /**
      * Every value in the tree down to $depth levels below the root (root
-     * excluded), breadth-first. Guards recursive invariants (e.g. "all
-     * candidates satisfy the filter predicate").
+     * excluded), depth-first pre-order: each child is followed by its own
+     * subtree. Guards recursive invariants (e.g. "all candidates satisfy the
+     * filter predicate").
      *
      * @return list<mixed>
      */

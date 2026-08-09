@@ -35,10 +35,10 @@ echo $violated
     ? "sum-is-nonnegative: FAILED unexpectedly\n"
     : "sum-is-nonnegative: held for 100 runs\n";
 
-// A property that is falsified: "every integer is even". Since 2.0 generate()
-// returns a Shrinkable — the value plus a lazy tree of smaller candidates —
-// so shrinking is a greedy descent: move to the first candidate that still
-// fails, repeat until no candidate does.
+// A property that is falsified: "every integer is even". generate() returns a
+// Shrinkable — the value plus a lazy tree of smaller candidates — so shrinking
+// is a greedy descent: move to the first candidate that still fails, repeat
+// until no candidate does.
 $ints = Gen::intBetween(0, 1000);
 
 $failing = null;

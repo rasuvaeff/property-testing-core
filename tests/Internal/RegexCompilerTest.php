@@ -485,11 +485,15 @@ final class RegexCompilerTest
             static fn(mixed $value): bool => $value !== 'a',
         );
 
-        while (true) {
+        for ($step = 0; ; ++$step) {
             $children = iterator_to_array($node->shrinks(), preserve_keys: false);
 
             if ($children === []) {
                 break;
+            }
+
+            if ($step > 100) {
+                Assert::fail('the greedy descent did not reach a leaf within 100 steps');
             }
 
             $node = $children[0];

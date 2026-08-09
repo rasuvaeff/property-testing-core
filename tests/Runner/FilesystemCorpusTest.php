@@ -403,6 +403,15 @@ final class FilesystemCorpusTest
             umask($previousUmask);
         }
 
+        if (DIRECTORY_SEPARATOR === '\\') {
+            // Windows has no POSIX mode bits: umask() is a no-op and
+            // fileperms() reports a synthetic 0o777 for every directory, so
+            // the mode assertion below would hold vacuously.
+            Assert::true(is_dir($nested));
+
+            return;
+        }
+
         Assert::same(fileperms($nested) & 0o7777, 0o777);
     }
 

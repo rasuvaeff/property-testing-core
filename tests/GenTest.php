@@ -635,6 +635,10 @@ final class GenTest
         $seed = 0;
         while (Gen::sample(Gen::intBetween(0, 100), 1, $seed)[0] === 0) {
             ++$seed;
+
+            if ($seed > 100) {
+                Assert::fail('no seed in [0, 100] produced a non-zero value');
+            }
         }
 
         $sampled = Gen::sampleShrinks(Gen::intBetween(0, 100), seed: $seed);

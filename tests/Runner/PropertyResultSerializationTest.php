@@ -255,6 +255,10 @@ final class PropertyResultSerializationTest
     {
         $previous = ini_set('zend.exception_ignore_args', $value);
 
+        if (ini_get('zend.exception_ignore_args') !== $value) {
+            Assert::fail("zend.exception_ignore_args could not be set to {$value}");
+        }
+
         try {
             $body();
         } finally {

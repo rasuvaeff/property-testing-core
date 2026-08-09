@@ -1,0 +1,27 @@
+{
+    "name": "rasuvaeff/property-testing-docs-api-workspace",
+    "description": "Not a package: installs the two adapters alongside this checkout of core so docs/scripts/reflect-api.php can reflect all three src/ trees through one autoloader. Deliberately kept out of core's own composer.json — installing it must never change what `composer why testo/testo` reports for core (Stage F exit criterion).",
+    "type": "project",
+    "require": {
+        "php": "8.3 - 8.5",
+        "rasuvaeff/property-testing-testo": "^0.1",
+        "rasuvaeff/property-testing-phpunit": "^0.1",
+        "phpdocumentor/reflection-docblock": "^5.6"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../..",
+            "options": {
+                "versions": {
+                    "rasuvaeff/property-testing-core": "0.1.0"
+                }
+            }
+        }
+    ],
+    "config": {
+        "allow-plugins": false,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}

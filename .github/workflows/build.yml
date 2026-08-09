@@ -189,8 +189,15 @@ jobs:
 
   adapters:
     name: Adapter contract suite (${{ matrix.adapter }})
-    needs: changes
-    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.run == 'true') }}
+    # Deliberately NOT gated on the `changes` filter, unlike every other heavy
+    # job here. A matrix job skipped by an `if:` never expands its matrix: it
+    # reports ONE check run named with the raw, uninterpolated expression, so
+    # the required contexts `Adapter contract suite (testo)` and `(phpunit)`
+    # would wait forever for a status that is never reported, and every
+    # docs-only PR would be unmergeable. Non-matrix jobs do report under their
+    # real name when skipped, which is why the gate is fine on the others.
+    # Running it unconditionally costs ~25s per adapter — a fraction of the
+    # gated `Coverage & Mutation` the filter exists to avoid.
     runs-on: ubuntu-latest
 
     strategy:

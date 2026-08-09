@@ -207,5 +207,11 @@ make release-check
 
 - Update `README.md` **and `README.ru.md`** (both languages, same commit;
   and `examples/` if usage changed); update `CHANGELOG.md` when releasing.
+- `MIGRATION.md` and `docs/src/guide/migrating-from-2x.md` are two renderings
+  of one document — the root file for the tarball and GitHub, the docs page
+  for the site (with in-site cross-links instead of relative paths). Any
+  change to one goes into the other in the same commit. Deliberately a rule
+  and not a generator: the site's exit criterion is that no page is assembled
+  from a file that moves in the normal working cycle.
 - Re-run `composer build`; if the change affects public API or release safety,
   also run `make release-check`. Paste the output.

@@ -1,10 +1,10 @@
 import { defineConfig } from 'vitepress'
 
-// Stage I.5.1 skeleton: nav/sidebar reflect the planned page set (see
-// property-testing-evolution-plan.md, §I.1/§I.5). Guide/cookbook/adapters
-// pages are placeholders until I.5.3/I.5.4 write real content; the API
-// section fills in once docs/scripts/reflect-api.php + generate-api.mjs
-// exist (I.5.2).
+// Nav/sidebar are the single source of truth for the page set (see
+// property-testing-evolution-plan.md, §I.1/§I.5). docs/scripts/check-integrity.mjs
+// enforces both directions: every link here resolves to a file, and every
+// hand-written page under src/ is reachable from here — an orphan page is an
+// error, not a page that merely nobody linked yet.
 const sidebar = [
     {
         text: 'Intro',
@@ -47,6 +47,7 @@ const sidebar = [
     { text: 'Recipes', link: '/guide/recipes' },
     { text: 'Security', link: '/guide/security' },
     { text: 'Examples', link: '/guide/examples' },
+    { text: 'Migrating from 2.x', link: '/guide/migrating-from-2x' },
     {
         text: 'Cookbook',
         items: [

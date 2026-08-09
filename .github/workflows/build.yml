@@ -20,6 +20,7 @@ jobs:
 
     outputs:
       run: ${{ steps.filter.outputs.run }}
+      mutation: ${{ steps.filter.outputs.mutation }}
 
     steps:
       - name: Checkout
@@ -51,6 +52,21 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
           else
             echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Mutation is the expensive job here (~2100 mutants, ~8 minutes), so
+          # it gets a narrower filter than the rest: only what can change which
+          # mutants exist or which tests kill them. Style and static-analysis
+          # configs, examples, and this workflow cannot. The trade is explicit
+          # — editing the mutation STEP in this file no longer re-runs it; a
+          # workflow change that breaks it surfaces on the next source change
+          # or a manual re-run, which is cheaper than paying 8 minutes on
+          # every docs and CI edit.
+          if git diff --quiet "$BASE" "$GITHUB_SHA" -- \
+            src tests composer.json testo.php infection.json5; then
+            echo "mutation=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "mutation=true" >> "$GITHUB_OUTPUT"
           fi
 
   build:
@@ -154,7 +170,7 @@ jobs:
   coverage:
     name: Coverage & Mutation
     needs: changes
-    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.run == 'true') }}
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.mutation == 'true') }}
     runs-on: ubuntu-latest
 
     steps:

@@ -145,6 +145,31 @@ make release-check
   explicit types.
 - `examples/` is part of the public contract: keep scripts runnable and update
   `examples/README.md` when example usage changes.
+- **Every engine change is gated by both adapters' suites.** The
+  `Adapter contract suite (testo|phpunit)` job in `build.yml` checks out
+  `rasuvaeff/property-testing-{testo,phpunit}` at their default branch, points
+  them at *this* checkout through a Composer path repository, and runs their
+  `composer test`. That is where the event-sequence and message-format
+  characterizations live — they are not duplicated here, so a change that
+  reorders an event or reflows a message goes green locally and red there.
+  The job asserts the path install took effect (`composer show` prints a
+  `path :` line) precisely so it cannot silently pass against the released
+  core from Packagist. Its path-repository `versions` override is pinned at
+  `0.1.0` because the adapters constrain core with `^0.1`: when core moves to
+  a version they do not accept, this job is *supposed* to fail until the
+  adapters are updated — do not paper over it by widening the override.
+  Same recipe locally, from the monorepo root:
+
+  ```bash
+  docker run --rm -v "$PWD":/repo -w /repo/property-testing-testo composer:2 sh -c '
+      composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"0.1.0\"}}}"
+      composer update && composer test
+      composer config --unset repositories.core && rm -f composer.lock
+  '
+  ```
+
+  Never leave that `repositories` key or a `composer.lock` in the adapter.
+
 - **CI workflows are SHA-pinned.** Every `uses:` in `.github/workflows/*.yml`
   references a 40-char commit SHA with a `# vN` trailing comment
   (e.g. `actions/checkout@<sha> # v4`). Never revert to floating `@vN` tags.

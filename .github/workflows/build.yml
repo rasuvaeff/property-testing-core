@@ -187,6 +187,71 @@ jobs:
       - name: Mutation testing
         run: composer mutation
 
+  adapters:
+    name: Adapter contract suite (${{ matrix.adapter }})
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.run == 'true') }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        adapter:
+          - testo
+          - phpunit
+
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: core
+
+      - name: Checkout adapter
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: rasuvaeff/property-testing-${{ matrix.adapter }}
+          persist-credentials: false
+          path: adapter
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          extensions: mbstring
+          tools: composer:v2
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Point the adapter at this checkout of core
+        # The path repository needs an explicit version: a library declares
+        # none, and the adapter constrains core with a caret range. Keep this
+        # in step with the adapters' constraint — when core moves to a version
+        # they no longer accept, this job is meant to go red until they do.
+        working-directory: adapter
+        run: |
+          composer config repositories.core '{"type":"path","url":"../core","options":{"versions":{"rasuvaeff/property-testing-core":"0.1.0"}}}'
+          composer update --no-interaction --no-progress
+
+      - name: Verify core resolved to the path repository
+        # Without this the job would silently pass against the released core
+        # from Packagist and test nothing about the change under review.
+        # A path install is the only one that reports a local `path :` line.
+        working-directory: adapter
+        run: |
+          composer show rasuvaeff/property-testing-core | tee /tmp/core-source.txt
+          grep -qE '^path +: +' /tmp/core-source.txt
+
+      - name: Adapter test suite
+        working-directory: adapter
+        run: composer test
+
   compatibility:
     name: Backward compatibility
     needs: changes

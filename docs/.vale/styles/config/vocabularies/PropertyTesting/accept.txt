@@ -1,0 +1,38 @@
+# Domain vocabulary Vale's dictionary does not know.
+#
+# Entries are regular expressions, and case matters twice over: an entry
+# teaches Vale.Spelling the word AND teaches Vale.Terms the one correct
+# casing. A bare `backoff` therefore makes Vale.Terms reject "Backoff" at the
+# start of a sentence or heading — verified live 2026-08-09, which is why
+# every common noun below is written with a bracketed initial. Only names
+# with genuinely fixed casing (PHPUnit, flatMap, PROPERTY_DB) are spelled
+# exactly.
+#
+# Deliberately NOT listed: shrink, shrinking, shrunk, arbitrary. The
+# dictionary already accepts them, and listing them would put them under
+# Vale.Terms for no gain.
+[Aa]rbitraries
+[Aa]rity
+[Aa]utoloader
+[Bb]ackoff
+[Cc]odecov
+[Cc]ombinators
+[Ee]num
+[Ii]njective
+[Ii]nts
+[Mm]isconfigured
+[Mm]onorepo
+[Mm]ultibyte
+[Nn]amespace
+[Pp]ostcondition
+[Rr]egexes
+[Rr]ollout
+[Ss]ubtree
+[Uu]nshrunk
+[Vv]alidator
+[Ww]alkthrough
+flatMap
+PCRE
+PHPUnit
+PROPERTY_DB
+Testo

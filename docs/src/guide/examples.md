@@ -8,7 +8,7 @@ description: "Runnable example scripts covering generators, shrinking, state mac
 Every package ships its own `examples/`, runnable after `composer install`
 via the `composer:2` Docker image (no PHP/Composer needed on the host).
 
-### [`property-testing-core`](https://github.com/rasuvaeff/property-testing-core/blob/master/examples/)
+### [`property-testing-core`](https://github.com/rasuvaeff/property-testing-core/tree/master/examples)
 
 | Script | Shows | Needs server? |
 |---|---|---|
@@ -21,14 +21,14 @@ via the `composer:2` Docker image (no PHP/Composer needed on the host).
 | `case-studies/backoff-cap.php` | [Cookbook](/cookbook/backoff-cap) case study: jitter added after the cap was applied, pushing the delay past it | No |
 | `case-studies/hash-bucketing.php` | [Cookbook](/cookbook/hash-bucketing) case study: a rollout hash salted with the percentage, breaking monotonicity | No |
 
-### [`property-testing-testo`](https://github.com/rasuvaeff/property-testing-testo/blob/master/examples/)
+### [`property-testing-testo`](https://github.com/rasuvaeff/property-testing-testo/tree/master/examples)
 
 | Script | Shows | Needs server? |
 |---|---|---|
 | `property_test.php` | Canonical `#[Property]` usage as a real Testo test case, including an in-body dependent draw with `Gen::draw()` | No |
 | `state_machine.php` | Stateful / model-based testing: a `Command` interface, `Gen::commands()`, and `StateMachine::check()` driving command sequences against a stack | No |
 
-### [`property-testing-phpunit`](https://github.com/rasuvaeff/property-testing-phpunit/blob/master/examples/)
+### [`property-testing-phpunit`](https://github.com/rasuvaeff/property-testing-phpunit/tree/master/examples)
 
 | Example | Shows | Needs server? |
 |---|---|---|

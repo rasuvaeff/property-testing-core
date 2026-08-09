@@ -48,8 +48,13 @@ __construct(
 
 ```php
 runTest(
-    Testo\Core\Context\TestInfo $info,
+    \Testo\Core\Context\TestInfo $info,
     callable $next,
 ): Testo\Core\Context\TestResult
 ```
+
+*Documentation inherited from `Testo\Pipeline\Middleware\TestRunInterceptor`.*
+
+- `$info` — Information about the test to be run.
+- `$next` — Next interceptor or core logic to run the test.
 

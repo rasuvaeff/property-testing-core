@@ -194,6 +194,31 @@ make release-check
 
   Never leave that `repositories` key or a `composer.lock` in the adapter.
 
+- **The family documentation site lives in `docs/` and is checked, not
+  proofread.** `npm run docs:build` (or `make docs-build`) regenerates
+  `docs/src/api/**` from the reflection snapshot, runs
+  `docs/scripts/check-integrity.mjs`, builds, then runs
+  `check-anchors.mjs`. Three more checkers are separate on purpose:
+  `make docs-cookbook` needs PHP (it re-runs `examples/case-studies/*.php`
+  and diffs stdout against the block under each page's
+  `<!-- case-study-output: … -->` marker), `make docs-links` needs the
+  network, `make docs-vale` needs `vale` on PATH. Rules that are easy to
+  trip:
+  - a new page must be linked from `docs/src/.vitepress/config.ts` — an
+    orphan page is an error, not an oversight;
+  - `docs/src/api/**` is generated. Fix the PHP docblock, then
+    `make docs-api` (which reinstalls `docs/.api-workspace`, re-reflects all
+    three packages and rewrites the pages). Editing a generated page is
+    silently undone by the next build;
+  - `COMPLETENESS_BUDGET` in `check-integrity.mjs` only ever goes down.
+    A new undocumented parameter fails the build; when the count drops, the
+    checker says so and the constant is lowered in the same commit;
+  - the site is EN-only, and Vale's rule set is Microsoft's minus the
+    exclusions listed with their reasons in `.vale.ini`. Do not add an
+    exclusion to silence a finding that is simply correct;
+  - VitePress compiles markdown through Vue: a literal `{{` in prose is
+    interpolated and throws at render time while the build still exits 0.
+    Wrap it in `<code v-pre>`.
 - **CI workflows are SHA-pinned.** Every `uses:` in `.github/workflows/*.yml`
   references a 40-char commit SHA with a `# vN` trailing comment
   (e.g. `actions/checkout@<sha> # v4`). Never revert to floating `@vN` tags.

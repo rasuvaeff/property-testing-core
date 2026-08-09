@@ -71,6 +71,7 @@ Full runnable script:
 
 ## Runner output
 
+<!-- case-study-output: backoff-cap -->
 ```
 Buggy backoff falsified:
 

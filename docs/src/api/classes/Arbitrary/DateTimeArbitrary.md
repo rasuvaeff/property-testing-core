@@ -39,3 +39,10 @@ __construct(
 generate(Random $random): Shrinkable
 ```
 
+Produce one random value from this arbitrary's space, together with its
+shrink tree. Candidates must be ordered most aggressive first (typically
+toward a zero/empty/identity element) and every branch of the tree must
+be finite, so shrinking terminates.
+
+*Documentation inherited from [`ArbitraryInterface`](/api/classes/ArbitraryInterface).*
+

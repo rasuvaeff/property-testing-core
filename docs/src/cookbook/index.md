@@ -12,7 +12,7 @@ self-contained property. Every page follows the same shape:
 2. the unit test that stayed green next to it, and why;
 3. the property that falsifies it, in 8–12 lines;
 4. real runner output — pasted from an actual execution of
-   [`examples/case-studies/`](https://github.com/rasuvaeff/property-testing-core/blob/master/examples/case-studies/),
+   [`examples/case-studies/`](https://github.com/rasuvaeff/property-testing-core/tree/master/examples/case-studies),
    not invented;
 5. the one-line fix.
 
@@ -22,7 +22,7 @@ Every page here is honest about one thing: **none of these bugs was actually
 caught by a property test at the time.** A search across this monorepo's
 history — every package that has `property-testing` in `require-dev`, every
 commit touching `src/` alongside a new `#[Property]`, every commit message
-mentioning "counterexample", "shrink" or "falsif", every committed regression
+mentioning "counterexample", "shrink" or "falsified", every committed regression
 corpus (there are none) — turned up no case of a property test finding a bug
 before it shipped.
 

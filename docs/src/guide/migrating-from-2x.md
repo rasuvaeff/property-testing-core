@@ -11,7 +11,7 @@ The same code now ships as three packages — the engine plus one adapter per te
 framework — so a project pulls only the framework it actually uses.
 
 The split was designed as a **drop-in for the public API**: no public
-fully-qualified class name changed, no method convention changed, no
+fully qualified class name changed, no method convention changed, no
 environment variable changed, and the regression corpus on disk is read back
 byte-for-byte. For a Testo project the whole migration is two Composer commands
 and no PHP edits.

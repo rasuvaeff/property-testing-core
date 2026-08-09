@@ -37,6 +37,10 @@ __construct(
 ### execute()
 
 ```php
-execute(array $arguments): Runner\TrialOutcome
+execute(array<string,mixed> $arguments): Runner\TrialOutcome
 ```
+
+*Documentation inherited from [`Runner\TrialExecutor`](/api/classes/Runner/TrialExecutor).*
+
+- `$arguments` — Keyed by parameter name, in [`Runner\PropertyDefinition`](/api/classes/Runner/PropertyDefinition)::$parameterNames order.
 

@@ -69,6 +69,7 @@ Full runnable script:
 
 ## Runner output
 
+<!-- case-study-output: hash-bucketing -->
 ```
 Buggy rollout bucketing falsified:
 

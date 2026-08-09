@@ -49,6 +49,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Full history and tags: the API pages are stamped with `git
+          # describe`, which sees neither at the default depth of 1.
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Setup PHP
@@ -79,7 +82,18 @@ jobs:
         working-directory: docs/.api-workspace
         run: composer install --no-interaction --no-progress
 
+      # What every core reference page is stamped with. On a tagged commit
+      # `git describe` prints the tag; between releases it prints the nearest
+      # tag plus the commit, so a page built from master still says which
+      # commit it describes. Without this the pages say "working tree", which
+      # is true locally and meaningless once published (#9).
+      - name: Resolve the core version for the API pages
+        id: core-version
+        run: echo "version=$(git describe --tags --always)" >> "$GITHUB_OUTPUT"
+
       - name: Refresh the API reflection snapshot
+        env:
+          DOCS_CORE_VERSION: ${{ steps.core-version.outputs.version }}
         run: php docs/scripts/reflect-api.php > docs/scripts/api-snapshot.json
 
       # A deliberate non-check: the refreshed snapshot is NOT compared against

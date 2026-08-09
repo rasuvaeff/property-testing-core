@@ -1,0 +1,19 @@
+{
+    "seed": 4242,
+    "runsBeforeFailure": 3,
+    "originalArguments": {
+        "x": 100,
+        "s": "hi"
+    },
+    "shrunkArguments": {
+        "x": 51,
+        "s": ""
+    },
+    "shrinkSteps": 2,
+    "shrinkTrials": 5,
+    "failure": {
+        "type": "RuntimeException",
+        "message": "x>50"
+    },
+    "skips": 1
+}

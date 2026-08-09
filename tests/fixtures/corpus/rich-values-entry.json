@@ -1,0 +1,61 @@
+{
+    "format": 1,
+    "property": "R::rich",
+    "entries": [
+        {
+            "kind": "values",
+            "seed": 7,
+            "epoch": 1,
+            "args": {
+                "i": -1,
+                "f": {
+                    "#": "f",
+                    "v": "-0.0"
+                },
+                "s": {
+                    "#": "b",
+                    "v": "/wByYXc="
+                },
+                "a": {
+                    "#": "a",
+                    "p": [
+                        [
+                            "k",
+                            false,
+                            {
+                                "#": "a",
+                                "p": [
+                                    [
+                                        "0",
+                                        true,
+                                        1
+                                    ],
+                                    [
+                                        "1",
+                                        true,
+                                        null
+                                    ],
+                                    [
+                                        "2",
+                                        true,
+                                        true
+                                    ]
+                                ]
+                            }
+                        ],
+                        [
+                            "3",
+                            true,
+                            "gap"
+                        ]
+                    ]
+                },
+                "e": {
+                    "#": "e",
+                    "c": "Rasuvaeff\\PropertyTesting\\Tests\\Support\\Priority",
+                    "n": "High"
+                }
+            }
+        }
+    ]
+}

@@ -374,6 +374,11 @@ $result = (new PropertyRunner())->run($definition, new CallableTrialExecutor(
 and `toExamplesCode()` emits runnable PHP pinning the shrunk case as a
 permanent example.
 
+`ValueRenderer::render($value)` produces the single-line human form used inside
+counterexample messages (strings quoted and escaped, arrays and objects
+summarised, recursion and depth bounded). Adapters reuse it so their verbose
+output reads exactly like the failure message.
+
 ### Debugging generators
 
 `Gen::sample($arb, $count, $seed)` eagerly generates values;

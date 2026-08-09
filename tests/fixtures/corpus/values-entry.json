@@ -1,0 +1,14 @@
+{
+    "format": 1,
+    "property": "X::y",
+    "entries": [
+        {
+            "kind": "values",
+            "seed": 4242,
+            "epoch": 1,
+            "args": {
+                "x": 51
+            }
+        }
+    ]
+}

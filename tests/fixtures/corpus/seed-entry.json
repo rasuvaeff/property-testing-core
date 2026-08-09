@@ -1,0 +1,11 @@
+{
+    "format": 1,
+    "property": "S::seeded",
+    "entries": [
+        {
+            "kind": "seed",
+            "seed": 99,
+            "epoch": 1
+        }
+    ]
+}

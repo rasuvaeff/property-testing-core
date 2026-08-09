@@ -216,6 +216,9 @@ Classify::cover(bool $condition, string $label, float $minPercent): void // -> C
 Gen::draw(ArbitraryInterface $arb): mixed  // recorded on the replay tape, shrunk like a parameter
 ```
 
+`ValueRenderer::render(mixed $value): string` — the single-line human rendering
+used inside counterexample messages; adapters reuse it for verbose output.
+
 ### Stateful / model-based (`StateMachine\` namespace)
 
 ```php

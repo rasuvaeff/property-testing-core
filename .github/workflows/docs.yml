@@ -1,0 +1,180 @@
+name: docs
+
+# The family documentation site (property-testing-evolution-plan.md, §I).
+# One site for three packages: this repository holds it, and the API
+# reference is reflected out of all three `src/` trees at build time.
+#
+# Pull requests build and check but never deploy. `master` deploys.
+# `repository_dispatch` exists because the reference documents the adapters
+# from their PUBLISHED tags (§I.2): an adapter release changes what belongs
+# on this site without changing a single file here, so the adapter's release
+# workflow sends `docs-rebuild` and the site catches up. Without it the
+# reference silently lags behind the adapter it describes.
+on:
+  pull_request:
+    paths: &paths
+      - 'docs/**'
+      - 'examples/case-studies/**'
+      - 'src/**'
+      - 'llms.txt'
+      - 'README.md'
+      - '.vale.ini'
+      - '.github/workflows/docs.yml'
+  push:
+    branches:
+      - master
+    paths: *paths
+  repository_dispatch:
+    types: [docs-rebuild]
+  # The floor under the same problem, with no secret to hand out: even if
+  # nobody dispatches anything, the reference is never more than a week
+  # behind an adapter release.
+  schedule:
+    - cron: '41 5 * * 1' # Mondays, 05:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          extensions: mbstring
+          tools: composer:v2
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      # Needed by the case studies, which run against this checkout's engine.
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      # docs/.api-workspace is NOT part of composer.json: core must never
+      # require its own adapters (Stage F exit criterion — `composer why
+      # testo/testo` stays empty for a core-only install). It installs both
+      # adapters from their published tags next to a path repository on this
+      # checkout, so one autoloader covers all three src/ trees.
+      - name: Install the API reflection workspace
+        working-directory: docs/.api-workspace
+        run: composer install --no-interaction --no-progress
+
+      - name: Refresh the API reflection snapshot
+        run: php docs/scripts/reflect-api.php > docs/scripts/api-snapshot.json
+
+      # A deliberate non-check: the refreshed snapshot is NOT compared against
+      # the committed one. Adapter versions come from Packagist, so an adapter
+      # release legitimately changes the snapshot with no commit in this
+      # repository — a drift check would turn every adapter release into a red
+      # master here.
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install docs dependencies
+        working-directory: docs
+        run: npm ci
+
+      - name: Build docs (API pages + integrity check + VitePress build + anchor check)
+        working-directory: docs
+        run: npm run docs:build
+
+      # Separate step, and after the build: it needs PHP, and its failure
+      # ("the page quotes output the script no longer produces") is a content
+      # problem, not a build problem — the distinction is worth one glance at
+      # the job summary.
+      - name: Verify cookbook case studies reproduce their quoted output
+        run: node docs/scripts/check-cookbook.mjs
+
+      - name: Setup Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: docs/src/.vitepress/dist
+
+  prose:
+    name: Prose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Vale ships as a single binary. Downloaded with a pinned version and a
+      # pinned checksum rather than through a third-party action: the action
+      # route wants a token and `pull-requests: write` for its annotations,
+      # and the two lines of `::error` below produce the same annotations with
+      # no write permission anywhere in this workflow.
+      - name: Install Vale
+        env:
+          VALE_VERSION: 3.9.1
+          VALE_SHA256: fbc2eb47d0b8c50220ed1a2c5c611fbe0904ed567d638143d482016a18fd2db0
+        run: |
+          curl -fsSL -o vale.tar.gz \
+            "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz"
+          echo "${VALE_SHA256}  vale.tar.gz" | sha256sum --check --strict
+          tar -xzf vale.tar.gz vale
+          sudo install -m 0755 vale /usr/local/bin/vale
+          rm vale vale.tar.gz
+
+      - name: Sync Vale styles
+        run: vale sync
+
+      # Hand-written sections only: docs/src/api/** is generated from
+      # docblocks and a prose linter on it reports nothing fixable on the
+      # site (§I.3).
+      - name: Lint prose
+        run: |
+          vale --output=JSON docs/src/index.md docs/src/guide docs/src/cookbook docs/src/adapters > vale.json || true
+          jq -r 'to_entries[] | .key as $file | .value[]
+                 | "::error file=\($file),line=\(.Line),col=\(.Span[0])::\(.Check): \(.Message)"' vale.json
+          found=$(jq 'to_entries | map(.value | length) | add // 0' vale.json)
+          echo "Vale findings: $found"
+          test "$found" -eq 0
+
+  deploy:
+    name: Deploy
+    needs: [build, prose]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write # publish the built site to GitHub Pages
+      id-token: write # required by actions/deploy-pages for OIDC Pages deployment
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

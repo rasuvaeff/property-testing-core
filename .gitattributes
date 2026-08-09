@@ -3,6 +3,7 @@
 /.gitignore export-ignore
 /.github export-ignore
 /.php-cs-fixer.php export-ignore
+/.vale.ini export-ignore
 /AGENTS.md export-ignore
 /CLAUDE.md export-ignore
 /Makefile export-ignore

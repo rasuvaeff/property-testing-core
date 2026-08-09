@@ -39,7 +39,11 @@ jobs:
           if [ "$EVENT_NAME" = "pull_request" ]; then
             BASE="$BASE_SHA"
           elif [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            # First push to a new branch: there is no base to diff against, so
+            # every filter says yes. Both outputs must be set here — an unset
+            # one reads as false downstream and silently skips its job.
             echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "mutation=true" >> "$GITHUB_OUTPUT"
             exit 0
           else
             BASE="$BEFORE_SHA"

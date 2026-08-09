@@ -30,8 +30,9 @@ shrink it to a minimal counterexample you can actually read.
 > (2.x) — both ship classes in the `Rasuvaeff\PropertyTesting` namespace, so
 > Composer refuses to install them together. Migrating from 2.x? Swap the dev
 > dependency for the adapter matching your framework; your imports stay as they
-> are. [MIGRATION.md](MIGRATION.md) is the full guide: one command for Testo
-> projects, plus the custom-harness and PHPUnit paths.
+> are. [MIGRATION.md](MIGRATION.md) is the full guide: two Composer commands
+> and no PHP edits for Testo projects, plus the custom-harness and PHPUnit
+> paths.
 
 ## Requirements
 

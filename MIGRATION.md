@@ -5,17 +5,23 @@ engine welded to a Testo plugin. It is frozen at `2.8.1` and marked abandoned.
 The same code now ships as three packages — this one plus one adapter per test
 framework — so a project pulls only the framework it actually uses.
 
-The split was designed as a **drop-in**: no fully-qualified class name changed,
-no method convention changed, no environment variable changed, and the
-regression corpus on disk is read back byte-for-byte. For a Testo project the
-entire migration is one Composer command.
+The split was designed as a **drop-in for the public API**: no public
+fully-qualified class name changed, no method convention changed, no
+environment variable changed, and the regression corpus on disk is read back
+byte-for-byte. For a Testo project the whole migration is two Composer commands
+and no PHP edits.
+
+That guarantee covers what 2.x documented as public. Classes marked
+`@internal` in 2.x are the one exception — some moved, and code that reached
+for them has imports to update; see [Custom harness](#custom-harness) for the
+exact mapping.
 
 ## Pick your path
 
 | You were using | Install | PHP code changes |
 |---|---|---|
 | `#[Property]` under Testo | `rasuvaeff/property-testing-testo` | **none** |
-| The engine directly (custom harness, CLI script, CI guard) | `rasuvaeff/property-testing-core` | none — see [Custom harness](#custom-harness) for the `@internal` classes that moved |
+| The engine directly (custom harness, CLI script, CI guard) | `rasuvaeff/property-testing-core` | none for public API; update imports of the `@internal` classes listed under [Custom harness](#custom-harness) |
 | Nothing yet, and you test with PHPUnit | `rasuvaeff/property-testing-phpunit` | new integration, see [PHPUnit](#phpunit) |
 
 ## Testo
@@ -29,8 +35,10 @@ That is the whole migration. Every import, attribute, generator method and
 assertion stays as it is:
 
 ```php
+use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Property;
+use Testo\Assert;
 
 #[Property(runs: 300)]
 public function roundTrip(string $value): void

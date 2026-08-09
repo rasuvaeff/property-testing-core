@@ -158,15 +158,27 @@ make release-check
   `0.1.0` because the adapters constrain core with `^0.1`: when core moves to
   a version they do not accept, this job is *supposed* to fail until the
   adapters are updated — do not paper over it by widening the override.
-  Same recipe locally, from the monorepo root:
+  Same recipe locally, from the monorepo root. **Both** adapters, not just
+  `-testo` — they exercise different halves of the contract, and an engine
+  change can break one while the other stays green:
 
   ```bash
-  docker run --rm -v "$PWD":/repo -w /repo/property-testing-testo composer:2 sh -c '
-      composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"0.1.0\"}}}"
-      composer update && composer test
-      composer config --unset repositories.core && rm -f composer.lock
-  '
+  for adapter in testo phpunit; do
+    docker run --rm -v "$PWD":/repo -w "/repo/property-testing-$adapter" composer:2 sh -c '
+        set -e
+        cleanup() { composer config --unset repositories.core; rm -f composer.lock; }
+        trap cleanup EXIT
+        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"0.1.0\"}}}"
+        composer update
+        composer test
+    ' || echo "ADAPTER FAILED: $adapter"
+  done
   ```
+
+  The `set -e` + `trap ... EXIT` is not decoration. `sh -c` has no `errexit` by
+  default, so a plain `update; test; cleanup` sequence runs the cleanup after a
+  failing `composer test` and exits with *cleanup's* status — a red adapter
+  suite reported as green. The trap runs cleanup while preserving `$?`.
 
   Never leave that `repositories` key or a `composer.lock` in the adapter.
 

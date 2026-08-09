@@ -43,6 +43,11 @@ Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`.
 - Corpus format is byte-compatible with `rasuvaeff/property-testing` 2.8
   (`FORMAT_VERSION` 1): one JSON file per property, max 8 values + 2 seed
   entries. Seed entries are fenced off by `FilesystemCorpus::SEQUENCE_EPOCH`.
+- A corpus values entry stores the failing input VERBATIM as plain JSON, so the
+  corpus directory is as sensitive as what the generators produce. Do not put
+  it in world-readable paths or published build artifacts; for realistic
+  personal/credential-shaped data, synthesise inside the property body instead
+  of generating it, so only a seed is recorded.
 - Results serialize natively when traces carry no argument values
   (`zend.exception_ignore_args=1`); the portable format is
   `CounterExample::toArray()` / `toJson()`.

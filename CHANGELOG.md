@@ -6,6 +6,9 @@
   2.x to this family — one Composer command for Testo projects, plus the
   custom-harness path (including where the `@internal` classes a harness used
   to reach for now live) and the PHPUnit path.
+- Documented that a corpus values entry persists the failing input verbatim as
+  plain JSON, and what that implies for generators that can produce
+  sensitive-looking data (both READMEs, `llms.txt`).
 - CI: added the `Adapter contract suite` job — both adapter packages are
   checked out at their default branch, pointed at the core under review
   through a path repository, and their test suites run. Documentation and CI

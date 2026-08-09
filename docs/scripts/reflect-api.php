@@ -77,7 +77,15 @@ function installedPackageMeta(string $workspaceDir, string $packageName): array
 }
 
 $coreDir = dirname(__DIR__, 2);
-$coreVersion = ['version' => 'working tree', 'reference' => null];
+
+// The adapters carry a real version because they are installed from Packagist
+// (composer/installed.json). Core is reflected from this checkout, which has
+// no such record — and "working tree" is the honest answer only while someone
+// is running this locally. On a deployed page it is the one package the
+// reader cannot place in time, on the pages where that matters most, so CI
+// passes the version it is building: DOCS_CORE_VERSION, from `git describe`.
+// See docs.yml and issue #9.
+$coreVersion = ['version' => getenv('DOCS_CORE_VERSION') ?: 'working tree', 'reference' => null];
 $testoVersion = installedPackageMeta($workspaceDir, 'rasuvaeff/property-testing-testo');
 $phpunitVersion = installedPackageMeta($workspaceDir, 'rasuvaeff/property-testing-phpunit');
 

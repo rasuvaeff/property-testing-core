@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — 2026-08-08
+## 0.1.0 — 2026-08-09
 
 - Extracted the framework-agnostic engine from `rasuvaeff/property-testing`
   2.8.1 with FQCNs preserved (namespace `Rasuvaeff\PropertyTesting`) — a

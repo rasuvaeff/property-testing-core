@@ -25,10 +25,10 @@ const pkgDir = join(docsDir, '..')
 // тихо деградирует обратно".
 const COMPLETENESS_BUDGET = {
     'type without a summary': 1,
-    'method without a summary': 30,
-    'parameter without a description': 136,
-    'constructor parameter without a description': 121,
-    'throwing method without @throws': 14,
+    'method without a summary': 29,
+    'parameter without a description': 125,
+    'constructor parameter without a description': 115,
+    'throwing method without @throws': 13,
 }
 
 const errors = []
@@ -237,7 +237,11 @@ for (const entry of apiClasses.filter((e) => e.root === 'core')) {
 const incomplete = { ...Object.fromEntries(Object.keys(COMPLETENESS_BUDGET).map((k) => [k, []])) }
 const note = (kind, where) => incomplete[kind].push(where)
 
-for (const entry of apiClasses) {
+// Core only. The snapshot spans all three packages, and the adapters are
+// reflected from their PUBLISHED tags — counting their holes here would let
+// an adapter release blow the budget and redden this repository's master
+// with nothing changed in it. Same reason the llms.txt check above is scoped.
+for (const entry of apiClasses.filter((e) => e.root === 'core')) {
     const page = pageLink(entry.class)
 
     if (entry.summary.trim() === '') {

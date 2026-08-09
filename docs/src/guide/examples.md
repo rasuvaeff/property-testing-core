@@ -16,6 +16,10 @@ via the `composer:2` Docker image (no PHP/Composer needed on the host).
 | `generators.php` | `sample`, boundary bias, `uuid`, `datetime`, `dictOf`, `record`, and dependent generation with `flatMap` (uses generators directly, no runner) | No |
 | `standalone_runner.php` | Driving the framework-agnostic engine directly: a hand-built `PropertyDefinition`, `CallableTrialExecutor`, and structured `PropertyResult` inspection | No |
 | `custom_listeners.php` | Custom observers over the engine's event model: a console reporter narrating the shrink descent and a telemetry collector aggregating run counts, timings and labels — pure `PropertyListener` implementations, no engine changes | No |
+| `case-studies/regex-anchor.php` | [Cookbook](/cookbook/regex-anchor) case study: a `$`-anchored identifier validator accepting a trailing newline | No |
+| `case-studies/saturating-minus.php` | [Cookbook](/cookbook/saturating-minus) case study: subtraction producing a negative duration instead of saturating at zero | No |
+| `case-studies/backoff-cap.php` | [Cookbook](/cookbook/backoff-cap) case study: jitter added after the cap was applied, pushing the delay past it | No |
+| `case-studies/hash-bucketing.php` | [Cookbook](/cookbook/hash-bucketing) case study: a rollout hash salted with the percentage, breaking monotonicity | No |
 
 ### [`property-testing-testo`](https://github.com/rasuvaeff/property-testing-testo/blob/master/examples/)
 

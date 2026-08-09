@@ -163,6 +163,7 @@ make release-check
   change can break one while the other stays green:
 
   ```bash
+  failed=''
   for adapter in testo phpunit; do
     docker run --rm -v "$PWD":/repo -w "/repo/property-testing-$adapter" composer:2 sh -c '
         set -e
@@ -171,14 +172,25 @@ make release-check
         composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"0.1.0\"}}}"
         composer update
         composer test
-    ' || echo "ADAPTER FAILED: $adapter"
+    ' || failed="$failed $adapter"
   done
+  [ -z "$failed" ] || { echo "ADAPTER SUITES FAILED:$failed"; false; }
   ```
 
-  The `set -e` + `trap ... EXIT` is not decoration. `sh -c` has no `errexit` by
-  default, so a plain `update; test; cleanup` sequence runs the cleanup after a
-  failing `composer test` and exits with *cleanup's* status — a red adapter
-  suite reported as green. The trap runs cleanup while preserving `$?`.
+  Both halves of the status handling are load-bearing, and they fail the same
+  way for different reasons:
+
+  - inside the container, `sh -c` has no `errexit`, so a plain
+    `update; test; cleanup` sequence runs the cleanup after a failing
+    `composer test` and exits with *cleanup's* status. `set -e` plus a
+    `trap ... EXIT` runs the cleanup while preserving `$?`;
+  - outside it, `|| echo …` inside the loop would swallow the same failure one
+    level up: the loop continues, the last command succeeds, and the whole
+    snippet exits 0. Collect the failures and re-raise after the loop.
+
+  A recipe that exits 0 on a red adapter suite is worse than no recipe — the
+  reader is an agent whose golden rule is not to claim "done" without a green
+  run.
 
   Never leave that `repositories` key or a `composer.lock` in the adapter.
 

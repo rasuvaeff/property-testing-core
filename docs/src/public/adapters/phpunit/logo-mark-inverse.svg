@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="property-testing-phpunit">
+  <title>property-testing-phpunit</title>
+  <rect x="0.75" y="0.75" width="118.5" height="118.5" rx="29" fill="#FFFFFF" stroke="#DDE1E6" stroke-width="1.5"/>
+  <rect x="24" y="25" width="74" height="12" rx="6" fill="#2E8B57"/>
+  <rect x="24" y="45" width="54" height="12" rx="6" fill="#2E8B57"/>
+  <rect x="24" y="65" width="38" height="12" rx="6" fill="#2E8B57"/>
+  <rect x="24" y="85" width="20" height="12" rx="6" fill="#C9911A"/>
+</svg>

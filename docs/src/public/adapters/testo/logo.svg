@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 120" width="500" height="120" role="img" aria-label="property-testing-testo">
+  <title>property-testing-testo</title>
+  <style>
+    .ink{fill:#141428}
+    @media (prefers-color-scheme: dark){.ink{fill:#F2F1FA}}
+  </style>
+  <path fill-rule="evenodd" fill="#12796A" d="M30 0 H90 A30 30 0 0 1 120 30 V90 A30 30 0 0 1 90 120 H30 A30 30 0 0 1 0 90 V30 A30 30 0 0 1 30 0 Z M120 45 A15 15 0 0 0 120 75 Z"/>
+  <rect x="24" y="25" width="74" height="12" rx="6" fill="#FFFFFF"/>
+  <rect x="24" y="45" width="54" height="12" rx="6" fill="#FFFFFF"/>
+  <rect x="24" y="65" width="38" height="12" rx="6" fill="#FFFFFF"/>
+  <rect x="24" y="85" width="20" height="12" rx="6" fill="#F79A6B"/>
+  <text class="ink" x="150" y="62" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="38" font-weight="600" letter-spacing="-0.8">Property Testing</text>
+  <rect x="152" y="78" width="126" height="28" rx="14" fill="none" stroke="#F79A6B" stroke-width="1.5"/>
+  <text x="215.0" y="97" text-anchor="middle" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#F79A6B">Testo adapter</text>
+</svg>

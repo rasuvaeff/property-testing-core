@@ -25,6 +25,7 @@ const columns = [
     {
         title: 'Cookbook',
         links: [
+            { text: 'Overview', link: '/cookbook/index' },
             { text: 'Regex accept/reject anchoring', link: '/cookbook/regex-anchor' },
             { text: 'Saturating subtraction', link: '/cookbook/saturating-minus' },
             { text: 'Backoff delay stays within cap', link: '/cookbook/backoff-cap' },

@@ -50,6 +50,7 @@ const sidebar = [
     {
         text: 'Cookbook',
         items: [
+            { text: 'Overview', link: '/cookbook/index' },
             { text: 'Regex accept/reject anchoring', link: '/cookbook/regex-anchor' },
             { text: 'Saturating subtraction', link: '/cookbook/saturating-minus' },
             { text: 'Backoff delay stays within its cap', link: '/cookbook/backoff-cap' },
@@ -110,7 +111,7 @@ export default defineConfig({
         search: { provider: 'local' },
         nav: [
             { text: 'Guide', link: '/guide/intro/what-is-property-testing' },
-            { text: 'Cookbook', link: '/cookbook/regex-anchor' },
+            { text: 'Cookbook', link: '/cookbook/index' },
             { text: 'Adapters', link: '/adapters/testo' },
             { text: 'API', link: '/api/index' },
         ],

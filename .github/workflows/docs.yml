@@ -110,10 +110,16 @@ jobs:
       - name: Verify cookbook case studies reproduce their quoted output
         run: node docs/scripts/check-cookbook.mjs
 
+      # Skipped on pull requests: `deploy` is skipped there too, so nothing
+      # consumes the artifact — and both steps call the Pages API, which does
+      # not exist until Pages is switched on for the repository. A PR must
+      # not depend on that.
       - name: Setup Pages
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Upload artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: docs/src/.vitepress/dist

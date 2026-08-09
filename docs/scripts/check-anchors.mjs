@@ -68,6 +68,17 @@ function idsFor(pagePath) {
 }
 
 const linkPattern = /\]\((\/[^)#\s]+)#([^)\s]+)\)/g
+// A same-page link has no path half at all. Checked against the page's own
+// rendered ids: it is the commonest kind of anchor and it was the one kind
+// the 2.x script never looked at.
+const selfLinkPattern = /\]\(#([^)\s]+)\)/g
+
+// The site path VitePress serves a source file at, in the form idsFor() wants.
+function pagePathFor(file) {
+    const rel = relative(srcDir, file).replace(/\.md$/, '')
+
+    return '/' + rel
+}
 
 for (const file of collectMarkdownFiles(srcDir)) {
     const content = readFileSync(file, 'utf8')
@@ -78,6 +89,16 @@ for (const file of collectMarkdownFiles(srcDir)) {
 
         if (ids !== null && !ids.has(fragment)) {
             errors.push(`src/${relative(srcDir, file)} links to "${target}#${fragment}", but that page has no heading with id "${fragment}".`)
+        }
+    }
+
+    const own = pagePathFor(file)
+    for (const match of content.matchAll(selfLinkPattern)) {
+        const fragment = match[1]
+        const ids = idsFor(own)
+
+        if (ids !== null && !ids.has(fragment)) {
+            errors.push(`src/${relative(srcDir, file)} links to "#${fragment}", but the page has no heading with that id.`)
         }
     }
 }

@@ -301,6 +301,15 @@ keep working after the migration.
 | Values | Every minimised argument is representable as data (null/scalars/arrays/enum cases/byte strings) | One run with the exact recorded input |
 | Seed | Objects, closures, or in-body `Gen::draw()` values in the counterexample | The whole random phase, re-run with that seed; fenced off by the sequence epoch |
 
+A values entry stores the failing input **verbatim**, so a corpus directory is
+as sensitive as the data your generators produce. That is normally
+uninteresting — random ints and strings — but a generator seeded from a
+production fixture, or one that composes realistic personal or
+credential-shaped data, writes exactly that to disk in plain JSON. Keep the
+directory out of world-readable locations and out of published build
+artifacts, and prefer synthesising such values inside the property body over
+generating them, so the counterexample records the seed rather than the data.
+
 ### Events and listeners
 
 Pass `PropertyListener` implementations to `PropertyRunner::run()` and observe
@@ -395,6 +404,10 @@ to the runner. Random values come from PHP's MT19937 engine seeded by the
 reported seed — a PRNG, not a CSPRNG; never use generated values for
 cryptographic purposes, and treat seeds as reproducibility handles, not
 secrets.
+
+When you do enable the corpus, remember that it persists failing inputs as
+plain JSON: see [Regression corpus](#regression-corpus) for what that means
+for generators that can produce sensitive-looking data.
 
 ## Examples
 

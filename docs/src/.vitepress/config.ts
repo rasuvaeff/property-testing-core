@@ -48,6 +48,7 @@ const sidebar = [
     { text: 'Security', link: '/guide/security' },
     { text: 'Examples', link: '/guide/examples' },
     { text: 'Migrating from 2.x', link: '/guide/migrating-from-2x' },
+    { text: 'Roadmap', link: '/roadmap' },
     {
         text: 'Cookbook',
         items: [
@@ -114,6 +115,7 @@ export default defineConfig({
             { text: 'Guide', link: '/guide/intro/what-is-property-testing' },
             { text: 'Cookbook', link: '/cookbook/index' },
             { text: 'Adapters', link: '/adapters/testo' },
+            { text: 'Roadmap', link: '/roadmap' },
             { text: 'API', link: '/api/index' },
         ],
         sidebar: { '/': sidebar },

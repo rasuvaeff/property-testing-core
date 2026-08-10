@@ -16,7 +16,7 @@ lifecycle events, and stateful/model-based testing — with no dependency on any
 test framework. Generate hundreds of random inputs, find the failing one, and
 shrink it to a minimal counterexample you can actually read.
 
-> Using an AI coding assistant? [llms.txt](llms.txt) contains a compact API reference you can share with the model. If the project uses [`llm/skills`](https://github.com/roxblnfk/skills), the [`rasuvaeff-property-testing-core` skill](resources/skills/rasuvaeff-property-testing-core/SKILL.md) is auto-synced to `.agents/skills/` on `composer require` — it is decision-oriented (which generator, which phase mechanism) and points back here for the full syntax.
+> Using an AI coding assistant? [llms.txt](llms.txt) contains a compact API reference you can share with the model. If the project uses [`llm/skills`](https://github.com/roxblnfk/skills), the [`rasuvaeff-property-testing-core` skill](resources/skills/rasuvaeff-property-testing-core/SKILL.md) is auto-synced to `.agents/skills/` on `composer require` — it is decision-oriented (which generator, which phase mechanism) and points back here for the full syntax. To mirror the skill into `.claude/skills/` or `.cursor/skills/` (a single set of files, OS-level junctions/symlinks), add a `skills.json` at the project root: `{"target": ".agents/skills", "aliases": [".claude/skills", ".cursor/skills"]}` — or run `composer skills:init` for the interactive wizard.
 
 ## Part of the property-testing family
 

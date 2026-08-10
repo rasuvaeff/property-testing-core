@@ -17,7 +17,7 @@ Framework-agnostic **движок** property-based тестирования дл
 проверку, поиск падающего и сжатие его до минимального контрпримера, который
 реально читается.
 
-> Работаете с AI-ассистентом? [llms.txt](llms.txt) содержит компактный API-справочник для модели. Если проект использует [`llm/skills`](https://github.com/roxblnfk/skills), скилл [`rasuvaeff-property-testing-core`](resources/skills/rasuvaeff-property-testing-core/SKILL.md) автоматически синхронизируется в `.agents/skills/` при `composer require` — он построен вокруг решений (какой генератор, какой механизм фазы выбрать), а полный синтаксис оставляет здесь.
+> Работаете с AI-ассистентом? [llms.txt](llms.txt) содержит компактный API-справочник для модели. Если проект использует [`llm/skills`](https://github.com/roxblnfk/skills), скилл [`rasuvaeff-property-testing-core`](resources/skills/rasuvaeff-property-testing-core/SKILL.md) автоматически синхронизируется в `.agents/skills/` при `composer require` — он построен вокруг решений (какой генератор, какой механизм фазы выбрать), а полный синтаксис оставляет здесь. Чтобы зеркало скилла появилось в `.claude/skills/` или `.cursor/skills/` (один набор файлов, на уровне ОС — junction/symlink), добавьте `skills.json` в корень проекта: `{"target": ".agents/skills", "aliases": [".claude/skills", ".cursor/skills"]}` — либо запустите `composer skills:init` для интерактивного мастера.
 
 ## Семейство property-testing
 

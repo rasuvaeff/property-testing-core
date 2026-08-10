@@ -15,8 +15,10 @@ wires the engine into PHPUnit: a `PropertyTesting` trait with a fluent
 composer require --dev rasuvaeff/property-testing-phpunit
 ```
 
-Requires `phpunit/phpunit` `^11.5 || ^12.0`. No configuration is needed: mix
-the trait into a `TestCase` and call `forAll()` from a test method.
+Requires `phpunit/phpunit` `^11.5 || ^12.0 || ^13.0`. PHPUnit 13 requires PHP
+8.4.1 or newer; projects on PHP 8.3 continue to resolve a compatible PHPUnit
+11 or 12 release. No configuration is needed: mix the trait into a `TestCase`
+and call `forAll()` from a test method.
 
 ## Usage
 

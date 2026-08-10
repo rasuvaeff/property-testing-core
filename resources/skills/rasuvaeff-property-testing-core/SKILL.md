@@ -118,7 +118,7 @@ default method names).
 | ASCII string | `Gen::stringAscii()` | 0..100 chars |
 | Unicode string | `Gen::string()` | |
 | Bounded length | `Gen::stringOf($min, $max)` | |
-| From alphabet | `Gen::stringFrom($alphabet, $min, $max)` | **Preferred for parser inputs** — keeps value free of delimiter chars |
+| From alphabet | `Gen::stringFrom($alphabet, $min, $max)` | **Preferred for parser inputs** — the alphabet is the caller's responsibility: pick one that excludes the parser's delimiter chars (`,`, `=`, `&`, ...) so the value cannot break out of its field, but DOES include the chars you want the parser to handle |
 | Bytes (HMAC, raw) | `Gen::bytes($min, $max)` | |
 | Array | `Gen::arrayOf($element, $min, $max)` | |
 | Unique array (ids, keys) | `Gen::uniqueArrayOf($element, $min, $max)` | |
@@ -169,9 +169,17 @@ public function andIsCommutative(Specification $a, Specification $b): void
 /** @return iterable<array{0: Specification, 1: Specification}> */
 public static function andIsCommutativeExamples(): iterable
 {
-    yield 'identity (same leaf twice)' => [$this->active, $this->active];
-    yield 'disjoint (empty intersection)' => [$this->active, $this->inactive];
-    yield 'NOT-wrapped left' => [$this->notActive, $this->inactive];
+    // Examples methods are `public static` (their only call site is reflection),
+    // so fixtures must be built statically too — `$this->active` would not compile.
+    // The pattern is a private static catalog (see specification/tests/Integration/
+    // CompositionLawsPropertyTest.php for the live version).
+    $active = ComparisonSpecification::equal(column: 'status', value: 'active');
+    $inactive = ComparisonSpecification::equal(column: 'status', value: 'inactive');
+    $notActive = NotSpecification::create(specification: $active);
+
+    yield 'identity (same leaf twice)' => [$active, $active];
+    yield 'disjoint (empty intersection)' => [$active, $inactive];
+    yield 'NOT-wrapped left' => [$notActive, $inactive];
 }
 ```
 
@@ -196,7 +204,7 @@ For state machines, retries, lifecycles. Four files in `tests/Support/`:
 2. **Command** — implements `Rasuvaeff\PropertyTesting\StateMachine\Command`:
    `preCondition($model)`, `nextState($model)` (pure, returns NEW model),
    `run($model, $system)` (mutates SUT), `postCondition($model, $result)`.
-3. **Harness** (optional) — holds the SUT side; reassigned by each `run()`.
+3. **Harness** (optional) — holds the SUT instance; reassigned by each `run()`.
 4. **Test** — drives it via `Gen::commands()` + `StateMachine::check()`:
    ```php
    #[Property(runs: 100)]
@@ -204,7 +212,9 @@ For state machines, retries, lifecycles. Four files in `tests/Support/`:
    {
        $harness = null;
        StateMachine::check($sequence, static function () use (&$harness) {
-           return $harness = new Harness(MyClass::create(...));
+           // The factory receives a fresh SUT per sequence replay; the harness
+           // stores it so Command::run() can reassign it as the SUT evolves.
+           return $harness = new Harness(MyClass::create());
        });
        \assert($harness instanceof Harness);
 
@@ -256,12 +266,30 @@ Enabled by adapter env: `PROPERTY_DB=/path/to/dir`. Behaviour:
 - An **attribute `seed`** disables replay for that property; an **env
   `PROPERTY_SEED`** does not. Asymmetry is pinned by adapter tests.
 
-CI pipeline for property packages: `actions/cache/restore` for
-`build/property-db` (keyed `property-db-${{ github.run_id }}-${{ github.run_attempt }}`)
-→ `env: PROPERTY_DB` on the coverage step → `actions/cache/save` with
-`if: ${{ !cancelled() }}` (separate restore/save — combined `actions/cache`
-has `post-if: success()` and would skip the save on red runs, where new
-counterexamples appear). See root `AGENTS.md` for the exact YAML.
+CI pipeline for property packages (the recipe consumer packages follow, not
+the core engine — core has no `#[Property]` tests of its own):
+
+1. `actions/cache/restore` for `build/property-db` with a unique save key
+   `property-db-${{ github.run_id }}-${{ github.run_attempt }}` AND a stable
+   prefix `restore-keys: property-db-` — without the prefix, every run misses
+   the corpus from earlier runs (the unique key alone never collides).
+2. `env: PROPERTY_DB: ${{ github.workspace }}/build/property-db` on the
+   coverage step (`composer test:coverage:ci`).
+3. `actions/cache/save` with `if: ${{ !cancelled() }}` and the same unique
+   key. Separate restore/save — the combined `actions/cache` declares
+   `post-if: success()` and would skip the save on red runs, where new
+   counterexamples appear.
+
+The exact YAML lives in the consumer package's `.github/workflows/build.yml`
+— see root `AGENTS.md` (monorepo) for the canonical block.
+
+**Sensitivity of the cache.** A values entry stores the failing input as plain
+JSON. The CI cache therefore inherits whatever the generators produced. This
+is fine for synthetic test inputs (the rasuvaeff/* default — properties run
+on generated ASCII, not on production-shaped data); for suites that feed the
+property real or credential-shaped inputs, either synthesise inside the body
+so only a seed is recorded, or skip step 3 (no cache save) and accept that
+regressions live in one CI run only.
 
 ## Adapters
 

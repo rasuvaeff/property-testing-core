@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 — 2026-08-10
 
 - Added `MIGRATION.md`: the guide from the frozen `rasuvaeff/property-testing`
   2.x to this family — one Composer command for Testo projects, plus the
@@ -13,6 +13,15 @@
   checked out at their default branch, pointed at the core under review
   through a path repository, and their test suites run. Documentation and CI
   only; no library changes.
+- Added `resources/skills/rasuvaeff-property-testing-core/SKILL.md` and wired
+  `extra.skills.source` in `composer.json`. The skill is decision-oriented
+  (which generator, which phase mechanism) and auto-syncs into a consumer
+  project's `.agents/skills/` via [`llm/skills`](https://github.com/roxblnfk/skills).
+  Both READMEs document the consumer-side `skills.json` snippet for mirroring
+  into `.claude/skills` / `.cursor/skills` via OS-level junctions/symlinks.
+  Documentation and distribution metadata only; no library changes.
+
+## Unreleased
 
 ## 0.1.0 — 2026-08-09
 

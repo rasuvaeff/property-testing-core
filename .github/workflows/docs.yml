@@ -4,12 +4,13 @@ name: docs
 # One site for three packages: this repository holds it, and the API
 # reference is reflected out of all three `src/` trees at build time.
 #
-# Pull requests build and check but never deploy. `master` deploys.
-# `repository_dispatch` exists because the reference documents the adapters
-# from their PUBLISHED tags (§I.2): an adapter release changes what belongs
-# on this site without changing a single file here, so the adapter's release
-# workflow sends `docs-rebuild` and the site catches up. Without it the
-# reference silently lags behind the adapter it describes.
+# Pull requests build and check but never deploy. `master` deploys. The
+# reference documents the adapters from their PUBLISHED tags (§I.2): an
+# adapter release changes what belongs on this site without changing a
+# single file here. Deliberately no `repository_dispatch` wired to an
+# adapter release (see issue #8) — a cross-repository PAT for a rare event
+# that the weekly cron already bounds is not worth the secret-management
+# overhead; `workflow_dispatch` covers the "I want it now" case by hand.
 on:
   pull_request:
     paths: &paths
@@ -24,11 +25,7 @@ on:
     branches:
       - master
     paths: *paths
-  repository_dispatch:
-    types: [docs-rebuild]
-  # The floor under the same problem, with no secret to hand out: even if
-  # nobody dispatches anything, the reference is never more than a week
-  # behind an adapter release.
+  # The reference is never more than a week behind an adapter release.
   schedule:
     - cron: '41 5 * * 1' # Mondays, 05:41 UTC
   workflow_dispatch:

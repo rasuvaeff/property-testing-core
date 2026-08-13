@@ -25,6 +25,7 @@ shrink it to a minimal counterexample you can actually read.
 | **`rasuvaeff/property-testing-core`** (this package) | You drive the engine yourself: a custom harness, CI guard, CLI checker, or another framework adapter |
 | [`rasuvaeff/property-testing-testo`](https://github.com/rasuvaeff/property-testing-testo) | You test with [Testo](https://github.com/php-testo/testo) — drop-in replacement for the frozen `rasuvaeff/property-testing` with the same `#[Property]` attribute |
 | [`rasuvaeff/property-testing-phpunit`](https://github.com/rasuvaeff/property-testing-phpunit) | You test with PHPUnit — a `PropertyTesting` trait with a fluent `forAll()->check()` API |
+| [`rasuvaeff/property-testing-names`](https://github.com/rasuvaeff/property-testing-names) | Your inputs are people: forms, profiles, auth, validators, reports — `Names::first()`/`last()`/`middle()` draw single parts independently, `full()`/`person()` keep every part consistent with one gender; bundled `en` and `ru` datasets, shrinking to the shortest entry |
 
 > **Note:** this package `conflict`s with the frozen `rasuvaeff/property-testing`
 > (2.x) — both ship classes in the `Rasuvaeff\PropertyTesting` namespace, so

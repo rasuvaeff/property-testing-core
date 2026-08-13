@@ -304,6 +304,17 @@ Both adapters resolve env (`PROPERTY_RUNS`, `PROPERTY_SEED`,
 the engine. The engine's contract (returns `PropertyResult`, never throws for
 an outcome) is the same regardless of adapter.
 
+## Domain generators
+
+- **`rasuvaeff/property-testing-names`** — person names for `en` and `ru`:
+  `Names::first()`, `last()`, `middle()` (patronymic), `full()` and
+  `person()` (a `PersonName` value object with `full()`/`initialLast()`/
+  `lastInitials()`, gender-consistent across the parts). Plain
+  `ArbitraryInterface` values — usable from any adapter or a custom harness.
+  Reach for it instead of `Gen::string()` when the property is about people:
+  forms, profiles, auth, validators, reports. Data sets are versioned by
+  release policy — changing an entry is a release, not a silent edit.
+
 ## What to read next
 
 - `vendor/rasuvaeff/property-testing-core/llms.txt` — full syntax reference

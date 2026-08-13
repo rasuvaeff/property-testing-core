@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Documented `rasuvaeff/property-testing-names` — the person-name domain
+  generator built on this engine — in both READMEs, `llms.txt` and the
+  bundled skill.
+
 ## 0.1.1 — 2026-08-10
 
 - Added `MIGRATION.md`: the guide from the frozen `rasuvaeff/property-testing`
@@ -20,8 +26,6 @@
   Both READMEs document the consumer-side `skills.json` snippet for mirroring
   into `.claude/skills` / `.cursor/skills` via OS-level junctions/symlinks.
   Documentation and distribution metadata only; no library changes.
-
-## Unreleased
 
 ## 0.1.0 — 2026-08-09
 

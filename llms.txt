@@ -4,8 +4,10 @@ Framework-agnostic property-based testing engine for PHP 8.3+: generators with
 integrated shrinking, a structured property runner, a regression corpus,
 lifecycle events, and stateful/model-based testing. No test-framework
 dependency. Adapters: `rasuvaeff/property-testing-testo` (Testo `#[Property]`),
-`rasuvaeff/property-testing-phpunit` (PHPUnit trait). Conflicts with the frozen
-`rasuvaeff/property-testing` 2.x (same namespace).
+`rasuvaeff/property-testing-phpunit` (PHPUnit trait). Domain generators:
+`rasuvaeff/property-testing-names` (`Names::first()`/`last()`/`middle()`/
+`full()`/`person()` over bundled `en`/`ru` person-name datasets). Conflicts
+with the frozen `rasuvaeff/property-testing` 2.x (same namespace).
 
 ## Install
 

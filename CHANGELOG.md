@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Documented `rasuvaeff/property-testing-names` — the person-name domain
+  generator built on this engine — in both READMEs, `llms.txt` and the
+  bundled skill.
+
 ## 0.1.1 — 2026-08-10
 
 - Added `MIGRATION.md`: the guide from the frozen `rasuvaeff/property-testing`

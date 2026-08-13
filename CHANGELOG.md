@@ -27,8 +27,6 @@
   into `.claude/skills` / `.cursor/skills` via OS-level junctions/symlinks.
   Documentation and distribution metadata only; no library changes.
 
-## Unreleased
-
 ## 0.1.0 — 2026-08-09
 
 - Extracted the framework-agnostic engine from `rasuvaeff/property-testing`

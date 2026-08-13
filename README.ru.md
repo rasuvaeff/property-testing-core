@@ -26,7 +26,7 @@ Framework-agnostic **движок** property-based тестирования дл
 | **`rasuvaeff/property-testing-core`** (этот пакет) | Вы управляете движком сами: собственный harness, CI-страж, CLI-проверка или адаптер другого фреймворка |
 | [`rasuvaeff/property-testing-testo`](https://github.com/rasuvaeff/property-testing-testo) | Вы тестируете с [Testo](https://github.com/php-testo/testo) — drop-in замена замороженного `rasuvaeff/property-testing` с тем же атрибутом `#[Property]` |
 | [`rasuvaeff/property-testing-phpunit`](https://github.com/rasuvaeff/property-testing-phpunit) | Вы тестируете с PHPUnit — trait `PropertyTesting` с fluent-API `forAll()->check()` |
-| [`rasuvaeff/property-testing-names`](https://github.com/rasuvaeff/property-testing-names) | На входе люди: формы, профили, авторизация, валидаторы, отчёты — `Names::first()`/`last()`/`middle()`/`full()`/`person()` по встроенным наборам `en` и `ru`, согласованные по полу, shrink к самой короткой записи |
+| [`rasuvaeff/property-testing-names`](https://github.com/rasuvaeff/property-testing-names) | На входе люди: формы, профили, авторизация, валидаторы, отчёты — `Names::first()`/`last()`/`middle()` берут отдельные части независимо, `full()`/`person()` держат все части согласованными по одному полу; встроенные наборы `en` и `ru`, shrink к самой короткой записи |
 
 > **Внимание:** пакет объявляет `conflict` с замороженным
 > `rasuvaeff/property-testing` (2.x) — оба поставляют классы в namespace

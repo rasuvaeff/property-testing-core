@@ -19,7 +19,8 @@ use Testo\Bench;
  * report is one projection of the counters those calls accumulated, built after
  * the last of them. The pair below is the measurement — a classifying property
  * against the same property without labels — and the difference between them
- * must stay the cost of the `Classify` calls themselves.
+ * is the cost of the in-body `Classify` calls plus the labels they add to the
+ * report both variants build at the end of the run.
  */
 final class PropertyRunBench
 {

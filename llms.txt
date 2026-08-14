@@ -165,7 +165,8 @@ phase and are dropped when `SEQUENCE_EPOCH` changes.
 `RunStarted(attempt, arguments)`, `RunPassed(labels, elapsedNs)`,
 `RunDiscarded`, `RunFailed(failure, elapsedNs)`, `ShrinkTried(parameter,
 candidate, accepted)`, `ShrinkAccepted(step, parameter, before, after)`,
-`CorpusReplayed/CorpusPruned/CorpusStored`, `PropertyFinished(?failure)`.
+`CorpusReplayed/CorpusPruned/CorpusStored`,
+`PropertyFinished(propertyId, ?failure, ?distribution)`.
 
 ```php
 interface PropertyListener { public function onEvent(PropertyEvent $event): void; }

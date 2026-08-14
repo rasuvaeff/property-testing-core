@@ -195,6 +195,7 @@ if ($stale instanceof PathFailed) {
 $collector = new class implements PropertyListener {
     public ?DistributionReport $report = null;
 
+    #[\Override]
     public function onEvent(PropertyEvent $event): void
     {
         if ($event instanceof PropertyFinished) {

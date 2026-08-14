@@ -269,7 +269,8 @@ Two denominators, named apart: label shares are over the successful checks (a
 discard never dilutes them), the discard share is over the attempts. A label
 that was required and never occurred is reported with a count of zero rather
 than omitted, and `coverageAssessed` is false when the run ended before the
-check loop completed, so a report never implies a verdict nothing reached. A
+check loop completed, so a report never implies a coverage verdict the run
+never reached. A
 falsified run carries no distribution — it stops at the counterexample.
 
 ### Configuration

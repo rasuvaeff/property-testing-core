@@ -23,8 +23,8 @@ __construct(
     int $attempts,
     int $discards,
     int $checks,
-    array<string,int> $classifications,
-    array<string,float> $requirements = [],
+    array<array-key,int> $classifications,
+    array<array-key,float> $requirements = [],
 )
 ```
 
@@ -33,6 +33,6 @@ __construct(
 | `$attempts` | `int` | *required* | Bodies executed in the random phase, discarded ones included. |
 | `$discards` | `int` | *required* | Runs discarded via `Assume::that()`. |
 | `$checks` | `int` | *required* | Successful (non-discarded, non-failing) runs completed. |
-| `$classifications` | `array<string,int>` | *required* | Per-label counts from `Classify` over the passing runs. |
-| `$requirements` | `array<string,float>` | `[]` | Minimum percentages `Classify::cover()` registered, by label — carried alongside the counts they are compared against, including at the exits that never reached the assessment, so a report can say what was demanded as well as what happened. |
+| `$classifications` | `array<array-key,int>` | *required* | Per-label counts from `Classify` over the passing runs. Keyed by label — as `array-key` rather than `string` because PHP stores a numeric label such as `'42'` under an integer key, and a type that denied it would be a lie the readers of this array pay for. |
+| `$requirements` | `array<array-key,float>` | `[]` | Minimum percentages `Classify::cover()` registered, by label — carried alongside the counts they are compared against, including at the exits that never reached the assessment, so a report can say what was demanded as well as what happened. |
 

@@ -7770,8 +7770,8 @@
             },
             {
                 "name": "classifications",
-                "type": "array<string,int>",
-                "description": "Per-label counts from `Classify` over the passing runs.",
+                "type": "array<array-key,int>",
+                "description": "Per-label counts from `Classify` over the passing\nruns. Keyed by label — as `array-key` rather than `string` because PHP stores a numeric\nlabel such as `'42'` under an integer key, and a type that denied it would be a lie the\nreaders of this array pay for.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -7779,7 +7779,7 @@
             },
             {
                 "name": "requirements",
-                "type": "array<string,float>",
+                "type": "array<array-key,float>",
                 "description": "Minimum percentages `Classify::cover()` registered,\nby label — carried alongside the counts they are compared against, including at the\nexits that never reached the assessment, so a report can say what was demanded as well\nas what happened.",
                 "default": "[]",
                 "promoted": true,

@@ -163,7 +163,15 @@ final readonly class DistributionReport
         // Union by key, not concatenation: `+` keeps one entry per label and
         // array_keys() hands back a list, so neither uniqueness nor listness
         // needs a second pass to restore it.
-        return array_keys($statistics->classifications + $statistics->requirements);
+        //
+        // The cast restores what PHP took away: a label like '42' is a numeric
+        // string, so it was stored under an integer key and comes back as an
+        // int. LabelShare declares a string label, and strict_types would throw
+        // on the way in.
+        return array_map(
+            static fn(int|string $label): string => (string) $label,
+            array_keys($statistics->classifications + $statistics->requirements),
+        );
     }
 
     private static function percent(int $count, int $total): float

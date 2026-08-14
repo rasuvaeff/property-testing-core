@@ -98,6 +98,30 @@ final class DistributionReportTest
         );
     }
 
+    public function aNumericLabelSurvivesAsTheStringTheBodyRecorded(): void
+    {
+        // PHP stores '42' under the integer key 42, so the counters hand the
+        // label back as an int. Both paths through the union matter: a label
+        // that was only classified, and one that was only required — the
+        // second reaches LabelShare with a count of zero.
+        $report = DistributionReport::of(
+            new RunStatistics(
+                attempts: 10,
+                discards: 0,
+                checks: 10,
+                classifications: ['42' => 5],
+                requirements: ['7' => 5.0],
+            ),
+            coverageAssessed: true,
+        );
+
+        Assert::same($report->label('42')?->label, '42');
+        Assert::same($report->label('42')?->count, 5);
+        Assert::same($report->label('7')?->label, '7');
+        Assert::same($report->label('7')?->count, 0);
+        Assert::same($report->label('7')?->required, 5.0);
+    }
+
     public function labelsAreOrderedByCountAndThenAlphabetically(): void
     {
         // Deterministic order, so two runs of the same property compare line by

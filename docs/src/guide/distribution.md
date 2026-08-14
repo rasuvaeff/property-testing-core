@@ -57,6 +57,7 @@ use Rasuvaeff\PropertyTesting\PropertyListener;
 
 final class DistributionCollector implements PropertyListener
 {
+    #[\Override]
     public function onEvent(PropertyEvent $event): void
     {
         if (!$event instanceof PropertyFinished || $event->distribution === null) {

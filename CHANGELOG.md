@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-08-14
 
 - Added `Gen::swarm()` — swarm testing over a choice generator. Each generated
   case may use only a random, non-empty subset of the wrapped generator's

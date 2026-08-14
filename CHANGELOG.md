@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Added the machine-readable distribution report. `PropertyFinished` now carries
+  a `DistributionReport`: every `Classify` label as a `LabelShare` (count, share
+  and the `cover()` threshold it was registered with), the discard tally, and
+  `toArray()` for telemetry — the contents of the line an adapter prints, before
+  it becomes a line, so a CI job or a test can read it without parsing text.
+  Label shares are over the successful checks and the discard share is over the
+  attempts, named apart so the two cannot be confused; a label that was required
+  and never occurred is reported with a count of zero rather than omitted; and
+  `coverageAssessed` says whether the run reached the coverage assessment at
+  all, so a report never implies a verdict that a run which gave up or exhausted
+  its budget never reached. `RunStatistics` carries the `cover()` requirements
+  alongside the counts they are compared against, at every exit that builds one.
+  A falsified run carries no report — it stops at the counterexample. The report
+  is a projection of counters the phase already accumulated, computed once when
+  the run finishes; printing stays with the adapters.
 - Added shrink-path replay. A falsified property now reports the descent that
   produced its counterexample on `CounterExample::$path` (and in `toArray()` /
   `toJson()`) as `name:index` steps, where a step names a parameter — or an

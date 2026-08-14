@@ -261,6 +261,17 @@ requirement — a passing property whose label coverage falls short fails with
 `CoverageFailed`. The counts come back on `RunStatistics::$classifications`;
 printing a distribution report is the adapter's job.
 
+The same contents are available as data, without parsing the printed line:
+`PropertyFinished::$distribution` carries a `DistributionReport` — every label
+as a `LabelShare` (count, share, and the `cover()` threshold it was registered
+with), `discardPercent()`, `unmetRequirements()` and `toArray()` for telemetry.
+Two denominators, named apart: label shares are over the successful checks (a
+discard never dilutes them), the discard share is over the attempts. A label
+that was required and never occurred is reported with a count of zero rather
+than omitted, and `coverageAssessed` is false when the run ended before the
+check loop completed, so a report never implies a verdict nothing reached. A
+falsified run carries no distribution — it stops at the counterexample.
+
 ### Configuration
 
 `PropertyConfig` carries every knob the engine understands — the runner reads

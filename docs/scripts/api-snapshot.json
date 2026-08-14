@@ -2633,13 +2633,22 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "distribution",
+                "type": "?\\Rasuvaeff\\PropertyTesting\\Runner\\DistributionReport",
+                "description": "What the random phase generated, as data — the\nlabels with their shares, the `cover()` thresholds beside them, the discards. Null for\nan outcome that carries no counters: a falsification stops at the counterexample, and\nan example, regression, deadline or generation failure never reached the random phase's\naccounting. Listeners are where telemetry lives, which is why the report travels here\nand not only on the result.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [],
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Event/PropertyFinished.php#L14",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Event/PropertyFinished.php#L16",
         "implementedBy": []
     },
     {
@@ -6379,6 +6388,176 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\DistributionReport",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "What the random phase actually generated, as data: every\n\\Rasuvaeff\\PropertyTesting\\Classify label with its share, every\n`cover()` threshold beside the share it is compared against, and the discard\ntally with its own share.",
+        "description": "The engine has always counted these; until now it handed over raw counters\nfor an adapter to format into a line of text, which left everything that is\nnot a human parsing that line back — a CI job collecting distributions, or a\ntest asserting that a property really reaches a branch often enough. This is\nthat line's contents before it becomes a line. Printing remains the adapter's\njob.\n\nA projection of counters already accumulated, computed once when the run\nfinishes: `Classify::label()` runs in the property body on every run, this\ndoes not.\n\nTwo denominators, deliberately different and named so a consumer cannot mix\nthem up: label shares are over the successful $checks, the discard\nshare is over the $attempts.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "attempts",
+                "type": "int",
+                "description": "Bodies executed in the random phase, discarded ones included.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "discards",
+                "type": "int",
+                "description": "Runs discarded via `Assume::that()`.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "checks",
+                "type": "int",
+                "description": "Successful (non-discarded, non-failing) runs — the label denominator.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "labels",
+                "type": "list<\\Rasuvaeff\\PropertyTesting\\Runner\\LabelShare>",
+                "description": "Every label recorded or required, most frequent first and\nalphabetical within a count, so two runs of the same property compare line by line.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "coverageAssessed",
+                "type": "bool",
+                "description": "Whether the engine judged the `cover()` requirements. False when\nthe run ended before the check loop completed (it gave up on discards, or ran out of\nits time budget): the shares below are still what happened, but nothing enforced them.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "of",
+                "static": true,
+                "params": [
+                    {
+                        "name": "statistics",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\RunStatistics",
+                        "description": "The phase's accumulated counters and `cover()` requirements.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "coverageAssessed",
+                        "type": "bool",
+                        "description": "Whether the run reached the coverage assessment at all.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Runner\\DistributionReport",
+                "summary": "The report for one set of counters.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 56
+            },
+            {
+                "name": "discardPercent",
+                "static": false,
+                "params": [],
+                "returnType": "float",
+                "summary": "Discarded runs as a percentage of the attempts — the one share whose\ndenominator is not $checks, because a discard is precisely an\nattempt that never became a check. A phase that executed nothing reports\n0.0 rather than a division by zero.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 91
+            },
+            {
+                "name": "label",
+                "static": false,
+                "params": [
+                    {
+                        "name": "label",
+                        "type": "string",
+                        "description": "The label as the property body would record it.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?Rasuvaeff\\PropertyTesting\\Runner\\LabelShare",
+                "summary": "One label's share, or null when the property never recorded or required\nit — which is the answer to \"is this branch reached at all\".",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 102
+            },
+            {
+                "name": "unmetRequirements",
+                "static": false,
+                "params": [],
+                "returnType": "array",
+                "summary": "The labels whose `cover()` threshold the recorded share does not reach.",
+                "description": "Empty when every requirement held — and, on a run that never reached the\nassessment, still only arithmetic (see $coverageAssessed).",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 120
+            },
+            {
+                "name": "toArray",
+                "static": false,
+                "params": [],
+                "returnType": "array",
+                "summary": "Machine-readable representation suitable for telemetry and serialization.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 133
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/DistributionReport.php#L30",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\Runner\\ExampleFailed",
         "kind": "class",
         "isApi": true,
@@ -6786,6 +6965,84 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/GenerationFailed.php#L15",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\LabelShare",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "How often one \\Rasuvaeff\\PropertyTesting\\Classify label occurred,\ntogether with the \\Rasuvaeff\\PropertyTesting\\Classify::cover()\nthreshold it was registered with, if any.",
+        "description": "The share is over the property's successful checks, never its attempts: a\ndiscarded run produced no input the label could describe, so counting it in\nthe denominator would report a smaller share for the same generator merely\nbecause `Assume::that()` rejected more inputs.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "label",
+                "type": "string",
+                "description": "The label as the property body recorded it.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "count",
+                "type": "int",
+                "description": "Successful checks that recorded it (once per run, however often it was called).",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "percent",
+                "type": "float",
+                "description": "That count as a percentage of the successful checks; 0.0 when there were none.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "required",
+                "type": "?float",
+                "description": "The percentage `Classify::cover()` demanded, or null when the label\nwas only classified. A required label the runs never reached still appears, with a\ncount of zero — that is the case worth seeing.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "meetsRequirement",
+                "static": false,
+                "params": [],
+                "returnType": "bool",
+                "summary": "Whether the recorded share reaches the requirement. True for a label\nwithout one — there is nothing to miss.",
+                "description": "This is arithmetic, not a verdict: whether the engine *enforced* it is\n\\Rasuvaeff\\PropertyTesting\\Runner\\DistributionReport::$coverageAssessed, because a run that gave up\nor ran out of budget never reached the assessment.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 44
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/LabelShare.php#L19",
         "implementedBy": []
     },
     {
@@ -7516,6 +7773,15 @@
                 "type": "array<string,int>",
                 "description": "Per-label counts from `Classify` over the passing runs.",
                 "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "requirements",
+                "type": "array<string,float>",
+                "description": "Minimum percentages `Classify::cover()` registered,\nby label — carried alongside the counts they are compared against, including at the\nexits that never reached the assessment, so a report can say what was demanded as well\nas what happened.",
+                "default": "[]",
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true

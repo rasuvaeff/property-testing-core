@@ -43,3 +43,58 @@ public function holds(int $n): void
 Discarded attempts (`Assume::that()`) are excluded from the denominator and
 replaced until all requested successful runs complete. Exceeding `maxDiscards`
 fails with `GaveUpException` (see [Assume::that() vs Gen::filter()](/guide/controlling-runs/assume-vs-filter)).
+
+## Reading the distribution as data
+
+The printed line is for people. Everything else — a CI job collecting
+distributions, a test asserting that a property really reaches a branch — gets
+the same contents as a `DistributionReport`, on the `PropertyFinished` event:
+
+```php
+use Rasuvaeff\PropertyTesting\Event\PropertyEvent;
+use Rasuvaeff\PropertyTesting\Event\PropertyFinished;
+use Rasuvaeff\PropertyTesting\PropertyListener;
+
+final class DistributionCollector implements PropertyListener
+{
+    public function onEvent(PropertyEvent $event): void
+    {
+        if (!$event instanceof PropertyFinished || $event->distribution === null) {
+            return;
+        }
+
+        foreach ($event->distribution->labels as $share) {
+            // 'even', 245, 49.0, null
+            [$share->label, $share->count, $share->percent, $share->required];
+        }
+
+        $event->distribution->toArray();      // ready for a telemetry payload
+        $event->distribution->unmetRequirements();
+    }
+}
+```
+
+Each label carries the `cover()` threshold it was registered with, if any, so
+"is this branch reached often enough" is a comparison instead of a parse.
+`Classify::cover()` still fails the property; the report is what lets you *see*
+the share, including the label that was required and never occurred — it
+appears with a count of zero rather than going missing.
+
+### Two denominators
+
+| Number | Out of | Why |
+|---|---|---|
+| `LabelShare::$percent` | the successful checks | A discarded run produced no input the label could describe; counting it would shrink the share of the same generator merely because `Assume::that()` rejected more inputs |
+| `DistributionReport::discardPercent()` | the attempts | A discard *is* an attempt that never became a check |
+
+A phase that executed nothing (a run without `Phase::Random`) reports zeros,
+not a division by zero.
+
+### What a report does not say
+
+`coverageAssessed` is false when the run ended before the check loop completed —
+it gave up on discards, or ran out of its time budget. The shares are still what
+happened, but nothing enforced the `cover()` thresholds beside them.
+
+A falsified run reports no distribution at all: it stops at the counterexample,
+and the counters it did accumulate are not part of that result.

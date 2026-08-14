@@ -120,6 +120,15 @@ unset seed becomes a pure function of the property id, so a locally found bug
 reproduces in CI before any corpus entry exists, and a passing property keeps a
 stable input distribution. An explicit seed still wins.
 
+The distribution is also available as data, not only as the line an adapter
+prints: `PropertyFinished::$distribution` carries a `DistributionReport` with a
+`LabelShare` per label (count, share, and the `cover()` threshold it was
+registered with), `discardPercent()`, `unmetRequirements()` and `toArray()`.
+Label shares are over the successful checks and the discard share is over the
+attempts — two denominators, named apart. `coverageAssessed` is false when the
+run ended before the check loop completed, and a falsified run carries no
+report at all.
+
 Finally `path`: the accepted steps of an earlier descent, reported on
 `CounterExample::$path` as `value:1/draw#1:0/value:3` and passed back with the
 seed to follow them instead of searching for them again — one body execution per

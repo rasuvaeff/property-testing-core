@@ -24,6 +24,7 @@ __construct(
     int $discards,
     int $checks,
     array<string,int> $classifications,
+    array<string,float> $requirements = [],
 )
 ```
 
@@ -33,4 +34,5 @@ __construct(
 | `$discards` | `int` | *required* | Runs discarded via `Assume::that()`. |
 | `$checks` | `int` | *required* | Successful (non-discarded, non-failing) runs completed. |
 | `$classifications` | `array<string,int>` | *required* | Per-label counts from `Classify` over the passing runs. |
+| `$requirements` | `array<string,float>` | `[]` | Minimum percentages `Classify::cover()` registered, by label — carried alongside the counts they are compared against, including at the exits that never reached the assessment, so a report can say what was demanded as well as what happened. |
 

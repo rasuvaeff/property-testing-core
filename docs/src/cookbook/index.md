@@ -6,7 +6,10 @@ description: "Real monorepo incidents, reconstructed as property tests — every
 # Cookbook
 
 Four real bugs from this monorepo's history, each rebuilt here as a small,
-self-contained property. Every page follows the same shape:
+self-contained property, plus one page that is not an incident at all:
+[Faker vs property](/cookbook/faker-vs-property), which runs the same bug past
+a realistic-data generator and a shrinkable one to show what each reports.
+Every bug page follows the same shape:
 
 1. the bug, in its original package;
 2. the unit test that stayed green next to it, and why;

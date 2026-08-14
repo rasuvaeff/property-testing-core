@@ -69,6 +69,7 @@ and `check()` runs the property.
 
 | Method | Meaning |
 |---|---|
+| `id(string)` | Names the property, replacing the id derived from the calling method. Keys the corpus and the events, and is the display name — see [Pest](#pest) for the case that needs it |
 | `runs(int)` | Successful checks to complete (default 100). Discarded runs do not count |
 | `seed(int)` | Pins the random phase for reproduction. Also disables corpus replay — the pinned run wins |
 | `maxShrinks(int)` | Cap on accepted shrink steps; `0` disables shrinking |
@@ -108,6 +109,70 @@ property passes, the adapter prints the label distribution:
 ```
 Property "testSortKeepsEveryElement" distribution: long 39% (77/200), short 61% (123/200)
 ```
+
+## Pest
+
+Pest works with this adapter today, with no plugin and no new package. Mix the
+trait into the test case and call the chain inside `it()`:
+
+```php
+// tests/Pest.php
+uses(Rasuvaeff\PropertyTesting\PhpUnit\PropertyTesting::class)->in(__DIR__);
+
+// tests/SortTest.php
+it('sorts idempotently', function (): void {
+    $this->forAll(['values' => Gen::arrayOf(Gen::int())])
+        ->id('sort::idempotent')
+        ->runs(200)
+        ->check(function (array $values): void {
+            sort($values);
+            $once = $values;
+            sort($values);
+
+            expect($values)->toBe($once);
+        });
+});
+```
+
+Pest binds `$this` in the closure to the test case, so the trait's protected
+`forAll()` is reachable and `expect()` works inside the property body like any
+other assertion.
+
+### `id()` is not optional here
+
+Without it, `forAll()` derives the property id from its caller — and in Pest
+the caller is a closure. Both of these are real output from running the
+example above with the id line removed:
+
+```text
+PHP 8.3   P\Tests\SortTest::{closure}
+PHP 8.5   P\Tests\SortTest::{closure:/app/tests/SortTest.php:18}
+```
+
+On 8.3 every property in the file collapses onto one id, so two of them share
+a [corpus](/guide/regression-corpus) key and overwrite each other's recorded
+counterexample. From 8.4 the id carries the line number, so inserting a line
+above the `it()` orphans yesterday's entry. Neither throws — the corpus simply
+stops replaying the failure it exists to replay, which is why the engine
+offers [`PropertyId::unstableWarning()`](/api/classes/PropertyId) for an id in
+either shape.
+
+Name the property with `id()` and none of it applies: the string you pass is
+the corpus key, the event id and the display name.
+
+### There is no `it(...)->forAll(...)` chain
+
+And there is no plan to add one. Pest's `TestCall::__call()` does not execute a
+chained call; it records it through `addChain()` for the test case to replay
+later, so a chain cannot wrap or replace the test closure. The two mechanisms
+that do repeat a body — `with()` datasets and `repeat()` — are both wrong for a
+property: a dataset produces N independent tests, which means no shrinking, no
+single run counter and no corpus entry. Anything closer would bind to Pest's
+internals.
+
+A separate `rasuvaeff/property-testing-pest` package is possible later, but it
+would offer a functional API (`property([...])->runs(300)->check(fn)`), not a
+chain on `it()`.
 
 ## Why no `#[Property]` attribute?
 

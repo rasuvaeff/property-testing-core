@@ -115,7 +115,10 @@ generated), `shrinkBudgetMs` (wall-clock budget of the descent, implies
 without `Shrink` IS `ShrinkMode::Off`, a set without `Random` reports zero
 statistics and passes unless an enabled example or corpus replay failed first,
 and `Phase::Corpus` gates replay only). Every element must be a `Phase`: a
-stray value is rejected, not silently skipped.
+stray value is rejected, not silently skipped. It also adds `derandomize`: an
+unset seed becomes a pure function of the property id, so a locally found bug
+reproduces in CI before any corpus entry exists, and a passing property keeps a
+stable input distribution. An explicit seed still wins.
 
 ## Choosing a generator
 

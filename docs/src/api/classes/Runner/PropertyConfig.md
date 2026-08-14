@@ -29,6 +29,7 @@ __construct(
     ?\Runner\ShrinkMode $shrink = NULL,
     ?int $shrinkBudgetMs = NULL,
     ?list<\Runner\Phase> $phases = NULL,
+    bool $derandomize = false,
 )
 ```
 
@@ -43,6 +44,7 @@ __construct(
 | `$shrink` | `?\Runner\ShrinkMode` | `NULL` | How hard to minimise a counterexample. Null means [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Full unless $shrinkBudgetMs or $phases say otherwise. |
 | `$shrinkBudgetMs` | `?int` | `NULL` | Wall-clock budget for the shrink descent in milliseconds, which implies [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Bounded; null disables it. Unlike every other knob this one costs determinism: the same seed can minimise to different counterexamples on a fast and a slow machine, because how far the descent gets depends on how long the body takes. It answers "the descent hung", not "reproduce this exactly" — the corpus and an explicit seed remain the reproducible paths. A budget large enough to overflow its own nanosecond deadline is a configuration error. |
 | `$phases` | `?list<\Runner\Phase>` | `NULL` | Stages to perform; null means [`Runner\Phase`](/api/classes/Runner/Phase)::all(). An empty list is a configuration error — a run with no phases has nothing to report — and so is a list holding anything other than a [`Runner\Phase`](/api/classes/Runner/Phase): an unrecognised stage is not run, which would report green having checked nothing. |
+| `$derandomize` | `bool` | `false` | Whether an unset $seed is derived from the property's id instead of drawn at random, so the same property on the same code always selects the same inputs. An explicit $seed always wins. The derivation lives in [`Runner\PropertyRunner`](/api/classes/Runner/PropertyRunner) because only it knows the id — and because a config that called `random_int()` would stop being a plain value. |
 
 ## Properties
 

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Added `PropertyConfig::$derandomize`: with it set, a run without an explicit
+  seed derives one from the property's id instead of drawing it at random, so
+  the same property on the same code always selects the same inputs. The
+  regression corpus only helps once a failure has been recorded; this covers
+  the other side of that moment — a bug found locally reproduces in CI before
+  any corpus entry exists, and a property that passes (and therefore records
+  nothing) keeps a stable input distribution, which is what makes distribution
+  numbers comparable between commits. An explicit seed still wins, and the
+  mapping from a seed to the values it produces is untouched.
 - Added shrink modes and switchable run phases to `PropertyConfig`.
   `ShrinkMode::Off` reports a counterexample exactly as generated (no trial, no
   shrink event); `shrinkBudgetMs` bounds the descent by wall clock and keeps

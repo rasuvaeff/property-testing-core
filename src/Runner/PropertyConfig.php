@@ -49,6 +49,11 @@ final readonly class PropertyConfig
      *        is a configuration error — a run with no phases has nothing to report — and so is a
      *        list holding anything other than a {@see Phase}: an unrecognised stage is not run,
      *        which would report green having checked nothing.
+     * @param bool $derandomize Whether an unset $seed is derived from the property's id instead of
+     *        drawn at random, so the same property on the same code always selects the same inputs.
+     *        An explicit $seed always wins. The derivation lives in {@see PropertyRunner} because
+     *        only it knows the id — and because a config that called `random_int()` would stop being
+     *        a plain value.
      */
     public function __construct(
         public int $runs = 100,
@@ -60,6 +65,7 @@ final readonly class PropertyConfig
         ?ShrinkMode $shrink = null,
         public ?int $shrinkBudgetMs = null,
         ?array $phases = null,
+        public bool $derandomize = false,
     ) {
         if ($runs < 1) {
             throw new \InvalidArgumentException('Runs must be greater than or equal to 1');

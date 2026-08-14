@@ -29,6 +29,7 @@ final class PropertyConfigTest
         Assert::null($config->shrinkBudgetMs);
         Assert::same($config->shrink, ShrinkMode::Full);
         Assert::same($config->phases, Phase::all());
+        Assert::false($config->derandomize);
     }
 
     public function everyPhaseRunsByDefault(): void

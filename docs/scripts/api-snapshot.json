@@ -6844,6 +6844,15 @@
                 "promoted": false,
                 "promotedVisibility": "private",
                 "readonly": false
+            },
+            {
+                "name": "derandomize",
+                "type": "bool",
+                "description": "Whether an unset $seed is derived from the property's id instead of\ndrawn at random, so the same property on the same code always selects the same inputs.\nAn explicit $seed always wins. The derivation lives in \\Rasuvaeff\\PropertyTesting\\Runner\\PropertyRunner because\nonly it knows the id — and because a config that called `random_int()` would stop being\na plain value.",
+                "default": "false",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [
@@ -6882,7 +6891,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 107
+                "startLine": 113
             }
         ],
         "constants": [],

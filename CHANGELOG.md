@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-08-14
 
 - The falsification message now ends with the shrink path
   (`Path:     value:1/value:3`), the same value `CounterExample::$path` has

@@ -78,6 +78,7 @@ Property falsified after 22 successful run(s); seed=5
   Shrunk:   subject="opcqcbaani5", p1=16, delta=1 (8 shrink step(s), 129 trial(s))
   Changed:  subject="opcqcb45ni5" -> "opcqcbaani5", delta=30 -> 1
   Failure:  subject 'opcqcbaani5' is in the 16% rollout but not the 17% rollout
+  Path:     subject:9/delta:1/subject:9/delta:1/delta:2/delta:1/delta:1/delta:1
 ```
 
 Twenty-two passing runs, then a subject/percentage pair that violates

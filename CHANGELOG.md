@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- The falsification message now ends with the shrink path
+  (`Path:     value:1/value:3`), the same value `CounterExample::$path` has
+  carried since 0.2.0. Replaying a descent is now a copy of one line plus the
+  seed printed above it, instead of reading the path out of the counterexample
+  programmatically. A run that shrank nothing has no path and the line is
+  omitted rather than printed empty. Adapters that pin the message verbatim
+  (the Testo adapter's golden) see one added line.
+
 ## 0.2.0 — 2026-08-14
 
 - Added `Gen::swarm()` — swarm testing over a choice generator. Each generated

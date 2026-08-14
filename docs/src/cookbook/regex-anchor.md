@@ -84,6 +84,7 @@ Property falsified after 40 successful run(s); seed=42
   Changed:  identifier="quxz5\n" -> "aaaaa\n"
   Failure:  $-anchor and \z-anchor disagree on 'aaaaa
 ': $ says accept, \z says reject
+  Path:     identifier:2/identifier:2/identifier:2/identifier:2/identifier:2
 ```
 
 Forty passing runs on identifiers without a trailing newline, then the

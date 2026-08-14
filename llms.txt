@@ -124,6 +124,9 @@ Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
   `counterExample(): CounterExample` (`seed`, `runsBeforeFailure`,
   `originalArguments`, `shrunkArguments`, `shrinkSteps`, `shrinkTrials`,
   `skips`, `path`, `failure`, `toArray()`, `toJson()`, `toExamplesCode()`).
+  The falsification message ends with a `Path:` line carrying that same value
+  (omitted when nothing shrank), so a replay is a copy of the line plus the seed
+  printed above it.
 - `GaveUp` — `GaveUpException` + `RunStatistics` (discard budget exhausted).
 - `CoverageFailed` — `CoverageViolationException` + `RunStatistics`
   (a `Classify::cover()` requirement missed although every run passed).

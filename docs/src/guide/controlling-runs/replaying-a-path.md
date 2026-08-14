@@ -12,10 +12,23 @@ suite accepts nine steps after trying thirty-nine candidates, and on a body that
 takes a second per run that ratio is the difference between a coffee and a
 commit.
 
-The counterexample carries the descent itself:
+The counterexample carries the descent itself, and so does the message you are
+already reading when a property fails — its last line:
+
+```text
+Property falsified after 0 successful run(s); seed=1
+  Original: value=100
+  Shrunk:   value=51 (4 shrink step(s), 22 trial(s))
+  Changed:  value=100 -> 51
+  Failure:  value>50
+  Path:     value:2/value:2/value:4/value:4
+```
+
+A run that shrank nothing has no path, and the line is omitted rather than
+printed empty. The same value is on the counterexample:
 
 ```php
-$counterExample->path;   // 'value:1/value:1/value:1/value:1/value:1/value:3/value:4/value:5/value:6'
+$counterExample->path;   // 'value:2/value:2/value:4/value:4'
 ```
 
 Pass it back, with the seed it came from, and the run follows those steps
@@ -24,7 +37,7 @@ instead of searching for them:
 ```php
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 
-new PropertyConfig(seed: 42, path: 'value:1/value:1/value:3');
+new PropertyConfig(seed: 1, path: 'value:2/value:2/value:4/value:4');
 ```
 
 Each step names a node — a parameter, or an in-body [draw](/guide/generators/dependent) under

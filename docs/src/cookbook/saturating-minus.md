@@ -74,6 +74,7 @@ Property falsified after 0 successful run(s); seed=7
   Shrunk:   a=0, b=1 (30 shrink step(s), 60 trial(s))
   Changed:  a=1 -> 0, b=369975285 -> 1
   Failure:  Duration(0)->minus(Duration(1)) produced -1 micros, expected >= 0
+  Path:     a:0/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1/b:1
 ```
 
 Zero successful runs — the very first draw already falsifies it, because

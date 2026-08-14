@@ -80,6 +80,7 @@ Property falsified after 2 successful run(s); seed=17
   Shrunk:   baseMs=2, capMs=2, jitterFactor=0.47378904446907 (27 shrink step(s), 79 trial(s))
   Changed:  baseMs=8397 -> 2, capMs=11138 -> 2
   Failure:  buggyDelayMs(base=2, cap=2, jitter=0.4738) returned 3, expected <= cap 2
+  Path:     baseMs:4/capMs:1/baseMs:1/capMs:1/baseMs:1/capMs:1/baseMs:1/capMs:1/baseMs:1/capMs:1/baseMs:1/capMs:1/baseMs:1/capMs:1/baseMs:1/capMs:1/baseMs:1/capMs:1/baseMs:1/capMs:1/baseMs:1/capMs:1/baseMs:2/capMs:1/baseMs:1/capMs:1/baseMs:1
 ```
 
 Two passing runs — both happened to draw a near-zero jitter factor — then

@@ -52,6 +52,14 @@ final class PropertyViolationException extends RuntimeException
             $message .= sprintf("\n  Failure:  %s", $c->failure->getMessage());
         }
 
+        // Last, and only when there is one: the descent this counterexample
+        // came from, so replaying it is a copy of the line rather than a
+        // second search (`PropertyConfig::$path`, beside the seed above). A
+        // run that shrank nothing has no path and says nothing.
+        if ($c->path !== '') {
+            $message .= sprintf("\n  Path:     %s", $c->path);
+        }
+
         return $message;
     }
 

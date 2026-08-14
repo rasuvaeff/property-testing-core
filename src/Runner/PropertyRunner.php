@@ -277,7 +277,7 @@ final readonly class PropertyRunner
         $checks = 0;
         $attempts = 0;
         $phaseStart = $this->clock->nanoseconds();
-        /** @var array<string, int> $classifications */
+        /** @var array<array-key, int> $classifications */
         $classifications = [];
 
         while ($checks < $runs) {
@@ -436,8 +436,9 @@ final readonly class PropertyRunner
      * the pass is (partially) vacuous and must fail. The successful-run loop
      * guarantees the denominator is always positive.
      *
-     * @param array<string, float> $requirements
-     * @param array<string, int> $classifications
+     * @param array<array-key, float> $requirements Keyed by label — `array-key`, not `string`,
+     *        because PHP stores a numeric label under an integer key (see {@see Classify::$current}).
+     * @param array<array-key, int> $classifications Keyed by label, for the same reason.
      */
     private function coverageViolation(
         string $name,

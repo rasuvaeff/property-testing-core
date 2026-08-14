@@ -90,6 +90,13 @@
 - Documented `rasuvaeff/property-testing-names` — the person-name domain
   generator built on this engine — in both READMEs, `llms.txt` and the
   bundled skill.
+- Fixed a numeric classification label reaching listeners as an int. PHP stores
+  a numeric string such as `'42'` under an integer array key, so a label
+  recorded with `Classify::label('42')` came back from the per-run buffer as
+  `42` and travelled on to `RunPassed::$labels` — declared `list<string>`. The
+  label is now handed back as the string the body recorded, and the internal
+  counters declare the `array-key` they can actually hold instead of a `string`
+  they cannot.
 
 ## 0.1.1 — 2026-08-10
 

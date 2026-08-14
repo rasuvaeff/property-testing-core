@@ -96,6 +96,7 @@ final class PropertyConfigTest
             maxDiscards: 0,
             timeoutMs: 1,
             budgetMs: 1,
+            shrinkBudgetMs: 1,
         );
 
         Assert::same($config->runs, 1);
@@ -103,6 +104,10 @@ final class PropertyConfigTest
         Assert::same($config->maxDiscards, 0);
         Assert::same($config->timeoutMs, 1);
         Assert::same($config->budgetMs, 1);
+        // One millisecond is a budget, not a rejected value: the guard is
+        // "< 1", so the smallest accepted budget must survive it.
+        Assert::same($config->shrinkBudgetMs, 1);
+        Assert::same($config->shrink, ShrinkMode::Bounded);
     }
 
     #[DataProvider('invalidProvider')]

@@ -86,13 +86,67 @@ final class PropertyRunnerPhasesTest
 
         Assert::instanceOf($result, Falsified::class);
         $example = $result->counterExample();
-        $shrunk = $example->shrunkArguments['value'];
 
-        Assert::true(is_int($shrunk));
-        \assert(is_int($shrunk));
-        // Cut short: neither the untouched original nor the fully minimised value.
-        Assert::true($shrunk < 3989 && $shrunk > 100);
-        Assert::true($example->shrinkSteps > 0 && $example->shrinkSteps < 9);
+        // Exact, not "somewhere in between": the budget check is an inclusive
+        // comparison against the deadline, and only a pinned step count says
+        // which side of it the descent stopped on.
+        Assert::same($example->shrunkArguments, ['value' => 250]);
+        Assert::same($example->shrinkSteps, 4);
+        Assert::same($example->shrinkTrials, 8);
+        // Cut short: neither the untouched original nor the fully minimised 100.
+        Assert::same($example->failure?->getMessage(), '250 is not below 100');
+    }
+
+    public function theShrinkBudgetConvertsMillisecondsToNanosecondsExactly(): void
+    {
+        // A clock ticking one nanosecond short of a millisecond: against a 1 ms
+        // budget the first reading (999_999 ns) is still inside the deadline,
+        // so exactly one candidate search happens before the next reading ends
+        // the descent. One nanosecond off in the conversion and the descent
+        // would never start at all.
+        $result = $this->runFalsifiable(
+            new PropertyConfig(runs: 200, seed: 42, shrinkBudgetMs: 1),
+            clock: new FakeClock(stepNs: 999_999),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+
+        Assert::same($example->shrunkArguments, ['value' => 1995]);
+        Assert::same($example->shrinkSteps, 1);
+        Assert::same($example->shrinkTrials, 2);
+    }
+
+    public function aShrinkBudgetAlsoStopsTheTapeWalk(): void
+    {
+        // The descent walks in-body draws as extra positions after the
+        // parameters, with its own budget check; without a parameter to shrink
+        // this run exercises that walk alone. Unbounded it needs 7 steps and 22
+        // trials to reach 10 (PropertyRunnerShrinkTest).
+        $result = (new PropertyRunner(new FakeClock(stepNs: 1_000_000)))->run(
+            new PropertyDefinition(
+                id: 'phases::draws',
+                name: 'draws',
+                generators: [],
+                parameterNames: [],
+                config: new PropertyConfig(runs: 50, seed: 42, shrinkBudgetMs: 3),
+            ),
+            new CallableTrialExecutor(static function (): void {
+                $draw = Gen::draw(Gen::intBetween(0, 1000));
+
+                if ($draw >= 10) {
+                    throw new \RuntimeException(sprintf('draw %d too big', $draw));
+                }
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+
+        Assert::same($example->originalArguments, ['draw#1' => 359]);
+        Assert::same($example->shrunkArguments, ['draw#1' => 90]);
+        Assert::same($example->shrinkSteps, 2);
+        Assert::same($example->shrinkTrials, 4);
     }
 
     public function aBudgetThatOutlastsTheDescentChangesNothing(): void
@@ -212,6 +266,9 @@ final class PropertyRunnerPhasesTest
         );
 
         Assert::instanceOf($first, Passed::class);
+        // Directly observable: the run drained the requirement itself. Without
+        // this assertion the next run's own defensive flush would hide a leak.
+        Assert::same(Classify::flushRequirements(), []);
 
         $second = $runner->run(
             new PropertyDefinition(

@@ -203,6 +203,7 @@ through their source domain.
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators) | shorter/simpler matches (via the compiled trees) |
 | `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
 | `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |
+| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — the `@param` psalm type when there is one (`int<0, 100>`, `non-empty-string`, `list<T>`, `'a'\|'b'`), the native type otherwise; anything unreadable throws instead of guessing | through the generated arguments, rebuilding the instance |
 
 Numeric generators (`int*`, `float*`) are **boundary-biased**: roughly one draw in
 five returns an in-range edge value (`0`, `±1`, `min`, `max` for ints; `0.0` or

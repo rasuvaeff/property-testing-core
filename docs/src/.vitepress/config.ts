@@ -22,6 +22,7 @@ const sidebar = [
             { text: 'Boundary bias', link: '/guide/generators/boundary-bias' },
             { text: 'Dependent generators (flatMap vs draw)', link: '/guide/generators/dependent' },
             { text: 'Swarm testing', link: '/guide/generators/swarm' },
+            { text: 'Generating from a class', link: '/guide/generators/from-a-class' },
             { text: 'Custom arbitrary', link: '/guide/generators/custom-arbitrary' },
         ],
     },

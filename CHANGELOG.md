@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Added `Gen::forClass()`: a generator built from what a constructor already
+  declares. Per parameter, in order — an override, the `@param` psalm type, the
+  native type. The docblock wins because it says more: `int` and `int<0, 100>`
+  are the same native type and a very different value space, and reading the
+  narrower one is what keeps a validating constructor from rejecting four
+  generated values in five. The supported subset is bounded and documented
+  (`int<a, b>`, `positive-int` and friends, `non-empty-string`, `list<T>`,
+  `array<K, V>`, literal unions such as `'draft'|'published'`, `?T`, unions,
+  enums, `DateTimeImmutable`, and other classes followed to `maxDepth` with
+  cycles refused by name); anything outside it throws naming the parameter
+  rather than widening to a guess, because a guessed generator fails later, in
+  somebody else's test. A constructor that rejects a value throws by default —
+  that is information — and `skipInvalid: true` discards and redraws through
+  the same `Gen::filter()` machinery, discarding exceptions only, never
+  `Error`s.
 - Added `RedisCorpus`: the regression corpus in Redis instead of a directory, so
   a falsification found on a laptop replays in CI and one found in CI replays on
   the next laptop. The stored document is byte-identical to the filesystem

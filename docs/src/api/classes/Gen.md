@@ -9,7 +9,7 @@ description: "Facade with static factories for the built-in ArbitraryInterfaces.
 
 `Rasuvaeff\PropertyTesting\Gen`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L47) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L48) — **Version:** working tree
 
 Facade with static factories for the built-in ArbitraryInterfaces.
 
@@ -214,6 +214,40 @@ static oneOf(\TValue $values): Arbitrary\OneOfArbitrary
 ```
 
 Picks one of the given values at random.
+
+### forClass()
+
+```php
+static forClass(
+    class-string<\TValue> $class,
+    array<string,\ArbitraryInterface> $overrides = [],
+    bool $skipInvalid = false,
+    int $maxDepth = 3,
+): Arbitrary\ClassArbitrary
+```
+
+Instances of $class, generated from what its constructor already
+declares — the reflection answer to jqwik's type-driven `@ForAll` and
+Rust's `derive(Arbitrary)`, in a language that has no macros but does
+have promoted constructor properties and psalm annotations.
+
+- `$class` — The class to instantiate.
+- `$overrides` — Generators by constructor parameter name.
+- `$skipInvalid` — Whether a constructor that rejects a generated value discards it and redraws (as `filter`() does) instead of failing the run.
+- `$maxDepth` — How deep to follow class-typed parameters before refusing.
+
+```php
+Gen::forClass(Money::class);
+Gen::forClass(Money::class, ['amount' => Gen::intPositive()]);
+```
+
+Per parameter, in order: an override, then the `@param` docblock (psalm
+subset), then the native type. The docblock wins over the native type
+because it says more — `int` and `int<0, 100>` are the same native type
+and a very different value space — and a type this cannot read is an
+exception naming the parameter rather than a widened guess. See
+[`Arbitrary\ClassArbitrary`](/api/classes/Arbitrary/ClassArbitrary) for the supported subset and for what a validating
+constructor does.
 
 ### swarm()
 

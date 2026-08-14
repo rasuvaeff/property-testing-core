@@ -90,6 +90,14 @@
 - Documented `rasuvaeff/property-testing-names` — the person-name domain
   generator built on this engine — in both READMEs, `llms.txt` and the
   bundled skill.
+- Documented two things the site never covered: a cookbook comparison
+  [Faker vs property](https://rasuvaeff.github.io/property-testing-core/cookbook/faker-vs-property),
+  which runs one UTF-8 truncation bug past a realistic-data generator and a
+  shrinkable one and quotes what each reports (both falsify; one shrinks 30
+  steps to another arbitrary name, the other one step to the boundary), and a
+  Pest section on the PHPUnit adapter page — the scenario that already works
+  (`uses()` plus the chain inside `it()`), why `id()` is not optional there,
+  and why no `it(...)->forAll(...)` chain exists or is planned.
 - Added `PropertyId::unstableWarning()`: the warning text for a property id
   derived from a closure (`Suite::{closure}` on PHP 8.3,
   `Suite::{closure:file:line}` from 8.4), or null when the id is stable. Such an

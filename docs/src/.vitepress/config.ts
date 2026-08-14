@@ -61,6 +61,7 @@ const sidebar = [
             { text: 'Saturating subtraction', link: '/cookbook/saturating-minus' },
             { text: 'Backoff delay stays within its cap', link: '/cookbook/backoff-cap' },
             { text: 'Deterministic hash bucketing', link: '/cookbook/hash-bucketing' },
+            { text: 'Faker vs property', link: '/cookbook/faker-vs-property' },
         ],
     },
     {

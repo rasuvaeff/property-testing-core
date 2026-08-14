@@ -13,6 +13,7 @@ Runnable scripts demonstrating `rasuvaeff/property-testing-core`.
 | `case-studies/saturating-minus.php` | Docs cookbook case study: subtraction producing a negative duration instead of saturating at zero | No |
 | `case-studies/backoff-cap.php` | Docs cookbook case study: jitter added after the cap was applied, pushing the delay past it | No |
 | `case-studies/hash-bucketing.php` | Docs cookbook case study: a rollout hash salted with the percentage, breaking monotonicity across percentage changes | No |
+| `case-studies/faker-vs-property.php` | Docs cookbook comparison: the same UTF-8 truncation bug found with realistic (Faker-shaped) data and with shrinkable data — both falsify, only one minimises | No |
 
 `case-studies/` backs the [documentation site's Cookbook](https://rasuvaeff.github.io/property-testing-core/cookbook/)
 — each script's buggy code is reconstructed inline from a real incident

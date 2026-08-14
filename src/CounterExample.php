@@ -23,6 +23,13 @@ final readonly class CounterExample
      * @param ?\Throwable $failure The assertion or exception reported by the failing run.
      * @param int $skips Number of runs discarded via {@see Assume::that()} before the failure.
      * @param int $shrinkTrials Total number of shrink candidates tried (accepted and rejected).
+     * @param string $path The accepted shrink steps that lead from the original arguments to the
+     *        minimised ones, as `name:index` segments joined by `/`. Passed back through
+     *        {@see \Rasuvaeff\PropertyTesting\Runner\PropertyConfig::$path} (together with the seed)
+     *        it replays this descent instead of searching for it again. Empty when nothing shrank.
+     *        A debugging aid, not a durable identifier: it indexes into each node's shrink
+     *        candidates, so editing a generator orphans it — the regression corpus is what survives
+     *        a refactor.
      */
     public function __construct(
         public int $seed,
@@ -33,6 +40,7 @@ final readonly class CounterExample
         public ?\Throwable $failure = null,
         public int $skips = 0,
         public int $shrinkTrials = 0,
+        public string $path = '',
     ) {}
 
     /**
@@ -49,6 +57,7 @@ final readonly class CounterExample
             'shrunkArguments' => \Rasuvaeff\PropertyTesting\ValueRenderer::normalize($this->shrunkArguments),
             'shrinkSteps' => $this->shrinkSteps,
             'shrinkTrials' => $this->shrinkTrials,
+            'path' => $this->path,
             'failure' => $this->failure instanceof \Throwable
                 ? ['type' => $this->failure::class, 'message' => $this->failure->getMessage()]
                 : null,

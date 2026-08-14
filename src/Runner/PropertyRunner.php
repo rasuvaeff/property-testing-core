@@ -27,6 +27,8 @@ use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
 use Rasuvaeff\PropertyTesting\GenerationExhausted;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
+use Rasuvaeff\PropertyTesting\Internal\ShrinkPath;
+use Rasuvaeff\PropertyTesting\PathViolationException;
 use Rasuvaeff\PropertyTesting\PropertyListener;
 use Rasuvaeff\PropertyTesting\PropertyViolationException;
 use Rasuvaeff\PropertyTesting\Random;
@@ -221,6 +223,7 @@ final readonly class PropertyRunner
         $shrinkBudgetMs = $shrinkMode === ShrinkMode::Bounded ? $property->config->shrinkBudgetMs : null;
         $timeoutMs = $property->config->timeoutMs;
         $budgetMs = $property->config->budgetMs;
+        $path = $property->config->path;
 
         $skips = 0;
         $checks = 0;
@@ -304,13 +307,21 @@ final readonly class PropertyRunner
 
             if ($outcome->isFailed()) {
                 $this->emit($listeners, new RunFailed($property->id, $attempts, $arguments, $this->drawArguments($draws), $outcome->failure, $runElapsedNs));
-                [$shrunk, $shrunkDraws, $shrinkSteps, $shrunkFailure, $shrinkTrials] = $this->shrink($property->id, $executor, $trees, $draws, $random, $maxShrinks, $shrinkMode, $shrinkBudgetMs, $listeners);
+                $descent = $path === null
+                    ? $this->shrink($property->id, $executor, $trees, $draws, $random, $maxShrinks, $shrinkMode, $shrinkBudgetMs, $listeners)
+                    : $this->replayPath($property->id, $executor, $trees, $draws, $random, $path, $listeners);
 
                 // Drain the coverage requirements like every other exit path:
                 // the 2.8 interceptor left them armed here and relied on the
                 // next property's defensive flush, which a standalone runner
                 // caller does not get between run() calls.
                 Classify::flushRequirements();
+
+                if ($descent instanceof PathViolationException) {
+                    return new PathFailed($descent);
+                }
+
+                [$shrunk, $shrunkDraws, $shrinkSteps, $shrunkFailure, $shrinkTrials, $shrinkPath] = $descent;
 
                 return new Falsified(new PropertyViolationException(new CounterExample(
                     seed: $seed,
@@ -325,6 +336,7 @@ final readonly class PropertyRunner
                     failure: $shrunkFailure ?? $outcome->failure,
                     skips: $skips,
                     shrinkTrials: $shrinkTrials,
+                    path: $shrinkPath,
                 )));
             }
 
@@ -586,10 +598,13 @@ final readonly class PropertyRunner
      * @param ?int $budgetMs Wall-clock budget of the whole descent; non-null exactly when $mode is
      *        {@see ShrinkMode::Bounded}.
      * @param list<PropertyListener> $listeners
-     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int} The
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string} The
      *         minimised arguments, the minimised draws (as `draw#N` pseudo-arguments), the number
      *         of accepted shrink steps, the failure of the last accepted candidate (null when
-     *         nothing shrank), and the total number of candidates tried (accepted and rejected).
+     *         nothing shrank), the total number of candidates tried (accepted and rejected), and
+     *         the descent itself as a replayable path (see {@see ShrinkPath}). Every exit carries
+     *         the steps actually taken — a descent cut short by the cap or the budget is still
+     *         replayable up to where it stopped.
      */
     private function shrink(
         string $propertyId,
@@ -603,7 +618,7 @@ final readonly class PropertyRunner
         array $listeners,
     ): array {
         if ($mode === ShrinkMode::Off) {
-            return [$this->values($trees), $this->drawArguments($tape), 0, null, 0];
+            return [$this->values($trees), $this->drawArguments($tape), 0, null, 0, ''];
         }
 
         $deadlineNs = $budgetMs === null ? null : $this->clock->nanoseconds() + $budgetMs * 1_000_000;
@@ -612,6 +627,8 @@ final readonly class PropertyRunner
         $steps = 0;
         $trials = 0;
         $acceptedFailure = null;
+        /** @var list<array{name: string, index: int<0, max>}> $acceptedSteps */
+        $acceptedSteps = [];
 
         do {
             $improved = false;
@@ -621,10 +638,17 @@ final readonly class PropertyRunner
                 // Checking here (before the per-parameter search) makes maxShrinks=0
                 // return the original counterexample with zero accepted steps.
                 if ($this->capReached($maxShrinks, $currentTape, $steps) || $this->budgetSpent($deadlineNs)) {
-                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials];
+                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps)];
                 }
 
+                // Counted over every candidate the enumeration yields, skipped
+                // ones included: the index is what a replay indexes back into,
+                // so both sides must agree on what they are counting.
+                $index = -1;
+
                 foreach ($current[$name]->shrinks() as $candidate) {
+                    ++$index;
+
                     // A candidate whose value equals the current one (possible under a
                     // non-injective map) makes no progress; skip it and its subtree.
                     if ($candidate->value === $current[$name]->value) {
@@ -648,6 +672,7 @@ final readonly class PropertyRunner
                         $current = $trial;
                         $currentTape = $recorded;
                         $acceptedFailure = $outcome->failure;
+                        $acceptedSteps[] = ['name' => $name, 'index' => $index];
                         ++$steps;
                         $improved = true;
 
@@ -664,10 +689,14 @@ final readonly class PropertyRunner
 
             while ($position < count($currentTape)) {
                 if ($this->capReached($maxShrinks, $currentTape, $steps) || $this->budgetSpent($deadlineNs)) {
-                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials];
+                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps)];
                 }
 
+                $index = -1;
+
                 foreach ($currentTape[$position]->shrinks() as $candidate) {
+                    ++$index;
+
                     if ($candidate->value === $currentTape[$position]->value) {
                         continue;
                     }
@@ -684,6 +713,7 @@ final readonly class PropertyRunner
 
                         $currentTape = $recorded;
                         $acceptedFailure = $outcome->failure;
+                        $acceptedSteps[] = ['name' => 'draw#' . ($position + 1), 'index' => $index];
                         ++$steps;
                         $improved = true;
 
@@ -695,7 +725,125 @@ final readonly class PropertyRunner
             }
         } while ($improved);
 
-        return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials];
+        return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps)];
+    }
+
+    /**
+     * Follows a recorded descent instead of searching for one: each step names
+     * a node and the candidate of it that was accepted, so the body runs once
+     * per step rather than once per candidate a search would have to try.
+     *
+     * Every step is executed rather than merely applied, and that is the point
+     * of the design: a path indexes into shrink candidates, so a generator that
+     * changed turns a stale step into a *different* input that may still fail.
+     * Re-running each step converts that from a silently wrong counterexample
+     * into a {@see PathViolationException} naming the step that broke.
+     *
+     * What it does not save is the random phase — reaching the failing run
+     * means executing the runs before it, because bodies consume randomness
+     * through {@see \Rasuvaeff\PropertyTesting\Gen::draw()} and discards depend
+     * on the body. The saving is the descent.
+     *
+     * @param array<string, Shrinkable> $trees The failing arguments' shrink trees.
+     * @param list<Shrinkable> $tape The failing run's recorded in-body draws.
+     * @param list<PropertyListener> $listeners
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string}|PathViolationException
+     *         The same tuple {@see shrink()} returns, or the reason the path could not be followed.
+     */
+    private function replayPath(
+        string $propertyId,
+        TrialExecutor $executor,
+        array $trees,
+        array $tape,
+        Random $random,
+        string $path,
+        array $listeners,
+    ): array|PathViolationException {
+        $current = $trees;
+        $currentTape = $tape;
+        $steps = 0;
+        $acceptedFailure = null;
+
+        foreach (ShrinkPath::parse($path) as $step) {
+            $name = $step['name'];
+            $number = ShrinkPath::drawNumber($name);
+            $position = $number === null ? null : $number - 1;
+            $node = $position === null ? ($current[$name] ?? null) : ($currentTape[$position] ?? null);
+
+            if (!$node instanceof Shrinkable) {
+                return $this->pathBroken($path, $steps, $step, 'names something this run does not have');
+            }
+
+            $candidate = $this->candidateAt($node, $step['index']);
+
+            if (!$candidate instanceof Shrinkable) {
+                return $this->pathBroken($path, $steps, $step, 'has no such candidate any more');
+            }
+
+            // A candidate that no longer differs from the value it replaces
+            // would re-run the identical input, still fail, and report a path
+            // that "applied" without minimising anything.
+            if ($candidate->value === $node->value) {
+                return $this->pathBroken($path, $steps, $step, 'no longer changes the value');
+            }
+
+            $trial = $position === null ? array_replace($current, [$name => $candidate]) : $current;
+            $trialTape = $position === null ? $currentTape : array_replace($currentTape, [$position => $candidate]);
+            [$outcome, $recorded] = $this->trial($executor, $trial, $trialTape, $random);
+
+            $accepted = $outcome->isFailed();
+            $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, $accepted));
+
+            if (!$accepted) {
+                return $this->pathBroken($path, $steps, $step, 'no longer falsifies the property');
+            }
+
+            $this->emit($listeners, new ShrinkAccepted($propertyId, $steps + 1, $name, $node->value, $candidate->value));
+
+            $current = $trial;
+            $currentTape = $recorded;
+            $acceptedFailure = $outcome->failure;
+            ++$steps;
+        }
+
+        return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $steps, $path];
+    }
+
+    /**
+     * @param array{name: string, index: int<0, max>} $step
+     * @param int $followed Steps followed before this one, so the reported position is one-based.
+     */
+    private function pathBroken(string $path, int $followed, array $step, string $reason): PathViolationException
+    {
+        return new PathViolationException(
+            path: $path,
+            step: $followed + 1,
+            segment: ShrinkPath::format([$step]),
+            reason: $reason,
+        );
+    }
+
+    /**
+     * The candidate at a recorded index, counted over every candidate the
+     * enumeration yields — the same counting {@see shrink()} records — or null
+     * when the enumeration is now shorter than the path expects.
+     *
+     * @param Shrinkable<mixed> $node
+     * @return ?Shrinkable<mixed>
+     */
+    private function candidateAt(Shrinkable $node, int $index): ?Shrinkable
+    {
+        $position = 0;
+
+        foreach ($node->shrinks() as $candidate) {
+            if ($position === $index) {
+                return $candidate;
+            }
+
+            ++$position;
+        }
+
+        return null;
     }
 
     /**

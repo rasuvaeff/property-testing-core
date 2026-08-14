@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Runner;
 
+use Rasuvaeff\PropertyTesting\Internal\ShrinkPath;
+
 /**
  * Resolved knobs of one property run. The engine never reads the process
  * environment: an adapter resolves its attribute/env/defaults into this value
@@ -54,6 +56,14 @@ final readonly class PropertyConfig
      *        An explicit $seed always wins. The derivation lives in {@see PropertyRunner} because
      *        only it knows the id — and because a config that called `random_int()` would stop being
      *        a plain value.
+     * @param ?string $path The shrink descent of an earlier failure, as reported by
+     *        {@see \Rasuvaeff\PropertyTesting\CounterExample::$path}: the runner follows those steps
+     *        instead of searching for them again, executing the body once per recorded step instead
+     *        of once per candidate tried. Null searches as usual. It needs an explicit $seed (the
+     *        steps only mean anything against the run that produced them), and it refuses every
+     *        configuration that would leave it a silent no-op: a descent switched off, capped below
+     *        the path's own length, or bounded by a wall clock — the last one because a path exists
+     *        to be deterministic and a budget exists not to be.
      */
     public function __construct(
         public int $runs = 100,
@@ -66,6 +76,7 @@ final readonly class PropertyConfig
         public ?int $shrinkBudgetMs = null,
         ?array $phases = null,
         public bool $derandomize = false,
+        public ?string $path = null,
     ) {
         if ($runs < 1) {
             throw new \InvalidArgumentException('Runs must be greater than or equal to 1');
@@ -103,6 +114,10 @@ final readonly class PropertyConfig
 
         $this->phases = $phases ?? Phase::all();
         $this->shrink = $this->resolveShrinkMode($shrink, $shrinkBudgetMs, $this->phases);
+
+        if ($path !== null) {
+            $this->assertPathIsReplayable($path, $seed, $maxShrinks);
+        }
     }
 
     /**
@@ -147,6 +162,40 @@ final readonly class PropertyConfig
             if (!$phase instanceof Phase) {
                 throw new \InvalidArgumentException('Phases must be a list of Phase cases');
             }
+        }
+    }
+
+    /**
+     * Rejects a path the run could not actually follow. Every rejection here
+     * is a configuration that would otherwise reach the runner and quietly
+     * search instead of replaying — the one failure mode a replay tool cannot
+     * have, because its answer would look exactly like a successful one.
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function assertPathIsReplayable(string $path, ?int $seed, ?int $maxShrinks): void
+    {
+        $steps = ShrinkPath::parse($path);
+
+        if ($seed === null) {
+            // Not satisfied by derandomize either: a derived seed is stable,
+            // but a path is always copied from a message that printed the seed
+            // next to it, so requiring both keeps one code path and no
+            // surprises for a profile that happens to set the flag.
+            throw new \InvalidArgumentException('Replaying a shrink path requires an explicit seed');
+        }
+        if ($this->shrink === ShrinkMode::Off) {
+            throw new \InvalidArgumentException('Replaying a shrink path requires the shrink phase');
+        }
+        if ($this->shrink === ShrinkMode::Bounded) {
+            throw new \InvalidArgumentException('Replaying a shrink path cannot be combined with a shrink budget');
+        }
+        if ($maxShrinks !== null && count($steps) > $maxShrinks) {
+            throw new \InvalidArgumentException(sprintf(
+                'Shrink path has %d step(s), more than the max shrinks cap of %d',
+                count($steps),
+                $maxShrinks,
+            ));
         }
     }
 

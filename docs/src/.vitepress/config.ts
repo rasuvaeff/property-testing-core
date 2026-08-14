@@ -32,6 +32,7 @@ const sidebar = [
             { text: 'Deadlines', link: '/guide/controlling-runs/deadlines' },
             { text: 'Derandomized runs', link: '/guide/controlling-runs/derandomize' },
             { text: 'Run phases', link: '/guide/controlling-runs/phases' },
+            { text: 'Replaying a shrink path', link: '/guide/controlling-runs/replaying-a-path' },
             { text: 'Environment overrides', link: '/guide/controlling-runs/env-overrides' },
         ],
     },

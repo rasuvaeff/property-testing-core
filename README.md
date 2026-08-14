@@ -452,6 +452,22 @@ specific silent failure (a combined cache action does not save on a red job,
 which is exactly when the corpus was written); the recipe and the traps are in
 [The corpus as a CI artifact](https://rasuvaeff.github.io/property-testing-core/guide/regression-corpus#the-corpus-as-a-ci-artifact).
 
+`RedisCorpus` is the shared alternative: the same document, in Redis instead of
+a directory, so a failure found on a laptop replays in CI and a failure found in
+CI replays on the next laptop. It takes a small client seam — `CorpusClient`,
+with `PhpRedisCorpusClient` for `ext-redis` and `PredisCorpusClient` for predis
+— and writes optimistically (read, compare-and-set, retry) rather than under a
+lock, giving up quietly after a few attempts: a corpus is memory, not a ledger,
+and failing a passing test run to record a counterexample would be the wrong
+trade.
+
+```php
+$corpus = new RedisCorpus(new PhpRedisCorpusClient($redis));
+```
+
+A shared corpus is a shared value space — a values entry is generator output,
+readable by anyone who can read that Redis.
+
 A values entry stores the failing input **verbatim**, so a corpus directory is
 as sensitive as the data your generators produce. That is normally
 uninteresting — random ints and strings — but a generator seeded from a

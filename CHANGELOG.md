@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Added `RedisCorpus`: the regression corpus in Redis instead of a directory, so
+  a falsification found on a laptop replays in CI and one found in CI replays on
+  the next laptop. The stored document is byte-identical to the filesystem
+  backend's, so moving a corpus between the two is a copy rather than a
+  migration — asserted, not assumed. It takes a two-method client seam
+  (`Runner\Redis\CorpusClient`), shipped over `ext-redis`
+  (`PhpRedisCorpusClient`) and predis (`PredisCorpusClient`); a consumer with a
+  pool or a namespaced wrapper can supply its own. Writes are optimistic — read,
+  compare-and-set through one Lua script, retry — and give up quietly after
+  `RedisCorpus::MAX_ATTEMPTS`, because a corpus is memory rather than a ledger
+  and failing a passing run to record a counterexample is the wrong trade.
 - Documented the corpus as a CI artifact: the three GitHub Actions steps that
   carry a corpus across runs, and why each exists. The combined cache action
   declares `post-if: success()`, so it never saves on the red job that just

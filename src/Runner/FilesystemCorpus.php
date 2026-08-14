@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Runner;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
+use Rasuvaeff\PropertyTesting\Internal\CorpusDocument;
 use Rasuvaeff\PropertyTesting\Internal\ValueCodec;
 
 /**
@@ -90,7 +91,7 @@ final readonly class FilesystemCorpus implements Corpus
         $seeds = [];
 
         foreach ($this->read($id) as $raw) {
-            $entry = $this->hydrate($raw, $parameterNames);
+            $entry = CorpusDocument::hydrate($raw, $parameterNames, self::SEQUENCE_EPOCH);
 
             if (!$entry instanceof CorpusEntry) {
                 continue;
@@ -118,16 +119,16 @@ final readonly class FilesystemCorpus implements Corpus
         $this->withLock(
             $id,
             function () use ($id, $counterExample, $parameterNames): void {
-                $entry = $this->encodeEntry($counterExample, $parameterNames);
-                $key = $this->keyOf($entry);
+                $entry = CorpusDocument::encodeEntry($counterExample, $parameterNames, self::SEQUENCE_EPOCH);
+                $key = CorpusDocument::keyOf($entry);
 
                 // Newest first, without the previous copy of the same input.
                 $kept = array_filter(
                     $this->read($id),
-                    fn(array $raw): bool => $this->keyOf($raw) !== $key,
+                    static fn(array $raw): bool => CorpusDocument::keyOf($raw) !== $key,
                 );
 
-                $this->write($id, $this->cap([$entry, ...$kept]));
+                $this->write($id, CorpusDocument::cap([$entry, ...$kept], self::MAX_VALUE_ENTRIES, self::MAX_SEED_ENTRIES));
             },
         );
     }
@@ -145,13 +146,13 @@ final readonly class FilesystemCorpus implements Corpus
                 // A hydrated entry re-encodes to the very bytes it was read from,
                 // so the key identifies the same stored entry.
                 $encoded = $entry->isValues()
-                    ? $this->valuesEntry($entry->arguments, array_keys($entry->arguments), $entry->seed)
-                    : $this->seedEntry($entry->seed);
-                $key = $encoded === null ? null : $this->keyOf($encoded);
+                    ? CorpusDocument::valuesEntry($entry->arguments, array_keys($entry->arguments), $entry->seed, self::SEQUENCE_EPOCH)
+                    : CorpusDocument::seedEntry($entry->seed, self::SEQUENCE_EPOCH);
+                $key = $encoded === null ? null : CorpusDocument::keyOf($encoded);
 
                 $kept = array_values(array_filter(
                     $this->read($id),
-                    fn(array $raw): bool => $this->keyOf($raw) !== $key,
+                    static fn(array $raw): bool => CorpusDocument::keyOf($raw) !== $key,
                 ));
 
                 $this->write($id, $kept);
@@ -179,28 +180,7 @@ final readonly class FilesystemCorpus implements Corpus
             return [];
         }
 
-        try {
-            /** @var mixed $document */
-            $document = json_decode($content, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return [];
-        }
-
-        if (!is_array($document) || ($document['format'] ?? null) !== self::FORMAT_VERSION || !is_array($document['entries'] ?? null)) {
-            return [];
-        }
-
-        $entries = [];
-
-        /** @var mixed $raw */
-        foreach ($document['entries'] as $raw) {
-            if (is_array($raw)) {
-                /** @var array<string, mixed> $raw */
-                $entries[] = $raw;
-            }
-        }
-
-        return $entries;
+        return CorpusDocument::decode($content, self::FORMAT_VERSION);
     }
 
     /**
@@ -220,10 +200,7 @@ final readonly class FilesystemCorpus implements Corpus
             return;
         }
 
-        $payload = json_encode(
-            ['format' => self::FORMAT_VERSION, 'property' => $id, 'entries' => $entries],
-            JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
-        );
+        $payload = CorpusDocument::encode($id, $entries, self::FORMAT_VERSION);
 
         // Temp file + atomic rename: a reader sees either the previous or the
         // new document, never a partial one; a process killed mid-write (OOM,
@@ -287,166 +264,6 @@ final readonly class FilesystemCorpus implements Corpus
             flock($lock, LOCK_UN);
             fclose($lock);
         }
-    }
-
-    /**
-     * Turns a raw stored entry back into a usable {@see CorpusEntry}, or null when
-     * it is corrupt or no longer applicable.
-     *
-     * @param array<string, mixed> $raw
-     * @param list<string> $parameterNames
-     */
-    private function hydrate(array $raw, array $parameterNames): ?CorpusEntry
-    {
-        $seed = $raw['seed'] ?? null;
-
-        if (!is_int($seed)) {
-            return null;
-        }
-
-        if (($raw['kind'] ?? null) === 'seed') {
-            return ($raw['epoch'] ?? null) === self::SEQUENCE_EPOCH ? CorpusEntry::seed($seed) : null;
-        }
-
-        $encoded = $raw['args'] ?? null;
-
-        if (($raw['kind'] ?? null) !== 'values' || !is_array($encoded)) {
-            return null;
-        }
-
-        // The signature must still be the one that produced the entry: a renamed,
-        // reordered or added parameter makes the stored input a different input.
-        $names = array_keys($encoded);
-        sort($names);
-        $expected = $parameterNames;
-        sort($expected);
-
-        if ($names !== $expected) {
-            return null;
-        }
-
-        $decoded = [];
-
-        foreach ($parameterNames as $name) {
-            $value = ValueCodec::decode($encoded[$name]);
-
-            if ($value === null) {
-                return null;
-            }
-
-            $decoded[] = $value;
-        }
-
-        return CorpusEntry::values(
-            array_combine($parameterNames, array_map(static fn(array $value): mixed => $value[0], $decoded)),
-            $seed,
-        );
-    }
-
-    /**
-     * Encodes a failure for storage: a values entry when every minimised argument
-     * is a parameter the codec can represent, a seed entry otherwise.
-     *
-     * `draw#N` pseudo-arguments from in-body `Gen::draw()` are exactly what makes
-     * a counterexample unrepresentable — they are not parameters, and replaying
-     * the named arguments alone would let the body draw fresh values.
-     *
-     * @param list<string> $parameterNames
-     * @return array<string, mixed>
-     */
-    private function encodeEntry(CounterExample $counterExample, array $parameterNames): array
-    {
-        return $this->valuesEntry($counterExample->shrunkArguments, $parameterNames, $counterExample->seed)
-            ?? $this->seedEntry($counterExample->seed);
-    }
-
-    /**
-     * The values entry for $arguments, or null when they hold anything but exactly
-     * the named parameters in codec-representable form.
-     *
-     * @param array<string, mixed> $arguments
-     * @param list<string> $parameterNames
-     * @return ?array<string, mixed>
-     */
-    private function valuesEntry(array $arguments, array $parameterNames, int $seed): ?array
-    {
-        if (count($arguments) !== count($parameterNames)) {
-            return null;
-        }
-
-        $encoded = [];
-
-        foreach ($parameterNames as $name) {
-            if (!array_key_exists($name, $arguments)) {
-                return null;
-            }
-
-            $value = ValueCodec::encode($arguments[$name]);
-
-            if ($value === null) {
-                return null;
-            }
-
-            $encoded[] = $value;
-        }
-
-        return [
-            'kind' => 'values',
-            'seed' => $seed,
-            'epoch' => self::SEQUENCE_EPOCH,
-            'args' => array_combine($parameterNames, array_map(static fn(array $value): mixed => $value[0], $encoded)),
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function seedEntry(int $seed): array
-    {
-        return ['kind' => 'seed', 'seed' => $seed, 'epoch' => self::SEQUENCE_EPOCH];
-    }
-
-    /**
-     * Identity of an entry for dedup and pruning: a values entry is its arguments
-     * (the same minimal input recorded twice is one regression), a seed entry is
-     * its seed.
-     *
-     * @param array<string, mixed> $raw
-     */
-    private function keyOf(array $raw): string
-    {
-        try {
-            return ($raw['kind'] ?? null) === 'values'
-                ? 'v:' . json_encode($raw['args'] ?? null, JSON_THROW_ON_ERROR)
-                : 's:' . json_encode($raw['seed'] ?? null, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return 'x:' . serialize($raw['kind'] ?? null);
-        }
-    }
-
-    /**
-     * @param list<array<string, mixed>> $entries
-     * @return list<array<string, mixed>>
-     */
-    private function cap(array $entries): array
-    {
-        $values = 0;
-        $seeds = 0;
-        $kept = [];
-
-        foreach ($entries as $entry) {
-            if (($entry['kind'] ?? null) === 'values') {
-                if (++$values > self::MAX_VALUE_ENTRIES) {
-                    continue;
-                }
-            } elseif (++$seeds > self::MAX_SEED_ENTRIES) {
-                continue;
-            }
-
-            $kept[] = $entry;
-        }
-
-        return $kept;
     }
 
     private function path(string $id): string

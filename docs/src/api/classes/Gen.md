@@ -9,7 +9,7 @@ description: "Facade with static factories for the built-in ArbitraryInterfaces.
 
 `Rasuvaeff\PropertyTesting\Gen`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L45) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L46) — **Version:** working tree
 
 Facade with static factories for the built-in ArbitraryInterfaces.
 
@@ -411,6 +411,24 @@ static ipv4(): Arbitrary\MappedArbitrary
 
 IPv4 dotted-quad address strings (`"0.0.0.0"`..`"255.255.255.255"`). Each
 octet shrinks toward 0 through its own integer tree.
+
+### ipv6()
+
+```php
+static ipv6(): Arbitrary\MappedArbitrary
+```
+
+IPv6 address strings in the canonical text form of RFC 5952: lowercase
+hex, leading zeros stripped, and the longest run of zero groups
+compressed to `::` (leftmost on a tie, never a single group).
+
+Each of the eight 16-bit groups shrinks toward 0 through its own integer
+tree, so the descent walks through the shortened forms parsers get wrong
+— `2001:db8::1`, `fe80::`, `::1` — and terminates at `::`.
+
+IPv4-mapped addresses (`::ffff:1.2.3.4`), zone ids (`%eth0`) and the
+bracketed URL form (`[::1]:8080`) are out of scope; `url`() emits no
+IPv6 host either.
 
 ### email()
 

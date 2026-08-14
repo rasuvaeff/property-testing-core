@@ -215,6 +215,18 @@ final class SeedDeterminismVectorsTest
             ['154.182.62.108', '187.207.182.21', '169.78.228.51', '141.173.1.188', '255.42.48.255'],
         ];
 
+        yield 'ipv6' => [
+            Gen::ipv6(...),
+            127,
+            [
+                'ffff:0:fd43:2d9b:ffff:1b17:63d9:e713',
+                'a38:1:9632:0:2544:c26d:cf33:608c',
+                '6cdb:3db1:8c22:81c4:c70d:2990:a2c:dca1',
+                'b0d3:ffff:3343:0:ebff:8bb5:148c:679b',
+                '4727::727d:5d17:1ff1:848d:2c6b',
+            ],
+        ];
+
         yield 'email' => [
             Gen::email(...),
             123,

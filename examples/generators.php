@@ -34,6 +34,17 @@ $random = new Random(1);
 echo 'uuid: ' . Gen::uuid()->generate($random)->value . "\n";
 echo 'datetime: ' . Gen::datetime()->generate($random)->value->format(DATE_ATOM) . "\n";
 
+// ipv6 — canonical RFC 5952 text: lowercase, no leading zeros, longest run of
+// zero groups compressed to "::". Shrinking every group toward zero walks the
+// shortened forms parsers get wrong and ends at the all-zero address.
+$address = Gen::ipv6()->generate(new Random(4));
+echo 'ipv6: ' . $address->value . "\n";
+foreach ($address->shrinks() as $candidate) {
+    echo 'ipv6 first shrink candidate: ' . $candidate->value . "\n";
+
+    break;
+}
+
 // dictOf — string-keyed map; record — fixed shape keyed by field name.
 $dictionary = Gen::dictOf(Gen::stringOf(3, 5), Gen::intBetween(1, 9))->generate($random)->value;
 echo 'dictOf entries: ' . count($dictionary) . "\n";

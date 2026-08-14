@@ -194,6 +194,7 @@ through their source domain.
 | `Gen::tuple(...$elements)` | `TupleArbitrary`, fixed-arity tuple, one value per element | each position via its element, arity fixed |
 | `Gen::frequency($pairs)` | `FrequencyArbitrary`, weighted choice over `[weight, arbitrary]` pairs | within the branch that generated the value |
 | `Gen::ipv4()` | IPv4 dotted-quad strings | each octet toward `0` |
+| `Gen::ipv6()` | IPv6 addresses in the canonical RFC 5952 text form (lowercase, no leading zeros, longest zero run compressed to `::`) | each group toward `0`, ending at `::` |
 | `Gen::email()` | `local@label.tld` addresses | toward the shortest local/label and first TLD |
 | `Gen::url()` | `http(s)://host.tld[/path]` URLs | toward `http://a.com` |
 | `Gen::json($maxDepth)` | a JSON-encodable value (null/bool/int/float/string/list/object) | within the generated structure |

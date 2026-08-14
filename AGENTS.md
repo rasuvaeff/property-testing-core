@@ -219,6 +219,25 @@ make release-check
   - VitePress compiles markdown through Vue: a literal `{{` in prose is
     interpolated and throws at render time while the build still exits 0.
     Wrap it in `<code v-pre>`.
+- **`tests/Integration/` needs a live Redis, and CI has one.** The
+  `Integration (Redis)` job runs a digest-pinned `redis:7-alpine` service and
+  `vendor/bin/testo --suite=Integration`. It installs `ext-redis` deliberately:
+  the suite runs every scenario against every client it can build, so without
+  the extension only predis would be exercised and half of what `RedisCorpus`
+  ships would never meet a real server. Locally the suite skips itself unless
+  `REDIS_HOST` is set:
+
+  ```bash
+  docker run -d --name property-redis -p 6379:6379 redis:7-alpine
+  REDIS_HOST=127.0.0.1 vendor/bin/testo --suite=Integration
+  ```
+
+  What the live suite is for is narrow and worth keeping narrow: that the Lua
+  compare-and-set really refuses a stale expectation on Redis, and that a
+  document written through a client is byte-identical to the filesystem one.
+  Everything else about `RedisCorpus` is unit-tested against an in-memory
+  client, which is what keeps it mutation-covered — an env-gated suite
+  contributes no killed mutants.
 - **CI workflows are SHA-pinned.** Every `uses:` in `.github/workflows/*.yml`
   references a 40-char commit SHA with a `# vN` trailing comment
   (e.g. `actions/checkout@<sha> # v4`). Never revert to floating `@vN` tags.

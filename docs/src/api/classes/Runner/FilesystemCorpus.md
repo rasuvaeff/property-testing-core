@@ -9,7 +9,7 @@ description: "Opt-in on-disk corpus of a property's past failures, replayed befo
 
 `Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/FilesystemCorpus.php#L27) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/FilesystemCorpus.php#L28) — **Version:** working tree
 
 **Implements:** [`Runner\Corpus`](/api/classes/Runner/Corpus)
 

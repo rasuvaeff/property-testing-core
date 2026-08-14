@@ -155,6 +155,11 @@ interface Corpus {
 }
 
 new FilesystemCorpus('/path/to/dir');   // 2.8-compatible JSON storage
+new RedisCorpus(new PhpRedisCorpusClient($redis));  // same document, shared between CI and developers
+new RedisCorpus(new PredisCorpusClient($client), prefix: 'suite:', maxValues: 8, maxSeeds: 2);
+// CorpusClient is the seam (get + compareAndSet); RedisCorpus writes optimistically and gives up
+// quietly after RedisCorpus::MAX_ATTEMPTS — a corpus is memory, not a ledger. Byte-identical
+// document to FilesystemCorpus, so moving between backends is a copy.
 FilesystemCorpus::fromEnv();            // ?self from PROPERTY_DB
 ```
 

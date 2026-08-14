@@ -11,7 +11,7 @@ description: "Persistent store of past falsifications, replayed before the rando
 
 **Interface** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Corpus.php#L18) — **Version:** working tree
 
-**Implemented by:** [`Runner\FilesystemCorpus`](/api/classes/Runner/FilesystemCorpus)
+**Implemented by:** [`Runner\FilesystemCorpus`](/api/classes/Runner/FilesystemCorpus), [`Runner\RedisCorpus`](/api/classes/Runner/RedisCorpus)
 
 Persistent store of past falsifications, replayed before the random phase.
 

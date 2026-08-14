@@ -4866,6 +4866,311 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\CorpusDocument",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The on-disk shape of a corpus, without the disk.",
+        "description": "Everything a \\Rasuvaeff\\PropertyTesting\\Runner\\Corpus does that is not\nstorage lives here: parsing a document, rendering one, turning a stored entry\nback into a \\Rasuvaeff\\PropertyTesting\\Runner\\CorpusEntry (or refusing to), encoding a counterexample,\nidentifying an entry for dedup, and capping how many are kept. A backend is\nthen only the part that is actually different — where the bytes go and how a\nread-modify-write is made safe.\n\nThe point of the split is not tidiness: it is that two backends store the\n*same document*, so a corpus written to a directory and a corpus written to\nRedis are the same artifact, and moving between them is a copy. The format\nversion and sequence epoch stay public constants on\n\\Rasuvaeff\\PropertyTesting\\Runner\\FilesystemCorpus — they are the\npublished contract, and they are passed in here rather than duplicated.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "decode",
+                "static": true,
+                "params": [
+                    {
+                        "name": "content",
+                        "type": "string",
+                        "description": "The stored document.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "format",
+                        "type": "int",
+                        "description": "The format version this reader accepts.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "The entries of a stored document, or an empty list when it is unreadable\n— corrupt JSON, a foreign format version, or a shape that is not a\ndocument. An unusable corpus is an empty corpus, never an error: it must\nnot fail a test run that would otherwise pass.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 47
+            },
+            {
+                "name": "encode",
+                "static": true,
+                "params": [
+                    {
+                        "name": "id",
+                        "type": "string",
+                        "description": "The property id, stored for a human reading the file.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "entries",
+                        "type": "list<array<string,mixed>>",
+                        "description": "The entries to keep, newest first.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "format",
+                        "type": "int",
+                        "description": "The format version to stamp.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "string",
+                "summary": "The document to store for a property.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 80
+            },
+            {
+                "name": "hydrate",
+                "static": true,
+                "params": [
+                    {
+                        "name": "raw",
+                        "type": "array<string,mixed>",
+                        "description": "The stored entry.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "parameterNames",
+                        "type": "list<string>",
+                        "description": "The property's current parameters, in order.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "epoch",
+                        "type": "int",
+                        "description": "The sequence epoch a seed entry must carry to be replayable.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?Rasuvaeff\\PropertyTesting\\Runner\\CorpusEntry",
+                "summary": "A raw stored entry as a usable CorpusEntry, or null when it is\ncorrupt or no longer applicable.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 96
+            },
+            {
+                "name": "encodeEntry",
+                "static": true,
+                "params": [
+                    {
+                        "name": "counterExample",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\CounterExample",
+                        "description": "The failure to record.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "parameterNames",
+                        "type": "list<string>",
+                        "description": "The property's current parameters, in order.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "epoch",
+                        "type": "int",
+                        "description": "The sequence epoch to stamp.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "A failure encoded for storage: a values entry when every minimised argument\nis a parameter the codec can represent, a seed entry otherwise.",
+                "description": "`draw#N` pseudo-arguments from in-body `Gen::draw()` are exactly what makes\na counterexample unrepresentable — they are not parameters, and replaying\nthe named arguments alone would let the body draw fresh values.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 157
+            },
+            {
+                "name": "valuesEntry",
+                "static": true,
+                "params": [
+                    {
+                        "name": "arguments",
+                        "type": "array<string,mixed>",
+                        "description": "The minimised arguments.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "parameterNames",
+                        "type": "list<string>",
+                        "description": "The property's current parameters, in order.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "seed",
+                        "type": "int",
+                        "description": "The seed the failure was found with.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "epoch",
+                        "type": "int",
+                        "description": "The sequence epoch to stamp.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?array",
+                "summary": "The values entry for $arguments, or null when they hold anything but exactly\nthe named parameters in codec-representable form.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 174
+            },
+            {
+                "name": "seedEntry",
+                "static": true,
+                "params": [
+                    {
+                        "name": "seed",
+                        "type": "int",
+                        "description": "The seed to replay the whole random phase with.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "epoch",
+                        "type": "int",
+                        "description": "The sequence epoch to stamp.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 210
+            },
+            {
+                "name": "keyOf",
+                "static": true,
+                "params": [
+                    {
+                        "name": "raw",
+                        "type": "array<string,mixed>",
+                        "description": "The stored entry.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "string",
+                "summary": "Identity of an entry for dedup and pruning: a values entry is its arguments\n(the same minimal input recorded twice is one regression), a seed entry is\nits seed.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 222
+            },
+            {
+                "name": "cap",
+                "static": true,
+                "params": [
+                    {
+                        "name": "entries",
+                        "type": "list<array<string,mixed>>",
+                        "description": "Candidate entries, newest first.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxValues",
+                        "type": "int",
+                        "description": "How many values entries a property keeps.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxSeeds",
+                        "type": "int",
+                        "description": "How many seed entries a property keeps.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "The entries to keep, oldest evicted first within each kind.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 242
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/CorpusDocument.php#L29",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\Internal\\DrawContext",
         "kind": "class",
         "isApi": false,
@@ -6437,7 +6742,8 @@
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Corpus.php#L18",
         "implementedBy": [
-            "Rasuvaeff\\PropertyTesting\\Runner\\FilesystemCorpus"
+            "Rasuvaeff\\PropertyTesting\\Runner\\FilesystemCorpus",
+            "Rasuvaeff\\PropertyTesting\\Runner\\RedisCorpus"
         ]
     },
     {
@@ -7012,7 +7318,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 62
+                "startLine": 63
             },
             {
                 "name": "recall",
@@ -7044,7 +7350,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 87
+                "startLine": 88
             },
             {
                 "name": "remember",
@@ -7083,7 +7389,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 116
+                "startLine": 117
             },
             {
                 "name": "prune",
@@ -7115,7 +7421,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 140
+                "startLine": 141
             }
         ],
         "constants": [
@@ -7133,7 +7439,7 @@
             }
         ],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/FilesystemCorpus.php#L27",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/FilesystemCorpus.php#L28",
         "implementedBy": []
     },
     {
@@ -7954,6 +8260,510 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L55",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\RedisCorpus",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "A Corpus in Redis, so one falsification is replayed everywhere.",
+        "description": "\\Rasuvaeff\\PropertyTesting\\Runner\\FilesystemCorpus remembers a counterexample for whoever owns that\ndirectory — which, in CI, is a machine that is deleted when the job ends.\nThe same corpus in Redis is shared: a failure found on a laptop replays in\nCI, a failure found in CI replays on the next laptop, and neither had to\ncommit anything.\n\nThe document is byte-identical to the one on disk, so the two backends store\nthe same artifact and moving between them is a copy rather than a migration.\n\n```php\n$corpus = new RedisCorpus(new PhpRedisCorpusClient($redis));\n(new PropertyRunner())->run($definition, $executor, corpus: $corpus);\n```\n\nTwo differences from the filesystem backend are worth knowing before wiring\nit into a suite:\n\n- **a shared corpus is a shared value space.** A values entry is generator\n  output, so anyone who can read the Redis instance can read the inputs that\n  falsified a property. That is the same warning the directory carries, with\n  a wider audience;\n- **writes are optimistic, not locked.** A write re-reads and retries when\n  another writer got there first (\\Rasuvaeff\\PropertyTesting\\Runner\\MAX_ATTEMPTS times), then gives up\n  silently. A corpus is memory, not a ledger: losing one entry to a storm of\n  concurrent writers costs a replay, while throwing would fail a test run\n  that had already passed.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\Corpus"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "client",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "description": "The Redis client seam — \\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PhpRedisCorpusClient\nfor `ext-redis`, \\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PredisCorpusClient for predis, or your own.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "prefix",
+                "type": "string",
+                "description": "Key prefix, so a corpus can share an instance with everything else that\nlives there. The key is this prefix plus the sha1 of the property id, exactly as the\nfilesystem backend names its files.",
+                "default": "'property-testing:corpus:'",
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "maxValues",
+                "type": "int",
+                "description": "How many values entries a property keeps, oldest evicted first. The\ndefault matches the filesystem backend; a shared corpus may reasonably keep more.",
+                "default": "8",
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "maxSeeds",
+                "type": "int",
+                "description": "How many seed entries a property keeps, oldest evicted first.",
+                "default": "2",
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "recall",
+                "static": false,
+                "params": [
+                    {
+                        "name": "id",
+                        "type": "string",
+                        "description": "The property id, as the runner knows it.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "parameterNames",
+                        "type": "list<string>",
+                        "description": "The property's current parameters, in order.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "The usable entries recorded for the property, cheapest first. Entries\nthat can no longer replay faithfully (foreign format, superseded\nsequence epoch, a signature that no longer matches) are skipped, not\nsurfaced.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Corpus",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 78
+            },
+            {
+                "name": "remember",
+                "static": false,
+                "params": [
+                    {
+                        "name": "id",
+                        "type": "string",
+                        "description": "The property id, as the runner knows it.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "counterExample",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\CounterExample",
+                        "description": "The failure to record.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "parameterNames",
+                        "type": "list<string>",
+                        "description": "The property's current parameters, in order.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "void",
+                "summary": "Records a falsification's counterexample as the newest entry, preferring\nits minimised arguments over the bare seed.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Corpus",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 106
+            },
+            {
+                "name": "prune",
+                "static": false,
+                "params": [
+                    {
+                        "name": "id",
+                        "type": "string",
+                        "description": "The property id, as the runner knows it.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "entry",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\CorpusEntry",
+                        "description": "The entry whose replay no longer fails.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "void",
+                "summary": "Drops an entry whose replay no longer fails — the regression is fixed\nand the entry has served its purpose.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Corpus",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 127
+            }
+        ],
+        "constants": [
+            {
+                "name": "MAX_ATTEMPTS",
+                "type": "int",
+                "summary": "How many times a write re-reads and retries before giving up. Contention\nhere is one property's key being written by two runs at the same moment;\na handful of attempts covers that, and a number large enough to cover a\npathological storm would only make the run slower without making the\ncorpus more correct.",
+                "value": 5
+            }
+        ],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/RedisCorpus.php#L43",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+        "kind": "interface",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The two operations \\Rasuvaeff\\PropertyTesting\\Runner\\RedisCorpus needs\nfrom a Redis client, and nothing else.",
+        "description": "The seam exists for three reasons, in order of how much they cost when it is\nmissing: the two PHP clients disagree about how commands are called (phpredis\nhas real methods, predis routes them through `__call` annotations that no\nstatic analyser resolves across releases); the corpus is then unit-testable\nagainst an in-memory double instead of only against a live server; and a\nconsumer with a connection pool, a namespaced wrapper or a test harness can\nsupply its own without this package knowing about it.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "get",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?string",
+                "summary": "The stored document for $key, or null when the key does not exist.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 28
+            },
+            {
+                "name": "compareAndSet",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "expected",
+                        "type": "?string",
+                        "description": "The document the caller read, or null when the key was absent.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "document",
+                        "type": "?string",
+                        "description": "The document to store, or null to delete the key (an empty corpus\nis an absent key, exactly as an empty corpus is an absent file on disk).",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "bool",
+                "summary": "Stores $document for $key only if the stored value is still $expected —\nthe whole read-modify-write of a corpus write, made safe without holding\na lock across a round trip.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 43
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/CorpusClient.php#L21",
+        "implementedBy": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PhpRedisCorpusClient",
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PredisCorpusClient"
+        ]
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusScript",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The compare-and-set both shipped clients run.",
+        "description": "One script rather than two implementations of the same logic: what the\nclients differ in is how a script is sent, not what it does.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [],
+        "constants": [
+            {
+                "name": "CAS",
+                "type": "string",
+                "summary": "Sets, deletes or refuses, atomically.",
+                "value": "local current = redis.call('GET', KEYS[1])\nlocal expected = ARGV[1]\nlocal document = ARGV[2]\n\nif current == false then\n    current = ''\nend\n\nif current ~= expected then\n    return 0\nend\n\nif document == '' then\n    redis.call('DEL', KEYS[1])\nelse\n    redis.call('SET', KEYS[1], document)\nend\n\nreturn 1"
+            }
+        ],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/CorpusScript.php#L15",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PhpRedisCorpusClient",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "CorpusClient over the `ext-redis` client (`\\Redis`).",
+        "description": "",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "client",
+                "type": "\\Redis",
+                "description": "A connected client. Its serializer and prefix options are the\ncaller's business: this class stores a JSON string under the key it is given.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "get",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?string",
+                "summary": "The stored document for $key, or null when the key does not exist.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 23
+            },
+            {
+                "name": "compareAndSet",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "expected",
+                        "type": "?string",
+                        "description": "The document the caller read, or null when the key was absent.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "document",
+                        "type": "?string",
+                        "description": "The document to store, or null to delete the key (an empty corpus\nis an absent key, exactly as an empty corpus is an absent file on disk).",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "bool",
+                "summary": "Stores $document for $key only if the stored value is still $expected —\nthe whole read-modify-write of a corpus write, made safe without holding\na lock across a round trip.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 32
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/PhpRedisCorpusClient.php#L12",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PredisCorpusClient",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "CorpusClient over predis.",
+        "description": "",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "client",
+                "type": "\\Predis\\ClientInterface",
+                "description": "A connected client.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "get",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?string",
+                "summary": "The stored document for $key, or null when the key does not exist.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 24
+            },
+            {
+                "name": "compareAndSet",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "expected",
+                        "type": "?string",
+                        "description": "The document the caller read, or null when the key was absent.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "document",
+                        "type": "?string",
+                        "description": "The document to store, or null to delete the key (an empty corpus\nis an absent key, exactly as an empty corpus is an absent file on disk).",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "bool",
+                "summary": "Stores $document for $key only if the stored value is still $expected —\nthe whole read-modify-write of a corpus write, made safe without holding\na lock across a round trip.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 35
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/PredisCorpusClient.php#L14",
         "implementedBy": []
     },
     {

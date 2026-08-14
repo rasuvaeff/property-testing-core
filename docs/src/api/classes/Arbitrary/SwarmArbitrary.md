@@ -21,21 +21,21 @@ Swarm testing over a choice generator: every generated case may only use
 some of the variants, drawn afresh and never empty.
 
 Drawing uniformly from the whole alphabet, every case looks like every other
-one — a long run of `oneOf('push', 'pop', 'ack')` almost always contains all
+one — a long run of `oneOf('push', 'pop', 'flush')` almost always contains all
 three. The bugs that need an operation to be *absent* ("the bag breaks when
-no ack ever arrives") are then astronomically rare, because avoiding one
+no flush ever arrives") are then astronomically rare, because avoiding one
 variant for a hundred draws is a coin flipped a hundred times. Restricting
 the alphabet per case makes those runs ordinary instead. This is Groce et
 al., *Swarm Testing* (ISSTA 2012), and it costs one extra draw per case.
 
 ```php
-Gen::swarm(Gen::oneOf('push', 'pop', 'ack'));   // one case sees, say, only 'pop' and 'ack'
+Gen::swarm(Gen::oneOf('push', 'pop', 'flush'));   // one case sees, say, only 'pop' and 'flush'
 Gen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands
 ```
 
 Shrinking stays inside the subset the case was generated from: the tree
 returned here is the restricted generator's own, so a counterexample found
-without `ack` cannot shrink to one containing it — which is what makes the
+without `flush` cannot shrink to one containing it — which is what makes the
 finding reproducible at all. The alphabet widens again on the next case, not
 during a descent.
 

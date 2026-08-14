@@ -227,7 +227,7 @@ some of $arbitrary's variants, drawn afresh per case and never empty.
 - `$arbitrary` — A choice generator: `oneOf`(), `elements`(), `frequency`(), `commands`(), or any [`Swarmable`](/api/classes/Swarmable).
 
 ```php
-Gen::swarm(Gen::oneOf('push', 'pop', 'ack'));   // one case sees, say, only 'pop' and 'ack'
+Gen::swarm(Gen::oneOf('push', 'pop', 'flush'));   // one case sees, say, only 'pop' and 'flush'
 Gen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands
 ```
 

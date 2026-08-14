@@ -427,6 +427,14 @@ function defaultValueLiteral(ReflectionParameter $param): ?string
     return match (true) {
         is_string($value) => var_export($value, true),
         is_array($value) => $value === [] ? '[]' : var_export($value, true),
+        // A `new Foo()` default var_export()s to a multi-line
+        // `Foo::__set_state(array(...))` dump that grows with every property
+        // the class gains. Inside a markdown table cell those newlines end the
+        // cell, and the type names left stranded in prose (`list<string>`) are
+        // then parsed as HTML tags — VitePress fails with "Element is missing
+        // end tag". The signature says all a reader needs: the default is a
+        // default-constructed instance.
+        is_object($value) => 'new \\' . $value::class . '()',
         default => var_export($value, true),
     };
 }
@@ -479,6 +487,14 @@ foreach (roots($coreDir, $workspaceDir, $coreVersion, $testoVersion, $phpunitVer
             }
             if ($method->isConstructor()) {
                 continue; // reported above as constructorParams
+            }
+            if ($reflection->isEnum() && in_array($method->getName(), ['cases', 'from', 'tryFrom'], true)) {
+                // PHP synthesises these on every enum, so reflection reports
+                // them as the enum's own — but they are language built-ins with
+                // no docblock to write, not authored API surface. Listing them
+                // would also charge the completeness ratchet for prose nobody
+                // can add.
+                continue;
             }
 
             $methodDoc = parseDocBlock($factory, $contextFactory, $method);

@@ -93,9 +93,12 @@ final readonly class PropertyRunner
 
         $this->emit($listeners, new PropertyStarted($property->id, $seed, $runs));
 
-        $exampleFailure = $this->runExamples($property, $executor, $seed, $listeners);
-        if ($exampleFailure instanceof PropertyResult) {
-            return $this->finish($listeners, $property->id, $exampleFailure);
+        if ($config->runs(Phase::Examples)) {
+            $exampleFailure = $this->runExamples($property, $executor, $seed, $listeners);
+
+            if ($exampleFailure instanceof PropertyResult) {
+                return $this->finish($listeners, $property->id, $exampleFailure);
+            }
         }
 
         // Opt-in regression replay: re-run every recorded past failure first
@@ -103,7 +106,7 @@ final readonly class PropertyRunner
         // any way — is reported immediately; only an entry whose replay passes
         // cleanly is pruned. An inconclusive replay must not delete the
         // recorded regression.
-        if ($corpus instanceof Corpus && $property->replayRegressions) {
+        if ($corpus instanceof Corpus && $property->replayRegressions && $config->runs(Phase::Corpus)) {
             foreach ($corpus->recall($property->id, $property->parameterNames) as $entry) {
                 if ($entry->isValues()) {
                     $this->emit($listeners, new CorpusReplayed($property->id, isValues: true, arguments: $entry->arguments, seed: $entry->seed));
@@ -124,6 +127,22 @@ final readonly class PropertyRunner
                 $corpus->prune($property->id, $entry);
                 $this->emit($listeners, new CorpusPruned($property->id, $entry->isValues(), $entry->seed));
             }
+        }
+
+        // Without the random phase there is nothing left to check: the examples
+        // and the corpus have already passed. The statistics say so honestly —
+        // zero attempts, zero checks — instead of reporting the configured run
+        // count as if it had happened, and coverage requirements are dropped
+        // rather than assessed against an empty denominator.
+        if (!$config->runs(Phase::Random)) {
+            Classify::flushRequirements();
+
+            return $this->finish($listeners, $property->id, new Passed(new RunStatistics(
+                attempts: 0,
+                discards: 0,
+                checks: 0,
+                classifications: [],
+            )));
         }
 
         $result = $this->runPhase($property, $executor, new Random($seed), $seed, $runs, $maxDiscards, $listeners);
@@ -182,6 +201,8 @@ final readonly class PropertyRunner
         array $listeners,
     ): PropertyResult {
         $maxShrinks = $property->config->maxShrinks;
+        $shrinkMode = $property->config->shrink;
+        $shrinkBudgetMs = $shrinkMode === ShrinkMode::Bounded ? $property->config->shrinkBudgetMs : null;
         $timeoutMs = $property->config->timeoutMs;
         $budgetMs = $property->config->budgetMs;
 
@@ -267,7 +288,7 @@ final readonly class PropertyRunner
 
             if ($outcome->isFailed()) {
                 $this->emit($listeners, new RunFailed($property->id, $attempts, $arguments, $this->drawArguments($draws), $outcome->failure, $runElapsedNs));
-                [$shrunk, $shrunkDraws, $shrinkSteps, $shrunkFailure, $shrinkTrials] = $this->shrink($property->id, $executor, $trees, $draws, $random, $maxShrinks, $listeners);
+                [$shrunk, $shrunkDraws, $shrinkSteps, $shrunkFailure, $shrinkTrials] = $this->shrink($property->id, $executor, $trees, $draws, $random, $maxShrinks, $shrinkMode, $shrinkBudgetMs, $listeners);
 
                 // Drain the coverage requirements like every other exit path:
                 // the 2.8 interceptor left them armed here and relied on the
@@ -537,9 +558,17 @@ final readonly class PropertyRunner
      * non-empty tape the accepted steps are additionally capped by
      * {@see self::MAX_DRAW_SHRINK_STEPS}.
      *
+     * {@see ShrinkMode::Off} skips the descent entirely — no trial, no shrink
+     * event, the counterexample exactly as generated. {@see ShrinkMode::Bounded}
+     * stops on wall clock instead of on accepted steps, checked at the same
+     * points as the step cap (before each parameter's and each tape position's
+     * candidate search), and returns the best candidate reached so far.
+     *
      * @param array<string, Shrinkable> $trees The failing arguments' shrink trees.
      * @param list<Shrinkable> $tape The failing run's recorded in-body draws.
      * @param ?int $maxShrinks Cap on accepted shrink steps; null means no cap, 0 disables shrinking.
+     * @param ?int $budgetMs Wall-clock budget of the whole descent; non-null exactly when $mode is
+     *        {@see ShrinkMode::Bounded}.
      * @param list<PropertyListener> $listeners
      * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int} The
      *         minimised arguments, the minimised draws (as `draw#N` pseudo-arguments), the number
@@ -553,8 +582,15 @@ final readonly class PropertyRunner
         array $tape,
         Random $random,
         ?int $maxShrinks,
+        ShrinkMode $mode,
+        ?int $budgetMs,
         array $listeners,
     ): array {
+        if ($mode === ShrinkMode::Off) {
+            return [$this->values($trees), $this->drawArguments($tape), 0, null, 0];
+        }
+
+        $deadlineNs = $budgetMs === null ? null : $this->clock->nanoseconds() + $budgetMs * 1_000_000;
         $current = $trees;
         $currentTape = $tape;
         $steps = 0;
@@ -568,7 +604,7 @@ final readonly class PropertyRunner
                 // Stop before accepting any further candidate once the cap is hit.
                 // Checking here (before the per-parameter search) makes maxShrinks=0
                 // return the original counterexample with zero accepted steps.
-                if ($this->capReached($maxShrinks, $currentTape, $steps)) {
+                if ($this->capReached($maxShrinks, $currentTape, $steps) || $this->budgetSpent($deadlineNs)) {
                     return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials];
                 }
 
@@ -611,7 +647,7 @@ final readonly class PropertyRunner
             $position = 0;
 
             while ($position < count($currentTape)) {
-                if ($this->capReached($maxShrinks, $currentTape, $steps)) {
+                if ($this->capReached($maxShrinks, $currentTape, $steps) || $this->budgetSpent($deadlineNs)) {
                     return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials];
                 }
 
@@ -677,6 +713,15 @@ final readonly class PropertyRunner
         $cap = $maxShrinks ?? ($tape === [] ? null : self::MAX_DRAW_SHRINK_STEPS);
 
         return $cap !== null && $steps >= $cap;
+    }
+
+    /**
+     * True once a bounded descent has run out of wall clock. A null deadline
+     * (every mode but {@see ShrinkMode::Bounded}) never expires.
+     */
+    private function budgetSpent(?int $deadlineNs): bool
+    {
+        return $deadlineNs !== null && $this->clock->nanoseconds() >= $deadlineNs;
     }
 
     /**

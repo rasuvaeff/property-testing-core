@@ -16,3 +16,34 @@ can cap the number of accepted shrink steps with `maxShrinks`:
 `maxShrinks: null` (the default) means no cap. `maxShrinks: 0` disables shrinking
 entirely and reports the original counterexample unchanged. The cap counts
 *accepted* shrink steps, not test executions.
+
+## Bounding the work, not the result
+
+That last sentence is the limitation: a descent spends most of its time on
+candidates it *rejects*, and `maxShrinks` never counts those. On a large
+collection the rejected candidates alone can cost more than the random phase
+that found the failure. The engine's `PropertyConfig` bounds the descent from
+the other side:
+
+```php
+use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
+use Rasuvaeff\PropertyTesting\Runner\ShrinkMode;
+
+new PropertyConfig(shrink: ShrinkMode::Off);   // report the counterexample as generated
+new PropertyConfig(shrinkBudgetMs: 500);       // descend for at most 500 ms
+```
+
+`ShrinkMode::Off` skips the descent: no trial, no shrink event, zero steps and
+zero trials on the counterexample. A `shrinkBudgetMs` resolves to
+`ShrinkMode::Bounded`, which stops the descent on wall clock and reports the
+best candidate it reached — not the original one.
+
+## What a budget costs
+
+A wall-clock budget is the one knob here that gives up determinism. How far the
+descent gets depends on how long the property body takes, so the same seed can
+minimise to a different counterexample on a fast machine and a slow one. That
+is a deliberate trade: the budget answers "the descent hung for a minute", not
+"reproduce this exactly". For reproduction, pin the seed or let the
+[regression corpus](/guide/regression-corpus) replay the recorded input — both
+stay deterministic.

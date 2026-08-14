@@ -78,10 +78,20 @@ $definition = new PropertyDefinition(
         maxDiscards: null,  // null -> runs * 10
         timeoutMs: null,    // per-run wall-clock deadline
         budgetMs: null,     // whole-random-phase wall-clock budget
+        shrink: null,           // ShrinkMode::Off|Bounded|Full; null -> Full
+        shrinkBudgetMs: null,   // wall-clock budget of the descent; implies ShrinkMode::Bounded
+        phases: null,           // list<Phase>; null -> Phase::all(); [] throws
     ),
     examples: [],               // list of positional tuples, run FIRST, unshrunk
     replayRegressions: true,    // adapters pass false when the seed is pinned
 );
+
+// Phase::Examples -> Corpus -> Random -> Shrink. Rules:
+//   [] throws; no Shrink == ShrinkMode::Off; Phase::Corpus gates REPLAY only
+//   (a fresh falsification is still stored) and ANDs with replayRegressions;
+//   no Random -> Passed with attempts: 0, checks: 0 and no coverage assessment.
+// A shrink budget trades determinism for a bounded descent: same seed, different
+// machine speed, possibly different minimal counterexample.
 
 $result = (new PropertyRunner())->run(
     $definition,

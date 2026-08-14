@@ -159,6 +159,7 @@ rejected at construction.
 | One of N | `Gen::oneOf($a, $b, $c)` or `Gen::elements([$a, $b, $c])` | |
 | Enum cases | `Gen::enum(MyEnum::class)` | |
 | Weighted choice | `Gen::frequency([[7, $common], [3, $rare]])` | |
+| Case that must LACK an operation | `Gen::swarm(Gen::oneOf(...))` / `Gen::swarm(Gen::commands(...))` | Swarm testing: each case uses a random non-empty subset of the variants; shrinking stays inside that subset |
 | UUID v4 | `Gen::uuid()` | |
 | Date/time | `Gen::datetime($min, $max)` | UTC `DateTimeImmutable` |
 | URL / email / IP | `Gen::url()`, `Gen::email()`, `Gen::ipv4()`, `Gen::ipv6()` | Domain-shaped, shrink meaningfully; `ipv6()` is canonical RFC 5952 text and shrinks to `::` |

@@ -63,6 +63,7 @@ never treats a non-void-returning method as a test.
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators) | shorter/simpler matches (via the compiled trees) |
 | `Gen::subset($values, $min, $max)` | `SubsetArbitrary`, subsets of a fixed ordered set — distinct members of `$values` in source order; duplicates in the source are rejected | size first (toward the empty set), then each kept element toward earlier source positions — the minimal subset is a short prefix |
 | `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing — see [State machine](/guide/state-machine/concepts) | drops command blocks, then simplifies each command |
+| `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants — see [Swarm testing](/guide/generators/swarm) | inside the subset the case came from, never widening back |
 
 Numeric generators (`int*`, `float*`) are **boundary-biased**: roughly one draw in
 five returns an in-range edge value (`0`, `±1`, `min`, `max` for ints; `0.0` or

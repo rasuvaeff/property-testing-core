@@ -9,9 +9,9 @@ description: "Weighted choice among several arbitraries: each `[weight, arbitrar
 
 `Rasuvaeff\PropertyTesting\Arbitrary\FrequencyArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/FrequencyArbitrary.php#L23) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/FrequencyArbitrary.php#L24) — **Version:** working tree
 
-**Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+**Implements:** [`Swarmable`](/api/classes/Swarmable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
 **Type parameters:**
 
@@ -50,4 +50,37 @@ toward a zero/empty/identity element) and every branch of the tree must
 be finite, so shrinking terminates.
 
 *Documentation inherited from [`ArbitraryInterface`](/api/classes/ArbitraryInterface).*
+
+### variantCount()
+
+```php
+variantCount(): int
+```
+
+How many variants this generator chooses among. Must be positive: a
+choice generator with nothing to choose from is not a choice, and
+[`Arbitrary\SwarmArbitrary`](/api/classes/Arbitrary/SwarmArbitrary) rejects a
+source that reports otherwise rather than drawing from an empty
+alphabet. Deliberately typed `int` and not `int<1, max>` — the bound is
+a promise implementations make, and a swarm still checks it at runtime
+because it cannot analyse the implementations it will be handed.
+
+*Documentation inherited from [`Swarmable`](/api/classes/Swarmable).*
+
+### withVariants()
+
+```php
+withVariants(list<int> $indices): Arbitrary\FrequencyArbitrary
+```
+
+The kept pairs carry their weights unchanged, so a swarm changes which
+branches exist and not how the surviving ones compete: the total weight
+shrinks with them, and a branch that was twice as likely as its
+neighbour still is.
+
+- `$indices` — Variant positions to keep, each in `[0, variantCount() - 1]`.
+
+**Throws:**
+
+- `InvalidArgumentException` — When an index falls outside the weighted branches.
 

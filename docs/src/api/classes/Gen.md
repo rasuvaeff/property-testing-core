@@ -9,7 +9,7 @@ description: "Facade with static factories for the built-in ArbitraryInterfaces.
 
 `Rasuvaeff\PropertyTesting\Gen`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L46) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L47) — **Version:** working tree
 
 Facade with static factories for the built-in ArbitraryInterfaces.
 
@@ -214,6 +214,28 @@ static oneOf(\TValue $values): Arbitrary\OneOfArbitrary
 ```
 
 Picks one of the given values at random.
+
+### swarm()
+
+```php
+static swarm(\ArbitraryInterface<\TValue> $arbitrary): Arbitrary\SwarmArbitrary
+```
+
+Swarm testing over a choice generator: each generated case may only use
+some of $arbitrary's variants, drawn afresh per case and never empty.
+
+- `$arbitrary` — A choice generator: `oneOf`(), `elements`(), `frequency`(), `commands`(), or any [`Swarmable`](/api/classes/Swarmable).
+
+```php
+Gen::swarm(Gen::oneOf('push', 'pop', 'ack'));   // one case sees, say, only 'pop' and 'ack'
+Gen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands
+```
+
+Uniform draws from the full alphabet make every case look alike, and the
+bugs that need an operation to be *absent* stay out of reach. Shrinking
+stays inside the subset the case came from, so such a finding keeps
+reproducing — see [`Arbitrary\SwarmArbitrary`](/api/classes/Arbitrary/SwarmArbitrary) for that and for the two
+consequences (scope of the draw, and what the counterexample reports).
 
 ### elements()
 

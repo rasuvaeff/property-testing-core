@@ -33,6 +33,9 @@
 [Vv]alidator
 [Ww]alkthrough
 flatMap
+# Surname of the Swarm Testing paper's first author (ISSTA 2012), cited on the
+# swarm page. A proper noun the dictionary does not carry.
+Groce
 PCRE
 PHPUnit
 PROPERTY_DB

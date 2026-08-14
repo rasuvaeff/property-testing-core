@@ -25,6 +25,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\RecordArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\StringArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\SubsetArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\SwarmArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\TupleArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UniqueArrayArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UuidArbitrary;
@@ -259,6 +260,33 @@ final class Gen
     public static function oneOf(mixed ...$values): OneOfArbitrary
     {
         return new OneOfArbitrary(...$values);
+    }
+
+    /**
+     * Swarm testing over a choice generator: each generated case may only use
+     * some of $arbitrary's variants, drawn afresh per case and never empty.
+     *
+     * ```php
+     * Gen::swarm(Gen::oneOf('push', 'pop', 'flush'));   // one case sees, say, only 'pop' and 'flush'
+     * Gen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands
+     * ```
+     *
+     * Uniform draws from the full alphabet make every case look alike, and the
+     * bugs that need an operation to be *absent* stay out of reach. Shrinking
+     * stays inside the subset the case came from, so such a finding keeps
+     * reproducing — see {@see SwarmArbitrary} for that and for the two
+     * consequences (scope of the draw, and what the counterexample reports).
+     *
+     * @template TValue
+     *
+     * @param ArbitraryInterface<TValue> $arbitrary A choice generator: {@see oneOf()}, {@see elements()},
+     *        {@see frequency()}, {@see commands()}, or any {@see \Rasuvaeff\PropertyTesting\Swarmable}.
+     *
+     * @return SwarmArbitrary<TValue>
+     */
+    public static function swarm(ArbitraryInterface $arbitrary): SwarmArbitrary
+    {
+        return new SwarmArbitrary($arbitrary);
     }
 
     /**

@@ -176,4 +176,51 @@ final class FrequencyArbitraryTest
     {
         new FrequencyArbitrary([[1.5, new IntArbitrary()]]);
     }
+
+    public function variantCountIsTheNumberOfWeightedBranches(): void
+    {
+        $arbitrary = new FrequencyArbitrary([
+            [1, new ConstantArbitrary('a')],
+            [9, new ConstantArbitrary('b')],
+        ]);
+
+        Assert::same($arbitrary->variantCount(), 2);
+    }
+
+    public function restrictingDropsBranchesAndLeavesTheSurvivingWeightsIntact(): void
+    {
+        // The dropped branch's weight leaves with it: 'b' stays nine times as
+        // likely as 'a', which it would not be if the copy renormalized or
+        // reused the original total.
+        $restricted = (new FrequencyArbitrary([
+            [1, new ConstantArbitrary('a')],
+            [9, new ConstantArbitrary('b')],
+            [90, new ConstantArbitrary('c')],
+        ]))->withVariants([0, 1]);
+
+        $random = new Random(9);
+        $counts = ['a' => 0, 'b' => 0];
+
+        for ($i = 0; $i < 2_000; ++$i) {
+            $value = $restricted->generate($random)->value;
+            Assert::true($value === 'a' || $value === 'b');
+            ++$counts[$value];
+        }
+
+        Assert::same($restricted->variantCount(), 2);
+        Assert::same($counts['a'] + $counts['b'], 2_000);
+        // Nine to one, with room for the sampling noise of 2000 draws.
+        Assert::true($counts['b'] > $counts['a'] * 5);
+    }
+
+    public function rejectsAVariantIndexOutsideTheBranches(): void
+    {
+        try {
+            (new FrequencyArbitrary([[1, new ConstantArbitrary('a')]]))->withVariants([1]);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Variant 1 is outside the 1 weighted branches of this generator');
+        }
+    }
 }

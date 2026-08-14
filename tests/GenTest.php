@@ -22,12 +22,14 @@ use Rasuvaeff\PropertyTesting\Arbitrary\NullableArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\RecordArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\StringArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\SwarmArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\TupleArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UniqueArrayArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UuidArbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Random;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\PushCommand;
 use Rasuvaeff\PropertyTesting\Tests\Support\Priority;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
@@ -783,6 +785,17 @@ final class GenTest
     public function frequencyReturnsFrequencyArbitrary(): void
     {
         Assert::instanceOf(Gen::frequency([[3, Gen::int()], [1, Gen::bool()]]), FrequencyArbitrary::class);
+    }
+
+    public function swarmReturnsSwarmArbitraryOverEveryChoiceGenerator(): void
+    {
+        Assert::instanceOf(Gen::swarm(Gen::oneOf('a', 'b')), SwarmArbitrary::class);
+        Assert::instanceOf(Gen::swarm(Gen::elements(['a', 'b'])), SwarmArbitrary::class);
+        Assert::instanceOf(Gen::swarm(Gen::frequency([[1, Gen::int()], [1, Gen::bool()]])), SwarmArbitrary::class);
+        Assert::instanceOf(
+            Gen::swarm(Gen::commands([], [Gen::constant(new PushCommand(1))])),
+            SwarmArbitrary::class,
+        );
     }
 
     public function intPositiveHasLowerBoundOne(): void

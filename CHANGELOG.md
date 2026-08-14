@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Added `Gen::swarm()` — swarm testing over a choice generator. Each generated
+  case may use only a random, non-empty subset of the wrapped generator's
+  variants, so the cases that never perform an operation at all stop being
+  astronomically rare: over 200 eight-command sequences, 4 avoided one command
+  by chance against 77 when swarmed. It accepts `Gen::oneOf()`,
+  `Gen::elements()`, `Gen::frequency()` and `Gen::commands()` through the new
+  `Swarmable` interface, which a custom choice generator can implement too;
+  surviving `frequency` branches keep their weights. Shrinking stays inside the
+  subset a case was drawn from and never widens back to the full alphabet —
+  without that, a counterexample found without some operation would shrink into
+  one containing it, and the finding would stop reproducing. The subset is
+  drawn once per generated value; swarming `Gen::commands()` with a non-zero
+  `minLength` can starve the sequence and throw `GenerationExhausted`, exactly
+  as an unrestricted generator starved by its model does.
+
 - Added the machine-readable distribution report. `PropertyFinished` now carries
   a `DistributionReport`: every `Classify` label as a `LabelShare` (count, share
   and the `cover()` threshold it was registered with), the discard tally, and

@@ -445,6 +445,13 @@ keep working after the migration.
 | Values | Every minimised argument is representable as data (null/scalars/arrays/enum cases/byte strings) | One run with the exact recorded input |
 | Seed | Objects, closures, or in-body `Gen::draw()` values in the counterexample | The whole random phase, re-run with that seed; fenced off by the sequence epoch |
 
+A corpus is the only memory a property has between runs, and most
+falsifications happen in CI — on a machine that is destroyed when the job ends.
+Carrying it across runs takes three steps, each of which exists because of a
+specific silent failure (a combined cache action does not save on a red job,
+which is exactly when the corpus was written); the recipe and the traps are in
+[The corpus as a CI artifact](https://rasuvaeff.github.io/property-testing-core/guide/regression-corpus#the-corpus-as-a-ci-artifact).
+
 A values entry stores the failing input **verbatim**, so a corpus directory is
 as sensitive as the data your generators produce. That is normally
 uninteresting — random ints and strings — but a generator seeded from a

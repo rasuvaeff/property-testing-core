@@ -106,7 +106,7 @@ final class CounterExampleTest
             $counterExample->toJson(),
             '{"seed":1,"runsBeforeFailure":0,"originalArguments":[],'
             . '"shrunkArguments":{"s":"<\ufffd"},"shrinkSteps":0,"shrinkTrials":0,'
-            . '"failure":null,"skips":0}',
+            . '"path":"","failure":null,"skips":0}',
         );
     }
 
@@ -153,6 +153,7 @@ final class CounterExampleTest
             failure: new \RuntimeException('x>50'),
             skips: 1,
             shrinkTrials: 5,
+            path: 'x:1/s:0',
         );
 
         Assert::same(

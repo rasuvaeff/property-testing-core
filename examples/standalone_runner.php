@@ -8,6 +8,7 @@ use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\Passed;
+use Rasuvaeff\PropertyTesting\Runner\PathFailed;
 use Rasuvaeff\PropertyTesting\Runner\Phase;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
@@ -129,6 +130,59 @@ if ($unshrunk instanceof Falsified) {
         $example->shrinkSteps,
         $example->shrinkTrials,
     );
+}
+
+// The counterexample carries the descent that produced it. Passed back with the
+// seed, the runner follows those steps instead of searching for them again: one
+// body execution per accepted step instead of one per candidate tried. It does
+// not skip the random phase — reaching the failing run still means running the
+// runs before it.
+if ($result instanceof Falsified) {
+    $replayed = $runner->run(
+        new PropertyDefinition(
+            id: 'standalone::everyIntStaysBelowHundred',
+            name: 'everyIntStaysBelowHundred',
+            generators: ['value' => Gen::intBetween(0, 10_000)],
+            parameterNames: ['value'],
+            config: new PropertyConfig(runs: 200, seed: 42, path: $result->counterExample()->path),
+        ),
+        new CallableTrialExecutor(static function (int $value): void {
+            if ($value >= 100) {
+                throw new RuntimeException(sprintf('%d is not below 100', $value));
+            }
+        }),
+    );
+
+    if ($replayed instanceof Falsified) {
+        echo sprintf(
+            "  path %s: same shrunk value %s in %d trial(s) instead of %d\n",
+            $result->counterExample()->path,
+            var_export($replayed->counterExample()->shrunkArguments['value'], true),
+            $replayed->counterExample()->shrinkTrials,
+            $result->counterExample()->shrinkTrials,
+        );
+    }
+}
+
+// A path that no longer applies is its own outcome, never a silent fresh
+// search: this one names a candidate the enumeration does not have.
+$stale = $runner->run(
+    new PropertyDefinition(
+        id: 'standalone::everyIntStaysBelowHundred',
+        name: 'everyIntStaysBelowHundred',
+        generators: ['value' => Gen::intBetween(0, 10_000)],
+        parameterNames: ['value'],
+        config: new PropertyConfig(runs: 200, seed: 42, path: 'value:99'),
+    ),
+    new CallableTrialExecutor(static function (int $value): void {
+        if ($value >= 100) {
+            throw new RuntimeException(sprintf('%d is not below 100', $value));
+        }
+    }),
+);
+
+if ($stale instanceof PathFailed) {
+    echo sprintf("  stale path: %s\n", $stale->exception->getMessage());
 }
 
 // Phases are a set: this run performs the pinned examples and nothing else, so

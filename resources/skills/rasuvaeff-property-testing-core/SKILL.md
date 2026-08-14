@@ -120,6 +120,16 @@ unset seed becomes a pure function of the property id, so a locally found bug
 reproduces in CI before any corpus entry exists, and a passing property keeps a
 stable input distribution. An explicit seed still wins.
 
+Finally `path`: the accepted steps of an earlier descent, reported on
+`CounterExample::$path` as `value:1/draw#1:0/value:3` and passed back with the
+seed to follow them instead of searching for them again — one body execution per
+step instead of one per candidate tried. It does not skip the random phase. A
+path indexes into shrink candidates, so a generator edit orphans it: that is a
+debugging aid, not a fixture, and the corpus is what survives a refactor. A
+stale path is its own outcome (`PathFailed`) naming the step that broke, never a
+silent fresh search, and any configuration that would make the path a no-op is
+rejected at construction.
+
 ## Choosing a generator
 
 | You want | Use | Notes |

@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Added shrink-path replay. A falsified property now reports the descent that
+  produced its counterexample on `CounterExample::$path` (and in `toArray()` /
+  `toJson()`) as `name:index` steps, where a step names a parameter — or an
+  in-body draw under its `draw#N` pseudo-name — and the shrink candidate that
+  was accepted. Passing it back through `PropertyConfig::$path`, together with
+  the seed it came from, follows those steps instead of searching for them
+  again: one body execution per accepted step instead of one per candidate
+  tried. It does not skip the random phase; reaching the failing run still
+  means executing the runs before it. A path is a debugging aid rather than a
+  fixture — its steps index into shrink candidates, so editing a generator
+  orphans it, which is what the regression corpus is for. A path that no longer
+  applies is reported as the new `PathFailed` result carrying the new
+  `PathViolationException`, naming the step that broke, and is never absorbed
+  into a fresh search. Configurations that would leave the path a silent no-op
+  (no explicit seed, a phase set without `Random` or `Shrink`, shrinking
+  switched off, a wall-clock shrink budget, a `maxShrinks` below the path's own
+  length, a malformed path) are rejected at construction. The failure message is unchanged: the path travels on the
+  counterexample, and printing it is the adapters' half of the 0.2 line.
 - Added `PropertyConfig::$derandomize`: with it set, a run without an explicit
   seed derives one from the property's id instead of drawing it at random, so
   the same property on the same code always selects the same inputs. The

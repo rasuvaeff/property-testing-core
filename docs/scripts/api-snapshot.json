@@ -2100,6 +2100,15 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "path",
+                "type": "string",
+                "description": "The accepted shrink steps that lead from the original arguments to the\nminimised ones, as `name:index` segments joined by `/`. Passed back through\n\\Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig::$path (together with the seed)\nit replays this descent instead of searching for it again. Empty when nothing shrank.\nA debugging aid, not a durable identifier: it indexes into each node's shrink\ncandidates, so editing a generator orphans it — the regression corpus is what survives\na refactor.",
+                "default": "''",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [],
@@ -2117,7 +2126,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 43
+                "startLine": 51
             },
             {
                 "name": "toJson",
@@ -2140,7 +2149,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 59
+                "startLine": 68
             },
             {
                 "name": "toExamplesCode",
@@ -2163,7 +2172,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 67
+                "startLine": 76
             }
         ],
         "constants": [],
@@ -4846,6 +4855,113 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\ShrinkPath",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The textual form of a shrink descent: the accepted steps of one\nminimisation, as `name:index` segments joined by `/`.",
+        "description": "A step names what was replaced (a parameter, or an in-body draw under its\n`draw#N` pseudo-name) and which candidate of that node's\n\\Rasuvaeff\\PropertyTesting\\Shrinkable::shrinks() enumeration was\naccepted. The index counts every candidate the enumeration yields, including\nones the descent skipped, so a recorded step means the same thing to the\nreplay that reads it back.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ],
+            "psalm-type": [
+                "Step = array{name: string, index: int<0, max>}"
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "parse",
+                "static": true,
+                "params": [
+                    {
+                        "name": "path",
+                        "type": "string",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "The recorded steps of a path.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "when the path is not a sequence of\n`name:index` segments — a malformed path is a typo in something the\ndeveloper pasted, and silently ignoring it would report a fresh search\nas a replay."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 44
+            },
+            {
+                "name": "format",
+                "static": true,
+                "params": [
+                    {
+                        "name": "steps",
+                        "type": "list<\\Rasuvaeff\\PropertyTesting\\Internal\\Step>",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "string",
+                "summary": "The textual form of recorded steps; the empty string when nothing was\naccepted, which is what a descent that found no improvement (or never\nran) reports.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 75
+            },
+            {
+                "name": "drawNumber",
+                "static": true,
+                "params": [
+                    {
+                        "name": "name",
+                        "type": "string",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?int",
+                "summary": "The one-based draw a `draw#N` step refers to, or null when the step names\na parameter. One-based because that is how a draw is reported; the caller\nturns it into a tape position.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 88
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/ShrinkPath.php#L22",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\Internal\\ValueCodec",
         "kind": "class",
         "isApi": false,
@@ -4916,6 +5032,117 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/ValueCodec.php#L24",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\PathViolationException",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": true,
+        "summary": "Reported when a run pinned to a shrink path cannot follow it: the candidate\na step names is gone, no longer differs from the value it would replace, or\nno longer falsifies the property.",
+        "description": "A path indexes into each node's shrink candidates, so any edit to a\ngenerator — even reordering the candidates of one — orphans it. That is the\nexpected end of a path's life, and it is reported rather than absorbed: had\nthe runner fallen back to a fresh search, the answer would look exactly like\na successful replay while reproducing a different descent.\n\nThe property still failed when this is raised; what failed is the\nreproduction, not the property. For a regression that has to survive a\nrefactor, record it in the corpus instead.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": "RuntimeException",
+        "implements": [
+            "Stringable",
+            "Throwable"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "path",
+                "type": "string",
+                "description": "The path the run was pinned to.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "step",
+                "type": "int",
+                "description": "One-based position of the segment that could not be followed.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "segment",
+                "type": "string",
+                "description": "The segment itself, in its `name:index` form.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "reason",
+                "type": "string",
+                "description": "Why it could not be followed, as a noun phrase.",
+                "default": null,
+                "promoted": false,
+                "promotedVisibility": "private",
+                "readonly": false
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "getPath",
+                "static": false,
+                "params": [],
+                "returnType": "string",
+                "summary": "The path the run was pinned to, as it was configured.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 53
+            },
+            {
+                "name": "getStep",
+                "static": false,
+                "params": [],
+                "returnType": "int",
+                "summary": "One-based position of the segment that could not be followed.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 61
+            },
+            {
+                "name": "getSegment",
+                "static": false,
+                "params": [],
+                "returnType": "string",
+                "summary": "The segment that could not be followed, in its `name:index` form.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 69
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/PathViolationException.php#L26",
         "implementedBy": []
     },
     {
@@ -6665,6 +6892,61 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\PathFailed",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "A run pinned to a shrink path found its falsification but could not follow\nthe recorded descent. Its own outcome, deliberately: falling back to a fresh\nsearch would report a counterexample the path never reached, and reporting a\npass would hide a property that did fail.",
+        "description": "",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\PropertyResult"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "exception",
+                "type": "\\Rasuvaeff\\PropertyTesting\\PathViolationException",
+                "description": "Which step of the pinned path could not be\nfollowed, and why.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "failure",
+                "static": false,
+                "params": [],
+                "returnType": "Throwable",
+                "summary": "The engine exception describing the failure — the same type and message\nthe package has always reported (\\Rasuvaeff\\PropertyTesting\\PropertyViolationException\nfor a falsification, and so on). Null for a pass.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\PropertyResult",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 28
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PathFailed.php#L17",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\Runner\\Phase",
         "kind": "enum",
         "isApi": true,
@@ -6853,6 +7135,15 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "path",
+                "type": "?string",
+                "description": "The shrink descent of an earlier failure, as reported by\n\\Rasuvaeff\\PropertyTesting\\CounterExample::$path: the runner follows those steps\ninstead of searching for them again, executing the body once per recorded step instead\nof once per candidate tried. Null searches as usual. It needs an explicit $seed (the\nsteps only mean anything against the run that produced them), and it refuses every\nconfiguration that would leave it a silent no-op: a descent switched off, capped below\nthe path's own length, or bounded by a wall clock — the last one because a path exists\nto be deterministic and a budget exists not to be.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [
@@ -6891,12 +7182,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 113
+                "startLine": 128
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyConfig.php#L15",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyConfig.php#L17",
         "implementedBy": []
     },
     {
@@ -7035,6 +7326,7 @@
             "Rasuvaeff\\PropertyTesting\\Runner\\GaveUp",
             "Rasuvaeff\\PropertyTesting\\Runner\\GenerationFailed",
             "Rasuvaeff\\PropertyTesting\\Runner\\Passed",
+            "Rasuvaeff\\PropertyTesting\\Runner\\PathFailed",
             "Rasuvaeff\\PropertyTesting\\Runner\\RegressionFailed",
             "Rasuvaeff\\PropertyTesting\\Runner\\TimeBudgetExceeded"
         ]
@@ -7111,12 +7403,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 75
+                "startLine": 77
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L53",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L55",
         "implementedBy": []
     },
     {

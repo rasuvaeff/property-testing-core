@@ -11,7 +11,7 @@ description: "Structured outcome of a property run."
 
 **Interface** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyResult.php#L28) — **Version:** working tree
 
-**Implemented by:** [`Runner\CoverageFailed`](/api/classes/Runner/CoverageFailed), [`Runner\DeadlineExceeded`](/api/classes/Runner/DeadlineExceeded), [`Runner\ExampleFailed`](/api/classes/Runner/ExampleFailed), [`Runner\Falsified`](/api/classes/Runner/Falsified), [`Runner\GaveUp`](/api/classes/Runner/GaveUp), [`Runner\GenerationFailed`](/api/classes/Runner/GenerationFailed), [`Runner\Passed`](/api/classes/Runner/Passed), [`Runner\RegressionFailed`](/api/classes/Runner/RegressionFailed), [`Runner\TimeBudgetExceeded`](/api/classes/Runner/TimeBudgetExceeded)
+**Implemented by:** [`Runner\CoverageFailed`](/api/classes/Runner/CoverageFailed), [`Runner\DeadlineExceeded`](/api/classes/Runner/DeadlineExceeded), [`Runner\ExampleFailed`](/api/classes/Runner/ExampleFailed), [`Runner\Falsified`](/api/classes/Runner/Falsified), [`Runner\GaveUp`](/api/classes/Runner/GaveUp), [`Runner\GenerationFailed`](/api/classes/Runner/GenerationFailed), [`Runner\Passed`](/api/classes/Runner/Passed), [`Runner\PathFailed`](/api/classes/Runner/PathFailed), [`Runner\RegressionFailed`](/api/classes/Runner/RegressionFailed), [`Runner\TimeBudgetExceeded`](/api/classes/Runner/TimeBudgetExceeded)
 
 Structured outcome of a property run. The runner returns a result — it
 never throws for a property outcome, exits, or prints; how a failure

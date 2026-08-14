@@ -189,6 +189,70 @@ final class PropertyConfigTest
             static fn(): PropertyConfig => new PropertyConfig(phases: ['random' => Phase::Random]),
             'Phases must be a list of Phase cases',
         ];
+
+        // Every rejection below describes a run that would silently search
+        // instead of replaying — the one outcome a replay tool must not have,
+        // because a fresh descent looks exactly like a followed one.
+        yield 'a path without a seed' => [
+            static fn(): PropertyConfig => new PropertyConfig(path: 'value:1'),
+            'Replaying a shrink path requires an explicit seed',
+        ];
+
+        // A derived seed is stable, but a path is always copied from a message
+        // that printed the seed beside it: one rule, no special case.
+        yield 'a path with a derived seed only' => [
+            static fn(): PropertyConfig => new PropertyConfig(derandomize: true, path: 'value:1'),
+            'Replaying a shrink path requires an explicit seed',
+        ];
+
+        yield 'a path without the random phase' => [
+            static fn(): PropertyConfig => new PropertyConfig(seed: 1, phases: [Phase::Shrink], path: 'value:1'),
+            'Replaying a shrink path requires the random phase',
+        ];
+
+        yield 'a path with shrinking switched off' => [
+            static fn(): PropertyConfig => new PropertyConfig(seed: 1, shrink: ShrinkMode::Off, path: 'value:1'),
+            'Replaying a shrink path requires the shrink phase',
+        ];
+
+        yield 'a path without the shrink phase' => [
+            static fn(): PropertyConfig => new PropertyConfig(seed: 1, phases: [Phase::Random], path: 'value:1'),
+            'Replaying a shrink path requires the shrink phase',
+        ];
+
+        // A path is deterministic; a wall-clock budget is deliberately not.
+        yield 'a path bounded by a wall clock' => [
+            static fn(): PropertyConfig => new PropertyConfig(seed: 1, shrinkBudgetMs: 10, path: 'value:1'),
+            'Replaying a shrink path cannot be combined with a shrink budget',
+        ];
+
+        yield 'a path longer than the shrink cap' => [
+            static fn(): PropertyConfig => new PropertyConfig(seed: 1, maxShrinks: 1, path: 'value:1/value:2'),
+            'Shrink path has 2 step(s), more than the max shrinks cap of 1',
+        ];
+
+        yield 'a malformed path' => [
+            static fn(): PropertyConfig => new PropertyConfig(seed: 1, path: 'value'),
+            'Invalid shrink path "value"',
+        ];
+
+        yield 'an empty path' => [
+            static fn(): PropertyConfig => new PropertyConfig(seed: 1, path: ''),
+            'Invalid shrink path ""',
+        ];
+    }
+
+    public function aPathExactlyAsLongAsTheShrinkCapIsAccepted(): void
+    {
+        // The guard is "> cap": a path that spends the whole cap is replayable.
+        $config = new PropertyConfig(seed: 1, maxShrinks: 2, path: 'value:1/value:2');
+
+        Assert::same($config->path, 'value:1/value:2');
+    }
+
+    public function noPathIsTheDefault(): void
+    {
+        Assert::null((new PropertyConfig())->path);
     }
 
     public function theLargestUsableShrinkBudgetIsAccepted(): void

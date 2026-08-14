@@ -9,7 +9,7 @@ description: "The framework-agnostic property engine: runs the explicit examples
 
 `Rasuvaeff\PropertyTesting\Runner\PropertyRunner`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L53) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L55) — **Version:** working tree
 
 The framework-agnostic property engine: runs the explicit examples, replays
 the regression corpus, generates random inputs until the required number of

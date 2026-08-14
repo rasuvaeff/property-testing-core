@@ -138,6 +138,7 @@ carries the engine's own exception type with the established message format:
 | `GenerationFailed` | A generator could not produce a valid value | `GenerationExhausted` |
 | `ExampleFailed` | An explicit example failed (examples run first, unshrunk) | `ExampleViolationException` |
 | `RegressionFailed` | A recorded corpus entry still fails | `RegressionViolationException` |
+| `PathFailed` | The run falsified the property but could not follow the pinned shrink `path` | `PathViolationException` |
 
 Configuration errors (`runs < 1`, a missing generator, mismatched parameter
 names) remain exceptions — they are programmer errors, not verdicts about the
@@ -277,6 +278,7 @@ no environment:
 | `shrinkBudgetMs` | `null` | Wall-clock budget for the shrink descent; implies `ShrinkMode::Bounded` |
 | `phases` | `null` | Stages to perform (`Phase::Examples`/`Corpus`/`Random`/`Shrink`); null runs all of them |
 | `derandomize` | `false` | Derive an unset seed from the property id instead of drawing one |
+| `path` | `null` | Replay a recorded shrink descent instead of searching for it; needs an explicit `seed` |
 
 ### Derandomized runs
 
@@ -295,6 +297,36 @@ property keeps a stable input distribution — which is what makes distribution
 numbers comparable between commits. An explicit `seed` always wins over the
 flag. The seed→values mapping is untouched: this changes which seed a run
 picks, never what that seed produces.
+
+### Replaying a shrink path
+
+A descent spends most of its work on candidates it rejects: the engine's own
+smallest integer property accepts nine steps after trying thirty-nine. The
+counterexample carries the accepted steps, so a rerun can follow them instead of
+searching for them again:
+
+```php
+$counterExample->path;                                  // 'value:1/value:1/value:3'
+
+new PropertyConfig(seed: 42, path: 'value:1/value:1/value:3');
+```
+
+Each step names a node — a parameter, or an in-body draw under its `draw#N`
+pseudo-name — and which candidate of that node's shrink enumeration was
+accepted. The replay runs the body once per step rather than once per candidate.
+It does not skip the random phase: reaching the failing run means executing the
+runs before it, because a body can consume randomness through `Gen::draw()` and
+discards depend on the body.
+
+A path is a debugging aid, not a fixture. Its steps are indices into shrink
+candidates, so editing a generator orphans it — that is what the regression
+corpus is for. A path that no longer applies is reported as its own outcome
+(`PathFailed`) naming the step that broke, never absorbed into a fresh search:
+searching quietly would return a counterexample that looks exactly like a
+successful replay. Configurations that would leave the path a no-op — no
+explicit seed, a phase set without `Random` or `Shrink`, shrinking switched off, a
+wall-clock shrink budget, a `maxShrinks` below the path's length, a malformed
+path — are rejected at construction.
 
 ### Shrink modes and phases
 

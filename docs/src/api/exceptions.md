@@ -16,6 +16,7 @@ Every `@api` type across all three packages that implements `Throwable`.
 | [`ExampleViolationException`](/api/classes/ExampleViolationException) | core | `RuntimeException` | Reported when an explicit example (a fixed input declared via the property's `Examples` method)… |
 | [`GaveUpException`](/api/classes/GaveUpException) | core | `RuntimeException` | Thrown (as the failure of a property) when discarded inputs exceed the configured budget before… |
 | [`GenerationExhausted`](/api/classes/GenerationExhausted) | core | `RuntimeException` | Thrown when a bounded-attempt generator cannot produce a value that satisfies its constraint… |
+| [`PathViolationException`](/api/classes/PathViolationException) | core | `RuntimeException` | Reported when a run pinned to a shrink path cannot follow it: the candidate a step names is gone,… |
 | [`PropertyViolationException`](/api/classes/PropertyViolationException) | core | `RuntimeException` | Reported when a property is falsified. |
 | [`RegressionViolationException`](/api/classes/RegressionViolationException) | core | `RuntimeException` | Reported when a recorded regression fails again: the minimised input of an earlier failure,… |
 | [`PostconditionViolation`](/api/classes/StateMachine/PostconditionViolation) | core | `RuntimeException` | Thrown by StateMachine::check() when a command's Command::postCondition() returns false. |

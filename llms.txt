@@ -83,6 +83,10 @@ $definition = new PropertyDefinition(
         phases: null,           // list<Phase>; null -> Phase::all(); [] throws
         derandomize: false,     // true -> an unset seed is derived from the property id
                                 // (explicit seed still wins; seed->values mapping unchanged)
+        path: null,             // replay a recorded descent: 'value:1/draw#1:0/value:3'
+                                // needs an explicit seed; rejects every no-op config
+                                // (no seed, no random/shrink phase, shrinkBudgetMs, maxShrinks
+                                // below its length, malformed); a stale path -> PathFailed
     ),
     examples: [],               // list of positional tuples, run FIRST, unshrunk
     replayRegressions: true,    // adapters pass false when the seed is pinned
@@ -119,7 +123,7 @@ Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
 - `Falsified` — carries `PropertyViolationException`;
   `counterExample(): CounterExample` (`seed`, `runsBeforeFailure`,
   `originalArguments`, `shrunkArguments`, `shrinkSteps`, `shrinkTrials`,
-  `skips`, `failure`, `toArray()`, `toJson()`, `toExamplesCode()`).
+  `skips`, `path`, `failure`, `toArray()`, `toJson()`, `toExamplesCode()`).
 - `GaveUp` — `GaveUpException` + `RunStatistics` (discard budget exhausted).
 - `CoverageFailed` — `CoverageViolationException` + `RunStatistics`
   (a `Classify::cover()` requirement missed although every run passed).
@@ -129,6 +133,9 @@ Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
 - `ExampleFailed` — `ExampleViolationException` (explicit example failed).
 - `RegressionFailed` — `RegressionViolationException` (`getArguments()`,
   `getSeed()`) — a corpus values entry still fails.
+- `PathFailed` — `PathViolationException` (`getPath()`, `getStep()`,
+  `getSegment()`) — the property failed, but the pinned `path` no longer
+  applies; never a silent fresh search.
 
 Executor seam: implement `TrialExecutor` (`execute(array $arguments):
 TrialOutcome`) to adapt any framework; `TrialOutcome::passed() / failed($e) /

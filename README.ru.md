@@ -94,7 +94,7 @@ if ($result instanceof Falsified) {
 
 Сообщение об ошибке рендерит контрпример:
 
-```
+```text
 Property falsified after 0 successful run(s); seed=42
   Original: value=54
   Shrunk:   value=100 (3 shrink step(s), 11 trial(s))
@@ -455,7 +455,7 @@ Id property ключует и события, которые агрегируе�
 property. Адаптер, выводящий его из бэктрейса, получает это для метода теста и
 теряет для замыкания: стабильного имени у замыкания в PHP никогда не было.
 
-```
+```text
 PHP 8.3   Suite::{closure}
 PHP 8.4+  Suite::{closure:/app/tests/StackTest.php:19}
 ```

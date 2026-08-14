@@ -19,7 +19,7 @@ counterexample. Both need it to name the same property tomorrow. An adapter
 that derives the id from a backtrace gets that for a test method and loses
 it for a closure, because PHP has never had a stable name for one:
 
-```
+```text
 PHP 8.3   Suite::{closure}
 PHP 8.4+  Suite::{closure:/app/tests/StackTest.php:19}
 ```

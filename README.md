@@ -92,7 +92,7 @@ if ($result instanceof Falsified) {
 
 The failure message renders the counterexample:
 
-```
+```text
 Property falsified after 0 successful run(s); seed=42
   Original: value=54
   Shrunk:   value=100 (3 shrink step(s), 11 trial(s))
@@ -453,7 +453,7 @@ property tomorrow. An adapter that derives it from a backtrace gets that for a
 test method and loses it for a closure, because PHP has never had a stable
 name for one:
 
-```
+```text
 PHP 8.3   Suite::{closure}
 PHP 8.4+  Suite::{closure:/app/tests/StackTest.php:19}
 ```

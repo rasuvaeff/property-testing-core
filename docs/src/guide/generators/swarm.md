@@ -25,7 +25,7 @@ The difference is not subtle. From
 [`examples/swarm.php`](https://github.com/rasuvaeff/property-testing-core/blob/master/examples/swarm.php),
 over 200 generated cases of 8 commands each:
 
-```
+```text
 8-command sequences that never used 'flush', out of 200:
   plain commands: 4
   swarmed:        77

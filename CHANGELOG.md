@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Documented the corpus as a CI artifact: the three GitHub Actions steps that
+  carry a corpus across runs, and why each exists. The combined cache action
+  declares `post-if: success()`, so it never saves on the red job that just
+  recorded the counterexample; `run_attempt` has to be in the key or a re-run
+  writes nothing; `restore-keys` is what actually carries the corpus forward.
+  Plus the two patterns beyond a cache — a committed fixture, and a store
+  shared between CI and developers — and what must not be committed or shared.
+
 ## 0.2.1 — 2026-08-14
 
 - The falsification message now ends with the shrink path

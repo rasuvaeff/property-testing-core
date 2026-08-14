@@ -4190,7 +4190,7 @@
                 "params": [],
                 "returnType": "Rasuvaeff\\PropertyTesting\\Arbitrary\\MappedArbitrary",
                 "summary": "IPv6 address strings in the canonical text form of RFC 5952: lowercase\nhex, leading zeros stripped, and the longest run of zero groups\ncompressed to `::` (leftmost on a tie, never a single group).",
-                "description": "Each of the eight 16-bit groups shrinks toward 0 through its own integer\ntree, so the descent walks through the shortened forms parsers get wrong\n— `2001:db8::1`, `fe80::`, `::1` — and terminates at `::`.\n\nIPv4-mapped addresses (`::ffff:1.2.3.4`), zone ids (`%eth0`) and the\nbracketed URL form (`[::1]:8080`) are out of scope; \\Rasuvaeff\\PropertyTesting\\url() emits no\nIPv6 host either.",
+                "description": "Each of the eight 16-bit groups shrinks toward 0 through its own integer\ntree, so the descent walks through the shortened forms parsers get wrong\n— `2001:db8::1`, `fe80::`, `::1` — and terminates at `::`.\n\nIPv4-mapped addresses (`::ffff:1.2.3.4`), zone ids (`%eth0`) and the\nbracketed URL form (`[::1]:8080`) are out of scope; `Gen::url()` emits\nno IPv6 host either.",
                 "throws": [],
                 "throwsInBody": false,
                 "inheritedFrom": null,
@@ -4212,7 +4212,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 597
+                "startLine": 599
             },
             {
                 "name": "url",
@@ -4227,7 +4227,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 621
+                "startLine": 623
             },
             {
                 "name": "json",
@@ -4250,7 +4250,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 649
+                "startLine": 651
             },
             {
                 "name": "jsonString",
@@ -4273,7 +4273,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 675
+                "startLine": 677
             },
             {
                 "name": "regex",
@@ -4303,7 +4303,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 699
+                "startLine": 701
             },
             {
                 "name": "stringMatching",
@@ -4333,7 +4333,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 712
+                "startLine": 714
             },
             {
                 "name": "commands",
@@ -4377,7 +4377,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 732
+                "startLine": 734
             },
             {
                 "name": "sample",
@@ -4414,7 +4414,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 752
+                "startLine": 754
             },
             {
                 "name": "sampleShrinks",
@@ -4451,7 +4451,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 781
+                "startLine": 783
             }
         ],
         "constants": [],
@@ -4713,7 +4713,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Renders eight 16-bit groups as the canonical IPv6 text form of RFC 5952:\nlowercase hex, leading zeros stripped, and the longest run of zero groups\nreplaced by `::` — leftmost run on a tie, and never a run of a single group.",
-        "description": "The canonical form is what \\inet_ntop() produces, which is why tests\ncan use it as an independent oracle; the implementation here is deliberately\nhand-written so that oracle stays independent.",
+        "description": "The canonical form is what `inet_ntop()` produces, which is why tests\ncan use it as an independent oracle; the implementation here is deliberately\nhand-written so that oracle stays independent.",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -4734,7 +4734,7 @@
                     {
                         "name": "groups",
                         "type": "non-empty-list<int>",
-                        "description": "exactly \\Rasuvaeff\\PropertyTesting\\Internal\\GROUPS values in `[0, 65535]`",
+                        "description": "exactly `self::GROUPS` values in `[0, 65535]`",
                         "default": null,
                         "variadic": false
                     }

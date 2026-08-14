@@ -427,8 +427,8 @@ tree, so the descent walks through the shortened forms parsers get wrong
 — `2001:db8::1`, `fe80::`, `::1` — and terminates at `::`.
 
 IPv4-mapped addresses (`::ffff:1.2.3.4`), zone ids (`%eth0`) and the
-bracketed URL form (`[::1]:8080`) are out of scope; `url`() emits no
-IPv6 host either.
+bracketed URL form (`[::1]:8080`) are out of scope; `Gen::url()` emits
+no IPv6 host either.
 
 ### email()
 

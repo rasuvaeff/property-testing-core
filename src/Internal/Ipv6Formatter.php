@@ -9,7 +9,7 @@ namespace Rasuvaeff\PropertyTesting\Internal;
  * lowercase hex, leading zeros stripped, and the longest run of zero groups
  * replaced by `::` — leftmost run on a tie, and never a run of a single group.
  *
- * The canonical form is what {@see \inet_ntop()} produces, which is why tests
+ * The canonical form is what `inet_ntop()` produces, which is why tests
  * can use it as an independent oracle; the implementation here is deliberately
  * hand-written so that oracle stays independent.
  *
@@ -22,7 +22,7 @@ final class Ipv6Formatter
     private const int MIN_COMPRESSED_RUN = 2;
 
     /**
-     * @param non-empty-list<int> $groups exactly {@see GROUPS} values in `[0, 65535]`
+     * @param non-empty-list<int> $groups exactly `self::GROUPS` values in `[0, 65535]`
      *
      * @return non-empty-string
      */
@@ -45,7 +45,7 @@ final class Ipv6Formatter
     /**
      * Start index and length of the longest run of zero groups worth
      * compressing, or null when there is none: no zero group at all, or only
-     * runs shorter than {@see MIN_COMPRESSED_RUN}, which RFC 5952 keeps
+     * runs shorter than `self::MIN_COMPRESSED_RUN`, which RFC 5952 keeps
      * spelled out. The leftmost run wins when several share the greatest
      * length.
      *

@@ -130,7 +130,18 @@ final class PropertyViolationExceptionTest
             path: 'x:1/x:3',
         ));
 
-        Assert::string($exception->getMessage())->contains("Failure:  boom\n  Path:     x:1/x:3");
+        // The whole message, so "last line" is asserted rather than "somewhere
+        // after the failure": a line appended below the path would pass a
+        // contains() check and break the copy-one-line replay this exists for.
+        Assert::same(
+            $exception->getMessage(),
+            "Property falsified after 3 successful run(s); seed=7\n"
+                . "  Original: x=51\n"
+                . "  Shrunk:   x=1 (2 shrink step(s))\n"
+                . "  Changed:  x=51 -> 1\n"
+                . "  Failure:  boom\n"
+                . '  Path:     x:1/x:3',
+        );
     }
 
     public function omitsThePathLineWhenNothingShrank(): void

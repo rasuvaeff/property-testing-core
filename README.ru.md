@@ -357,14 +357,14 @@ seed→значения не меняется: меняется только т�
 ним, а не искать их заново:
 
 ```text
-  Failure:  x>50
-  Path:     x:2/x:2/x:4/x:4
+  Failure:  value>50
+  Path:     value:2/value:2/value:4/value:4
 ```
 
 ```php
-$counterExample->path;                                  // 'value:1/value:1/value:3'
+$counterExample->path;                    // 'value:2/value:2/value:4/value:4'
 
-new PropertyConfig(seed: 42, path: 'value:1/value:1/value:3');
+new PropertyConfig(seed: 1, path: 'value:2/value:2/value:4/value:4');
 ```
 
 Прогон, который ничего не зашринкал, пути не имеет — строка не печатается

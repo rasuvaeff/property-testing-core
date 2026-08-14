@@ -79,9 +79,9 @@ final readonly class PropertyConfig
         if ($shrinkBudgetMs !== null && $shrinkBudgetMs < 1) {
             throw new \InvalidArgumentException('Shrink budget must be greater than or equal to 1 millisecond');
         }
-        if ($shrinkBudgetMs !== null && $shrinkBudgetMs > self::maxShrinkBudgetMs()) {
+        if ($shrinkBudgetMs !== null && $shrinkBudgetMs > $this->maxShrinkBudgetMs()) {
             throw new \InvalidArgumentException(
-                'Shrink budget must be less than or equal to ' . self::maxShrinkBudgetMs() . ' milliseconds',
+                'Shrink budget must be less than or equal to ' . $this->maxShrinkBudgetMs() . ' milliseconds',
             );
         }
         if ($shrink === ShrinkMode::Bounded && $shrinkBudgetMs === null) {
@@ -92,11 +92,11 @@ final readonly class PropertyConfig
                 throw new \InvalidArgumentException('Phases must not be empty');
             }
 
-            self::assertPhases($phases);
+            $this->assertPhases($phases);
         }
 
         $this->phases = $phases ?? Phase::all();
-        $this->shrink = self::resolveShrinkMode($shrink, $shrinkBudgetMs, $this->phases);
+        $this->shrink = $this->resolveShrinkMode($shrink, $shrinkBudgetMs, $this->phases);
     }
 
     /**
@@ -117,7 +117,7 @@ final readonly class PropertyConfig
      * reserved for the budget, which leaves the other half for the clock —
      * more than any monotonic source can ever report.
      */
-    private static function maxShrinkBudgetMs(): int
+    private function maxShrinkBudgetMs(): int
     {
         return intdiv(PHP_INT_MAX, 2_000_000);
     }
@@ -131,7 +131,7 @@ final readonly class PropertyConfig
      *
      * @param array<array-key, mixed> $phases
      */
-    private static function assertPhases(array $phases): void
+    private function assertPhases(array $phases): void
     {
         if (!array_is_list($phases)) {
             throw new \InvalidArgumentException('Phases must be a list of Phase cases');
@@ -152,7 +152,7 @@ final readonly class PropertyConfig
      *
      * @param non-empty-list<Phase> $phases
      */
-    private static function resolveShrinkMode(?ShrinkMode $shrink, ?int $shrinkBudgetMs, array $phases): ShrinkMode
+    private function resolveShrinkMode(?ShrinkMode $shrink, ?int $shrinkBudgetMs, array $phases): ShrinkMode
     {
         if ($shrink === ShrinkMode::Off || !in_array(Phase::Shrink, $phases, strict: true)) {
             return ShrinkMode::Off;

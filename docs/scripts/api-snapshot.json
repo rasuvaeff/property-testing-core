@@ -3311,7 +3311,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 58
+                "startLine": 59
             },
             {
                 "name": "intBetween",
@@ -3341,7 +3341,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 67
+                "startLine": 68
             },
             {
                 "name": "intPositive",
@@ -3356,7 +3356,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 75
+                "startLine": 76
             },
             {
                 "name": "float",
@@ -3371,7 +3371,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 83
+                "startLine": 84
             },
             {
                 "name": "floatBetween",
@@ -3401,7 +3401,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 88
+                "startLine": 89
             },
             {
                 "name": "bool",
@@ -3416,7 +3416,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 93
+                "startLine": 94
             },
             {
                 "name": "string",
@@ -3431,7 +3431,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 101
+                "startLine": 102
             },
             {
                 "name": "stringAscii",
@@ -3446,7 +3446,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 109
+                "startLine": 110
             },
             {
                 "name": "stringOf",
@@ -3476,7 +3476,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 118
+                "startLine": 119
             },
             {
                 "name": "char",
@@ -3491,7 +3491,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 126
+                "startLine": 127
             },
             {
                 "name": "stringFrom",
@@ -3528,7 +3528,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 136
+                "startLine": 137
             },
             {
                 "name": "bytes",
@@ -3558,7 +3558,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 145
+                "startLine": 146
             },
             {
                 "name": "arrayOf",
@@ -3595,7 +3595,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 159
+                "startLine": 160
             },
             {
                 "name": "nonEmptyArrayOf",
@@ -3625,7 +3625,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 173
+                "startLine": 174
             },
             {
                 "name": "uniqueArrayOf",
@@ -3662,7 +3662,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 191
+                "startLine": 192
             },
             {
                 "name": "subset",
@@ -3699,7 +3699,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 212
+                "startLine": 213
             },
             {
                 "name": "dictOf",
@@ -3743,7 +3743,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 231
+                "startLine": 232
             },
             {
                 "name": "record",
@@ -3766,7 +3766,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 244
+                "startLine": 245
             },
             {
                 "name": "oneOf",
@@ -3789,7 +3789,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 258
+                "startLine": 259
             },
             {
                 "name": "elements",
@@ -3812,7 +3812,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 272
+                "startLine": 273
             },
             {
                 "name": "constant",
@@ -3835,7 +3835,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 286
+                "startLine": 287
             },
             {
                 "name": "enum",
@@ -3858,7 +3858,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 301
+                "startLine": 302
             },
             {
                 "name": "floatSpecial",
@@ -3873,7 +3873,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 323
+                "startLine": 324
             },
             {
                 "name": "intRange",
@@ -3903,7 +3903,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 345
+                "startLine": 346
             },
             {
                 "name": "recursive",
@@ -3940,7 +3940,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 366
+                "startLine": 367
             },
             {
                 "name": "nullable",
@@ -3963,7 +3963,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 394
+                "startLine": 395
             },
             {
                 "name": "map",
@@ -3993,7 +3993,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 412
+                "startLine": 413
             },
             {
                 "name": "flatMap",
@@ -4023,7 +4023,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 432
+                "startLine": 433
             },
             {
                 "name": "filter",
@@ -4053,7 +4053,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 447
+                "startLine": 448
             },
             {
                 "name": "draw",
@@ -4076,7 +4076,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 484
+                "startLine": 485
             },
             {
                 "name": "tuple",
@@ -4099,7 +4099,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 497
+                "startLine": 498
             },
             {
                 "name": "frequency",
@@ -4122,7 +4122,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 513
+                "startLine": 514
             },
             {
                 "name": "uuid",
@@ -4137,7 +4137,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 524
+                "startLine": 525
             },
             {
                 "name": "datetime",
@@ -4167,7 +4167,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 534
+                "startLine": 535
             },
             {
                 "name": "ipv4",
@@ -4182,7 +4182,22 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 545
+                "startLine": 546
+            },
+            {
+                "name": "ipv6",
+                "static": true,
+                "params": [],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Arbitrary\\MappedArbitrary",
+                "summary": "IPv6 address strings in the canonical text form of RFC 5952: lowercase\nhex, leading zeros stripped, and the longest run of zero groups\ncompressed to `::` (leftmost on a tie, never a single group).",
+                "description": "Each of the eight 16-bit groups shrinks toward 0 through its own integer\ntree, so the descent walks through the shortened forms parsers get wrong\n— `2001:db8::1`, `fe80::`, `::1` — and terminates at `::`.\n\nIPv4-mapped addresses (`::ffff:1.2.3.4`), zone ids (`%eth0`) and the\nbracketed URL form (`[::1]:8080`) are out of scope; `Gen::url()` emits\nno IPv6 host either.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 575
             },
             {
                 "name": "email",
@@ -4197,7 +4212,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 566
+                "startLine": 599
             },
             {
                 "name": "url",
@@ -4212,7 +4227,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 590
+                "startLine": 623
             },
             {
                 "name": "json",
@@ -4235,7 +4250,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 618
+                "startLine": 651
             },
             {
                 "name": "jsonString",
@@ -4258,7 +4273,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 644
+                "startLine": 677
             },
             {
                 "name": "regex",
@@ -4288,7 +4303,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 668
+                "startLine": 701
             },
             {
                 "name": "stringMatching",
@@ -4318,7 +4333,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 681
+                "startLine": 714
             },
             {
                 "name": "commands",
@@ -4362,7 +4377,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 701
+                "startLine": 734
             },
             {
                 "name": "sample",
@@ -4399,7 +4414,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 721
+                "startLine": 754
             },
             {
                 "name": "sampleShrinks",
@@ -4436,12 +4451,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 750
+                "startLine": 783
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L45",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L46",
         "implementedBy": []
     },
     {
@@ -4686,6 +4701,66 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/DrawContext.php#L30",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\Ipv6Formatter",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "Renders eight 16-bit groups as the canonical IPv6 text form of RFC 5952:\nlowercase hex, leading zeros stripped, and the longest run of zero groups\nreplaced by `::` — leftmost run on a tie, and never a run of a single group.",
+        "description": "The canonical form is what `inet_ntop()` produces, which is why tests\ncan use it as an independent oracle; the implementation here is deliberately\nhand-written so that oracle stays independent.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "format",
+                "static": true,
+                "params": [
+                    {
+                        "name": "groups",
+                        "type": "non-empty-list<int>",
+                        "description": "exactly `self::GROUPS` values in `[0, 65535]`",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "string",
+                "summary": "",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 29
+            }
+        ],
+        "constants": [
+            {
+                "name": "GROUPS",
+                "type": "int",
+                "summary": "",
+                "value": 8
+            }
+        ],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/Ipv6Formatter.php#L18",
         "implementedBy": []
     },
     {

@@ -195,6 +195,7 @@ property.
 | `Gen::tuple(...$elements)` | `TupleArbitrary`, кортеж фиксированной арности | каждая позиция через свой элемент, арность фиксирована |
 | `Gen::frequency($pairs)` | `FrequencyArbitrary`, взвешенный выбор по парам `[вес, arbitrary]` | внутри породившей значение ветви |
 | `Gen::ipv4()` | IPv4-строки в точечной нотации | каждый октет к `0` |
+| `Gen::ipv6()` | IPv6-адреса в канонической текстовой форме RFC 5952 (нижний регистр, без ведущих нулей, самый длинный прогон нулевых групп сжат в `::`) | каждая группа к `0`, в пределе `::` |
 | `Gen::email()` | адреса `local@label.tld` | к кратчайшим local/label и первому TLD |
 | `Gen::url()` | URL `http(s)://host.tld[/path]` | к `http://a.com` |
 | `Gen::json($maxDepth)` | JSON-кодируемое значение (null/bool/int/float/string/list/object) | внутри порождённой структуры |

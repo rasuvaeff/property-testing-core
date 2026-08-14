@@ -155,4 +155,29 @@ final class GenPropertyTest
             seed: 222,
         );
     }
+
+    public function ipv6GeneratesAddressesInTheCanonicalTextForm(): void
+    {
+        Check::property(
+            static function (string $address): void {
+                $packed = inet_pton($address);
+
+                Assert::true($packed !== false);
+                \assert(is_string($packed));
+
+                // Canonical means the parser's own rendering is the same text:
+                // lowercase, no leading zeros, longest zero run compressed.
+                Assert::same(inet_ntop($packed), $address);
+
+                // The shortened form is the branch address parsers get wrong;
+                // the boundary bias reaches it in a small share of runs, and
+                // the gate keeps that share from silently dropping to zero.
+                Classify::cover(str_contains($address, '::'), 'compressed', 1.0);
+                Classify::when(!str_contains($address, '::'), 'full form');
+            },
+            ['address' => Gen::ipv6()],
+            runs: 300,
+            seed: 555,
+        );
+    }
 }

@@ -29,6 +29,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\TupleArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UniqueArrayArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UuidArbitrary;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
+use Rasuvaeff\PropertyTesting\Internal\Ipv6Formatter;
 use Rasuvaeff\PropertyTesting\Internal\RegexCompiler;
 
 /**
@@ -552,6 +553,38 @@ final class Gen
                 \assert(is_array($octets));
 
                 return implode('.', array_map(static fn(mixed $o): string => (string) $o, $octets));
+            },
+        );
+    }
+
+    /**
+     * IPv6 address strings in the canonical text form of RFC 5952: lowercase
+     * hex, leading zeros stripped, and the longest run of zero groups
+     * compressed to `::` (leftmost on a tie, never a single group).
+     *
+     * Each of the eight 16-bit groups shrinks toward 0 through its own integer
+     * tree, so the descent walks through the shortened forms parsers get wrong
+     * — `2001:db8::1`, `fe80::`, `::1` — and terminates at `::`.
+     *
+     * IPv4-mapped addresses (`::ffff:1.2.3.4`), zone ids (`%eth0`) and the
+     * bracketed URL form (`[::1]:8080`) are out of scope; `Gen::url()` emits
+     * no IPv6 host either.
+     *
+     * @return MappedArbitrary<list<mixed>, non-empty-string>
+     */
+    public static function ipv6(): MappedArbitrary
+    {
+        $group = new IntArbitrary(0, 65535);
+
+        return new MappedArbitrary(
+            // Spelled out rather than array_fill()ed: the arity is the contract
+            // Ipv6Formatter::format() asserts, not a computed length.
+            new TupleArbitrary($group, $group, $group, $group, $group, $group, $group, $group),
+            static function (mixed $groups): string {
+                \assert(is_array($groups));
+
+                /** @var non-empty-list<int> $groups */
+                return Ipv6Formatter::format($groups);
             },
         );
     }

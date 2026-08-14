@@ -189,7 +189,7 @@ Gen::filter(ArbitraryInterface $inner, Closure $p)   // FilteredArbitrary, 100 r
 Gen::tuple(ArbitraryInterface ...$elements)          // TupleArbitrary
 Gen::frequency(iterable $pairs)                      // FrequencyArbitrary, [weight, arb] pairs
 Gen::commands(mixed $initialModel, array $commandGenerators, int $minLen = 0, int $maxLen = 100) // CommandSequenceArbitrary
-Gen::ipv4()  Gen::email()  Gen::url()
+Gen::ipv4()  Gen::ipv6()  Gen::email()  Gen::url()  // ipv6: canonical RFC 5952 text, shrinks to "::"
 Gen::json(int $maxDepth = 3)  Gen::jsonString(int $maxDepth = 3)
 Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compiled to combinators
 Gen::stringMatching(string $pattern, int $maxRepeat = 8) // alias of regex()

@@ -129,7 +129,7 @@ default method names).
 | Weighted choice | `Gen::frequency([[7, $common], [3, $rare]])` | |
 | UUID v4 | `Gen::uuid()` | |
 | Date/time | `Gen::datetime($min, $max)` | UTC `DateTimeImmutable` |
-| URL / email / IPv4 | `Gen::url()`, `Gen::email()`, `Gen::ipv4()` | Domain-shaped, shrink meaningfully |
+| URL / email / IP | `Gen::url()`, `Gen::email()`, `Gen::ipv4()`, `Gen::ipv6()` | Domain-shaped, shrink meaningfully; `ipv6()` is canonical RFC 5952 text and shrinks to `::` |
 | JSON value | `Gen::json($maxDepth)` / `Gen::jsonString($maxDepth)` | |
 | String matching a regex | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | PCRE subset: `a-z . * + ? \| ()` |
 | Recursive structure (tree) | `Gen::recursive($leaf, $wrap, $maxDepth)` | |

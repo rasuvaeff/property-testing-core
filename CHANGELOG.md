@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Added `Gen::ipv6()`: IPv6 address strings in the canonical text form of
+  RFC 5952 — lowercase hex, leading zeros stripped, the longest run of zero
+  groups compressed to `::` (leftmost on a tie, never a single group). Each of
+  the eight 16-bit groups shrinks toward zero, so the descent walks the
+  shortened forms address parsers get wrong and ends at `::`. IPv4-mapped
+  addresses, zone ids and the bracketed URL form are out of scope; `Gen::url()`
+  still emits no IPv6 host.
 - Documented `rasuvaeff/property-testing-names` — the person-name domain
   generator built on this engine — in both READMEs, `llms.txt` and the
   bundled skill.

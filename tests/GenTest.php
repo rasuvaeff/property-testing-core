@@ -93,6 +93,18 @@ final class GenTest
         }
     }
 
+    public function ipv6GeneratesCanonicalAddresses(): void
+    {
+        foreach (Gen::sample(Gen::ipv6(), 50, 3) as $value) {
+            Assert::true(is_string($value) && filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false);
+            \assert(is_string($value));
+
+            // The RFC 5952 form is exactly what inet_ntop emits, so a canonical
+            // address survives a parse/render round trip unchanged.
+            Assert::same(inet_ntop((string) inet_pton($value)), $value);
+        }
+    }
+
     public function emailGeneratesValidAddresses(): void
     {
         foreach (Gen::sample(Gen::email(), 30, 3) as $value) {
@@ -145,6 +157,51 @@ final class GenTest
 
         Assert::true(in_array(0, $octets, strict: true));
         Assert::true(in_array(255, $octets, strict: true));
+    }
+
+    public function ipv6GroupsSpanTheFullRangeAndReachTheCompressedForm(): void
+    {
+        $groups = [];
+        $compressed = 0;
+        foreach (Gen::sample(Gen::ipv6(), 400, 4) as $address) {
+            \assert(is_string($address));
+            $compressed += str_contains($address, '::') ? 1 : 0;
+
+            foreach ((array) unpack('n8', (string) inet_pton($address)) as $group) {
+                $groups[] = $group;
+            }
+        }
+
+        Assert::true(in_array(0, $groups, strict: true));
+        Assert::true(in_array(65535, $groups, strict: true));
+        // Zero groups come from the boundary bias, so the shortened form shows
+        // up on its own — rarely (single-digit percent), but it does.
+        Assert::true($compressed > 0);
+    }
+
+    public function ipv6ShrinksTowardTheAllZeroAddress(): void
+    {
+        $node = Trees::generateWhere(Gen::ipv6(), static fn(mixed $v): bool => $v !== '::');
+
+        // Greedy descent through the first candidate at every level: each group
+        // is driven to zero in turn, so the tree bottoms out at the all-zero
+        // address, which the canonical form renders as "::".
+        for ($step = 0; $step < 100; ++$step) {
+            $first = null;
+            foreach ($node->shrinks() as $candidate) {
+                $first = $candidate;
+
+                break;
+            }
+
+            if ($first === null) {
+                break;
+            }
+
+            $node = $first;
+        }
+
+        Assert::same($node->value, '::');
     }
 
     public function jsonProducesEveryLeafTypeAndNesting(): void

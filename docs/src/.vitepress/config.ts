@@ -30,6 +30,7 @@ const sidebar = [
             { text: 'Assume vs filter', link: '/guide/controlling-runs/assume-vs-filter' },
             { text: 'Bounding shrink work', link: '/guide/controlling-runs/bounding-shrink' },
             { text: 'Deadlines', link: '/guide/controlling-runs/deadlines' },
+            { text: 'Derandomized runs', link: '/guide/controlling-runs/derandomize' },
             { text: 'Environment overrides', link: '/guide/controlling-runs/env-overrides' },
         ],
     },

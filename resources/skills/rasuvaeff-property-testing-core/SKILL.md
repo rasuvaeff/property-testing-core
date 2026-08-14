@@ -107,6 +107,11 @@ The Testo attribute takes: `runs` (≥1, default 100), `seed` (reproducible),
 `budgetMs` (whole random phase), `generators` / `examples` (override the
 default method names).
 
+`PropertyConfig` adds `derandomize` (engine level): an unset seed becomes a
+pure function of the property id, so a locally found bug reproduces in CI
+before any corpus entry exists, and a passing property keeps a stable input
+distribution. An explicit seed still wins.
+
 ## Choosing a generator
 
 | You want | Use | Notes |

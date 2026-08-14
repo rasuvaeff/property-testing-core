@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Added `PropertyConfig::$derandomize`: with it set, a run without an explicit
+  seed derives one from the property's id instead of drawing it at random, so
+  the same property on the same code always selects the same inputs. The
+  regression corpus only helps once a failure has been recorded; this covers
+  the other side of that moment — a bug found locally reproduces in CI before
+  any corpus entry exists, and a property that passes (and therefore records
+  nothing) keeps a stable input distribution, which is what makes distribution
+  numbers comparable between commits. An explicit seed still wins, and the
+  mapping from a seed to the values it produces is untouched.
+
 - Added `Gen::ipv6()`: IPv6 address strings in the canonical text form of
   RFC 5952 — lowercase hex, leading zeros stripped, the longest run of zero
   groups compressed to `::` (leftmost on a tie, never a single group). Each of

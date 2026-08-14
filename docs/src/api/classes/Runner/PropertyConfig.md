@@ -26,6 +26,7 @@ __construct(
     ?int $maxDiscards = NULL,
     ?int $timeoutMs = NULL,
     ?int $budgetMs = NULL,
+    bool $derandomize = false,
 )
 ```
 
@@ -37,4 +38,5 @@ __construct(
 | `$maxDiscards` | `?int` | `NULL` | Maximum discarded runs before giving up. Null uses ten times $runs (saturating to PHP_INT_MAX). |
 | `$timeoutMs` | `?int` | `NULL` | Wall-clock deadline for a single run in milliseconds; null disables it. |
 | `$budgetMs` | `?int` | `NULL` | Wall-clock budget for the whole random phase in milliseconds; null disables it. |
+| `$derandomize` | `bool` | `false` | Whether an unset $seed is derived from the property's id instead of drawn at random, so the same property on the same code always selects the same inputs. An explicit $seed always wins. The derivation lives in [`Runner\PropertyRunner`](/api/classes/Runner/PropertyRunner) because only it knows the id — and because a config that called `random_int()` would stop being a plain value. |
 

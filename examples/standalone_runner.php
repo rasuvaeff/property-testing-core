@@ -47,6 +47,28 @@ echo $result instanceof Passed
     ? "concatLengthIsAdditive: held for 200 runs\n"
     : "concatLengthIsAdditive: FAILED unexpectedly\n";
 
+// derandomize: with no explicit seed the runner would draw a random one, and a
+// property that fails for one input in fifty would fail CI only some of the
+// time. Derived from the property id instead, the same run always selects the
+// same inputs — printed here twice to show it.
+foreach ([1, 2] as $attempt) {
+    $seen = [];
+    $runner->run(
+        new PropertyDefinition(
+            id: 'standalone::derandomised',
+            name: 'derandomised',
+            generators: ['value' => Gen::intBetween(0, 1_000_000)],
+            parameterNames: ['value'],
+            config: new PropertyConfig(runs: 3, derandomize: true),
+        ),
+        new CallableTrialExecutor(static function (int $value) use (&$seen): void {
+            $seen[] = $value;
+        }),
+    );
+
+    echo sprintf("derandomised run %d: %s\n", $attempt, implode(', ', $seen));
+}
+
 // A property that is falsified: "every integer stays below 100". The runner
 // shrinks the failing input to the minimal one and reports it as a structured
 // Falsified result carrying the usual CounterExample.

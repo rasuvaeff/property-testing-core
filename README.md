@@ -273,6 +273,25 @@ no environment:
 | `maxDiscards` | `null` | Discard budget; null resolves to `runs * 10` |
 | `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded` |
 | `budgetMs` | `null` | Wall-clock budget for the whole random phase → `TimeBudgetExceeded` |
+| `derandomize` | `false` | Derive an unset seed from the property id instead of drawing one |
+
+### Derandomized runs
+
+An unset seed is drawn at random, so a property that fails for one input in
+fifty fails in CI only sometimes. The corpus fixes that — but only *after* the
+first failure is recorded. `derandomize: true` covers the other side of that
+moment:
+
+```php
+new PropertyConfig(derandomize: true);   // the same id always selects the same inputs
+```
+
+The seed becomes a pure function of the property's id, so a bug found locally
+reproduces in CI without waiting for a corpus entry to exist, and a passing
+property keeps a stable input distribution — which is what makes distribution
+numbers comparable between commits. An explicit `seed` always wins over the
+flag. The seed→values mapping is untouched: this changes which seed a run
+picks, never what that seed produces.
 
 `PropertyDefinition` adds the identity (`id` keys events and the corpus),
 display `name`, `generators`, `parameterNames`, fixed `examples` (positional

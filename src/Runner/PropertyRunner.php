@@ -84,7 +84,9 @@ final readonly class PropertyRunner
         $runs = $config->runs;
         $maxDiscards = $config->maxDiscards
             ?? ($runs > intdiv(PHP_INT_MAX, 10) ? PHP_INT_MAX : $runs * 10);
-        $seed = $config->seed ?? random_int(0, PHP_INT_MAX);
+        $seed = $config->seed ?? ($config->derandomize
+            ? self::derivedSeed($property->id)
+            : random_int(0, PHP_INT_MAX));
 
         // Discard requirements and a draw tape a previously aborted property may
         // have left over.
@@ -134,6 +136,20 @@ final readonly class PropertyRunner
         }
 
         return $this->finish($listeners, $property->id, $result);
+    }
+
+    /**
+     * The seed a derandomised run uses when none was pinned: a pure function of
+     * the property's id, so the same property selects the same inputs on every
+     * machine and every supported PHP version.
+     *
+     * Fifteen hex digits of a SHA-256 digest are 60 bits, which always fits an
+     * int — and the mapping from a seed to the values it generates is untouched,
+     * so this changes which seed a run picks, never what that seed produces.
+     */
+    private static function derivedSeed(string $propertyId): int
+    {
+        return (int) hexdec(substr(hash('sha256', $propertyId), 0, 15));
     }
 
     /**

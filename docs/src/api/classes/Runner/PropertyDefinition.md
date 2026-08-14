@@ -31,6 +31,7 @@ __construct(
    'maxDiscards' => NULL,
    'timeoutMs' => NULL,
    'budgetMs' => NULL,
+   'derandomize' => false,
 )),
     list<list> $examples = [],
     bool $replayRegressions = true,
@@ -50,6 +51,7 @@ __construct(
    'maxDiscards' => NULL,
    'timeoutMs' => NULL,
    'budgetMs' => NULL,
+   'derandomize' => false,
 ))` |  |
 | `$examples` | `list<list>` | `[]` | Fixed positional argument tuples run before the random phase. |
 | `$replayRegressions` | `bool` | `true` | Whether recorded corpus entries replay before the random phase. An adapter turns this off when the property pins its own seed, so the pinned reproducibility wins over the corpus. |

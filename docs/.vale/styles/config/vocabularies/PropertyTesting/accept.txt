@@ -17,6 +17,7 @@
 [Bb]ackoff
 [Cc]odecov
 [Cc]ombinators
+[Dd]erandomiz(?:e|ed|es|ing)
 [Ee]num
 [Ii]njective
 [Ii]nts

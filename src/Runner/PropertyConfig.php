@@ -22,6 +22,11 @@ final readonly class PropertyConfig
      *        (saturating to PHP_INT_MAX).
      * @param ?int $timeoutMs Wall-clock deadline for a single run in milliseconds; null disables it.
      * @param ?int $budgetMs Wall-clock budget for the whole random phase in milliseconds; null disables it.
+     * @param bool $derandomize Whether an unset $seed is derived from the property's id instead of
+     *        drawn at random, so the same property on the same code always selects the same inputs.
+     *        An explicit $seed always wins. The derivation lives in {@see PropertyRunner} because
+     *        only it knows the id — and because a config that called `random_int()` would stop being
+     *        a plain value.
      */
     public function __construct(
         public int $runs = 100,
@@ -30,6 +35,7 @@ final readonly class PropertyConfig
         public ?int $maxDiscards = null,
         public ?int $timeoutMs = null,
         public ?int $budgetMs = null,
+        public bool $derandomize = false,
     ) {
         if ($runs < 1) {
             throw new \InvalidArgumentException('Runs must be greater than or equal to 1');

@@ -24,6 +24,7 @@ final class PropertyConfigTest
         Assert::null($config->maxDiscards);
         Assert::null($config->timeoutMs);
         Assert::null($config->budgetMs);
+        Assert::false($config->derandomize);
     }
 
     public function acceptsEveryBoundaryValue(): void

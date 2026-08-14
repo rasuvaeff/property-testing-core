@@ -78,6 +78,8 @@ $definition = new PropertyDefinition(
         maxDiscards: null,  // null -> runs * 10
         timeoutMs: null,    // per-run wall-clock deadline
         budgetMs: null,     // whole-random-phase wall-clock budget
+        derandomize: false, // true -> an unset seed is derived from the property id
+                            // (explicit seed still wins; seed->values mapping unchanged)
     ),
     examples: [],               // list of positional tuples, run FIRST, unshrunk
     replayRegressions: true,    // adapters pass false when the seed is pinned

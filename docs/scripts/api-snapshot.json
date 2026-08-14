@@ -1713,7 +1713,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Swarm testing over a choice generator: every generated case may only use\nsome of the variants, drawn afresh and never empty.",
-        "description": "Drawing uniformly from the whole alphabet, every case looks like every other\none — a long run of `oneOf('push', 'pop', 'ack')` almost always contains all\nthree. The bugs that need an operation to be *absent* (\"the bag breaks when\nno ack ever arrives\") are then astronomically rare, because avoiding one\nvariant for a hundred draws is a coin flipped a hundred times. Restricting\nthe alphabet per case makes those runs ordinary instead. This is Groce et\nal., *Swarm Testing* (ISSTA 2012), and it costs one extra draw per case.\n\n```php\nGen::swarm(Gen::oneOf('push', 'pop', 'ack'));   // one case sees, say, only 'pop' and 'ack'\nGen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands\n```\n\nShrinking stays inside the subset the case was generated from: the tree\nreturned here is the restricted generator's own, so a counterexample found\nwithout `ack` cannot shrink to one containing it — which is what makes the\nfinding reproducible at all. The alphabet widens again on the next case, not\nduring a descent.\n\nTwo consequences worth knowing before reaching for it:\n\n- the subset is drawn once per generated value, so it covers exactly the\n  scope of the generator it wraps. `swarm(commands(...))` restricts a whole\n  sequence, which is the useful one; `arrayOf(swarm(oneOf(...)))` redraws\n  per element, which is not swarm testing but noise. Wrap the generator\n  whose scope you mean;\n- the counterexample reports the value, not the subset it came from. Seed\n  replay reproduces both; a counterexample read on its own does not say\n  which variants were available. Deliberate — the report describes the\n  input, and the subset is a property of how it was drawn.",
+        "description": "Drawing uniformly from the whole alphabet, every case looks like every other\none — a long run of `oneOf('push', 'pop', 'flush')` almost always contains all\nthree. The bugs that need an operation to be *absent* (\"the bag breaks when\nno flush ever arrives\") are then astronomically rare, because avoiding one\nvariant for a hundred draws is a coin flipped a hundred times. Restricting\nthe alphabet per case makes those runs ordinary instead. This is Groce et\nal., *Swarm Testing* (ISSTA 2012), and it costs one extra draw per case.\n\n```php\nGen::swarm(Gen::oneOf('push', 'pop', 'flush'));   // one case sees, say, only 'pop' and 'flush'\nGen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands\n```\n\nShrinking stays inside the subset the case was generated from: the tree\nreturned here is the restricted generator's own, so a counterexample found\nwithout `flush` cannot shrink to one containing it — which is what makes the\nfinding reproducible at all. The alphabet widens again on the next case, not\nduring a descent.\n\nTwo consequences worth knowing before reaching for it:\n\n- the subset is drawn once per generated value, so it covers exactly the\n  scope of the generator it wraps. `swarm(commands(...))` restricts a whole\n  sequence, which is the useful one; `arrayOf(swarm(oneOf(...)))` redraws\n  per element, which is not swarm testing but noise. Wrap the generator\n  whose scope you mean;\n- the counterexample reports the value, not the subset it came from. Seed\n  replay reproduces both; a counterexample read on its own does not say\n  which variants were available. Deliberate — the report describes the\n  input, and the subset is a property of how it was drawn.",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -2107,7 +2107,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 54
+                "startLine": 60
             },
             {
                 "name": "when",
@@ -2137,7 +2137,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 62
+                "startLine": 68
             },
             {
                 "name": "cover",
@@ -2174,7 +2174,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 80
+                "startLine": 86
             },
             {
                 "name": "beginRun",
@@ -2189,7 +2189,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 98
+                "startLine": 104
             },
             {
                 "name": "flushRun",
@@ -2204,7 +2204,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 110
+                "startLine": 116
             },
             {
                 "name": "flushRequirements",
@@ -2219,7 +2219,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 127
+                "startLine": 140
             }
         ],
         "constants": [],
@@ -4039,7 +4039,7 @@
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary",
                 "summary": "Swarm testing over a choice generator: each generated case may only use\nsome of $arbitrary's variants, drawn afresh per case and never empty.",
-                "description": "```php\nGen::swarm(Gen::oneOf('push', 'pop', 'ack'));   // one case sees, say, only 'pop' and 'ack'\nGen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands\n```\n\nUniform draws from the full alphabet make every case look alike, and the\nbugs that need an operation to be *absent* stay out of reach. Shrinking\nstays inside the subset the case came from, so such a finding keeps\nreproducing — see \\Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary for that and for the two\nconsequences (scope of the draw, and what the counterexample reports).",
+                "description": "```php\nGen::swarm(Gen::oneOf('push', 'pop', 'flush'));   // one case sees, say, only 'pop' and 'flush'\nGen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands\n```\n\nUniform draws from the full alphabet make every case look alike, and the\nbugs that need an operation to be *absent* stay out of reach. Shrinking\nstays inside the subset the case came from, so such a finding keeps\nreproducing — see \\Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary for that and for the two\nconsequences (scope of the draw, and what the counterexample reports).",
                 "throws": [],
                 "throwsInBody": false,
                 "inheritedFrom": null,
@@ -5861,6 +5861,55 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/837558a701e4eceb176769bb9656a840d25147da/src/Property.php#L26",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\PropertyId",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "What a property's id has to be good for, and how to tell when it is not.",
+        "description": "The id keys two things that outlive a single run: the events a listener\naggregates, and the regression corpus entry that replays yesterday's\ncounterexample. Both need it to name the same property tomorrow. An adapter\nthat derives the id from a backtrace gets that for a test method and loses\nit for a closure, because PHP has never had a stable name for one:\n\n```\nPHP 8.3   Suite::{closure}\nPHP 8.4+  Suite::{closure:/app/tests/StackTest.php:19}\n```\n\nNeither is usable. On 8.3 every closure of a class collapses onto one id, so\ntwo properties in one file overwrite each other's recorded counterexample;\nfrom 8.4 the id carries a file and a line, so inserting a line above the\nproperty orphans the entry it recorded yesterday. The corpus keeps working\nin the sense that nothing throws — it simply stops replaying the failure it\nwas built to replay, which is the failure mode a corpus exists to prevent.\n\nSo this is a diagnosis, not a fix: the engine returns the sentence, and the\nadapter prints it through whatever channel it already warns on. The engine\nitself never prints — see the README's account of what it does not do.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "unstableWarning",
+                "static": true,
+                "params": [
+                    {
+                        "name": "id",
+                        "type": "string",
+                        "description": "The property id as the adapter derived it.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?string",
+                "summary": "The warning an adapter should show for $id, or null when the id is\nstable and there is nothing to say.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 55
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/PropertyId.php#L34",
         "implementedBy": []
     },
     {

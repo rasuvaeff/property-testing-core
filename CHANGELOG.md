@@ -90,6 +90,15 @@
 - Documented `rasuvaeff/property-testing-names` — the person-name domain
   generator built on this engine — in both READMEs, `llms.txt` and the
   bundled skill.
+- Added `PropertyId::unstableWarning()`: the warning text for a property id
+  derived from a closure (`Suite::{closure}` on PHP 8.3,
+  `Suite::{closure:file:line}` from 8.4), or null when the id is stable. Such an
+  id breaks the regression corpus without breaking anything visible — on 8.3
+  every closure of a class shares one key, so two properties in a file overwrite
+  each other's counterexample; from 8.4 the key carries a line number that any
+  edit above shifts, orphaning yesterday's entry. The engine returns the
+  sentence and prints nothing; an adapter shows it through the channel it
+  already warns on.
 - Fixed a numeric classification label reaching listeners as an int. PHP stores
   a numeric string such as `'42'` under an integer array key, so a label
   recorded with `Classify::label('42')` came back from the per-run buffer as

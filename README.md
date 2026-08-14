@@ -445,6 +445,32 @@ directory out of world-readable locations and out of published build
 artifacts, and prefer synthesising such values inside the property body over
 generating them, so the counterexample records the seed rather than the data.
 
+### Property ids and closures (`PropertyId`)
+
+The property id keys both the events a listener aggregates and the corpus
+entry that replays yesterday's counterexample, so it has to name the same
+property tomorrow. An adapter that derives it from a backtrace gets that for a
+test method and loses it for a closure, because PHP has never had a stable
+name for one:
+
+```
+PHP 8.3   Suite::{closure}
+PHP 8.4+  Suite::{closure:/app/tests/StackTest.php:19}
+```
+
+On 8.3 every closure of a class collapses onto one id, so two properties in one
+file overwrite each other's recorded counterexample; from 8.4 the id carries a
+line number, so inserting a line above the property orphans the entry it
+recorded yesterday. Nothing throws either way — the corpus simply stops
+replaying the failure it exists to replay.
+
+`PropertyId::unstableWarning($id)` returns the sentence to show for such an id,
+or `null` when there is nothing to say. It is a diagnosis, not a fix: the engine
+returns the text and the adapter prints it, because the engine never writes
+anywhere itself. Adapters that let you name a property explicitly (the PHPUnit
+adapter's `forAll($generators, $id)`) take the id you pass verbatim, which is
+the fix.
+
 ### Events and listeners
 
 Pass `PropertyListener` implementations to `PropertyRunner::run()` and observe

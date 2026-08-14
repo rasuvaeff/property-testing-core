@@ -259,6 +259,13 @@ Gen::draw(ArbitraryInterface $arb): mixed  // recorded on the replay tape, shrun
 `ValueRenderer::render(mixed $value): string` — the single-line human rendering
 used inside counterexample messages; adapters reuse it for verbose output.
 
+`PropertyId::unstableWarning(string $id): ?string` — the warning text for an id
+derived from a closure (`Suite::{closure}` on PHP 8.3, `Suite::{closure:file:line}`
+from 8.4), or null for a stable id. Such an id breaks the regression corpus
+silently: on 8.3 every closure of a class shares one key, from 8.4 the key moves
+when a line is inserted above. The engine returns the sentence and never prints
+it — the adapter does, through the channel it already warns on.
+
 ### Stateful / model-based (`StateMachine\` namespace)
 
 ```php

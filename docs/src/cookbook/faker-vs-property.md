@@ -77,6 +77,7 @@ Property falsified after 10 successful run(s); seed=3
   Shrunk:   name="Agnès Sørensen PhD", limit=4 (30 shrink step(s), 228 trial(s))
   Changed:  name="Agnès Dubois-Lévesque PhD" -> "Agnès Sørensen PhD"
   Failure:  truncateDisplayName("Agnès Sørensen PhD", 4) returned bytes that are not valid UTF-8
+  Path:     name:1/name:6/name:6/name:11/name:11/name:5/name:2/name:9/name:3/name:8/name:2/name:5/name:1/name:2/name:5/name:5/name:3/name:1/name:5/name:4/name:1/name:1/name:4/name:1/name:8/name:2/name:3/name:9/name:1/name:3
 
 Shrinkable data (a string over an alphabet):
 
@@ -85,6 +86,7 @@ Property falsified after 14 successful run(s); seed=3
   Shrunk:   name="aaé", limit=3 (1 shrink step(s), 7 trial(s))
   Changed:  name="aaééaé" -> "aaé"
   Failure:  truncateDisplayName("aaé", 3) returned bytes that are not valid UTF-8
+  Path:     name:0
 ```
 
 Both found the bug. Read what they say about it.

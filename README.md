@@ -349,14 +349,23 @@ picks, never what that seed produces.
 
 A descent spends most of its work on candidates it rejects: the engine's own
 smallest integer property accepts nine steps after trying thirty-nine. The
-counterexample carries the accepted steps, so a rerun can follow them instead of
-searching for them again:
+accepted steps are the last line of the falsification message — and the same
+value is on the counterexample — so a rerun can follow them instead of searching
+for them again:
+
+```text
+  Failure:  x>50
+  Path:     x:2/x:2/x:4/x:4
+```
 
 ```php
 $counterExample->path;                                  // 'value:1/value:1/value:3'
 
 new PropertyConfig(seed: 42, path: 'value:1/value:1/value:3');
 ```
+
+A run that shrank nothing has no path, and the line is omitted rather than
+printed empty.
 
 Each step names a node — a parameter, or an in-body draw under its `draw#N`
 pseudo-name — and which candidate of that node's shrink enumeration was

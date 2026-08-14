@@ -115,6 +115,39 @@ final class PropertyViolationExceptionTest
         Assert::false(str_contains($exception->getMessage(), 'Failure:'));
     }
 
+    public function rendersTheShrinkPathAsTheLastLine(): void
+    {
+        // The path is what turns "reproduce this" from a second search into a
+        // copy of one line, so it is printed where the reader already looks —
+        // last, after the failure, and beside the seed it needs.
+        $exception = new PropertyViolationException(new CounterExample(
+            seed: 7,
+            runsBeforeFailure: 3,
+            originalArguments: ['x' => 51],
+            shrunkArguments: ['x' => 1],
+            shrinkSteps: 2,
+            failure: new \RuntimeException('boom'),
+            path: 'x:1/x:3',
+        ));
+
+        Assert::string($exception->getMessage())->contains("Failure:  boom\n  Path:     x:1/x:3");
+    }
+
+    public function omitsThePathLineWhenNothingShrank(): void
+    {
+        // ShrinkMode::Off, or a first draw that is already minimal: there is no
+        // descent to replay, and a "Path:" line with nothing after it would be
+        // a knob the reader cannot use.
+        $exception = new PropertyViolationException(new CounterExample(
+            seed: 1,
+            runsBeforeFailure: 0,
+            originalArguments: ['x' => 51],
+            shrunkArguments: ['x' => 51],
+        ));
+
+        Assert::false(str_contains($exception->getMessage(), 'Path:'));
+    }
+
     public function chainsTheUnderlyingFailureAsPrevious(): void
     {
         $failure = new \RuntimeException('boom');

@@ -70,9 +70,11 @@
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\RecordArbitrary",
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\StringArbitrary",
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\SubsetArbitrary",
+            "Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary",
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\TupleArbitrary",
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\UniqueArrayArbitrary",
-            "Rasuvaeff\\PropertyTesting\\Arbitrary\\UuidArbitrary"
+            "Rasuvaeff\\PropertyTesting\\Arbitrary\\UuidArbitrary",
+            "Rasuvaeff\\PropertyTesting\\Swarmable"
         ]
     },
     {
@@ -396,11 +398,12 @@
         "see": [],
         "extensionTags": {
             "implements": [
-                "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\StateMachine\\CommandSequence>"
+                "\\Rasuvaeff\\PropertyTesting\\Swarmable<\\Rasuvaeff\\PropertyTesting\\StateMachine\\CommandSequence>"
             ]
         },
         "extends": null,
         "implements": [
+            "Rasuvaeff\\PropertyTesting\\Swarmable",
             "Rasuvaeff\\PropertyTesting\\ArbitraryInterface"
         ],
         "attributes": [],
@@ -467,12 +470,59 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 88
+                "startLine": 89
+            },
+            {
+                "name": "variantCount",
+                "static": false,
+                "params": [],
+                "returnType": "int",
+                "summary": "How many variants this generator chooses among. Must be positive: a\nchoice generator with nothing to choose from is not a choice, and\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary rejects a\nsource that reports otherwise rather than drawing from an empty\nalphabet. Deliberately typed `int` and not `int<1, max>` — the bound is\na promise implementations make, and a swarm still checks it at runtime\nbecause it cannot analyse the implementations it will be handed.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Swarmable",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 128
+            },
+            {
+                "name": "withVariants",
+                "static": false,
+                "params": [
+                    {
+                        "name": "indices",
+                        "type": "list<int>",
+                        "description": "Variant positions to keep, each in `[0, variantCount() - 1]`.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Arbitrary\\CommandSequenceArbitrary",
+                "summary": "The restricted copy keeps the initial model and both length bounds — a\nswarm narrows the command alphabet and nothing else. That is also where\nits sharpest edge is: with a $minLength above zero, a subset from which\nno applicable command reaches that length throws\nGenerationExhausted exactly as the unrestricted generator does\nwhen the model starves it. That is the contract, not an accident — a\nsequence shorter than its minimum has never been a valid result here,\nand silently returning one would be the worse answer.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When an index falls outside the command generators."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 150
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CommandSequenceArbitrary.php#L35",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CommandSequenceArbitrary.php#L36",
         "implementedBy": []
     },
     {
@@ -972,11 +1022,12 @@
                 "TValue of mixed = mixed"
             ],
             "implements": [
-                "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\Arbitrary\\TValue>"
+                "\\Rasuvaeff\\PropertyTesting\\Swarmable<\\Rasuvaeff\\PropertyTesting\\Arbitrary\\TValue>"
             ]
         },
         "extends": null,
         "implements": [
+            "Rasuvaeff\\PropertyTesting\\Swarmable",
             "Rasuvaeff\\PropertyTesting\\ArbitraryInterface"
         ],
         "attributes": [],
@@ -1016,12 +1067,59 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 66
+                "startLine": 67
+            },
+            {
+                "name": "variantCount",
+                "static": false,
+                "params": [],
+                "returnType": "int",
+                "summary": "How many variants this generator chooses among. Must be positive: a\nchoice generator with nothing to choose from is not a choice, and\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary rejects a\nsource that reports otherwise rather than drawing from an empty\nalphabet. Deliberately typed `int` and not `int<1, max>` — the bound is\na promise implementations make, and a swarm still checks it at runtime\nbecause it cannot analyse the implementations it will be handed.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Swarmable",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 86
+            },
+            {
+                "name": "withVariants",
+                "static": false,
+                "params": [
+                    {
+                        "name": "indices",
+                        "type": "list<int>",
+                        "description": "Variant positions to keep, each in `[0, variantCount() - 1]`.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Arbitrary\\FrequencyArbitrary",
+                "summary": "The kept pairs carry their weights unchanged, so a swarm changes which\nbranches exist and not how the surviving ones compete: the total weight\nshrinks with them, and a branch that was twice as likely as its\nneighbour still is.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When an index falls outside the weighted branches."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 104
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/FrequencyArbitrary.php#L23",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/FrequencyArbitrary.php#L24",
         "implementedBy": []
     },
     {
@@ -1265,11 +1363,12 @@
                 "TValue of mixed = mixed"
             ],
             "implements": [
-                "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\Arbitrary\\TValue>"
+                "\\Rasuvaeff\\PropertyTesting\\Swarmable<\\Rasuvaeff\\PropertyTesting\\Arbitrary\\TValue>"
             ]
         },
         "extends": null,
         "implements": [
+            "Rasuvaeff\\PropertyTesting\\Swarmable",
             "Rasuvaeff\\PropertyTesting\\ArbitraryInterface"
         ],
         "attributes": [],
@@ -1310,6 +1409,53 @@
                     "Override"
                 ],
                 "startLine": 47
+            },
+            {
+                "name": "variantCount",
+                "static": false,
+                "params": [],
+                "returnType": "int",
+                "summary": "How many variants this generator chooses among. Must be positive: a\nchoice generator with nothing to choose from is not a choice, and\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary rejects a\nsource that reports otherwise rather than drawing from an empty\nalphabet. Deliberately typed `int` and not `int<1, max>` — the bound is\na promise implementations make, and a swarm still checks it at runtime\nbecause it cannot analyse the implementations it will be handed.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Swarmable",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 53
+            },
+            {
+                "name": "withVariants",
+                "static": false,
+                "params": [
+                    {
+                        "name": "indices",
+                        "type": "list<int>",
+                        "description": "Variant positions to keep, each in `[0, variantCount() - 1]`.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Arbitrary\\OneOfArbitrary",
+                "summary": "A copy of this generator that chooses only among the variants at\n$indices.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When an index falls outside the values."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Swarmable",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 66
             }
         ],
         "constants": [],
@@ -1555,6 +1701,76 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/SubsetArbitrary.php#L30",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "Swarm testing over a choice generator: every generated case may only use\nsome of the variants, drawn afresh and never empty.",
+        "description": "Drawing uniformly from the whole alphabet, every case looks like every other\none — a long run of `oneOf('push', 'pop', 'ack')` almost always contains all\nthree. The bugs that need an operation to be *absent* (\"the bag breaks when\nno ack ever arrives\") are then astronomically rare, because avoiding one\nvariant for a hundred draws is a coin flipped a hundred times. Restricting\nthe alphabet per case makes those runs ordinary instead. This is Groce et\nal., *Swarm Testing* (ISSTA 2012), and it costs one extra draw per case.\n\n```php\nGen::swarm(Gen::oneOf('push', 'pop', 'ack'));   // one case sees, say, only 'pop' and 'ack'\nGen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands\n```\n\nShrinking stays inside the subset the case was generated from: the tree\nreturned here is the restricted generator's own, so a counterexample found\nwithout `ack` cannot shrink to one containing it — which is what makes the\nfinding reproducible at all. The alphabet widens again on the next case, not\nduring a descent.\n\nTwo consequences worth knowing before reaching for it:\n\n- the subset is drawn once per generated value, so it covers exactly the\n  scope of the generator it wraps. `swarm(commands(...))` restricts a whole\n  sequence, which is the useful one; `arrayOf(swarm(oneOf(...)))` redraws\n  per element, which is not swarm testing but noise. Wrap the generator\n  whose scope you mean;\n- the counterexample reports the value, not the subset it came from. Seed\n  replay reproduces both; a counterexample read on its own does not say\n  which variants were available. Deliberate — the report describes the\n  input, and the subset is a property of how it was drawn.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "template": [
+                "TValue of mixed = mixed"
+            ],
+            "implements": [
+                "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\Arbitrary\\TValue>"
+            ]
+        },
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\ArbitraryInterface"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "source",
+                "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\Arbitrary\\TValue>",
+                "description": "A choice generator — `Gen::oneOf()`, `Gen::elements()`,\n`Gen::frequency()`, `Gen::commands()`, or any \\Rasuvaeff\\PropertyTesting\\Swarmable of your own.",
+                "default": null,
+                "promoted": false,
+                "promotedVisibility": "private",
+                "readonly": false
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "generate",
+                "static": false,
+                "params": [
+                    {
+                        "name": "random",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Random",
+                        "description": "The run's source of randomness — one draw for the subset, then the\nrestricted generator's own draws.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Shrinkable",
+                "summary": "Produce one random value from this arbitrary's space, together with its\nshrink tree. Candidates must be ordered most aggressive first (typically\ntoward a zero/empty/identity element) and every branch of the tree must\nbe finite, so shrinking terminates.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 96
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/SwarmArbitrary.php#L51",
         "implementedBy": []
     },
     {
@@ -3329,7 +3545,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 59
+                "startLine": 60
             },
             {
                 "name": "intBetween",
@@ -3359,7 +3575,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 68
+                "startLine": 69
             },
             {
                 "name": "intPositive",
@@ -3374,7 +3590,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 76
+                "startLine": 77
             },
             {
                 "name": "float",
@@ -3389,7 +3605,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 84
+                "startLine": 85
             },
             {
                 "name": "floatBetween",
@@ -3419,7 +3635,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 89
+                "startLine": 90
             },
             {
                 "name": "bool",
@@ -3434,7 +3650,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 94
+                "startLine": 95
             },
             {
                 "name": "string",
@@ -3449,7 +3665,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 102
+                "startLine": 103
             },
             {
                 "name": "stringAscii",
@@ -3464,7 +3680,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 110
+                "startLine": 111
             },
             {
                 "name": "stringOf",
@@ -3494,7 +3710,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 119
+                "startLine": 120
             },
             {
                 "name": "char",
@@ -3509,7 +3725,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 127
+                "startLine": 128
             },
             {
                 "name": "stringFrom",
@@ -3546,7 +3762,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 137
+                "startLine": 138
             },
             {
                 "name": "bytes",
@@ -3576,7 +3792,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 146
+                "startLine": 147
             },
             {
                 "name": "arrayOf",
@@ -3613,7 +3829,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 160
+                "startLine": 161
             },
             {
                 "name": "nonEmptyArrayOf",
@@ -3643,7 +3859,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 174
+                "startLine": 175
             },
             {
                 "name": "uniqueArrayOf",
@@ -3680,7 +3896,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 192
+                "startLine": 193
             },
             {
                 "name": "subset",
@@ -3717,7 +3933,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 213
+                "startLine": 214
             },
             {
                 "name": "dictOf",
@@ -3761,7 +3977,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 232
+                "startLine": 233
             },
             {
                 "name": "record",
@@ -3784,7 +4000,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 245
+                "startLine": 246
             },
             {
                 "name": "oneOf",
@@ -3807,7 +4023,30 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 259
+                "startLine": 260
+            },
+            {
+                "name": "swarm",
+                "static": true,
+                "params": [
+                    {
+                        "name": "arbitrary",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\TValue>",
+                        "description": "A choice generator: \\Rasuvaeff\\PropertyTesting\\oneOf(), \\Rasuvaeff\\PropertyTesting\\elements(),\n\\Rasuvaeff\\PropertyTesting\\frequency(), \\Rasuvaeff\\PropertyTesting\\commands(), or any \\Rasuvaeff\\PropertyTesting\\Swarmable.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary",
+                "summary": "Swarm testing over a choice generator: each generated case may only use\nsome of $arbitrary's variants, drawn afresh per case and never empty.",
+                "description": "```php\nGen::swarm(Gen::oneOf('push', 'pop', 'ack'));   // one case sees, say, only 'pop' and 'ack'\nGen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands\n```\n\nUniform draws from the full alphabet make every case look alike, and the\nbugs that need an operation to be *absent* stay out of reach. Shrinking\nstays inside the subset the case came from, so such a finding keeps\nreproducing — see \\Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary for that and for the two\nconsequences (scope of the draw, and what the counterexample reports).",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 287
             },
             {
                 "name": "elements",
@@ -3830,7 +4069,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 273
+                "startLine": 301
             },
             {
                 "name": "constant",
@@ -3853,7 +4092,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 287
+                "startLine": 315
             },
             {
                 "name": "enum",
@@ -3876,7 +4115,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 302
+                "startLine": 330
             },
             {
                 "name": "floatSpecial",
@@ -3891,7 +4130,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 324
+                "startLine": 352
             },
             {
                 "name": "intRange",
@@ -3921,7 +4160,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 346
+                "startLine": 374
             },
             {
                 "name": "recursive",
@@ -3958,7 +4197,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 367
+                "startLine": 395
             },
             {
                 "name": "nullable",
@@ -3981,7 +4220,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 395
+                "startLine": 423
             },
             {
                 "name": "map",
@@ -4011,7 +4250,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 413
+                "startLine": 441
             },
             {
                 "name": "flatMap",
@@ -4041,7 +4280,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 433
+                "startLine": 461
             },
             {
                 "name": "filter",
@@ -4071,7 +4310,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 448
+                "startLine": 476
             },
             {
                 "name": "draw",
@@ -4094,7 +4333,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 485
+                "startLine": 513
             },
             {
                 "name": "tuple",
@@ -4117,7 +4356,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 498
+                "startLine": 526
             },
             {
                 "name": "frequency",
@@ -4140,7 +4379,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 514
+                "startLine": 542
             },
             {
                 "name": "uuid",
@@ -4155,7 +4394,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 525
+                "startLine": 553
             },
             {
                 "name": "datetime",
@@ -4185,7 +4424,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 535
+                "startLine": 563
             },
             {
                 "name": "ipv4",
@@ -4200,7 +4439,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 546
+                "startLine": 574
             },
             {
                 "name": "ipv6",
@@ -4215,7 +4454,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 575
+                "startLine": 603
             },
             {
                 "name": "email",
@@ -4230,7 +4469,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 599
+                "startLine": 627
             },
             {
                 "name": "url",
@@ -4245,7 +4484,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 623
+                "startLine": 651
             },
             {
                 "name": "json",
@@ -4268,7 +4507,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 651
+                "startLine": 679
             },
             {
                 "name": "jsonString",
@@ -4291,7 +4530,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 677
+                "startLine": 705
             },
             {
                 "name": "regex",
@@ -4321,7 +4560,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 701
+                "startLine": 729
             },
             {
                 "name": "stringMatching",
@@ -4351,7 +4590,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 714
+                "startLine": 742
             },
             {
                 "name": "commands",
@@ -4395,7 +4634,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 734
+                "startLine": 762
             },
             {
                 "name": "sample",
@@ -4432,7 +4671,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 754
+                "startLine": 782
             },
             {
                 "name": "sampleShrinks",
@@ -4469,12 +4708,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 783
+                "startLine": 811
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L46",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L47",
         "implementedBy": []
     },
     {
@@ -8593,6 +8832,83 @@
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/StateMachine/StateMachine.php#L33",
         "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Swarmable",
+        "kind": "interface",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "A generator that picks among a fixed, countable set of variants and can hand\nback a copy of itself restricted to some of them — the seam\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary needs to do swarm\ntesting over it.",
+        "description": "Positions, not values, are the currency: a variant is a value in\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\OneOfArbitrary, a\n`[weight, arbitrary]` pair in\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\FrequencyArbitrary and a command\ngenerator in \\Rasuvaeff\\PropertyTesting\\Arbitrary\\CommandSequenceArbitrary,\nand an index is the one description all three share.\n\nImplement it on a custom choice generator to make it swarmable. Everything\nthe restricted copy is not asked about — sizes, weights, the initial model —\nmust survive unchanged: a swarm restricts the alphabet and nothing else.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "template": [
+                "TValue of mixed = mixed"
+            ],
+            "extends": [
+                "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\TValue>"
+            ]
+        },
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\ArbitraryInterface"
+        ],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "variantCount",
+                "static": false,
+                "params": [],
+                "returnType": "int",
+                "summary": "How many variants this generator chooses among. Must be positive: a\nchoice generator with nothing to choose from is not a choice, and\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary rejects a\nsource that reports otherwise rather than drawing from an empty\nalphabet. Deliberately typed `int` and not `int<1, max>` — the bound is\na promise implementations make, and a swarm still checks it at runtime\nbecause it cannot analyse the implementations it will be handed.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 39
+            },
+            {
+                "name": "withVariants",
+                "static": false,
+                "params": [
+                    {
+                        "name": "indices",
+                        "type": "list<int>",
+                        "description": "Variant positions to keep, each in\n`[0, variantCount() - 1]`; an index outside that range is a\nprogrammer error and throws.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Swarmable",
+                "summary": "A copy of this generator that chooses only among the variants at\n$indices.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 51
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Swarmable.php#L28",
+        "implementedBy": [
+            "Rasuvaeff\\PropertyTesting\\Arbitrary\\CommandSequenceArbitrary",
+            "Rasuvaeff\\PropertyTesting\\Arbitrary\\FrequencyArbitrary",
+            "Rasuvaeff\\PropertyTesting\\Arbitrary\\OneOfArbitrary"
+        ]
     },
     {
         "root": "testo",

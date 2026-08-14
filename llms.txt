@@ -211,6 +211,7 @@ Gen::filter(ArbitraryInterface $inner, Closure $p)   // FilteredArbitrary, 100 r
 Gen::tuple(ArbitraryInterface ...$elements)          // TupleArbitrary
 Gen::frequency(iterable $pairs)                      // FrequencyArbitrary, [weight, arb] pairs
 Gen::commands(mixed $initialModel, array $commandGenerators, int $minLen = 0, int $maxLen = 100) // CommandSequenceArbitrary
+Gen::swarm(ArbitraryInterface $choice)  // SwarmArbitrary: swarm testing. Wraps a CHOICE generator (oneOf/elements/frequency/commands) or any Swarmable; anything else throws. Each generated case may use only a random NON-EMPTY subset of the variants; frequency weights of survivors are kept. Shrinking stays INSIDE that subset (never widens back), which is what keeps an "operation never occurred" finding reproducible. Subset is drawn once per generated value -> wrap the generator whose scope you mean (swarm(commands(...)) = whole sequence; arrayOf(swarm(oneOf(...))) redraws per element). Counterexample reports the value, not the subset; seed replay reproduces both. swarm(commands(...)) with minLength > 0 can throw GenerationExhausted when the subset starves the sequence.
 Gen::ipv4()  Gen::ipv6()  Gen::email()  Gen::url()  // ipv6: canonical RFC 5952 text, shrinks to "::"
 Gen::json(int $maxDepth = 3)  Gen::jsonString(int $maxDepth = 3)
 Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compiled to combinators

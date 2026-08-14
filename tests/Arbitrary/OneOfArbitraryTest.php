@@ -141,4 +141,46 @@ final class OneOfArbitraryTest
     {
         new OneOfArbitrary();
     }
+
+    public function variantCountIsTheNumberOfValues(): void
+    {
+        Assert::same((new OneOfArbitrary('a', 'b', 'c'))->variantCount(), 3);
+    }
+
+    public function restrictingToVariantsKeepsTheChosenValuesInTheGivenOrder(): void
+    {
+        // Order matters beyond bookkeeping: OneOf shrinks toward earlier
+        // values, so the restricted copy's first kept value is what its
+        // descents gravitate to.
+        $restricted = (new OneOfArbitrary('a', 'b', 'c', 'd'))->withVariants([1, 3]);
+        $random = new Random(2);
+        $seen = [];
+
+        for ($i = 0; $i < 100; ++$i) {
+            $seen[$restricted->generate($random)->value] = true;
+        }
+
+        Assert::same(array_keys($seen), ['b', 'd']);
+        Assert::same($restricted->variantCount(), 2);
+    }
+
+    public function restrictingKeepsAValueThatIsNull(): void
+    {
+        // A null variant is a value like any other; a lookup that treated it
+        // as "absent" would drop it and report an out-of-range index instead.
+        $restricted = (new OneOfArbitrary(null, 'a'))->withVariants([0]);
+
+        Assert::null($restricted->generate(new Random(4))->value);
+    }
+
+    public function rejectsAVariantIndexOutsideTheValues(): void
+    {
+        try {
+            (new OneOfArbitrary('a', 'b'))->withVariants([2]);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Variant 2 is outside the 2 values of this generator');
+        }
+    }
 }

@@ -9,9 +9,9 @@ description: "Generates valid Command sequences for stateful / model-based testi
 
 `Rasuvaeff\PropertyTesting\Arbitrary\CommandSequenceArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CommandSequenceArbitrary.php#L35) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CommandSequenceArbitrary.php#L36) — **Version:** working tree
 
-**Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+**Implements:** [`Swarmable`](/api/classes/Swarmable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
 Generates valid Command sequences for stateful / model-based testing
 and shrinks them by dropping and simplifying steps.
@@ -62,4 +62,41 @@ toward a zero/empty/identity element) and every branch of the tree must
 be finite, so shrinking terminates.
 
 *Documentation inherited from [`ArbitraryInterface`](/api/classes/ArbitraryInterface).*
+
+### variantCount()
+
+```php
+variantCount(): int
+```
+
+How many variants this generator chooses among. Must be positive: a
+choice generator with nothing to choose from is not a choice, and
+[`Arbitrary\SwarmArbitrary`](/api/classes/Arbitrary/SwarmArbitrary) rejects a
+source that reports otherwise rather than drawing from an empty
+alphabet. Deliberately typed `int` and not `int<1, max>` — the bound is
+a promise implementations make, and a swarm still checks it at runtime
+because it cannot analyse the implementations it will be handed.
+
+*Documentation inherited from [`Swarmable`](/api/classes/Swarmable).*
+
+### withVariants()
+
+```php
+withVariants(list<int> $indices): Arbitrary\CommandSequenceArbitrary
+```
+
+The restricted copy keeps the initial model and both length bounds — a
+swarm narrows the command alphabet and nothing else. That is also where
+its sharpest edge is: with a $minLength above zero, a subset from which
+no applicable command reaches that length throws
+GenerationExhausted exactly as the unrestricted generator does
+when the model starves it. That is the contract, not an accident — a
+sequence shorter than its minimum has never been a valid result here,
+and silently returning one would be the worse answer.
+
+- `$indices` — Variant positions to keep, each in `[0, variantCount() - 1]`.
+
+**Throws:**
+
+- `InvalidArgumentException` — When an index falls outside the command generators.
 

@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
+use Rasuvaeff\PropertyTesting\Swarmable;
 
 /**
  * Weighted choice among several arbitraries: each `[weight, arbitrary]` pair is
@@ -17,10 +18,10 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * the branch that actually generated the value.
  *
  * @template TValue
- * @implements ArbitraryInterface<TValue>
+ * @implements Swarmable<TValue>
  * @api
  */
-final readonly class FrequencyArbitrary implements ArbitraryInterface
+final readonly class FrequencyArbitrary implements Swarmable
 {
     /** @var non-empty-list<array{0: int, 1: ArbitraryInterface<TValue>}> */
     private array $pairs;
@@ -79,5 +80,36 @@ final readonly class FrequencyArbitrary implements ArbitraryInterface
         // so the cumulative subtraction always crosses zero on some branch; the
         // loop therefore always returns. This throw only satisfies the compiler.
         throw new \LogicException('Frequency selection failed to pick a branch');
+    }
+
+    #[\Override]
+    public function variantCount(): int
+    {
+        return count($this->pairs);
+    }
+
+    /**
+     * The kept pairs carry their weights unchanged, so a swarm changes which
+     * branches exist and not how the surviving ones compete: the total weight
+     * shrinks with them, and a branch that was twice as likely as its
+     * neighbour still is.
+     *
+     * @param list<int> $indices Variant positions to keep, each in `[0, variantCount() - 1]`.
+     *
+     * @throws \InvalidArgumentException When an index falls outside the weighted branches.
+     *
+     * @return self<TValue>
+     */
+    #[\Override]
+    public function withVariants(array $indices): self
+    {
+        return new self(array_map(
+            fn(int $index): array => $this->pairs[$index] ?? throw new \InvalidArgumentException(sprintf(
+                'Variant %d is outside the %d weighted branches of this generator',
+                $index,
+                count($this->pairs),
+            )),
+            $indices,
+        ));
     }
 }

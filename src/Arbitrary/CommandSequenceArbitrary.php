@@ -10,6 +10,7 @@ use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\StateMachine\Command;
 use Rasuvaeff\PropertyTesting\StateMachine\CommandSequence;
+use Rasuvaeff\PropertyTesting\Swarmable;
 
 /**
  * Generates valid {@see Command} sequences for stateful / model-based testing
@@ -29,10 +30,10 @@ use Rasuvaeff\PropertyTesting\StateMachine\CommandSequence;
  * skips any command whose precondition a change invalidated, keeping every
  * candidate sound.
  *
- * @implements ArbitraryInterface<CommandSequence>
+ * @implements Swarmable<CommandSequence>
  * @api
  */
-final readonly class CommandSequenceArbitrary implements ArbitraryInterface
+final readonly class CommandSequenceArbitrary implements Swarmable
 {
     /**
      * How many command generators to try per step before giving up and ending
@@ -41,7 +42,7 @@ final readonly class CommandSequenceArbitrary implements ArbitraryInterface
     private const int MAX_PICK_ATTEMPTS = 20;
 
     /**
-     * @var list<ArbitraryInterface<Command>>
+     * @var non-empty-list<ArbitraryInterface<Command>>
      */
     private array $commandGenerators;
 
@@ -76,7 +77,7 @@ final readonly class CommandSequenceArbitrary implements ArbitraryInterface
             throw new \InvalidArgumentException('Minimum length must be less than or equal to maximum length');
         }
 
-        /** @var list<ArbitraryInterface<Command>> $validated */
+        /** @var non-empty-list<ArbitraryInterface<Command>> $validated */
         $validated = array_values($commandGenerators);
         $this->commandGenerators = $validated;
     }
@@ -121,6 +122,46 @@ final readonly class CommandSequenceArbitrary implements ArbitraryInterface
         }
 
         return $this->tree($commands);
+    }
+
+    #[\Override]
+    public function variantCount(): int
+    {
+        return count($this->commandGenerators);
+    }
+
+    /**
+     * The restricted copy keeps the initial model and both length bounds — a
+     * swarm narrows the command alphabet and nothing else. That is also where
+     * its sharpest edge is: with a $minLength above zero, a subset from which
+     * no applicable command reaches that length throws
+     * {@see GenerationExhausted} exactly as the unrestricted generator does
+     * when the model starves it. That is the contract, not an accident — a
+     * sequence shorter than its minimum has never been a valid result here,
+     * and silently returning one would be the worse answer.
+     *
+     * @param list<int> $indices Variant positions to keep, each in `[0, variantCount() - 1]`.
+     *
+     * @throws \InvalidArgumentException When an index falls outside the command generators.
+     *
+     * @return self
+     */
+    #[\Override]
+    public function withVariants(array $indices): self
+    {
+        return new self(
+            $this->initialModel,
+            array_map(
+                fn(int $index): ArbitraryInterface => $this->commandGenerators[$index] ?? throw new \InvalidArgumentException(sprintf(
+                    'Variant %d is outside the %d command generators of this generator',
+                    $index,
+                    count($this->commandGenerators),
+                )),
+                $indices,
+            ),
+            $this->minLength,
+            $this->maxLength,
+        );
     }
 
     /**

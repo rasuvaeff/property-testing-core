@@ -280,6 +280,55 @@ final class CommandSequenceArbitraryTest
         $arbitrary->generate(new Random(0));
     }
 
+    public function variantCountIsTheNumberOfCommandGenerators(): void
+    {
+        Assert::same($this->stackCommands()->variantCount(), 2);
+    }
+
+    public function restrictingTheCommandsKeepsTheModelAndBothLengthBounds(): void
+    {
+        // A swarm narrows the alphabet and nothing else: the restricted copy
+        // still starts from the same model and still owes exactly two steps.
+        $pushOnly = Gen::commands([], [
+            Gen::map(Gen::intBetween(0, 5), static fn(mixed $v): PushCommand => new PushCommand((int) $v)),
+            Gen::constant(new PopCommand()),
+        ], minLength: 2, maxLength: 2)->withVariants([0]);
+
+        for ($seed = 0; $seed < 20; ++$seed) {
+            $sequence = $pushOnly->generate(new Random($seed))->value;
+            Assert::instanceOf($sequence, CommandSequence::class);
+            Assert::same(count($sequence->commands), 2);
+
+            foreach ($sequence->commands as $command) {
+                Assert::instanceOf($command, PushCommand::class);
+            }
+        }
+    }
+
+    #[ExpectException(GenerationExhausted::class)]
+    public function restrictingAwayTheOnlyApplicableCommandStarvesTheMinimumLength(): void
+    {
+        // Pop alone cannot start from an empty stack, so the minimum is
+        // unreachable — and an unreachable minimum throws here exactly as it
+        // does when the model itself starves the generator. Worth pinning:
+        // this is the sharp edge of swarming over Gen::commands().
+        Gen::commands([], [
+            Gen::map(Gen::intBetween(0, 5), static fn(mixed $v): PushCommand => new PushCommand((int) $v)),
+            Gen::constant(new PopCommand()),
+        ], minLength: 1)->withVariants([1])->generate(new Random(1));
+    }
+
+    public function rejectsAVariantIndexOutsideTheCommandGenerators(): void
+    {
+        try {
+            $this->stackCommands()->withVariants([2]);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Variant 2 is outside the 2 command generators of this generator');
+        }
+    }
+
     private function stackCommands(): CommandSequenceArbitrary
     {
         return Gen::commands([], [

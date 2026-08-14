@@ -202,6 +202,7 @@ through their source domain.
 | `Gen::jsonString($maxDepth)` | the `json_encode` text of `Gen::json()` | through the value's tree |
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators) | shorter/simpler matches (via the compiled trees) |
 | `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
+| `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |
 
 Numeric generators (`int*`, `float*`) are **boundary-biased**: roughly one draw in
 five returns an in-range edge value (`0`, `±1`, `min`, `max` for ints; `0.0` or
@@ -218,6 +219,40 @@ value.
 seed produce identical sequences regardless of other random calls in the
 process — that is what makes reported seeds reproducible. Do not use generated
 values for cryptography.
+
+### Swarm testing (`Gen::swarm`)
+
+Uniform draws from the full alphabet make every case look like every other one:
+a hundred draws from `oneOf('push', 'pop', 'flush')` almost surely contain all
+three, so the bugs that need an operation to be *absent* are practically
+unreachable. `Gen::swarm()` restricts a choice generator to a random, non-empty
+subset of its variants for each generated case — Groce et al., *Swarm Testing*
+(ISSTA 2012):
+
+```php
+Gen::swarm(Gen::oneOf('push', 'pop', 'flush'));   // one case sees, say, only 'pop' and 'flush'
+Gen::swarm(Gen::commands($model, $commands));   // one sequence uses a subset of the commands
+```
+
+It accepts the choice generators — `Gen::oneOf()`, `Gen::elements()`,
+`Gen::frequency()`, `Gen::commands()` — and any `Swarmable` of your own;
+anything else throws. Surviving `frequency` branches keep their weights, so a
+branch that was twice as likely as its neighbour still is.
+
+Shrinking stays inside the subset the case came from: a counterexample found
+without `flush` never shrinks into one containing it, which is what keeps such a
+finding reproducible at all. Two consequences worth knowing:
+
+- the subset is drawn once per generated value, so wrap the generator whose
+  scope you mean. `swarm(commands(...))` restricts a whole sequence;
+  `arrayOf(swarm(oneOf(...)))` redraws per element, which is noise rather than
+  swarm testing;
+- the counterexample reports the value, not the subset it was drawn from. Seed
+  replay reproduces both.
+
+A swarm over `Gen::commands()` with a non-zero `$minLength` can leave a case
+with no applicable command; that throws `GenerationExhausted`, exactly as an
+unrestricted generator starved by its model does.
 
 ### Dependent generators (`flatMap`)
 

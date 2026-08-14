@@ -4904,7 +4904,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 42
+                "startLine": 44
             },
             {
                 "name": "format",
@@ -4927,7 +4927,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 73
+                "startLine": 75
             },
             {
                 "name": "drawNumber",
@@ -4950,7 +4950,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 86
+                "startLine": 88
             }
         ],
         "constants": [],

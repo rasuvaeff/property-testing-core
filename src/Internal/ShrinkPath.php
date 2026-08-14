@@ -22,12 +22,14 @@ namespace Rasuvaeff\PropertyTesting\Internal;
 final class ShrinkPath
 {
     /**
-     * A parameter name is a PHP identifier; an in-body draw is reported under
-     * `draw#N`, which cannot collide with one. Indices are bounded at nine
+     * A parameter name is a PHP identifier — which includes the bytes above
+     * `\x7f`, because PHP accepts `$é` and the recorder would otherwise write a
+     * path its own parser rejects. An in-body draw is reported under `draw#N`,
+     * which cannot collide with a parameter. Indices are bounded at nine
      * digits: a candidate a billion deep into a shrink enumeration is a typo,
      * not a path, and the bound keeps the parse away from integer saturation.
      */
-    private const string SEGMENT = '(?:[A-Za-z_]\w*|draw#[1-9]\d{0,8}):\d{1,9}';
+    private const string SEGMENT = '(?:[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*|draw#[1-9]\d{0,8}):\d{1,9}';
 
     /**
      * The recorded steps of a path.

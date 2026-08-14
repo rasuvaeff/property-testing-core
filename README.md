@@ -324,8 +324,9 @@ corpus is for. A path that no longer applies is reported as its own outcome
 (`PathFailed`) naming the step that broke, never absorbed into a fresh search:
 searching quietly would return a counterexample that looks exactly like a
 successful replay. Configurations that would leave the path a no-op — no
-explicit seed, shrinking switched off, a wall-clock shrink budget, a `maxShrinks`
-below the path's length, a malformed path — are rejected at construction.
+explicit seed, a phase set without `Random` or `Shrink`, shrinking switched off, a
+wall-clock shrink budget, a `maxShrinks` below the path's length, a malformed
+path — are rejected at construction.
 
 ### Shrink modes and phases
 

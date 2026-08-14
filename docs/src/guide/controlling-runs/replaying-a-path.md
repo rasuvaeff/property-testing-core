@@ -46,10 +46,11 @@ random phase.
 
 A pinned path does not switch the corpus off, and the two meet in run order: a
 recorded entry that still fails is reported before the random phase reaches the
-path at all. Pass `replayRegressions: false`, or a phase set without
-`Phase::Corpus`, to follow the path alone. In the other direction, a
-counterexample reached through a path is stored like any other — the input is
-minimal either way, and how it was reached is not part of what the corpus keeps.
+path at all. The path is not applied to that replay — a recorded regression is a
+different run from the one the path was recorded on, so a seed entry replays
+with a full search — and a counterexample reached through a path is stored like
+any other, since the input is minimal either way. Pass `replayRegressions:
+false`, or a phase set without `Phase::Corpus`, to follow the path alone.
 
 ## A path is a debugging aid, not a fixture
 
@@ -62,7 +63,7 @@ what survives a refactor; a path reproduces *this* descent, today.
 
 When a path stops applying, the run says so:
 
-```
+```text
 Shrink path "value:1/value:3" no longer applies: step 2 ("value:3") no longer
 falsifies the property. Re-run without a path to search for the counterexample
 again
@@ -84,6 +85,7 @@ construction instead:
 | Configuration | Why |
 |---|---|
 | No explicit `seed` | The steps only mean anything against the run that produced them. `derandomize` does not substitute: a path is always copied from a message that printed its seed beside it |
+| `phases` without `Phase::Random` | The descent a path replays starts from a random run's falsification; without that phase the run passes before the path is consulted |
 | `ShrinkMode::Off`, or `phases` without `Phase::Shrink` | There is no descent to follow |
 | A `shrinkBudgetMs` | A path exists to be deterministic; a [wall-clock budget](/guide/controlling-runs/bounding-shrink) exists not to be |
 | A `maxShrinks` below the path's own length | The replay could not finish the path |

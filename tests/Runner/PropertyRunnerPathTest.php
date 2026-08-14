@@ -10,6 +10,7 @@ use Rasuvaeff\PropertyTesting\Event\ShrinkAccepted;
 use Rasuvaeff\PropertyTesting\Event\ShrinkTried;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
+use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\PathFailed;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
@@ -18,6 +19,7 @@ use Rasuvaeff\PropertyTesting\Runner\PropertyResult;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
 use Rasuvaeff\PropertyTesting\Runner\ShrinkMode;
 use Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener;
+use Rasuvaeff\PropertyTesting\Tests\Support\RecordingCorpus;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -166,6 +168,38 @@ final class PropertyRunnerPathTest
             array_map(static fn(ShrinkAccepted $event): int => $event->step, $listener->ofType(ShrinkAccepted::class)),
             [1, 2, 3, 4, 5, 6, 7, 8, 9],
         );
+    }
+
+    /**
+     * A corpus seed entry replays a different run from the one the path was
+     * recorded on, so the path must not reach it: applied there it would report
+     * "path no longer applies" over the very regression the corpus exists to
+     * surface.
+     */
+    public function aPinnedPathDoesNotReachTheCorpusReplay(): void
+    {
+        $corpus = new RecordingCorpus([CorpusEntry::seed(7)]);
+
+        $result = (new PropertyRunner())->run(
+            new PropertyDefinition(
+                id: 'path::property',
+                name: 'property',
+                generators: ['value' => Gen::intBetween(0, 10_000)],
+                parameterNames: ['value'],
+                config: new PropertyConfig(runs: 200, seed: 42, path: self::INT_PATH),
+            ),
+            new CallableTrialExecutor($this->belowHundred()),
+            [],
+            $corpus,
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->seed, 7);
+        // Searched, not followed: the recorded seed's descent tries candidates
+        // it rejects, which a replay never does.
+        Assert::true($example->shrinkTrials > $example->shrinkSteps);
+        Assert::same($corpus->pruned, []);
     }
 
     public function aDescentCutShortStillReportsThePathItTook(): void

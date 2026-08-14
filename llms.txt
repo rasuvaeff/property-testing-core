@@ -85,7 +85,7 @@ $definition = new PropertyDefinition(
                                 // (explicit seed still wins; seed->values mapping unchanged)
         path: null,             // replay a recorded descent: 'value:1/draw#1:0/value:3'
                                 // needs an explicit seed; rejects every no-op config
-                                // (no seed, no shrink phase, shrinkBudgetMs, maxShrinks
+                                // (no seed, no random/shrink phase, shrinkBudgetMs, maxShrinks
                                 // below its length, malformed); a stale path -> PathFailed
     ),
     examples: [],               // list of positional tuples, run FIRST, unshrunk

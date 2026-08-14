@@ -51,6 +51,10 @@ final class ShrinkPathTest
         ];
 
         yield 'an underscored parameter' => ['_private_1:0', [['name' => '_private_1', 'index' => 0]]];
+
+        // PHP accepts `$é` as a parameter name, so the recorder can write one;
+        // a grammar that rejected it would reject a path this engine produced.
+        yield 'a non-ASCII parameter' => ['éclair:3', [['name' => 'éclair', 'index' => 3]]];
     }
 
     /**

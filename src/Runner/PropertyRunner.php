@@ -121,7 +121,12 @@ final readonly class PropertyRunner
                     }
                 } else {
                     $this->emit($listeners, new CorpusReplayed($property->id, isValues: false, arguments: [], seed: $entry->seed));
-                    $replay = $this->runPhase($property, $executor, new Random($entry->seed), $entry->seed, $runs, $maxDiscards, $listeners);
+                    // Without the pinned path: it records ONE descent — the
+                    // one the random phase below produces — and a recorded
+                    // regression is a different run. Applied here it would
+                    // report "path no longer applies" over the regression the
+                    // corpus exists to surface.
+                    $replay = $this->runPhase($property, $executor, new Random($entry->seed), $entry->seed, $runs, $maxDiscards, $listeners, null);
 
                     if ($replay->failure() instanceof \Throwable) {
                         return $this->finish($listeners, $property->id, $replay);
@@ -149,7 +154,7 @@ final readonly class PropertyRunner
             )));
         }
 
-        $result = $this->runPhase($property, $executor, new Random($seed), $seed, $runs, $maxDiscards, $listeners);
+        $result = $this->runPhase($property, $executor, new Random($seed), $seed, $runs, $maxDiscards, $listeners, $config->path);
 
         if ($corpus instanceof Corpus && $result instanceof Falsified) {
             $corpus->remember($property->id, $result->counterExample(), $property->parameterNames);
@@ -208,6 +213,9 @@ final readonly class PropertyRunner
      * re-run it with a recorded seed.
      *
      * @param list<PropertyListener> $listeners
+     * @param ?string $path The descent to follow instead of searching for one; null searches.
+     *        Passed in rather than read off the config because a corpus seed replay is a
+     *        different run from the one the path was recorded on.
      */
     private function runPhase(
         PropertyDefinition $property,
@@ -217,13 +225,13 @@ final readonly class PropertyRunner
         int $runs,
         int $maxDiscards,
         array $listeners,
+        ?string $path,
     ): PropertyResult {
         $maxShrinks = $property->config->maxShrinks;
         $shrinkMode = $property->config->shrink;
         $shrinkBudgetMs = $shrinkMode === ShrinkMode::Bounded ? $property->config->shrinkBudgetMs : null;
         $timeoutMs = $property->config->timeoutMs;
         $budgetMs = $property->config->budgetMs;
-        $path = $property->config->path;
 
         $skips = 0;
         $checks = 0;
@@ -743,6 +751,13 @@ final readonly class PropertyRunner
      * means executing the runs before it, because bodies consume randomness
      * through {@see \Rasuvaeff\PropertyTesting\Gen::draw()} and discards depend
      * on the body. The saving is the descent.
+     *
+     * {@see self::MAX_DRAW_SHRINK_STEPS} deliberately does not apply here. That
+     * cap exists because an accepted candidate can regrow the tape with fresh
+     * trees, so a search has no finite bound of its own; a path is finite by
+     * construction, and truncating a replay at the cap would return a
+     * counterexample the path does not describe — the silent wrong answer this
+     * whole design is built to avoid.
      *
      * @param array<string, Shrinkable> $trees The failing arguments' shrink trees.
      * @param list<Shrinkable> $tape The failing run's recorded in-body draws.

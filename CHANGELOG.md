@@ -16,9 +16,9 @@
   applies is reported as the new `PathFailed` result carrying the new
   `PathViolationException`, naming the step that broke, and is never absorbed
   into a fresh search. Configurations that would leave the path a silent no-op
-  (no explicit seed, shrinking switched off, a wall-clock shrink budget, a
-  `maxShrinks` below the path's own length, a malformed path) are rejected at
-  construction. The failure message is unchanged: the path travels on the
+  (no explicit seed, a phase set without `Random` or `Shrink`, shrinking
+  switched off, a wall-clock shrink budget, a `maxShrinks` below the path's own
+  length, a malformed path) are rejected at construction. The failure message is unchanged: the path travels on the
   counterexample, and printing it is the adapters' half of the 0.2 line.
 - Added `PropertyConfig::$derandomize`: with it set, a run without an explicit
   seed derives one from the property's id instead of drawing it at random, so

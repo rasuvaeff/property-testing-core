@@ -205,6 +205,11 @@ final class PropertyConfigTest
             'Replaying a shrink path requires an explicit seed',
         ];
 
+        yield 'a path without the random phase' => [
+            static fn(): PropertyConfig => new PropertyConfig(seed: 1, phases: [Phase::Shrink], path: 'value:1'),
+            'Replaying a shrink path requires the random phase',
+        ];
+
         yield 'a path with shrinking switched off' => [
             static fn(): PropertyConfig => new PropertyConfig(seed: 1, shrink: ShrinkMode::Off, path: 'value:1'),
             'Replaying a shrink path requires the shrink phase',

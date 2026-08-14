@@ -184,6 +184,12 @@ final readonly class PropertyConfig
             // surprises for a profile that happens to set the flag.
             throw new \InvalidArgumentException('Replaying a shrink path requires an explicit seed');
         }
+        if (!in_array(Phase::Random, $this->phases, strict: true)) {
+            // The descent a path replays starts from a random run's
+            // falsification; without that phase the run reports a pass before
+            // the path is ever consulted.
+            throw new \InvalidArgumentException('Replaying a shrink path requires the random phase');
+        }
         if ($this->shrink === ShrinkMode::Off) {
             throw new \InvalidArgumentException('Replaying a shrink path requires the shrink phase');
         }

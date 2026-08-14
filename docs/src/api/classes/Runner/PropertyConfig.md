@@ -26,6 +26,9 @@ __construct(
     ?int $maxDiscards = NULL,
     ?int $timeoutMs = NULL,
     ?int $budgetMs = NULL,
+    ?\Runner\ShrinkMode $shrink = NULL,
+    ?int $shrinkBudgetMs = NULL,
+    ?list<\Runner\Phase> $phases = NULL,
 )
 ```
 
@@ -37,4 +40,26 @@ __construct(
 | `$maxDiscards` | `?int` | `NULL` | Maximum discarded runs before giving up. Null uses ten times $runs (saturating to PHP_INT_MAX). |
 | `$timeoutMs` | `?int` | `NULL` | Wall-clock deadline for a single run in milliseconds; null disables it. |
 | `$budgetMs` | `?int` | `NULL` | Wall-clock budget for the whole random phase in milliseconds; null disables it. |
+| `$shrink` | `?\Runner\ShrinkMode` | `NULL` | How hard to minimise a counterexample. Null means [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Full unless $shrinkBudgetMs or $phases say otherwise. |
+| `$shrinkBudgetMs` | `?int` | `NULL` | Wall-clock budget for the shrink descent in milliseconds, which implies [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Bounded; null disables it. Unlike every other knob this one costs determinism: the same seed can minimise to different counterexamples on a fast and a slow machine, because how far the descent gets depends on how long the body takes. It answers "the descent hung", not "reproduce this exactly" — the corpus and an explicit seed remain the reproducible paths. A budget large enough to overflow its own nanosecond deadline is a configuration error. |
+| `$phases` | `?list<\Runner\Phase>` | `NULL` | Stages to perform; null means [`Runner\Phase`](/api/classes/Runner/Phase)::all(). An empty list is a configuration error — a run with no phases has nothing to report — and so is a list holding anything other than a [`Runner\Phase`](/api/classes/Runner/Phase): an unrecognised stage is not run, which would report green having checked nothing. |
+
+## Properties
+
+| Property | Type | Readonly | Description |
+|---|---|---|---|
+| `phases` | `non-empty-list<\Runner\Phase>` | yes | Which stages this run performs, in run order. Never empty. |
+| `shrink` | `Runner\ShrinkMode` | yes | The resolved shrink mode: what `$shrink`, `$shrinkBudgetMs` and `$phases` amount to together, so the runner reads one field instead of re-deriving a three-way interaction. |
+
+## Methods
+
+### runs()
+
+```php
+runs(\Runner\Phase $phase): bool
+```
+
+True when this run performs $phase.
+
+- `$phase` — The stage to test for.
 

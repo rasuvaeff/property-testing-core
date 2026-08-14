@@ -8,9 +8,11 @@ use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\Passed;
+use Rasuvaeff\PropertyTesting\Runner\Phase;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
+use Rasuvaeff\PropertyTesting\Runner\ShrinkMode;
 
 /**
  * This example drives the engine directly — no Testo, no PHPUnit, no test
@@ -75,4 +77,61 @@ if ($result instanceof Falsified) {
     echo sprintf("  shrunk:   %s (in %d step(s))\n", var_export($example->shrunkArguments['value'], true), $example->shrinkSteps);
 } else {
     echo "everyIntStaysBelowHundred: held unexpectedly\n";
+}
+
+// The same property with the descent switched off: the counterexample is
+// reported exactly as generated, with zero shrink steps and zero trials. A
+// wall-clock alternative is `shrinkBudgetMs`, which keeps the best candidate
+// the descent reached before the budget ran out.
+$unshrunk = $runner->run(
+    new PropertyDefinition(
+        id: 'standalone::everyIntStaysBelowHundred',
+        name: 'everyIntStaysBelowHundred',
+        generators: ['value' => Gen::intBetween(0, 10_000)],
+        parameterNames: ['value'],
+        config: new PropertyConfig(runs: 200, seed: 42, shrink: ShrinkMode::Off),
+    ),
+    new CallableTrialExecutor(static function (int $value): void {
+        if ($value >= 100) {
+            throw new RuntimeException(sprintf('%d is not below 100', $value));
+        }
+    }),
+);
+
+if ($unshrunk instanceof Falsified) {
+    $example = $unshrunk->counterExample();
+
+    echo sprintf(
+        "  with ShrinkMode::Off: %s in %d step(s), %d trial(s)\n",
+        var_export($example->shrunkArguments['value'], true),
+        $example->shrinkSteps,
+        $example->shrinkTrials,
+    );
+}
+
+// Phases are a set: this run performs the pinned examples and nothing else, so
+// it completes in one body execution instead of 200. With no random phase the
+// statistics report honest zeros rather than the configured run count.
+$gate = $runner->run(
+    new PropertyDefinition(
+        id: 'standalone::fastGate',
+        name: 'fastGate',
+        generators: ['value' => Gen::intBetween(0, 10_000)],
+        parameterNames: ['value'],
+        config: new PropertyConfig(runs: 200, seed: 42, phases: [Phase::Examples, Phase::Corpus]),
+        examples: [[7]],
+    ),
+    new CallableTrialExecutor(static function (int $value): void {
+        if ($value >= 100) {
+            throw new RuntimeException(sprintf('%d is not below 100', $value));
+        }
+    }),
+);
+
+if ($gate instanceof Passed) {
+    echo sprintf(
+        "fastGate: passed with attempts=%d, checks=%d (the random phase never ran)\n",
+        $gate->statistics->attempts,
+        $gate->statistics->checks,
+    );
 }

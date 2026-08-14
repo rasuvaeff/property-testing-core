@@ -30,7 +30,7 @@ final class Ipv6Formatter
     {
         \assert(count($groups) === self::GROUPS);
 
-        $hex = array_map(static fn(int $group): string => dechex($group), $groups);
+        $hex = array_map(dechex(...), $groups);
         $run = self::compressibleRun($groups);
 
         if ($run === null) {

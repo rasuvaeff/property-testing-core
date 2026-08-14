@@ -24,14 +24,7 @@ __construct(
     string $name,
     array<string,\ArbitraryInterface> $generators,
     list<string> $parameterNames,
-    Runner\PropertyConfig $config = \Rasuvaeff\PropertyTesting\Runner\PropertyConfig::__set_state(array(
-   'runs' => 100,
-   'seed' => NULL,
-   'maxShrinks' => NULL,
-   'maxDiscards' => NULL,
-   'timeoutMs' => NULL,
-   'budgetMs' => NULL,
-)),
+    Runner\PropertyConfig $config = new \Rasuvaeff\PropertyTesting\Runner\PropertyConfig(),
     list<list> $examples = [],
     bool $replayRegressions = true,
 )
@@ -43,14 +36,7 @@ __construct(
 | `$name` | `string` | *required* | Display name used in failure messages (the bare method name under Testo). |
 | `$generators` | `array<string,\ArbitraryInterface>` | *required* | One generator per parameter, keyed by name. |
 | `$parameterNames` | `list<string>` | *required* | The property body's parameters, in declaration order. |
-| `$config` | [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig) | `\Rasuvaeff\PropertyTesting\Runner\PropertyConfig::__set_state(array(
-   'runs' => 100,
-   'seed' => NULL,
-   'maxShrinks' => NULL,
-   'maxDiscards' => NULL,
-   'timeoutMs' => NULL,
-   'budgetMs' => NULL,
-))` |  |
+| `$config` | [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig) | `new \Rasuvaeff\PropertyTesting\Runner\PropertyConfig()` |  |
 | `$examples` | `list<list>` | `[]` | Fixed positional argument tuples run before the random phase. |
 | `$replayRegressions` | `bool` | `true` | Whether recorded corpus entries replay before the random phase. An adapter turns this off when the property pins its own seed, so the pinned reproducibility wins over the corpus. |
 

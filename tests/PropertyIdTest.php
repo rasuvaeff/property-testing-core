@@ -37,6 +37,19 @@ final class PropertyIdTest
         yield 'bare marker' => ['{closure'];
     }
 
+    public function theWarningReadsExactlyLikeThis(): void
+    {
+        // The sentence IS the product of this helper — an adapter prints it
+        // verbatim — so it is pinned whole rather than by fragments.
+        Assert::same(
+            PropertyId::unstableWarning('StackTest::{closure}'),
+            'Property id "StackTest::{closure}" comes from a closure and is not stable: '
+            . 'PHP 8.3 gives every closure of a class the same name, and from 8.4 the name '
+            . 'carries a line number that any edit above shifts. The regression corpus is '
+            . 'keyed by it — pass an explicit property id',
+        );
+    }
+
     #[DataProvider('stableIdProvider')]
     public function aMethodDerivedIdHasNothingToWarnAbout(string $id): void
     {

@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 use Rasuvaeff\PropertyTesting\Assume;
 use Rasuvaeff\PropertyTesting\Classify;
 use Rasuvaeff\PropertyTesting\Event\PropertyFinished;
+use Rasuvaeff\PropertyTesting\Event\RunPassed;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\CoverageFailed;
@@ -64,6 +65,33 @@ final class PropertyRunnerDistributionTest
             array_map(static fn(LabelShare $share): string => $share->label, $report->labels),
             ['even', 'odd'],
         );
+    }
+
+    public function aNumericLabelReachesListenersAsAStringOnBothPaths(): void
+    {
+        // Two surfaces, one root cause: the labels on RunPassed and the label
+        // of a LabelShare. A property that classifies by a numeric id is not
+        // exotic, and an int there breaks a listener comparing with ===.
+        $listener = new CollectingListener();
+        $this->run(
+            static function (int $value): void {
+                Classify::label('42');
+            },
+            runs: 5,
+            listener: $listener,
+        );
+
+        foreach ($listener->ofType(RunPassed::class) as $passed) {
+            Assert::same($passed->labels, ['42']);
+        }
+
+        $report = $this->distributionOf($listener);
+        Assert::instanceOf($report, DistributionReport::class);
+        Assert::same(
+            array_map(static fn(LabelShare $share): string => $share->label, $report->labels),
+            ['42'],
+        );
+        Assert::same($report->label('42')?->count, 5);
     }
 
     /**

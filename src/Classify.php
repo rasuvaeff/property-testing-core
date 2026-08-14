@@ -36,15 +36,21 @@ final class Classify
     /**
      * Labels recorded during the current run (used as a set).
      *
-     * @var array<string, true>
+     * Keyed by label, and typed `array-key` rather than `string` because PHP
+     * stores a numeric label such as `'42'` under an integer key. The type
+     * says what the array can hold; {@see flushRun()} is where the label is
+     * handed back as the string the body recorded.
+     *
+     * @var array<array-key, true>
      */
     private static array $current = [];
 
     /**
      * Minimum coverage requirements registered during the current property
-     * (label => required percentage of passing runs).
+     * (label => required percentage of passing runs). Keyed as `array-key`
+     * for the same reason as {@see $current}.
      *
-     * @var array<string, float>
+     * @var array<array-key, float>
      */
     private static array $requirements = [];
 
@@ -109,7 +115,14 @@ final class Classify
      */
     public static function flushRun(): array
     {
-        $labels = array_keys(self::$current);
+        // Cast back what the array key coerced away: a label like '42' went in
+        // as a string and comes out of array_keys() as an int. Listeners are
+        // promised list<string>, and a property that labels by a numeric id is
+        // not doing anything exotic.
+        $labels = array_map(
+            static fn(int|string $label): string => (string) $label,
+            array_keys(self::$current),
+        );
         self::$current = [];
 
         return $labels;
@@ -122,7 +135,7 @@ final class Classify
      *
      * @internal Driven by the property runner.
      *
-     * @return array<string, float>
+     * @return array<array-key, float>
      */
     public static function flushRequirements(): array
     {

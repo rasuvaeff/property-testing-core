@@ -28,6 +28,22 @@ final class ClassifyTest
         Assert::same(Classify::flushRun(), ['even']);
     }
 
+    public function aNumericLabelComesBackAsTheStringItWasRecordedWith(): void
+    {
+        // PHP stores '42' under the integer key 42, so without a cast back the
+        // buffer hands listeners an int where the contract says string.
+        Classify::label('42');
+        Classify::when(condition: true, label: '007');
+
+        $labels = Classify::flushRun();
+
+        Assert::same($labels, ['42', '007']);
+
+        foreach ($labels as $label) {
+            Assert::true(is_string($label));
+        }
+    }
+
     public function whenRecordsOnlyWhenTheConditionHolds(): void
     {
         Classify::when(condition: true, label: 'yes');

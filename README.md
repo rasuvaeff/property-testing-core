@@ -273,6 +273,9 @@ no environment:
 | `maxDiscards` | `null` | Discard budget; null resolves to `runs * 10` |
 | `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded` |
 | `budgetMs` | `null` | Wall-clock budget for the whole random phase → `TimeBudgetExceeded` |
+| `shrink` | `null` | `ShrinkMode::Off` reports the counterexample as generated; null resolves to `Full` |
+| `shrinkBudgetMs` | `null` | Wall-clock budget for the shrink descent; implies `ShrinkMode::Bounded` |
+| `phases` | `null` | Stages to perform (`Phase::Examples`/`Corpus`/`Random`/`Shrink`); null runs all of them |
 | `derandomize` | `false` | Derive an unset seed from the property id instead of drawing one |
 
 ### Derandomized runs
@@ -292,6 +295,38 @@ property keeps a stable input distribution — which is what makes distribution
 numbers comparable between commits. An explicit `seed` always wins over the
 flag. The seed→values mapping is untouched: this changes which seed a run
 picks, never what that seed produces.
+
+### Shrink modes and phases
+
+`maxShrinks` caps the *accepted* steps, but the cost of a descent is in the
+candidates it *tries* — on large collections that is easily more expensive than
+the random phase that found the failure. Two knobs bound it from the other side:
+
+```php
+new PropertyConfig(shrink: ShrinkMode::Off);   // report the counterexample as generated
+new PropertyConfig(shrinkBudgetMs: 500);       // descend for at most 500 ms, keep the best so far
+```
+
+A shrink budget is the one knob in this package that costs determinism: how far
+the descent gets depends on how long the body takes, so the same seed can
+minimise differently on a fast and a slow machine. It answers "the descent
+hung", not "reproduce this exactly" — for the latter, pin the seed or rely on
+the corpus.
+
+The stages of a run are a set, not a fixed sequence:
+
+```php
+new PropertyConfig(phases: [Phase::Examples, Phase::Corpus]);  // fast pull-request gate
+new PropertyConfig();                                          // every phase (the default)
+```
+
+| Rule | Behaviour |
+|---|---|
+| Empty phase set | `InvalidArgumentException` — a run with no phases has nothing to report |
+| Phase set holding anything but a `Phase` | `InvalidArgumentException` — an unrecognised stage would simply not run, and the property would report green having checked nothing |
+| Phase set without `Shrink` | Exactly `ShrinkMode::Off`; the stricter of the two knobs always wins |
+| `Phase::Corpus` | Gates corpus **replay** only, and composes with `replayRegressions` as an AND; a fresh falsification is still recorded |
+| Phase set without `Random` | Nothing is generated: honest zero statistics (`attempts: 0`, `checks: 0`) and coverage requirements dropped rather than assessed against an empty denominator. The result is `Passed` once the enabled earlier phases pass — a pinned example or a corpus entry that fails still reports its own failure |
 
 `PropertyDefinition` adds the identity (`id` keys events and the corpus),
 display `name`, `generators`, `parameterNames`, fixed `examples` (positional

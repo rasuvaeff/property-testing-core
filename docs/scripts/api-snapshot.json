@@ -729,7 +729,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Generates values from a delegate arbitrary, retrying until a predicate holds.",
-        "description": "Filtering is bounded: after \\Rasuvaeff\\PropertyTesting\\Arbitrary\\self::MAX_ATTEMPTS consecutive rejections\nthe generator throws \\Rasuvaeff\\PropertyTesting\\GenerationExhausted rather than yield a value that\nfails the predicate — a property never receives an out-of-domain input. Use\n\\Rasuvaeff\\PropertyTesting\\Assume::that() inside the property when the\nrejection rate is high, which skips discarded runs cleanly, or\n\\Rasuvaeff\\PropertyTesting\\Gen::flatMap() to construct dependent values\nwithout filtering at all.\n\nShrinking walks the inner value's tree, keeping only branches whose value\nsatisfies the predicate (a rejected candidate's subtree is pruned with it).",
+        "description": "Filtering is bounded: after \\Rasuvaeff\\PropertyTesting\\Arbitrary\\FilteredArbitrary::MAX_ATTEMPTS consecutive rejections\nthe generator throws \\Rasuvaeff\\PropertyTesting\\GenerationExhausted rather than yield a value that\nfails the predicate — a property never receives an out-of-domain input. Use\n\\Rasuvaeff\\PropertyTesting\\Assume::that() inside the property when the\nrejection rate is high, which skips discarded runs cleanly, or\n\\Rasuvaeff\\PropertyTesting\\Gen::flatMap() to construct dependent values\nwithout filtering at all.\n\nShrinking walks the inner value's tree, keeping only branches whose value\nsatisfies the predicate (a rejected candidate's subtree is pruned with it).",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -1634,7 +1634,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Generates lists of pairwise-distinct elements (strict comparison) drawn from\na delegate arbitrary, and shrinks them by length toward the empty array, then\nelement-by-element through each element's own tree — accepting only\ncandidates that keep the list distinct.",
-        "description": "Generation draws a size, then draws elements, skipping duplicates. Drawing is\nbounded: after \\Rasuvaeff\\PropertyTesting\\Arbitrary\\self::MAX_ATTEMPTS_PER_ELEMENT attempts per requested\nelement the generator settles for the distinct elements found so far — the\nresult may be smaller than the drawn size, mirroring dictOf's key-collision\nbehaviour. An element space too small to reach the minimum size throws\n\\Rasuvaeff\\PropertyTesting\\GenerationExhausted rather than hand the property a too-small list.",
+        "description": "Generation draws a size, then draws elements, skipping duplicates. Drawing is\nbounded: after \\Rasuvaeff\\PropertyTesting\\Arbitrary\\UniqueArrayArbitrary::MAX_ATTEMPTS_PER_ELEMENT attempts per requested\nelement the generator settles for the distinct elements found so far — the\nresult may be smaller than the drawn size, mirroring dictOf's key-collision\nbehaviour. An element space too small to reach the minimum size throws\n\\Rasuvaeff\\PropertyTesting\\GenerationExhausted rather than hand the property a too-small list.",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -6665,6 +6665,91 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\Phase",
+        "kind": "enum",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The stages of one property run, as an explicit set rather than a fixed\nsequence. Selecting a subset trades coverage for time on purpose: replaying\nonly the corpus and the pinned examples turns a minutes-long suite into a\nseconds-long pull-request gate, and dropping self::Corpus measures a\nproperty honestly without deleting the recorded regressions to do it.",
+        "description": "Whatever the subset, the stages that do run keep this order.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "UnitEnum"
+        ],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "all",
+                "static": true,
+                "params": [],
+                "returnType": "array",
+                "summary": "Every phase, in run order — the default of PropertyConfig.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 46
+            }
+        ],
+        "constants": [
+            {
+                "name": "Examples",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\Phase",
+                "summary": "The fixed argument tuples of PropertyDefinition::$examples.",
+                "value": null
+            },
+            {
+                "name": "Corpus",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\Phase",
+                "summary": "Replay of the recorded regressions. Composes with\nPropertyDefinition::$replayRegressions as an AND — either one\nswitching it off is enough. Gates replay only: a fresh falsification is\nstill recorded, because storing is not a phase.",
+                "value": null
+            },
+            {
+                "name": "Random",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\Phase",
+                "summary": "Generated inputs — the random phase proper.",
+                "value": null
+            },
+            {
+                "name": "Shrink",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\Phase",
+                "summary": "Minimisation of a counterexample. Leaving it out is exactly\nShrinkMode::Off; the two are one behaviour with one\nimplementation.",
+                "value": null
+            }
+        ],
+        "enumCases": [
+            {
+                "name": "Examples",
+                "backingValue": null
+            },
+            {
+                "name": "Corpus",
+                "backingValue": null
+            },
+            {
+                "name": "Random",
+                "backingValue": null
+            },
+            {
+                "name": "Shrink",
+                "backingValue": null
+            }
+        ],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Phase.php#L18",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig",
         "kind": "class",
         "isApi": true,
@@ -6734,6 +6819,33 @@
                 "readonly": true
             },
             {
+                "name": "shrink",
+                "type": "?\\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode",
+                "description": "How hard to minimise a counterexample. Null means\n\\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode::Full unless $shrinkBudgetMs or $phases say otherwise.",
+                "default": "NULL",
+                "promoted": false,
+                "promotedVisibility": "private",
+                "readonly": false
+            },
+            {
+                "name": "shrinkBudgetMs",
+                "type": "?int",
+                "description": "Wall-clock budget for the shrink descent in milliseconds, which\nimplies \\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode::Bounded; null disables it. Unlike every other knob this one\ncosts determinism: the same seed can minimise to different counterexamples on a fast\nand a slow machine, because how far the descent gets depends on how long the body\ntakes. It answers \"the descent hung\", not \"reproduce this exactly\" — the corpus and an\nexplicit seed remain the reproducible paths. A budget large enough to overflow its\nown nanosecond deadline is a configuration error.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "phases",
+                "type": "?list<\\Rasuvaeff\\PropertyTesting\\Runner\\Phase>",
+                "description": "Stages to perform; null means \\Rasuvaeff\\PropertyTesting\\Runner\\Phase::all(). An empty list\nis a configuration error — a run with no phases has nothing to report — and so is a\nlist holding anything other than a \\Rasuvaeff\\PropertyTesting\\Runner\\Phase: an unrecognised stage is not run,\nwhich would report green having checked nothing.",
+                "default": "NULL",
+                "promoted": false,
+                "promotedVisibility": "private",
+                "readonly": false
+            },
+            {
                 "name": "derandomize",
                 "type": "bool",
                 "description": "Whether an unset $seed is derived from the property's id instead of\ndrawn at random, so the same property on the same code always selects the same inputs.\nAn explicit $seed always wins. The derivation lives in \\Rasuvaeff\\PropertyTesting\\Runner\\PropertyRunner because\nonly it knows the id — and because a config that called `random_int()` would stop being\na plain value.",
@@ -6743,8 +6855,45 @@
                 "readonly": true
             }
         ],
-        "publicProperties": [],
-        "publicMethods": [],
+        "publicProperties": [
+            {
+                "name": "phases",
+                "type": "non-empty-list<\\Rasuvaeff\\PropertyTesting\\Runner\\Phase>",
+                "readonly": true,
+                "summary": "Which stages this run performs, in run order. Never empty."
+            },
+            {
+                "name": "shrink",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode",
+                "readonly": true,
+                "summary": "The resolved shrink mode: what `$shrink`, `$shrinkBudgetMs` and\n`$phases` amount to together, so the runner reads one field instead of\nre-deriving a three-way interaction."
+            }
+        ],
+        "publicMethods": [
+            {
+                "name": "runs",
+                "static": false,
+                "params": [
+                    {
+                        "name": "phase",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\Phase",
+                        "description": "The stage to test for.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "bool",
+                "summary": "True when this run performs $phase.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 113
+            }
+        ],
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyConfig.php#L15",
@@ -6808,7 +6957,7 @@
                 "name": "config",
                 "type": "Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig",
                 "description": "",
-                "default": "\\Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig::__set_state(array(\n   'runs' => 100,\n   'seed' => NULL,\n   'maxShrinks' => NULL,\n   'maxDiscards' => NULL,\n   'timeoutMs' => NULL,\n   'budgetMs' => NULL,\n   'derandomize' => false,\n))",
+                "default": "new \\Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig()",
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
@@ -7085,6 +7234,65 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/RunStatistics.php#L15",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode",
+        "kind": "enum",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "How hard the runner works to minimise a counterexample.",
+        "description": "\\Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig::$maxShrinks caps the *accepted* steps; the cost of a\ndescent is in the candidates it *tries*, which on large collections easily\nexceeds the random phase that found the failure. These modes bound that cost\nfrom the other side.\n\nThe mode is derived, never set twice: a phase set without\n\\Rasuvaeff\\PropertyTesting\\Runner\\Phase::Shrink is \\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode::Off, and a configured\n\\Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig::$shrinkBudgetMs is \\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode::Bounded.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "UnitEnum"
+        ],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [],
+        "constants": [
+            {
+                "name": "Off",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode",
+                "summary": "No descent at all: the counterexample is reported exactly as generated,\nwith zero shrink steps and zero shrink trials.",
+                "value": null
+            },
+            {
+                "name": "Bounded",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode",
+                "summary": "The descent runs until its wall-clock budget expires, then returns the\nbest candidate found so far. Deliberately not reproducible across\nmachines — see PropertyConfig::$shrinkBudgetMs.",
+                "value": null
+            },
+            {
+                "name": "Full",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode",
+                "summary": "The descent runs to exhaustion, subject only to\nPropertyConfig::$maxShrinks. The default, and the only\ndeterministic mode.",
+                "value": null
+            }
+        ],
+        "enumCases": [
+            {
+                "name": "Off",
+                "backingValue": null
+            },
+            {
+                "name": "Bounded",
+                "backingValue": null
+            },
+            {
+                "name": "Full",
+                "backingValue": null
+            }
+        ],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/ShrinkMode.php#L21",
         "implementedBy": []
     },
     {

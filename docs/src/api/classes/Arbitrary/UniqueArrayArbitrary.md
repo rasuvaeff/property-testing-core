@@ -23,7 +23,7 @@ element-by-element through each element's own tree — accepting only
 candidates that keep the list distinct.
 
 Generation draws a size, then draws elements, skipping duplicates. Drawing is
-bounded: after `Arbitrary\self`::MAX_ATTEMPTS_PER_ELEMENT attempts per requested
+bounded: after [`Arbitrary\UniqueArrayArbitrary`](/api/classes/Arbitrary/UniqueArrayArbitrary)::MAX_ATTEMPTS_PER_ELEMENT attempts per requested
 element the generator settles for the distinct elements found so far — the
 result may be smaller than the drawn size, mirroring dictOf's key-collision
 behaviour. An element space too small to reach the minimum size throws

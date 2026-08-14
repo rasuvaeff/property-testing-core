@@ -51,6 +51,7 @@ use phpDocumentor\Reflection\DocBlock\Tags\Deprecated;
 use phpDocumentor\Reflection\DocBlock\Tags\Param;
 use phpDocumentor\Reflection\DocBlock\Tags\See;
 use phpDocumentor\Reflection\DocBlock\Tags\Throws;
+use phpDocumentor\Reflection\DocBlock\Tags\Var_;
 use phpDocumentor\Reflection\Types\ContextFactory;
 
 /** @return array{version: string|null, reference: string|null} */
@@ -167,6 +168,45 @@ function stripInlineTags(string $text): string
     return preg_replace('/\{@(?:see|link)\s+([^}]+)\}/', '$1', $text) ?? $text;
 }
 
+/**
+ * Rewrites the `self`/`static` keywords a docblock is entitled to use into the
+ * class they stand for.
+ *
+ * phpDocumentor resolves a reference against the surrounding namespace without
+ * caring that the tail is a keyword, so `{@see self::Off}` inside
+ * `Runner\ShrinkMode` arrives here as `\Rasuvaeff\PropertyTesting\Runner\self`
+ * — a symbol that exists nowhere, links to nothing, and renders on the page as
+ * the nonexistent `Runner\self`. A class may not be named `self` or `static`,
+ * so a segment spelled that way can only be the keyword.
+ *
+ * @param mixed $value Any part of a parsed docblock; arrays are walked.
+ * @param ?string $selfClass The class the keywords refer to; null leaves the text alone.
+ * @return mixed The same shape, with the keywords resolved.
+ */
+function resolveSelfReferences(mixed $value, ?string $selfClass): mixed
+{
+    if ($selfClass === null) {
+        return $value;
+    }
+
+    if (is_array($value)) {
+        return array_map(static fn(mixed $item): mixed => resolveSelfReferences($item, $selfClass), $value);
+    }
+
+    if (!is_string($value)) {
+        return $value;
+    }
+
+    // A callback, not a replacement string: a fully qualified name is nothing
+    // but backslashes, and every one of them would have to be escaped against
+    // preg_replace()'s own backreference syntax.
+    return preg_replace_callback(
+        '/\\\\(?:[A-Za-z_][A-Za-z0-9_]*\\\\)*(?:self|static)\b/',
+        static fn(): string => '\\' . $selfClass,
+        $value,
+    ) ?? $value;
+}
+
 function tagBody(Tag $tag): string
 {
     // Every DocBlock tag renders its own body via __toString() — the `Tag`
@@ -192,7 +232,7 @@ function tagBody(Tag $tag): string
 function parseDocBlock(
     DocBlockFactory $factory,
     ContextFactory $contextFactory,
-    ReflectionClass|ReflectionMethod|ReflectionClassConstant $reflector,
+    ReflectionClass|ReflectionMethod|ReflectionClassConstant|ReflectionProperty $reflector,
 ): array {
     $empty = [
         'summary' => '',
@@ -248,6 +288,18 @@ function parseDocBlock(
             continue;
         }
 
+        // A property's or a constant's `@var` is the same shape as a `@param`
+        // with no variable name, and it carries the narrow type (`non-empty-
+        // list<Phase>`) that the PHP declaration (`array`) cannot.
+        if ($tag instanceof Var_) {
+            $params[$tag->getVariableName() ?? ''] = [
+                'type' => $tag->getType() !== null ? (string) $tag->getType() : '',
+                'description' => $tag->getDescription() !== null ? stripInlineTags(trim($tag->getDescription()->render())) : '',
+            ];
+
+            continue;
+        }
+
         if ($tag instanceof Throws) {
             $throws[] = [
                 'type' => $tag->getType() !== null ? (string) $tag->getType() : '',
@@ -282,7 +334,7 @@ function parseDocBlock(
         $extensionTags[$name][] = tagBody($tag);
     }
 
-    return [
+    $parsed = [
         'summary' => stripInlineTags(trim($block->getSummary())),
         'description' => stripInlineTags(trim($block->getDescription()->render())),
         'params' => $params,
@@ -292,6 +344,13 @@ function parseDocBlock(
         'isApi' => $isApi,
         'extensionTags' => $extensionTags,
     ];
+
+    $selfClass = $reflector instanceof ReflectionClass
+        ? $reflector->getName()
+        : $reflector->getDeclaringClass()->getName();
+
+    /** @var array{summary: string, description: string, params: array<string, array{type: string, description: string}>, throws: list<array{type: string, description: string}>, see: list<string>, deprecated: string|null, isApi: bool, extensionTags: array<string, list<string>>} */
+    return resolveSelfReferences($parsed, $selfClass);
 }
 
 function typeToString(?ReflectionType $type): ?string
@@ -427,6 +486,14 @@ function defaultValueLiteral(ReflectionParameter $param): ?string
     return match (true) {
         is_string($value) => var_export($value, true),
         is_array($value) => $value === [] ? '[]' : var_export($value, true),
+        // A `new Foo()` default var_export()s to a multi-line
+        // `Foo::__set_state(array(...))` dump that grows with every property
+        // the class gains. Inside a markdown table cell those newlines end the
+        // cell, and the type names left stranded in prose (`list<string>`) are
+        // then parsed as HTML tags — VitePress fails with "Element is missing
+        // end tag". The signature says all a reader needs: the default is a
+        // default-constructed instance.
+        is_object($value) => 'new \\' . $value::class . '()',
         default => var_export($value, true),
     };
 }
@@ -480,6 +547,14 @@ foreach (roots($coreDir, $workspaceDir, $coreVersion, $testoVersion, $phpunitVer
             if ($method->isConstructor()) {
                 continue; // reported above as constructorParams
             }
+            if ($reflection->isEnum() && in_array($method->getName(), ['cases', 'from', 'tryFrom'], true)) {
+                // PHP synthesises these on every enum, so reflection reports
+                // them as the enum's own — but they are language built-ins with
+                // no docblock to write, not authored API surface. Listing them
+                // would also charge the completeness ratchet for prose nobody
+                // can add.
+                continue;
+            }
 
             $methodDoc = parseDocBlock($factory, $contextFactory, $method);
 
@@ -527,13 +602,31 @@ foreach (roots($coreDir, $workspaceDir, $coreVersion, $testoVersion, $phpunitVer
             if ($property->getDeclaringClass()->getName() !== $className) {
                 continue;
             }
-            if ($constructor !== null && in_array($property->getName(), array_column($constructorParams, 'name'), true)) {
-                continue; // already reported as a promoted constructor param
+            // A promoted parameter is already reported as a constructor param.
+            // Matching on the *name* instead would also swallow a declared
+            // property that merely shares a name with a plain constructor
+            // parameter — which is exactly how a class exposes the resolved
+            // form of an argument it takes in a looser one, and precisely the
+            // thing the reference must show.
+            if ($property->isPromoted()) {
+                continue;
             }
+            if ($reflection->isEnum() && in_array($property->getName(), ['name', 'value'], true)) {
+                // The same language built-ins as cases()/from()/tryFrom() above:
+                // PHP declares them on the enum itself, and no docblock for them
+                // can be written where they appear.
+                continue;
+            }
+            $propertyDoc = parseDocBlock($factory, $contextFactory, $property);
+            // `@var` first: it carries the narrow type (`non-empty-list<Phase>`)
+            // that the PHP declaration (`array`) cannot express. An empty string
+            // is a `@var` with no type at all, which is no better than nothing.
+            $documentedType = $propertyDoc['params']['']['type'] ?? '';
             $declaredProperties[] = [
                 'name' => $property->getName(),
-                'type' => typeToString($property->getType()),
+                'type' => $documentedType === '' ? typeToString($property->getType()) : $documentedType,
                 'readonly' => $property->isReadOnly(),
+                'summary' => $propertyDoc['summary'],
             ];
         }
 

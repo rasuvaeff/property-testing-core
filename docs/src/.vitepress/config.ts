@@ -31,6 +31,7 @@ const sidebar = [
             { text: 'Bounding shrink work', link: '/guide/controlling-runs/bounding-shrink' },
             { text: 'Deadlines', link: '/guide/controlling-runs/deadlines' },
             { text: 'Derandomized runs', link: '/guide/controlling-runs/derandomize' },
+            { text: 'Run phases', link: '/guide/controlling-runs/phases' },
             { text: 'Environment overrides', link: '/guide/controlling-runs/env-overrides' },
         ],
     },

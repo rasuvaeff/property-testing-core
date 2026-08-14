@@ -107,10 +107,18 @@ The Testo attribute takes: `runs` (≥1, default 100), `seed` (reproducible),
 `budgetMs` (whole random phase), `generators` / `examples` (override the
 default method names).
 
-`PropertyConfig` adds `derandomize` (engine level): an unset seed becomes a
-pure function of the property id, so a locally found bug reproduces in CI
-before any corpus entry exists, and a passing property keeps a stable input
-distribution. An explicit seed still wins.
+`PropertyConfig` (engine level, for callers that build a `PropertyDefinition`
+themselves) adds: `shrink` (`ShrinkMode::Off` reports the counterexample as
+generated), `shrinkBudgetMs` (wall-clock budget of the descent, implies
+`ShrinkMode::Bounded`, and trades determinism for a bounded descent), and
+`phases` (`Phase::Examples`/`Corpus`/`Random`/`Shrink`; `[]` throws, a set
+without `Shrink` IS `ShrinkMode::Off`, a set without `Random` reports zero
+statistics and passes unless an enabled example or corpus replay failed first,
+and `Phase::Corpus` gates replay only). Every element must be a `Phase`: a
+stray value is rejected, not silently skipped. It also adds `derandomize`: an
+unset seed becomes a pure function of the property id, so a locally found bug
+reproduces in CI before any corpus entry exists, and a passing property keeps a
+stable input distribution. An explicit seed still wins.
 
 ## Choosing a generator
 

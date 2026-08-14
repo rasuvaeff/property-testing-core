@@ -263,7 +263,7 @@ jobs:
         # they no longer accept, this job is meant to go red until they do.
         working-directory: adapter
         run: |
-          composer config repositories.core '{"type":"path","url":"../core","options":{"versions":{"rasuvaeff/property-testing-core":"0.1.0"}}}'
+          composer config repositories.core '{"type":"path","url":"../core","options":{"versions":{"rasuvaeff/property-testing-core":"0.2.0"}}}'
           composer update --no-interaction --no-progress
 
       - name: Verify core resolved to the path repository

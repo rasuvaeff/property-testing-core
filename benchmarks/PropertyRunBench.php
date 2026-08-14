@@ -11,6 +11,7 @@ use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
 use Rasuvaeff\PropertyTesting\Runner\PropertyResult;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
+use Testo\Assert\ExpectNoAssertions;
 use Testo\Bench;
 
 /**
@@ -24,6 +25,7 @@ use Testo\Bench;
  */
 final class PropertyRunBench
 {
+    #[ExpectNoAssertions]
     #[Bench(['no labels' => [self::class, 'plainProperty']], calls: 20, iterations: 5)]
     public static function classifyingProperty(): PropertyResult
     {

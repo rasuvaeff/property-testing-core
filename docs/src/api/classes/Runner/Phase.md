@@ -39,12 +39,6 @@ Whatever the subset, the stages that do run keep this order.
 | `Random` | — |
 | `Shrink` | — |
 
-## Properties
-
-| Property | Type | Readonly |
-|---|---|---|
-| `name` | `string` | yes |
-
 ## Methods
 
 ### all()

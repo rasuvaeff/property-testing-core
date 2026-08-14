@@ -38,6 +38,12 @@ zero trials on the counterexample. A `shrinkBudgetMs` resolves to
 `ShrinkMode::Bounded`, which stops the descent on wall clock and reports the
 best candidate it reached — not the original one.
 
+The budget is a millisecond count of at least 1, and at most large enough to
+still convert into the nanosecond deadline the runner compares the clock
+against. Past that point the arithmetic leaves the integer range and the
+deadline stops being one, so such a budget is rejected at construction rather
+than silently disabled.
+
 ## What a budget costs
 
 A wall-clock budget is the one knob here that gives up determinism. How far the

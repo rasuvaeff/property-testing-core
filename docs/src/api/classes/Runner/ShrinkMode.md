@@ -21,8 +21,8 @@ exceeds the random phase that found the failure. These modes bound that cost
 from the other side.
 
 The mode is derived, never set twice: a phase set without
-[`Runner\Phase`](/api/classes/Runner/Phase)::Shrink is `Runner\self`::Off, and a configured
-[`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$shrinkBudgetMs is `Runner\self`::Bounded.
+[`Runner\Phase`](/api/classes/Runner/Phase)::Shrink is [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Off, and a configured
+[`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$shrinkBudgetMs is [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Bounded.
 
 ## Constants
 
@@ -39,10 +39,4 @@ The mode is derived, never set twice: a phase set without
 | `Off` | — |
 | `Bounded` | — |
 | `Full` | — |
-
-## Properties
-
-| Property | Type | Readonly |
-|---|---|---|
-| `name` | `string` | yes |
 

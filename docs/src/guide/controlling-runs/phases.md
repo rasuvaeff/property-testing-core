@@ -13,14 +13,15 @@ fixed sequence — `PropertyConfig` takes the ones to perform:
 use Rasuvaeff\PropertyTesting\Runner\Phase;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 
-new PropertyConfig(phases: [Phase::Examples, Phase::Corpus]);  // seconds, not minutes
+new PropertyConfig(phases: [Phase::Examples, Phase::Corpus]);  // examples and corpus only
 new PropertyConfig();                                          // every phase — the default
 ```
 
-Two uses this is for. A pull-request gate that replays only what is already
-known to have failed, leaving the full random phase to a nightly job. And an
-honest measurement of a property with corpus replay off — which until now meant
-deleting the corpus directory, and so losing the corpus.
+The first of those runs in seconds where the full set runs in minutes, and it
+serves two purposes. One is a pull-request gate that replays only what is
+already known to have failed, leaving the full random phase to a nightly job.
+The other is an honest measurement of a property with corpus replay off — which
+until now meant deleting the corpus directory, and so losing the corpus.
 
 ## Rules
 
@@ -29,13 +30,17 @@ deleting the corpus directory, and so losing the corpus.
 | An empty phase set | `InvalidArgumentException`: a run with no stages has nothing to report |
 | A set without `Phase::Shrink` | Exactly `ShrinkMode::Off` — one behaviour, one implementation, and the stricter of the two knobs always wins |
 | `Phase::Corpus` | Gates corpus **replay** only. Both it and `PropertyDefinition::$replayRegressions` must allow the replay, and neither stops a fresh falsification from being recorded: storing is not a stage |
-| A set without `Phase::Random` | The result is `Passed` with `attempts: 0` and `checks: 0` |
+| A set without `Phase::Random` | Nothing is generated: `attempts: 0`, `checks: 0`, and `Passed` once the enabled earlier phases pass |
+| A phase set holding anything but a `Phase` | `InvalidArgumentException`: an unrecognised stage would simply not run, and the property would report green having checked nothing |
 
-That last row is the one to read twice. With no random phase the statistics
-report zeros rather than the configured run count, and coverage requirements
-are dropped instead of being assessed against an empty denominator — a
-`Classify::cover()` gate cannot be satisfied by runs that never happened, and
-failing on that would make the fast gate unusable on any property that has one.
+That second-to-last row is the one to read twice. With no random phase the
+statistics report zeros rather than the configured run count, and coverage
+requirements are dropped instead of being assessed against an empty denominator
+— a `Classify::cover()` gate cannot be satisfied by runs that never happened,
+and failing on that would make the fast gate unusable on any property that has
+one. `Passed` is the result of the phases that did run, not a shortcut around
+them: a pinned example or a corpus entry that fails still reports
+`ExampleFailed` or `RegressionFailed`, exactly as it would in a full run.
 
 ## Where to set it
 

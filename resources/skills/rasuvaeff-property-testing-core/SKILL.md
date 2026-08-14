@@ -112,8 +112,10 @@ themselves) adds: `shrink` (`ShrinkMode::Off` reports the counterexample as
 generated), `shrinkBudgetMs` (wall-clock budget of the descent, implies
 `ShrinkMode::Bounded`, and trades determinism for a bounded descent), and
 `phases` (`Phase::Examples`/`Corpus`/`Random`/`Shrink`; `[]` throws, a set
-without `Shrink` IS `ShrinkMode::Off`, a set without `Random` yields `Passed`
-with zero statistics, and `Phase::Corpus` gates replay only).
+without `Shrink` IS `ShrinkMode::Off`, a set without `Random` reports zero
+statistics and passes unless an enabled example or corpus replay failed first,
+and `Phase::Corpus` gates replay only). Every element must be a `Phase`: a
+stray value is rejected, not silently skipped.
 
 ## Choosing a generator
 

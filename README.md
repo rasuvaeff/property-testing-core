@@ -304,9 +304,10 @@ new PropertyConfig();                                          // every phase (t
 | Rule | Behaviour |
 |---|---|
 | Empty phase set | `InvalidArgumentException` — a run with no phases has nothing to report |
+| Phase set holding anything but a `Phase` | `InvalidArgumentException` — an unrecognised stage would simply not run, and the property would report green having checked nothing |
 | Phase set without `Shrink` | Exactly `ShrinkMode::Off`; the stricter of the two knobs always wins |
 | `Phase::Corpus` | Gates corpus **replay** only, and composes with `replayRegressions` as an AND; a fresh falsification is still recorded |
-| Phase set without `Random` | `Passed` with honest zero statistics (`attempts: 0`, `checks: 0`); coverage requirements are dropped rather than assessed against an empty denominator |
+| Phase set without `Random` | Nothing is generated: honest zero statistics (`attempts: 0`, `checks: 0`) and coverage requirements dropped rather than assessed against an empty denominator. The result is `Passed` once the enabled earlier phases pass — a pinned example or a corpus entry that fails still reports its own failure |
 
 `PropertyDefinition` adds the identity (`id` keys events and the corpus),
 display `name`, `generators`, `parameterNames`, fixed `examples` (positional

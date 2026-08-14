@@ -271,10 +271,10 @@ function renderClass(entry, apiPagesByClass) {
     if (entry.publicProperties.length > 0) {
         lines.push('## Properties')
         lines.push('')
-        lines.push('| Property | Type | Readonly |')
-        lines.push('|---|---|---|')
+        lines.push('| Property | Type | Readonly | Description |')
+        lines.push('|---|---|---|---|')
         for (const prop of entry.publicProperties) {
-            lines.push(`| \`${prop.name}\` | \`${shortenType(prop.type)}\` | ${prop.readonly ? 'yes' : 'no'} |`)
+            lines.push(`| \`${prop.name}\` | \`${shortenType(prop.type)}\` | ${prop.readonly ? 'yes' : 'no'} | ${escapeCell(prop.summary ?? '', apiPagesByClass)} |`)
         }
         lines.push('')
     }

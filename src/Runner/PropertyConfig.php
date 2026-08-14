@@ -43,9 +43,12 @@ final readonly class PropertyConfig
      *        costs determinism: the same seed can minimise to different counterexamples on a fast
      *        and a slow machine, because how far the descent gets depends on how long the body
      *        takes. It answers "the descent hung", not "reproduce this exactly" — the corpus and an
-     *        explicit seed remain the reproducible paths.
+     *        explicit seed remain the reproducible paths. A budget large enough to overflow its
+     *        own nanosecond deadline is a configuration error.
      * @param ?list<Phase> $phases Stages to perform; null means {@see Phase::all()}. An empty list
-     *        is a configuration error — a run with no phases has nothing to report.
+     *        is a configuration error — a run with no phases has nothing to report — and so is a
+     *        list holding anything other than a {@see Phase}: an unrecognised stage is not run,
+     *        which would report green having checked nothing.
      */
     public function __construct(
         public int $runs = 100,
@@ -76,11 +79,20 @@ final readonly class PropertyConfig
         if ($shrinkBudgetMs !== null && $shrinkBudgetMs < 1) {
             throw new \InvalidArgumentException('Shrink budget must be greater than or equal to 1 millisecond');
         }
+        if ($shrinkBudgetMs !== null && $shrinkBudgetMs > self::maxShrinkBudgetMs()) {
+            throw new \InvalidArgumentException(
+                'Shrink budget must be less than or equal to ' . self::maxShrinkBudgetMs() . ' milliseconds',
+            );
+        }
         if ($shrink === ShrinkMode::Bounded && $shrinkBudgetMs === null) {
             throw new \InvalidArgumentException('Bounded shrinking requires a shrink budget');
         }
-        if ($phases !== null && $phases === []) {
-            throw new \InvalidArgumentException('Phases must not be empty');
+        if ($phases !== null) {
+            if ($phases === []) {
+                throw new \InvalidArgumentException('Phases must not be empty');
+            }
+
+            self::assertPhases($phases);
         }
 
         $this->phases = $phases ?? Phase::all();
@@ -95,6 +107,41 @@ final readonly class PropertyConfig
     public function runs(Phase $phase): bool
     {
         return in_array($phase, $this->phases, strict: true);
+    }
+
+    /**
+     * The largest shrink budget that still behaves like one. The runner turns
+     * it into a nanosecond deadline by adding it to a clock reading, and past
+     * this point that arithmetic leaves the integer range: the product becomes
+     * a float and the deadline stops being a deadline. Half the range is
+     * reserved for the budget, which leaves the other half for the clock —
+     * more than any monotonic source can ever report.
+     */
+    private static function maxShrinkBudgetMs(): int
+    {
+        return intdiv(PHP_INT_MAX, 2_000_000);
+    }
+
+    /**
+     * Rejects a phase set that static analysis would have caught. Untyped
+     * input reaches this constructor from callers that read a configuration
+     * file or a command line, and a stray value there is the worst kind of
+     * silent failure: an unrecognised phase is simply not run, so the property
+     * reports green having checked nothing.
+     *
+     * @param array<array-key, mixed> $phases
+     */
+    private static function assertPhases(array $phases): void
+    {
+        if (!array_is_list($phases)) {
+            throw new \InvalidArgumentException('Phases must be a list of Phase cases');
+        }
+
+        foreach ($phases as $phase) {
+            if (!$phase instanceof Phase) {
+                throw new \InvalidArgumentException('Phases must be a list of Phase cases');
+            }
+        }
     }
 
     /**

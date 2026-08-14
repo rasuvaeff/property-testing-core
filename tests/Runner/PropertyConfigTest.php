@@ -166,5 +166,37 @@ final class PropertyConfigTest
             static fn(): PropertyConfig => new PropertyConfig(phases: []),
             'Phases must not be empty',
         ];
+
+        yield 'shrink budget past its own deadline' => [
+            static fn(): PropertyConfig => new PropertyConfig(shrinkBudgetMs: intdiv(PHP_INT_MAX, 2_000_000) + 1),
+            'Shrink budget must be less than or equal to ' . intdiv(PHP_INT_MAX, 2_000_000) . ' milliseconds',
+        ];
+
+        // Nothing in the type system stops a configuration file or a command
+        // line from reaching the constructor with these.
+        yield 'a phase set holding a string' => [
+            static fn(): PropertyConfig => new PropertyConfig(phases: ['Random']),
+            'Phases must be a list of Phase cases',
+        ];
+
+        yield 'a phase set holding null' => [
+            static fn(): PropertyConfig => new PropertyConfig(phases: [Phase::Random, null]),
+            'Phases must be a list of Phase cases',
+        ];
+
+        yield 'a phase map instead of a list' => [
+            static fn(): PropertyConfig => new PropertyConfig(phases: ['random' => Phase::Random]),
+            'Phases must be a list of Phase cases',
+        ];
+    }
+
+    public function theLargestUsableShrinkBudgetIsAccepted(): void
+    {
+        // The guard is "> max", so the largest budget that still converts to a
+        // nanosecond deadline must survive it.
+        $config = new PropertyConfig(shrinkBudgetMs: intdiv(PHP_INT_MAX, 2_000_000));
+
+        Assert::same($config->shrinkBudgetMs, intdiv(PHP_INT_MAX, 2_000_000));
+        Assert::same($config->shrink, ShrinkMode::Bounded);
     }
 }

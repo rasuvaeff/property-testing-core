@@ -9,7 +9,8 @@
   counts accepted steps rather than the tried candidates a descent actually
   spends its time on. A shrink budget deliberately trades determinism for a
   bounded descent — the corpus and an explicit seed remain the reproducible
-  paths.
+  paths. A budget too large to convert into its own nanosecond deadline is
+  rejected: an overflowed deadline is not a deadline.
 - Added `Phase` and `PropertyConfig::$phases`: the stages of a run (examples,
   corpus replay, random, shrink) are now a set instead of a fixed sequence, so
   a pull request can replay only the corpus and the pinned examples, and a
@@ -17,7 +18,11 @@
   to do it. An empty set throws; a set without `Phase::Shrink` is exactly
   `ShrinkMode::Off`; `Phase::Corpus` gates replay only, and a fresh
   falsification is still recorded; without `Phase::Random` the result carries
-  honest zero statistics and no coverage assessment.
+  honest zero statistics and no coverage assessment, and passes only once the
+  enabled earlier phases have. A phase set is validated element by element: a
+  value that is not a `Phase` is rejected rather than silently skipped, since
+  an unrecognised stage would make a property report green having checked
+  nothing.
 - Added `Gen::ipv6()`: IPv6 address strings in the canonical text form of
   RFC 5952 — lowercase hex, leading zeros stripped, the longest run of zero
   groups compressed to `::` (leftmost on a tie, never a single group). Each of

@@ -101,7 +101,7 @@ final readonly class PropertyRunner
             $exampleFailure = $this->runExamples($property, $executor, $seed, $listeners);
 
             if ($exampleFailure instanceof PropertyResult) {
-                return $this->finish($listeners, $property->id, $exampleFailure);
+                return $this->finish($listeners, $property->id, $exampleFailure, coverageAssessed: false);
             }
         }
 
@@ -117,7 +117,7 @@ final readonly class PropertyRunner
                     $replay = $this->replayRegression($property, $executor, $entry->arguments, $entry->seed);
 
                     if ($replay instanceof PropertyResult) {
-                        return $this->finish($listeners, $property->id, $replay);
+                        return $this->finish($listeners, $property->id, $replay, coverageAssessed: false);
                     }
                 } else {
                     $this->emit($listeners, new CorpusReplayed($property->id, isValues: false, arguments: [], seed: $entry->seed));
@@ -129,7 +129,7 @@ final readonly class PropertyRunner
                     $replay = $this->runPhase($property, $executor, new Random($entry->seed), $entry->seed, $runs, $maxDiscards, $listeners, null);
 
                     if ($replay->failure() instanceof \Throwable) {
-                        return $this->finish($listeners, $property->id, $replay);
+                        return $this->finish($listeners, $property->id, $replay, self::assessedCoverage($replay));
                     }
                 }
 
@@ -146,12 +146,14 @@ final readonly class PropertyRunner
         if (!$config->runs(Phase::Random)) {
             Classify::flushRequirements();
 
+            // coverageAssessed: false — the requirements were dropped a few
+            // lines up, not judged, and the report must not claim otherwise.
             return $this->finish($listeners, $property->id, new Passed(new RunStatistics(
                 attempts: 0,
                 discards: 0,
                 checks: 0,
                 classifications: [],
-            )));
+            )), coverageAssessed: false);
         }
 
         $result = $this->runPhase($property, $executor, new Random($seed), $seed, $runs, $maxDiscards, $listeners, $config->path);
@@ -161,7 +163,7 @@ final readonly class PropertyRunner
             $this->emit($listeners, new CorpusStored($property->id, $result->counterExample()));
         }
 
-        return $this->finish($listeners, $property->id, $result);
+        return $this->finish($listeners, $property->id, $result, self::assessedCoverage($result));
     }
 
     /**
@@ -198,11 +200,49 @@ final readonly class PropertyRunner
      *
      * @param list<PropertyListener> $listeners
      */
-    private function finish(array $listeners, string $propertyId, PropertyResult $result): PropertyResult
-    {
-        $this->emit($listeners, new PropertyFinished($propertyId, $result->failure()));
+    private function finish(
+        array $listeners,
+        string $propertyId,
+        PropertyResult $result,
+        bool $coverageAssessed,
+    ): PropertyResult {
+        $this->emit($listeners, new PropertyFinished($propertyId, $result->failure(), $this->distribution($result, $coverageAssessed)));
 
         return $result;
+    }
+
+    /**
+     * Whether an outcome came out of a completed check loop, which is the only
+     * place the {@see Classify::cover()} requirements are judged. Every other
+     * exit ends before the assessment — including the run that performs no
+     * random phase at all.
+     */
+    private static function assessedCoverage(PropertyResult $result): bool
+    {
+        return $result instanceof Passed || $result instanceof CoverageFailed;
+    }
+
+    /**
+     * The distribution of the run that just ended, for the outcomes that carry
+     * counters; null for the rest. Built here, once, from counters the phase
+     * accumulated — {@see Classify::label()} runs inside the body on every run,
+     * this runs after the last one.
+     */
+    private function distribution(PropertyResult $result, bool $coverageAssessed): ?DistributionReport
+    {
+        $statistics = match (true) {
+            $result instanceof Passed => $result->statistics,
+            $result instanceof CoverageFailed => $result->statistics,
+            $result instanceof GaveUp => $result->statistics,
+            $result instanceof TimeBudgetExceeded => $result->statistics,
+            default => null,
+        };
+
+        if (!$statistics instanceof RunStatistics) {
+            return null;
+        }
+
+        return DistributionReport::of($statistics, $coverageAssessed);
     }
 
     /**
@@ -248,7 +288,10 @@ final readonly class PropertyRunner
                 $phaseElapsedNs = $this->clock->nanoseconds() - $phaseStart;
 
                 if ($phaseElapsedNs > $budgetMs * 1_000_000) {
-                    Classify::flushRequirements();
+                    // Drained AND kept: an exit that never reached the coverage
+                    // assessment still reports what the body demanded, beside
+                    // the shares it actually got.
+                    $requirements = Classify::flushRequirements();
 
                     return new TimeBudgetExceeded(
                         exception: new TimeBudgetExceededException(
@@ -258,7 +301,7 @@ final readonly class PropertyRunner
                             successfulRuns: $checks,
                             requiredRuns: $runs,
                         ),
-                        statistics: new RunStatistics($attempts, $skips, $checks, $classifications),
+                        statistics: new RunStatistics($attempts, $skips, $checks, $classifications, $requirements),
                     );
                 }
             }
@@ -295,7 +338,7 @@ final readonly class PropertyRunner
                 ++$skips;
 
                 if ($skips > $maxDiscards) {
-                    Classify::flushRequirements();
+                    $requirements = Classify::flushRequirements();
 
                     return new GaveUp(
                         exception: new GaveUpException(
@@ -306,7 +349,7 @@ final readonly class PropertyRunner
                             attempts: $attempts,
                             maxDiscards: $maxDiscards,
                         ),
-                        statistics: new RunStatistics($attempts, $skips, $checks, $classifications),
+                        statistics: new RunStatistics($attempts, $skips, $checks, $classifications, $requirements),
                     );
                 }
 
@@ -377,7 +420,7 @@ final readonly class PropertyRunner
 
         $requirements = Classify::flushRequirements();
 
-        $statistics = new RunStatistics($attempts, $skips, $checks, $classifications);
+        $statistics = new RunStatistics($attempts, $skips, $checks, $classifications, $requirements);
         $violation = $this->coverageViolation($property->name, $requirements, $classifications, $checks);
 
         if ($violation instanceof CoverageViolationException) {

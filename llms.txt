@@ -165,7 +165,8 @@ phase and are dropped when `SEQUENCE_EPOCH` changes.
 `RunStarted(attempt, arguments)`, `RunPassed(labels, elapsedNs)`,
 `RunDiscarded`, `RunFailed(failure, elapsedNs)`, `ShrinkTried(parameter,
 candidate, accepted)`, `ShrinkAccepted(step, parameter, before, after)`,
-`CorpusReplayed/CorpusPruned/CorpusStored`, `PropertyFinished(?failure)`.
+`CorpusReplayed/CorpusPruned/CorpusStored`,
+`PropertyFinished(propertyId, ?failure, ?distribution)`.
 
 ```php
 interface PropertyListener { public function onEvent(PropertyEvent $event): void; }
@@ -241,6 +242,16 @@ Assume::that(bool $condition): void   // throws AssumptionSkipped -> discard
 Classify::label(string $label): void
 Classify::when(bool $condition, string $label): void
 Classify::cover(bool $condition, string $label, float $minPercent): void // -> CoverageFailed
+
+// Distribution as data: PropertyFinished::$distribution (null for a falsified
+// run and for every outcome without counters).
+$report = $event->distribution;             // ?DistributionReport
+$report->labels;                            // list<LabelShare>: label, count, percent, ?required
+$report->label('even')?->meetsRequirement();
+$report->discardPercent();                  // discards / ATTEMPTS; labels use CHECKS
+$report->unmetRequirements();               // list<LabelShare>
+$report->coverageAssessed;                  // false when the run ended before the assessment
+$report->toArray();                         // telemetry payload
 Gen::draw(ArbitraryInterface $arb): mixed  // recorded on the replay tape, shrunk like a parameter
 ```
 

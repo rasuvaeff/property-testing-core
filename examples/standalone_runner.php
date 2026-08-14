@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use Rasuvaeff\PropertyTesting\Classify;
+use Rasuvaeff\PropertyTesting\Event\PropertyEvent;
+use Rasuvaeff\PropertyTesting\Event\PropertyFinished;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\PropertyListener;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
+use Rasuvaeff\PropertyTesting\Runner\DistributionReport;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\Passed;
 use Rasuvaeff\PropertyTesting\Runner\PathFailed;
@@ -183,6 +188,46 @@ $stale = $runner->run(
 
 if ($stale instanceof PathFailed) {
     echo sprintf("  stale path: %s\n", $stale->exception->getMessage());
+}
+
+// The distribution as data, not as a printed line: a listener reads the report
+// off PropertyFinished, which is where CI telemetry would collect it.
+$collector = new class implements PropertyListener {
+    public ?DistributionReport $report = null;
+
+    #[\Override]
+    public function onEvent(PropertyEvent $event): void
+    {
+        if ($event instanceof PropertyFinished) {
+            $this->report = $event->distribution;
+        }
+    }
+};
+
+$runner->run(
+    new PropertyDefinition(
+        id: 'standalone::classified',
+        name: 'classified',
+        generators: ['value' => Gen::intBetween(0, 100)],
+        parameterNames: ['value'],
+        config: new PropertyConfig(runs: 200, seed: 42),
+    ),
+    new CallableTrialExecutor(static function (int $value): void {
+        Classify::label($value % 2 === 0 ? 'even' : 'odd');
+        Classify::cover($value > 90, 'high', 5.0);
+    }),
+    [$collector],
+);
+
+foreach ($collector->report?->labels ?? [] as $share) {
+    echo sprintf(
+        "classified: %-4s %5.1f%% (%d/%d)%s\n",
+        $share->label,
+        $share->percent,
+        $share->count,
+        $collector->report?->checks ?? 0,
+        $share->required === null ? '' : sprintf(' — required %.1f%%, %s', $share->required, $share->meetsRequirement() ? 'met' : 'missed'),
+    );
 }
 
 // Phases are a set: this run performs the pinned examples and nothing else, so

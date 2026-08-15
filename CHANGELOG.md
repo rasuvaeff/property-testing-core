@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-08-15
 
 - Added `EdgeCases`, the explicit switch for the numeric boundary bias:
   `PropertyConfig(edgeCases: EdgeCases::None)` generates uniformly instead of

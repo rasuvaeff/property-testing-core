@@ -43,7 +43,7 @@ final readonly class IntArbitrary implements ArbitraryInterface
     public function generate(Random $random): Shrinkable
     {
         // Boundary candidates always include min and max, so the list is non-empty.
-        if ($random->int(1, self::BIAS_DENOMINATOR) === 1) {
+        if ($random->drawsEdgeCase(self::BIAS_DENOMINATOR)) {
             $boundaries = Boundary::ints($this->min, $this->max);
 
             return $this->tree($boundaries[$random->int(0, count($boundaries) - 1)]);

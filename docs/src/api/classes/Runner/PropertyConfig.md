@@ -30,6 +30,7 @@ __construct(
     ?int $shrinkBudgetMs = NULL,
     ?list<\Runner\Phase> $phases = NULL,
     bool $derandomize = false,
+    \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
     ?string $path = NULL,
 )
 ```
@@ -46,6 +47,7 @@ __construct(
 | `$shrinkBudgetMs` | `?int` | `NULL` | Wall-clock budget for the shrink descent in milliseconds, which implies [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Bounded; null disables it. Unlike every other knob this one costs determinism: the same seed can minimise to different counterexamples on a fast and a slow machine, because how far the descent gets depends on how long the body takes. It answers "the descent hung", not "reproduce this exactly" — the corpus and an explicit seed remain the reproducible paths. A budget large enough to overflow its own nanosecond deadline is a configuration error. |
 | `$phases` | `?list<\Runner\Phase>` | `NULL` | Stages to perform; null means [`Runner\Phase`](/api/classes/Runner/Phase)::all(). An empty list is a configuration error — a run with no phases has nothing to report — and so is a list holding anything other than a [`Runner\Phase`](/api/classes/Runner/Phase): an unrecognised stage is not run, which would report green having checked nothing. |
 | `$derandomize` | `bool` | `false` | Whether an unset $seed is derived from the property's id instead of drawn at random, so the same property on the same code always selects the same inputs. An explicit $seed always wins. The derivation lives in [`Runner\PropertyRunner`](/api/classes/Runner/PropertyRunner) because only it knows the id — and because a config that called `random_int()` would stop being a plain value. |
+| `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | Whether the numeric generators keep biasing toward their boundary values ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::Mixin, the default) or generate uniformly ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::None). Turn them off when the edges are what the property cannot use — a body discarding `0`, a range end that violates a precondition — so the discard budget stops paying for one run in five. |
 | `$path` | `?string` | `NULL` | The shrink descent of an earlier failure, as reported by [`CounterExample`](/api/classes/CounterExample)::$path: the runner follows those steps instead of searching for them again, executing the body once per recorded step instead of once per candidate tried. Null searches as usual. It needs an explicit $seed (the steps only mean anything against the run that produced them), and it refuses every configuration that would leave it a silent no-op: a descent switched off, capped below the path's own length, or bounded by a wall clock — the last one because a path exists to be deterministic and a budget exists not to be. |
 
 ## Properties

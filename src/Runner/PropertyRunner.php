@@ -126,7 +126,7 @@ final readonly class PropertyRunner
                     // regression is a different run. Applied here it would
                     // report "path no longer applies" over the regression the
                     // corpus exists to surface.
-                    $replay = $this->runPhase($property, $executor, new Random($entry->seed), $entry->seed, $runs, $maxDiscards, $listeners, null);
+                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $config->edgeCases), $entry->seed, $runs, $maxDiscards, $listeners, null);
 
                     if ($replay->failure() instanceof \Throwable) {
                         return $this->finish($listeners, $property->id, $replay, self::assessedCoverage($replay));
@@ -156,7 +156,7 @@ final readonly class PropertyRunner
             )), coverageAssessed: false);
         }
 
-        $result = $this->runPhase($property, $executor, new Random($seed), $seed, $runs, $maxDiscards, $listeners, $config->path);
+        $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $listeners, $config->path);
 
         if ($corpus instanceof Corpus && $result instanceof Falsified) {
             $corpus->remember($property->id, $result->counterExample(), $property->parameterNames);
@@ -523,7 +523,7 @@ final readonly class PropertyRunner
         $index = 0;
         // Examples may call Gen::draw(); their draws come from a dedicated
         // deterministic stream so the random phase's sequence is untouched.
-        $random = new Random($seed);
+        $random = new Random($seed, $property->config->edgeCases);
 
         foreach ($property->examples as $arguments) {
             $this->emit($listeners, new ExampleStarted($property->id, $index, $arguments));
@@ -599,7 +599,7 @@ final readonly class PropertyRunner
         Classify::beginRun();
         // A recorded regression may call Gen::draw(); its draws come from a
         // dedicated deterministic stream keyed on the recording run's seed.
-        DrawContext::arm(new Random($seed));
+        DrawContext::arm(new Random($seed, $property->config->edgeCases));
         $runStart = $this->clock->nanoseconds();
         $outcome = $executor->execute($ordered);
         $runElapsedNs = $this->clock->nanoseconds() - $runStart;

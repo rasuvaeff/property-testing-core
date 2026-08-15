@@ -64,6 +64,13 @@ final readonly class PropertyConfig
      *        configuration that would leave it a silent no-op: a descent switched off, capped below
      *        the path's own length, or bounded by a wall clock — the last one because a path exists
      *        to be deterministic and a budget exists not to be.
+     * @param EdgeCases $edgeCases Whether the numeric generators keep biasing toward their boundary
+     *        values ({@see EdgeCases::Mixin}, the default) or generate uniformly
+     *        ({@see EdgeCases::None}). Turn them off when the edges are what the property cannot
+     *        use — a body discarding `0`, a range end that violates a precondition — so the discard
+     *        budget stops paying for one run in five.
+     *        Last in the signature on purpose: a parameter added anywhere else moves the ones after
+     *        it, and every caller passing $path positionally would silently mean something else.
      */
     public function __construct(
         public int $runs = 100,
@@ -77,6 +84,7 @@ final readonly class PropertyConfig
         ?array $phases = null,
         public bool $derandomize = false,
         public ?string $path = null,
+        public EdgeCases $edgeCases = EdgeCases::Mixin,
     ) {
         if ($runs < 1) {
             throw new \InvalidArgumentException('Runs must be greater than or equal to 1');

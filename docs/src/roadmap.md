@@ -1,133 +1,134 @@
 ---
 title: Roadmap
-description: "Planned work for property-testing-core 0.2 and the longer-term direction of the property-testing package family."
+description: "What the 0.2 and 0.3 releases delivered, and the direction of the property-testing package family: targeted property testing, coverage-guided search, and attribute-declared generators."
 ---
 
 # Roadmap
 
-This roadmap describes planned work, not released functionality. Scope and
-ordering may change as each item goes through design review and implementation.
-The current target is `property-testing-core` 0.2, an additive minor release
-that preserves every existing call and its meaning.
+This roadmap describes direction, not commitment. Scope and ordering may
+change as each item goes through design review and implementation, and an
+item is dropped rather than shipped if its prototype does not show a
+measurable gain.
+
+Everything this page previously planned for 0.2 has shipped. Core 0.2.0 and
+0.2.1 were released on 2026-08-14 and 0.3.0 and 0.3.1 on 2026-08-15, with
+matching adapter releases; the details are in the changelog of each package.
+
+## Shipped in 0.2 and 0.3
+
+- **Replay by seed and path** — a falsified property reports the shrink
+  descent on `CounterExample::$path`, the failure message ends with a
+  `Path:` line (0.2.1), and `PropertyConfig::$path` replays the descent with
+  one body execution per accepted step.
+- **Shrinking controls** — `ShrinkMode::Off` and a wall-clock
+  `shrinkBudgetMs` that returns the best counterexample found so far.
+- **Deterministic unseeded runs** — `derandomize` derives the seed from the
+  property id; explicit seeds keep the highest priority.
+- **Selectable run phases** — examples, corpus replay, random generation, and
+  shrinking are individually selectable through `PropertyConfig::$phases`.
+- **Machine-readable distributions** — `PropertyFinished` carries a
+  `DistributionReport`: label shares, `cover()` requirements, and the discard
+  tally, as data rather than console text.
+- **Swarm generation** — `Gen::swarm()` runs a choice generator with a
+  random, non-empty subset of its variants per generated case; shrinking
+  stays inside the drawn subset. Custom choice generators join through the
+  `Swarmable` interface.
+- **IPv6 generation** — `Gen::ipv6()` generates canonical RFC 5952 addresses
+  and shrinks toward `::` and `::1`.
+- **Edge-case modes** (0.3) — `EdgeCases::None` turns the numeric boundary
+  bias off without shifting the sequence a seed produces.
+- **Generators from constructor types** (0.3) — `Gen::forClass()` builds a
+  generator from what a constructor declares: an override, the `@param`
+  psalm type, then the native type, with a bounded and documented supported
+  subset and refusal — naming the parameter and the chain that reached it —
+  for anything outside it.
+- **A Redis corpus backend** (0.3) — `RedisCorpus` stores a document
+  byte-identical to the filesystem backend's, so moving a corpus between the
+  two is a copy. The client seam ships implementations over `ext-redis` and
+  predis.
+- **Stable property ids for PHPUnit** — the PHPUnit adapter's explicit
+  `id()` provides stable event and corpus keys for properties invoked from
+  closures, including Pest tests.
+- **Adapter delivery** — the Testo and PHPUnit adapters resolve
+  `PROPERTY_PATH`, `PROPERTY_DERANDOMIZE`, `PROPERTY_PHASES`,
+  `PROPERTY_EDGE_CASES`, and `PROPERTY_DB=redis://…`; the PHPUnit fluent API
+  gained the corresponding methods.
 
 ## Compatibility commitments
 
-Version 0.2 must preserve the observable contracts established by 0.1:
+Every minor release preserves the observable contracts of the previous one:
 
 - the same generated sequence for an existing generator and seed;
-- compatibility with regression corpora written by 2.8 and 0.1;
+- compatibility with regression corpora written by 2.8 and by every 0.x
+  release so far;
 - the existing order and content of events for current outcomes;
 - the package conflict with the frozen `rasuvaeff/property-testing` 2.x line.
 
-New configuration, result fields, generators, and events may be added. Existing
-behaviour will not be silently reinterpreted.
+New configuration, result fields, generators, and events may be added.
+Existing behaviour will not be silently reinterpreted.
 
-## Planned for 0.2
+## Next: targeted property testing and an adaptive example database
 
-### Direct replay by seed and path
+The next core minor is planned around search: the property body reports a
+numeric score — a delay, a recursion depth, a distance from a boundary — and
+the engine spends part of the run maximising or minimising it instead of
+sampling blindly. The design under review:
 
-Failure output will include a shrink path alongside the seed. Supplying both
-will reproduce the minimal counterexample directly, without repeating the
-whole random run and shrink search. A path that no longer applies will produce
-an explicit replay failure instead of falling back to an unrelated run.
+- a `Target::maximize()` / `Target::minimize()` facade, process-local like
+  `Classify`, with a fixed direction per label and an immediate configuration
+  error for non-finite scores;
+- an opt-in search phase after the random phase: hill climbing over a pool of
+  the best-scoring inputs, mutating at parameter granularity — regenerate one
+  parameter, keep the others — because ordinary generator decisions are not
+  recorded on any replay tape;
+- an adaptive example database: today's corpus stores falsifications only.
+  Bounded top-K `target` entries per label will be kept in a **separate
+  search document**, so an older reader never mistakes them for regressions
+  and never prunes them;
+- a `TargetImproved` event and a `SearchReport` on `PropertyFinished`, under
+  the same guarantee as the distribution report: zero overhead when the
+  feature is unused;
+- the work starts with a go/no-go prototype against real extremum bugs. If
+  parameter-level mutation shows no measurable gain over random search, the
+  phase is not shipped, and a search tape — replay and mutation of generator
+  decisions — becomes the prerequisite instead.
 
-### Shrinking controls
+## Later: coverage-guided search, as a separate optional package
 
-The runner will support disabling shrinking and bounding it by wall-clock time.
-When a time budget expires, it will return the best counterexample found so
-far. This complements the existing accepted-step limit, which does not bound
-the cost of rejected shrink candidates.
+Only after targeted search, which provides the pool and the search loop it
+needs. The split is fixed in advance:
 
-### Deterministic unseeded runs
+- core gains only the seam: a `Feedback::feature()` facade for semantic
+  novelty reported by the property body, and a `FeedbackProvider` interface
+  for instrumented novelty. Inputs that reach something new join the same
+  search pool as `novelty` entries;
+- instrumented coverage ships as an optional package with a PCOV-backed,
+  line-granularity provider. Core will not depend on PCOV or Xdebug, not
+  even as a suggestion, and the package is inert without the extension
+  rather than silently fuzzing blind;
+- fuzzing runs as a nightly job with a time budget, never as a default mode
+  or a pull-request gate. Its findings are recorded in the ordinary
+  regression corpus, so a nightly discovery reproduces in the next normal
+  test run;
+- it is not an AFL reimplementation: no bytecode instrumentation, no
+  symbolic execution, and no replacement of the integrated rose-tree
+  shrinking model.
 
-An opt-in `derandomize` mode will derive the seed from the property id. This
-makes unseeded CI runs repeatable while preserving explicit seeds as the
-highest-priority source of reproducibility.
+## Testo adapter: generators in attribute arguments
 
-### Selectable run phases
+A proposal for the Testo adapter only — the engine does not change. The
+`#[Property]` attribute would accept generators and examples in its
+arguments as `callable|string`, the same idiom Testo's own `DataProvider`
+uses. A method reference such as `[SharedGens::class, 'delay']` works on
+every supported PHP version; an inline closure in an attribute only parses
+on PHP 8.5 and is a compile error that poisons the whole file on older
+versions, so the closure form is an option for 8.5-only projects rather
+than the recommended one. The `<method>Generators()` convention stays: the
+new forms are an addition, and a generator method that needs `$this` cannot
+be expressed as a constant expression at all.
 
-Examples, corpus replay, random generation, and shrinking will become
-individually selectable phases. This enables fast corpus-and-example checks on
-pull requests without deleting the corpus or changing the default full run.
+## Deferred
 
-### Machine-readable distributions
-
-Classification counts, coverage requirements, and discard statistics will be
-available as structured data. Adapters will keep their human-readable output,
-while listeners and CI integrations can consume the report without parsing
-console text.
-
-### Swarm generation
-
-`Gen::swarm()` will run a choice-based generator with a non-empty subset of its
-available variants. It is aimed particularly at state-machine tests where bugs
-often require an operation to be absent from a generated command sequence.
-
-### IPv6 generation
-
-`Gen::ipv6()` will generate canonical RFC 5952 addresses and shrink toward
-simple compressed forms such as `::` and `::1`. IPv4-mapped addresses, zone
-identifiers, and bracketed URL forms are outside the first version.
-
-### Stable property ids for PHPUnit
-
-The PHPUnit adapter will accept an explicit property id. This provides stable
-event and corpus keys for properties invoked from closures, including Pest
-tests, where a backtrace-derived id may collide or depend on a source line.
-
-## Adapter delivery
-
-Core configuration added in 0.2 will be exposed consistently by the Testo and
-PHPUnit adapters. The planned environment contract adds `PROPERTY_PATH`,
-`PROPERTY_DERANDOMIZE`, and `PROPERTY_PHASES`; the PHPUnit fluent API will gain
-the corresponding methods. Adapter releases follow the core release and run
-against it in the shared adapter contract suite.
-
-The PHPUnit adapter's explicit-id work does not depend on core 0.2 and may ship
-earlier as its own additive release.
-
-## Delivery sequence
-
-Each item is intended to land as a separate pull request with a green build:
-
-1. shrinking modes and a shrinking time budget;
-2. deterministic unseeded runs;
-3. selectable phases;
-4. seed-and-path replay;
-5. machine-readable distribution reports;
-6. swarm generation;
-7. IPv6 generation;
-8. release documentation and executable examples;
-9. matching Testo and PHPUnit adapter releases.
-
-The independent generator work may proceed in parallel. Ordering is otherwise
-chosen so that no pull request depends on a later one.
-
-## Release criteria
-
-The 0.2 release is ready when:
-
-- the full build and mutation gates pass without ignored mutants;
-- seed determinism vectors remain unchanged;
-- a corpus written by 0.1 is read by 0.2 in a golden compatibility test;
-- every feature has an executable example;
-- package audit and workflow security checks are clean;
-- English and Russian READMEs and `llms.txt` describe every new control;
-- the documentation build and executable cookbook checks pass;
-- published-package smoke tests pass for core and both adapters.
-
-## Beyond 0.2
-
-Targeted property testing and coverage-guided search are candidates for 0.3 or
-later. They require an adaptive example database for valuable passing inputs,
-scoring and eviction policies, and a separate search phase. They are not
-treated as another backend for the current falsification-only corpus.
-
-Potential coverage feedback will remain adapter-owned so that core does not
-depend on PCOV or Xdebug. A future search tape may support replay and mutation
-of generator decisions, but it will not replace the integrated rose-tree
-shrinking model.
-
-A dedicated Pest package is also deferred. Pest can already use the PHPUnit
-adapter's trait; a separate integration will be considered only after stable
-explicit property ids are available and without relying on Pest internals.
+A dedicated Pest package remains deferred. Pest can already use the PHPUnit
+adapter's trait with an explicit property id; a separate integration will be
+considered only if it can be built without relying on Pest internals.

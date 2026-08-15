@@ -5985,8 +5985,159 @@
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.1.0",
-        "rootReference": "d6f3bad6a995a3a09d7d2f59459c2fbe996e23b0",
+        "rootVersion": "v0.4.0",
+        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
+        "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\CorpusFromEnv",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "`PROPERTY_DB`, as a Corpus.",
+        "description": "The engine deliberately reads no environment — resolving where a corpus\nlives is the adapter's job, which is why this class exists here rather than\nin core. A directory keeps meaning what it always meant; a `redis://` DSN\nmeans the corpus is shared, so a falsification found on a laptop replays in\nCI and one found in CI replays on the next laptop.\n\n```bash\nPROPERTY_DB=/tmp/corpus            vendor/bin/phpunit\nPROPERTY_DB=redis://127.0.0.1:6379 vendor/bin/phpunit\nPROPERTY_DB=redis://redis:6379/my-suite: vendor/bin/phpunit\n```",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                "Driven by the fluent property check."
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "resolve",
+                "static": true,
+                "params": [],
+                "returnType": "?Rasuvaeff\\PropertyTesting\\Runner\\Corpus",
+                "summary": "The corpus `PROPERTY_DB` asks for, or null when it is unset (storage\noff, nothing written).",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 43
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/CorpusFromEnv.php#L30",
+        "implementedBy": []
+    },
+    {
+        "root": "phpunit",
+        "rootVersion": "v0.4.0",
+        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
+        "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\LazyPhpRedisCorpusClient",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "`ext-redis`, connected on first use rather than on construction.",
+        "description": "Core's \\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PhpRedisCorpusClient takes an already-connected `\\Redis`,\nwhich is the right contract for a class that does not own the connection —\nbut resolving `PROPERTY_DB` must not open a socket. A suite that names a\ncorpus it never touches (every property pinned by an explicit seed, say)\nwould otherwise fail at startup against a server it never needed, and CI\nproved it: the eager version was red everywhere the extension was installed\nand Redis was not running.\n\npredis is lazy by construction, so only this side needed the wrapper.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                "Driven by {@see \\Rasuvaeff\\PropertyTesting\\PhpUnit\\CorpusFromEnv}."
+            ]
+        },
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "dsn",
+                "type": "Rasuvaeff\\PropertyTesting\\PhpUnit\\RedisDsn",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "get",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?string",
+                "summary": "The stored document for $key, or null when the key does not exist.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 34
+            },
+            {
+                "name": "compareAndSet",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "expected",
+                        "type": "?string",
+                        "description": "The document the caller read, or null when the key was absent.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "document",
+                        "type": "?string",
+                        "description": "The document to store, or null to delete the key (an empty corpus\nis an absent key, exactly as an empty corpus is an absent file on disk).",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "bool",
+                "summary": "Stores $document for $key only if the stored value is still $expected —\nthe whole read-modify-write of a corpus write, made safe without holding\na lock across a round trip.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 40
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/LazyPhpRedisCorpusClient.php#L25",
+        "implementedBy": []
+    },
+    {
+        "root": "phpunit",
+        "rootVersion": "v0.4.0",
+        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
         "kind": "class",
         "isApi": true,
@@ -6017,7 +6168,7 @@
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "private",
-                "readonly": true
+                "readonly": false
             },
             {
                 "name": "name",
@@ -6026,7 +6177,7 @@
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "private",
-                "readonly": true
+                "readonly": false
             },
             {
                 "name": "generators",
@@ -6040,6 +6191,29 @@
         ],
         "publicProperties": [],
         "publicMethods": [
+            {
+                "name": "id",
+                "static": false,
+                "params": [
+                    {
+                        "name": "id",
+                        "type": "string",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Names the property, replacing the id derived from the calling method.",
+                "description": "The id keys the regression corpus entry and every event, so it has to\nname the same property tomorrow. Derived from the caller it does — for a\ntest method. From a **closure** it cannot: PHP 8.3 calls every closure of\na class `{closure}`, so two properties in one file share a corpus key and\noverwrite each other's counterexample, and from 8.4 the name carries a\nline number that an edit above shifts, orphaning yesterday's entry.\nNeither throws — the corpus simply stops replaying the failure it exists\nto replay. Pest's `it()`/`test()` bodies are the common case.\n\nThe name given here is used verbatim, and it is also the property's\ndisplay name, so one string identifies it in the corpus, in the events\nand in the printed output.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 117
+            },
             {
                 "name": "runs",
                 "static": false,
@@ -6061,7 +6235,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 78
+                "startLine": 128
             },
             {
                 "name": "seed",
@@ -6084,7 +6258,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 89
+                "startLine": 139
             },
             {
                 "name": "maxShrinks",
@@ -6107,7 +6281,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 99
+                "startLine": 149
             },
             {
                 "name": "maxDiscards",
@@ -6130,7 +6304,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 109
+                "startLine": 159
             },
             {
                 "name": "timeoutMs",
@@ -6153,7 +6327,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 119
+                "startLine": 169
             },
             {
                 "name": "budgetMs",
@@ -6176,7 +6350,145 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 129
+                "startLine": 179
+            },
+            {
+                "name": "shrink",
+                "static": false,
+                "params": [
+                    {
+                        "name": "shrink",
+                        "type": "Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "How hard to minimise a counterexample: ShrinkMode::Full (the\ndefault), ShrinkMode::Off to report the input as generated, or\nShrinkMode::Bounded together with shrinkBudgetMs().",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 191
+            },
+            {
+                "name": "shrinkBudgetMs",
+                "static": false,
+                "params": [
+                    {
+                        "name": "shrinkBudgetMs",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Wall-clock budget for the shrink descent, in milliseconds — the one knob\nhere that costs determinism: how far the descent gets depends on how\nlong the body takes, so the same seed can minimise differently on a\nfast and a slow machine. It answers \"the descent hung\", not \"reproduce\nthis exactly\".",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 205
+            },
+            {
+                "name": "phases",
+                "static": false,
+                "params": [
+                    {
+                        "name": "phases",
+                        "type": "list<\\Rasuvaeff\\PropertyTesting\\Runner\\Phase>",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Which stages this run performs, in run order — a subset trades coverage\nfor time on purpose (replaying only the examples and the corpus turns a\nminutes-long suite into a seconds-long pull-request gate).",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 219
+            },
+            {
+                "name": "derandomize",
+                "static": false,
+                "params": [
+                    {
+                        "name": "derandomize",
+                        "type": "bool",
+                        "description": "",
+                        "default": "true",
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Derives an unset seed from the property id instead of drawing it at\nrandom, so the same property on the same code always selects the same\ninputs. An explicit seed() still wins.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 231
+            },
+            {
+                "name": "edgeCases",
+                "static": false,
+                "params": [
+                    {
+                        "name": "edgeCases",
+                        "type": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Whether the numeric generators keep biasing toward their boundary values\n(EdgeCases::Mixin, the default) or generate uniformly\n(EdgeCases::None).",
+                "description": "Turn them off when the edges are what this property cannot use — a body\ndiscarding `0`, a range end that violates a precondition — so the\ndiscard budget stops paying for one run in five.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 247
+            },
+            {
+                "name": "path",
+                "static": false,
+                "params": [
+                    {
+                        "name": "path",
+                        "type": "string",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Replays the shrink descent of an earlier failure, as reported by\n`CounterExample::$path`, instead of searching for it again. It needs the\nseed of the run that produced it — the steps mean nothing against\nanother one.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 260
             },
             {
                 "name": "examples",
@@ -6199,7 +6511,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 142
+                "startLine": 273
             },
             {
                 "name": "listeners",
@@ -6222,7 +6534,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 152
+                "startLine": 283
             },
             {
                 "name": "output",
@@ -6252,7 +6564,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 166
+                "startLine": 297
             },
             {
                 "name": "check",
@@ -6275,18 +6587,127 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 179
+                "startLine": 310
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d6f3bad6a995a3a09d7d2f59459c2fbe996e23b0/src/PhpUnit/PropertyCheck.php#L38",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/PropertyCheck.php#L41",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.1.0",
-        "rootReference": "d6f3bad6a995a3a09d7d2f59459c2fbe996e23b0",
+        "rootVersion": "v0.4.0",
+        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
+        "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\RedisDsn",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "`redis://host[:port][/key-prefix]`, taken apart.",
+        "description": "Parsing lives in its own type because it is the part with answers worth\nasserting — a default port and a default prefix are decisions, and a\nresolver that also builds clients hides them behind a connection.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                "Driven by {@see \\Rasuvaeff\\PropertyTesting\\PhpUnit\\CorpusFromEnv}."
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "host",
+                "type": "non-empty-string",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "port",
+                "type": "int",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "prefix",
+                "type": "non-empty-string",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "toPredisParameters",
+                "static": false,
+                "params": [],
+                "returnType": "array",
+                "summary": "The connection parameters predis takes.",
+                "description": "Here rather than at the call site so the shape is something a test can\nassert: an array literal built where the client is constructed can only\nbe checked by connecting to a server.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 42
+            },
+            {
+                "name": "parse",
+                "static": true,
+                "params": [
+                    {
+                        "name": "dsn",
+                        "type": "string",
+                        "description": "The value of `PROPERTY_DB`, already known to start with `redis://`.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\RedisDsn",
+                "summary": "",
+                "description": "",
+                "throws": [],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 50
+            }
+        ],
+        "constants": [
+            {
+                "name": "DEFAULT_PORT",
+                "type": "int",
+                "summary": "",
+                "value": 6379
+            },
+            {
+                "name": "DEFAULT_PREFIX",
+                "type": "string",
+                "summary": "The engine's own default, so a DSN without a path behaves like the plain constructor.",
+                "value": "property-testing:corpus:"
+            }
+        ],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/RedisDsn.php#L16",
+        "implementedBy": []
+    },
+    {
+        "root": "phpunit",
+        "rootVersion": "v0.4.0",
+        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -6347,20 +6768,20 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d6f3bad6a995a3a09d7d2f59459c2fbe996e23b0/src/PhpUnit/VerboseListener.php#L27",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/VerboseListener.php#L27",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.1.0",
-        "rootReference": "837558a701e4eceb176769bb9656a840d25147da",
+        "rootVersion": "v0.5.0",
+        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
         "class": "Rasuvaeff\\PropertyTesting\\Property",
         "kind": "class",
         "isApi": true,
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Marks a test method as a property: the PropertyInterceptor takes over,\ngenerating random arguments from a generators method until the property has\ncompleted $runs successful checks or exhausted its discard budget.",
-        "description": "Attribute arguments in PHP must be constant expressions, so the generators\ncannot be passed inline. Instead name a method (on the same test case) that\nreturns `array<string, ArbitraryInterface>`, keyed by parameter name. When\n$generators is null the runner falls back to a method named\n`<testMethod>Generators`.",
+        "description": "Attribute arguments in PHP must be constant expressions. A provider can be\na method name, any callable accepted by an attribute expression, or an\ninvokable provider object; callable providers return\n`array<string, ArbitraryInterface>`, keyed by parameter name. When\n$generators is null the runner falls back to a method named\n`<testMethod>Generators`.",
         "deprecated": null,
         "see": [],
         "extensionTags": [],
@@ -6393,12 +6814,12 @@
             },
             {
                 "name": "generators",
-                "type": "?string",
-                "description": "Method name returning array<string, ArbitraryInterface>.\nDefaults to `<testMethod>Generators`.",
+                "type": "callable|string|null",
+                "description": "Method name\nor callable returning array<string, ArbitraryInterface>. Defaults to\n`<testMethod>Generators`.",
                 "default": "NULL",
-                "promoted": true,
-                "promotedVisibility": "public",
-                "readonly": true
+                "promoted": false,
+                "promotedVisibility": "private",
+                "readonly": false
             },
             {
                 "name": "maxShrinks",
@@ -6411,12 +6832,12 @@
             },
             {
                 "name": "examples",
-                "type": "?string",
-                "description": "Method name returning iterable<array<mixed>> of fixed positional\nargument tuples, each run (before the random inputs) as an explicit example.\nDefaults to `<testMethod>Examples` when that method exists.",
+                "type": "callable|string|null",
+                "description": "Method name or callable\nreturning fixed positional argument tuples, each run (before the random inputs) as\nan explicit example. Defaults to `<testMethod>Examples` when that method exists.",
                 "default": "NULL",
-                "promoted": true,
-                "promotedVisibility": "public",
-                "readonly": true
+                "promoted": false,
+                "promotedVisibility": "private",
+                "readonly": false
             },
             {
                 "name": "maxDiscards",
@@ -6444,13 +6865,80 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "shrink",
+                "type": "?\\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode",
+                "description": "How hard to minimise a counterexample: \\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode::Full\n(the default), \\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode::Off to report the input as generated, or\n\\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode::Bounded together with $shrinkBudgetMs.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "shrinkBudgetMs",
+                "type": "?int",
+                "description": "Wall-clock budget for the shrink descent in milliseconds — the\none knob here that costs determinism, since how far the descent gets depends on how\nlong the body takes. It answers \"the descent hung\", not \"reproduce this exactly\".",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "phases",
+                "type": "?list<\\Rasuvaeff\\PropertyTesting\\Runner\\Phase>",
+                "description": "Stages this property performs, in run order. Null (default) runs\nall of them; a subset trades coverage for time on purpose.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "derandomize",
+                "type": "bool",
+                "description": "Derives an unset seed from the property id instead of drawing one,\nso the same property on the same code always selects the same inputs. An explicit\n$seed still wins.",
+                "default": "false",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "path",
+                "type": "?string",
+                "description": "A recorded shrink descent (`CounterExample::$path`) followed instead of\nsearched for again. It needs the $seed of the run that produced it — the steps mean\nnothing against another one — and it is a debugging aid, not a fixture: editing a\ngenerator orphans it, which is what the regression corpus is for.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "edgeCases",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "description": "Whether the numeric generators keep biasing toward their boundary\nvalues (\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin, the default) or generate uniformly\n(\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::None). Turn them off when the edges are what this property cannot\nuse — a body discarding `0`, a range end that violates a precondition — so the discard\nbudget stops paying for one run in five.",
+                "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
-        "publicProperties": [],
+        "publicProperties": [
+            {
+                "name": "generators",
+                "type": "Closure|string|null",
+                "readonly": true,
+                "summary": ""
+            },
+            {
+                "name": "examples",
+                "type": "Closure|string|null",
+                "readonly": true,
+                "summary": ""
+            }
+        ],
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/837558a701e4eceb176769bb9656a840d25147da/src/Property.php#L26",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Property.php#L30",
         "implementedBy": []
     },
     {
@@ -8354,19 +8842,19 @@
                 "readonly": true
             },
             {
-                "name": "edgeCases",
-                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
-                "description": "Whether the numeric generators keep biasing toward their boundary\nvalues (\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin, the default) or generate uniformly\n(\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::None). Turn them off when the edges are what the property cannot\nuse — a body discarding `0`, a range end that violates a precondition — so the discard\nbudget stops paying for one run in five.",
-                "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
+                "name": "path",
+                "type": "?string",
+                "description": "The shrink descent of an earlier failure, as reported by\n\\Rasuvaeff\\PropertyTesting\\CounterExample::$path: the runner follows those steps\ninstead of searching for them again, executing the body once per recorded step instead\nof once per candidate tried. Null searches as usual. It needs an explicit $seed (the\nsteps only mean anything against the run that produced them), and it refuses every\nconfiguration that would leave it a silent no-op: a descent switched off, capped below\nthe path's own length, or bounded by a wall clock — the last one because a path exists\nto be deterministic and a budget exists not to be.",
+                "default": "NULL",
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
             },
             {
-                "name": "path",
-                "type": "?string",
-                "description": "The shrink descent of an earlier failure, as reported by\n\\Rasuvaeff\\PropertyTesting\\CounterExample::$path: the runner follows those steps\ninstead of searching for them again, executing the body once per recorded step instead\nof once per candidate tried. Null searches as usual. It needs an explicit $seed (the\nsteps only mean anything against the run that produced them), and it refuses every\nconfiguration that would leave it a silent no-op: a descent switched off, capped below\nthe path's own length, or bounded by a wall clock — the last one because a path exists\nto be deterministic and a budget exists not to be.",
-                "default": "NULL",
+                "name": "edgeCases",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "description": "Whether the numeric generators keep biasing toward their boundary\nvalues (\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin, the default) or generate uniformly\n(\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::None). Turn them off when the edges are what the property cannot\nuse — a body discarding `0`, a range end that violates a precondition — so the discard\nbudget stops paying for one run in five.\nLast in the signature on purpose: a parameter added anywhere else moves the ones after\nit, and every caller passing $path positionally would silently mean something else.",
+                "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
@@ -8408,7 +8896,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 134
+                "startLine": 136
             }
         ],
         "constants": [],
@@ -8898,7 +9386,9 @@
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/CorpusClient.php#L21",
         "implementedBy": [
             "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PhpRedisCorpusClient",
-            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PredisCorpusClient"
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PredisCorpusClient",
+            "Rasuvaeff\\PropertyTesting\\Testo\\LazyPhpRedisCorpusClient",
+            "Rasuvaeff\\PropertyTesting\\PhpUnit\\LazyPhpRedisCorpusClient"
         ]
     },
     {
@@ -10146,8 +10636,159 @@
     },
     {
         "root": "testo",
-        "rootVersion": "v0.1.0",
-        "rootReference": "837558a701e4eceb176769bb9656a840d25147da",
+        "rootVersion": "v0.5.0",
+        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "class": "Rasuvaeff\\PropertyTesting\\Testo\\CorpusFromEnv",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "`PROPERTY_DB`, as a Corpus.",
+        "description": "The engine deliberately reads no environment — resolving where a corpus\nlives is the adapter's job, which is why this class exists here rather than\nin core. A directory keeps meaning what it always meant; a `redis://` DSN\nmeans the corpus is shared, so a falsification found on a laptop replays in\nCI and one found in CI replays on the next laptop.\n\n```bash\nPROPERTY_DB=/tmp/corpus            vendor/bin/testo\nPROPERTY_DB=redis://127.0.0.1:6379 vendor/bin/testo\nPROPERTY_DB=redis://redis:6379/my-suite: vendor/bin/testo\n```",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                "Driven by the property interceptor."
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "resolve",
+                "static": true,
+                "params": [],
+                "returnType": "?Rasuvaeff\\PropertyTesting\\Runner\\Corpus",
+                "summary": "The corpus `PROPERTY_DB` asks for, or null when it is unset (storage\noff, nothing written).",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 43
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/CorpusFromEnv.php#L30",
+        "implementedBy": []
+    },
+    {
+        "root": "testo",
+        "rootVersion": "v0.5.0",
+        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "class": "Rasuvaeff\\PropertyTesting\\Testo\\LazyPhpRedisCorpusClient",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "`ext-redis`, connected on first use rather than on construction.",
+        "description": "Core's \\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PhpRedisCorpusClient takes an already-connected `\\Redis`,\nwhich is the right contract for a class that does not own the connection —\nbut resolving `PROPERTY_DB` must not open a socket. A suite that names a\ncorpus it never touches (every property pinned by an explicit seed, say)\nwould otherwise fail at startup against a server it never needed, and CI\nproved it: the eager version was red everywhere the extension was installed\nand Redis was not running.\n\npredis is lazy by construction, so only this side needed the wrapper.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                "Driven by {@see \\Rasuvaeff\\PropertyTesting\\Testo\\CorpusFromEnv}."
+            ]
+        },
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "dsn",
+                "type": "Rasuvaeff\\PropertyTesting\\Testo\\RedisDsn",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "get",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?string",
+                "summary": "The stored document for $key, or null when the key does not exist.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 34
+            },
+            {
+                "name": "compareAndSet",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "expected",
+                        "type": "?string",
+                        "description": "The document the caller read, or null when the key was absent.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "document",
+                        "type": "?string",
+                        "description": "The document to store, or null to delete the key (an empty corpus\nis an absent key, exactly as an empty corpus is an absent file on disk).",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "bool",
+                "summary": "Stores $document for $key only if the stored value is still $expected —\nthe whole read-modify-write of a corpus write, made safe without holding\na lock across a round trip.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 40
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/LazyPhpRedisCorpusClient.php#L25",
+        "implementedBy": []
+    },
+    {
+        "root": "testo",
+        "rootVersion": "v0.5.0",
+        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\PropertyInterceptor",
         "kind": "class",
         "isApi": true,
@@ -10227,18 +10868,127 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 80
+                "startLine": 96
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/837558a701e4eceb176769bb9656a840d25147da/src/Testo/PropertyInterceptor.php#L50",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/PropertyInterceptor.php#L51",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.1.0",
-        "rootReference": "837558a701e4eceb176769bb9656a840d25147da",
+        "rootVersion": "v0.5.0",
+        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "class": "Rasuvaeff\\PropertyTesting\\Testo\\RedisDsn",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "`redis://host[:port][/key-prefix]`, taken apart.",
+        "description": "Parsing lives in its own type because it is the part with answers worth\nasserting — a default port and a default prefix are decisions, and a\nresolver that also builds clients hides them behind a connection.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                "Driven by {@see \\Rasuvaeff\\PropertyTesting\\Testo\\CorpusFromEnv}."
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "host",
+                "type": "non-empty-string",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "port",
+                "type": "int",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "prefix",
+                "type": "non-empty-string",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "toPredisParameters",
+                "static": false,
+                "params": [],
+                "returnType": "array",
+                "summary": "The connection parameters predis takes.",
+                "description": "Here rather than at the call site so the shape is something a test can\nassert: an array literal built where the client is constructed can only\nbe checked by connecting to a server.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 42
+            },
+            {
+                "name": "parse",
+                "static": true,
+                "params": [
+                    {
+                        "name": "dsn",
+                        "type": "string",
+                        "description": "The value of `PROPERTY_DB`, already known to start with `redis://`.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Testo\\RedisDsn",
+                "summary": "",
+                "description": "",
+                "throws": [],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 50
+            }
+        ],
+        "constants": [
+            {
+                "name": "DEFAULT_PORT",
+                "type": "int",
+                "summary": "",
+                "value": 6379
+            },
+            {
+                "name": "DEFAULT_PREFIX",
+                "type": "string",
+                "summary": "The engine's own default, so a DSN without a path behaves like the plain constructor.",
+                "value": "property-testing:corpus:"
+            }
+        ],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/RedisDsn.php#L16",
+        "implementedBy": []
+    },
+    {
+        "root": "testo",
+        "rootVersion": "v0.5.0",
+        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\TestoTrialExecutor",
         "kind": "class",
         "isApi": false,
@@ -10323,13 +11073,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/837558a701e4eceb176769bb9656a840d25147da/src/Testo/TestoTrialExecutor.php#L28",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/TestoTrialExecutor.php#L28",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.1.0",
-        "rootReference": "837558a701e4eceb176769bb9656a840d25147da",
+        "rootVersion": "v0.5.0",
+        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -10390,7 +11140,7 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/837558a701e4eceb176769bb9656a840d25147da/src/Testo/VerboseListener.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/VerboseListener.php#L30",
         "implementedBy": []
     },
     {

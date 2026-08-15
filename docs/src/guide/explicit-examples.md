@@ -7,7 +7,9 @@ description: "Pinning known regression inputs with #[Property(examples: ...)] �
 
 Fixed inputs pin a found bug as a permanent case that runs on every invocation,
 alongside the random ones. Declare a `<testMethod>Examples` method (or name one
-via `#[Property(examples: 'method')]`) returning positional argument tuples; each
+via `#[Property(examples: 'method')]`; since `property-testing-testo` 0.5 any
+callable works too — `[Provider::class, 'method']`, an invokable object)
+returning positional argument tuples; each
 runs **before** the random inputs and is reported verbatim (not shrunk — it is
 already the minimal case you pinned) via `ExampleViolationException`.
 

@@ -9,7 +9,7 @@ description: "Marks a test method as a property: the PropertyInterceptor takes o
 
 `Rasuvaeff\PropertyTesting\Property`
 
-**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/837558a701e4eceb176769bb9656a840d25147da/src/Property.php#L26) — **Version:** v0.1.0
+**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Property.php#L30) — **Version:** v0.5.0
 
 **Implements:** `Testo\Pipeline\Attribute\Interceptable`
 
@@ -17,9 +17,10 @@ Marks a test method as a property: the PropertyInterceptor takes over,
 generating random arguments from a generators method until the property has
 completed $runs successful checks or exhausted its discard budget.
 
-Attribute arguments in PHP must be constant expressions, so the generators
-cannot be passed inline. Instead name a method (on the same test case) that
-returns `array<string, ArbitraryInterface>`, keyed by parameter name. When
+Attribute arguments in PHP must be constant expressions. A provider can be
+a method name, any callable accepted by an attribute expression, or an
+invokable provider object; callable providers return
+`array<string, ArbitraryInterface>`, keyed by parameter name. When
 $generators is null the runner falls back to a method named
 `<testMethod>Generators`.
 
@@ -29,12 +30,18 @@ $generators is null the runner falls back to a method named
 __construct(
     int $runs = 100,
     ?int $seed = NULL,
-    ?string $generators = NULL,
+    callable|string|null $generators = NULL,
     ?int $maxShrinks = NULL,
-    ?string $examples = NULL,
+    callable|string|null $examples = NULL,
     ?int $maxDiscards = NULL,
     ?int $timeoutMs = NULL,
     ?int $budgetMs = NULL,
+    ?\Runner\ShrinkMode $shrink = NULL,
+    ?int $shrinkBudgetMs = NULL,
+    ?list<\Runner\Phase> $phases = NULL,
+    bool $derandomize = false,
+    ?string $path = NULL,
+    \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
 )
 ```
 
@@ -42,10 +49,23 @@ __construct(
 |---|---|---|---|
 | `$runs` | `int` | `100` | Number of successful random inputs to check. Discarded inputs do not count. |
 | `$seed` | `?int` | `NULL` | Fixed seed for reproducibility. Omit to let the runner pick a random one (the failing seed is reported by [`PropertyViolationException`](/api/classes/PropertyViolationException)). |
-| `$generators` | `?string` | `NULL` | Method name returning array&lt;string, ArbitraryInterface&gt;. Defaults to `&lt;testMethod&gt;Generators`. |
+| `$generators` | `callable|string|null` | `NULL` | Method name or callable returning array&lt;string, ArbitraryInterface&gt;. Defaults to `&lt;testMethod&gt;Generators`. |
 | `$maxShrinks` | `?int` | `NULL` | Cap on the number of accepted shrink steps. Null (default) means no cap. 0 disables shrinking, reporting the original counterexample unchanged. |
-| `$examples` | `?string` | `NULL` | Method name returning iterable&lt;array&lt;mixed&gt;&gt; of fixed positional argument tuples, each run (before the random inputs) as an explicit example. Defaults to `&lt;testMethod&gt;Examples` when that method exists. |
+| `$examples` | `callable|string|null` | `NULL` | Method name or callable returning fixed positional argument tuples, each run (before the random inputs) as an explicit example. Defaults to `&lt;testMethod&gt;Examples` when that method exists. |
 | `$maxDiscards` | `?int` | `NULL` | Maximum number of discarded inputs before the property gives up. Null (default) uses ten times the resolved run count. |
 | `$timeoutMs` | `?int` | `NULL` | Wall-clock deadline for a single run (random or example) in milliseconds. A body that takes longer fails the property with a [`DeadlineExceededException`](/api/classes/DeadlineExceededException) naming the offending input — protection against pathological inputs (catastrophic regex, deep recursion, unbounded backoff). Measured after the run returns, so a body that never returns cannot be interrupted; shrink trials are not measured. Null (default) disables the deadline. |
 | `$budgetMs` | `?int` | `NULL` | Wall-clock budget for the whole random phase in milliseconds. When it runs out before $runs successful checks complete, the property fails with a [`TimeBudgetExceededException`](/api/classes/TimeBudgetExceededException). Null (default) disables the budget. |
+| `$shrink` | `?\Runner\ShrinkMode` | `NULL` | How hard to minimise a counterexample: [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Full (the default), [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Off to report the input as generated, or [`Runner\ShrinkMode`](/api/classes/Runner/ShrinkMode)::Bounded together with $shrinkBudgetMs. |
+| `$shrinkBudgetMs` | `?int` | `NULL` | Wall-clock budget for the shrink descent in milliseconds — the one knob here that costs determinism, since how far the descent gets depends on how long the body takes. It answers "the descent hung", not "reproduce this exactly". |
+| `$phases` | `?list<\Runner\Phase>` | `NULL` | Stages this property performs, in run order. Null (default) runs all of them; a subset trades coverage for time on purpose. |
+| `$derandomize` | `bool` | `false` | Derives an unset seed from the property id instead of drawing one, so the same property on the same code always selects the same inputs. An explicit $seed still wins. |
+| `$path` | `?string` | `NULL` | A recorded shrink descent (`CounterExample::$path`) followed instead of searched for again. It needs the $seed of the run that produced it — the steps mean nothing against another one — and it is a debugging aid, not a fixture: editing a generator orphans it, which is what the regression corpus is for. |
+| `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | Whether the numeric generators keep biasing toward their boundary values ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::Mixin, the default) or generate uniformly ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::None). Turn them off when the edges are what this property cannot use — a body discarding `0`, a range end that violates a precondition — so the discard budget stops paying for one run in five. |
+
+## Properties
+
+| Property | Type | Readonly | Description |
+|---|---|---|---|
+| `generators` | `Closure|string|null` | yes |  |
+| `examples` | `Closure|string|null` | yes |  |
 

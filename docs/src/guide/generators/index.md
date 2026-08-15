@@ -12,6 +12,15 @@ is not expressible. Instead name a method that returns
 `array<string, ArbitraryInterface>` keyed by parameter name. When the `generators`
 argument is omitted the runner falls back to a method named `<testMethod>Generators`.
 
+Since `property-testing-testo` 0.5 (and `-phpunit`'s fluent API from the start),
+`generators` and `examples` also accept a callable, which is how a provider gets
+reused between test classes: `[Provider::class, 'method']`, `'Provider::method'`,
+or an invokable object (`new Provider()`) — all valid attribute expressions on
+PHP 8.3. PHP 8.5 additionally allows an inline `static function (): array { ... }`
+and a first-class callable (`Provider::method(...)`). A string still resolves to
+a method on the test class first, so a local method named like a global function
+(`range`) keeps winning; the convention stays the default.
+
 Declare generators (and examples) methods `public static` — or `public` if the
 body needs `$this`. Their only call site is this package's reflection, so
 static analysis sees them as unused: Rector's dead-code set deletes private

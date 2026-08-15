@@ -9,7 +9,7 @@ description: "Fluent builder mapping the engine's structured PropertyResult onto
 
 `Rasuvaeff\PropertyTesting\PhpUnit\PropertyCheck`
 
-**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/d6f3bad6a995a3a09d7d2f59459c2fbe996e23b0/src/PhpUnit/PropertyCheck.php#L38) — **Version:** v0.1.0
+**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/PropertyCheck.php#L41) — **Version:** v0.4.0
 
 Fluent builder mapping the engine's structured PropertyResult onto PHPUnit:
 a pass counts one assertion, every failing outcome surfaces as one
@@ -43,6 +43,27 @@ __construct(
 | `$generators` | `array<string,\ArbitraryInterface>` | *required* |  |
 
 ## Methods
+
+### id()
+
+```php
+id(string $id): PhpUnit\PropertyCheck
+```
+
+Names the property, replacing the id derived from the calling method.
+
+The id keys the regression corpus entry and every event, so it has to
+name the same property tomorrow. Derived from the caller it does — for a
+test method. From a **closure** it cannot: PHP 8.3 calls every closure of
+a class `{closure}`, so two properties in one file share a corpus key and
+overwrite each other's counterexample, and from 8.4 the name carries a
+line number that an edit above shifts, orphaning yesterday's entry.
+Neither throws — the corpus simply stops replaying the failure it exists
+to replay. Pest's `it()`/`test()` bodies are the common case.
+
+The name given here is used verbatim, and it is also the property's
+display name, so one string identifies it in the corpus, in the events
+and in the printed output.
 
 ### runs()
 
@@ -92,6 +113,73 @@ budgetMs(int $budgetMs): PhpUnit\PropertyCheck
 ```
 
 Wall-clock budget for the whole random phase, in milliseconds.
+
+### shrink()
+
+```php
+shrink(Runner\ShrinkMode $shrink): PhpUnit\PropertyCheck
+```
+
+How hard to minimise a counterexample: ShrinkMode::Full (the
+default), ShrinkMode::Off to report the input as generated, or
+ShrinkMode::Bounded together with shrinkBudgetMs().
+
+### shrinkBudgetMs()
+
+```php
+shrinkBudgetMs(int $shrinkBudgetMs): PhpUnit\PropertyCheck
+```
+
+Wall-clock budget for the shrink descent, in milliseconds — the one knob
+here that costs determinism: how far the descent gets depends on how
+long the body takes, so the same seed can minimise differently on a
+fast and a slow machine. It answers "the descent hung", not "reproduce
+this exactly".
+
+### phases()
+
+```php
+phases(list<\Runner\Phase> $phases): PhpUnit\PropertyCheck
+```
+
+Which stages this run performs, in run order — a subset trades coverage
+for time on purpose (replaying only the examples and the corpus turns a
+minutes-long suite into a seconds-long pull-request gate).
+
+### derandomize()
+
+```php
+derandomize(bool $derandomize = true): PhpUnit\PropertyCheck
+```
+
+Derives an unset seed from the property id instead of drawing it at
+random, so the same property on the same code always selects the same
+inputs. An explicit seed() still wins.
+
+### edgeCases()
+
+```php
+edgeCases(Runner\EdgeCases $edgeCases): PhpUnit\PropertyCheck
+```
+
+Whether the numeric generators keep biasing toward their boundary values
+(EdgeCases::Mixin, the default) or generate uniformly
+(EdgeCases::None).
+
+Turn them off when the edges are what this property cannot use — a body
+discarding `0`, a range end that violates a precondition — so the
+discard budget stops paying for one run in five.
+
+### path()
+
+```php
+path(string $path): PhpUnit\PropertyCheck
+```
+
+Replays the shrink descent of an earlier failure, as reported by
+`CounterExample::$path`, instead of searching for it again. It needs the
+seed of the run that produced it — the steps mean nothing against
+another one.
 
 ### examples()
 

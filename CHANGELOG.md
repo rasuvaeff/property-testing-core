@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- `Gen::forClass()` names the chain that reached a class it cannot instantiate:
+  `Cannot generate …\Duration: it is not instantiable (reached through
+  …\BreakerConfig -> …\Ratio -> …\Duration)`. A value object with a private
+  constructor and named factories is usually several levels below the class you
+  asked for, and naming only that class sent the reader hunting for which
+  parameter pulled it in — the cycle and depth refusals already named their
+  chains. Found by using `forClass()` on a real package rather than on a
+  fixture.
+
 ## 0.3.0 — 2026-08-15
 
 - Added `EdgeCases`, the explicit switch for the numeric boundary bias:

@@ -19,6 +19,7 @@ use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Unreadable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Validating;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Variadic;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\WithEnumAndDate;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\WrapsNotInstantiable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
@@ -205,6 +206,35 @@ final class ClassArbitraryTest
             Assert::fail('expected an InvalidArgumentException');
         } catch (\InvalidArgumentException $e) {
             Assert::string($e->getMessage())->contains('not instantiable');
+        }
+    }
+
+    public function namesTheChainThatReachedAnUninstantiableClass(): void
+    {
+        // A value object with a private constructor and named factories (a
+        // Duration, a Money) is usually reached from levels up, and naming only
+        // the class sends the reader hunting for which parameter asked for it.
+        try {
+            new ClassArbitrary(WrapsNotInstantiable::class);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('is not instantiable');
+            Assert::string($e->getMessage())->contains('reached through');
+            Assert::string($e->getMessage())->contains('WrapsNotInstantiable -> ');
+            Assert::string($e->getMessage())->contains('NotInstantiable');
+        }
+    }
+
+    public function theClassAskedForIsNamedWithoutAChain(): void
+    {
+        // A chain of one says nothing worth reading.
+        try {
+            new ClassArbitrary(NotInstantiable::class);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::false(str_contains($e->getMessage(), 'reached through'));
         }
     }
 

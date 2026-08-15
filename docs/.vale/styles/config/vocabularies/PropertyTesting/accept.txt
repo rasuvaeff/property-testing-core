@@ -22,6 +22,7 @@
 [Ee]num
 [Ii]njective
 [Ii]nts
+[Ii]nvokable
 [Mm]isconfigured
 [Mm]onorepo
 [Mm]ultibyte

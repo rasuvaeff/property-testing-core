@@ -9,7 +9,7 @@ description: "Seedable, deterministic pseudo-random number generator."
 
 `Rasuvaeff\PropertyTesting\Random`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Random.php#L22) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Random.php#L28) — **Version:** working tree
 
 Seedable, deterministic pseudo-random number generator.
 
@@ -19,19 +19,41 @@ Mersenne Twister (MT19937) engine via ext-random's `Random\Randomizer`, so it
 is independent of PHP's global mt_rand state — important inside a test runner
 where other code may draw random numbers between runs.
 
+It also carries the [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) choice, because the generators that act
+on it already receive this and nothing else: threading a second parameter
+through every [`ArbitraryInterface`](/api/classes/ArbitraryInterface) would change a published signature to
+say something the source of randomness can say instead.
+
 ## Constructor
 
 ```php
 __construct(
     int $seed,
+    \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
 )
 ```
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `$seed` | `int` | *required* |  |
+| `$seed` | `int` | *required* | The seed; two instances with the same one produce the same sequence. |
+| `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | Whether the numeric generators keep biasing toward boundary values. |
 
 ## Methods
+
+### drawsEdgeCase()
+
+```php
+drawsEdgeCase(int $denominator): bool
+```
+
+Whether this draw should be an edge value rather than a uniform one.
+
+- `$denominator` — The odds: one draw in this many is an edge value.
+
+The roll happens either way. Skipping it under [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::None
+would shift every later draw and make the same seed mean something else
+in the two modes; consuming it keeps them aligned, so switching the mode
+changes which values are edges and not the whole sequence.
 
 ### int()
 

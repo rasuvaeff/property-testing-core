@@ -56,6 +56,11 @@ final readonly class PropertyConfig
      *        An explicit $seed always wins. The derivation lives in {@see PropertyRunner} because
      *        only it knows the id — and because a config that called `random_int()` would stop being
      *        a plain value.
+     * @param EdgeCases $edgeCases Whether the numeric generators keep biasing toward their boundary
+     *        values ({@see EdgeCases::Mixin}, the default) or generate uniformly
+     *        ({@see EdgeCases::None}). Turn them off when the edges are what the property cannot
+     *        use — a body discarding `0`, a range end that violates a precondition — so the discard
+     *        budget stops paying for one run in five.
      * @param ?string $path The shrink descent of an earlier failure, as reported by
      *        {@see \Rasuvaeff\PropertyTesting\CounterExample::$path}: the runner follows those steps
      *        instead of searching for them again, executing the body once per recorded step instead
@@ -76,6 +81,7 @@ final readonly class PropertyConfig
         public ?int $shrinkBudgetMs = null,
         ?array $phases = null,
         public bool $derandomize = false,
+        public EdgeCases $edgeCases = EdgeCases::Mixin,
         public ?string $path = null,
     ) {
         if ($runs < 1) {

@@ -208,7 +208,10 @@ through their source domain.
 Numeric generators (`int*`, `float*`) are **boundary-biased**: roughly one draw in
 five returns an in-range edge value (`0`, `±1`, `min`, `max` for ints; `0.0` or
 `min` for floats), where bugs cluster, instead of a uniform one. Shrinking is
-unaffected.
+unaffected. When the edges are exactly what a property cannot use — a body that
+discards `0`, a range end that violates a precondition — `edgeCases:
+EdgeCases::None` generates uniformly instead of spending one run in five on a
+value the property throws away.
 
 Sized generators guarantee their **minimum**: `uniqueArrayOf`/`dictOf` (distinct
 elements/keys) and `commands` (applicable steps) may fall short of the *drawn*
@@ -326,6 +329,7 @@ no environment:
 | `shrinkBudgetMs` | `null` | Wall-clock budget for the shrink descent; implies `ShrinkMode::Bounded` |
 | `phases` | `null` | Stages to perform (`Phase::Examples`/`Corpus`/`Random`/`Shrink`); null runs all of them |
 | `derandomize` | `false` | Derive an unset seed from the property id instead of drawing one |
+| `edgeCases` | `EdgeCases::Mixin` | `None` turns off the numeric boundary bias, for properties the edges only cost runs |
 | `path` | `null` | Replay a recorded shrink descent instead of searching for it; needs an explicit `seed` |
 
 ### Derandomized runs

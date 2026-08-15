@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 
+use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Rasuvaeff\PropertyTesting\Runner\Phase;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\ShrinkMode;
@@ -263,5 +264,15 @@ final class PropertyConfigTest
 
         Assert::same($config->shrinkBudgetMs, intdiv(PHP_INT_MAX, 2_000_000));
         Assert::same($config->shrink, ShrinkMode::Bounded);
+    }
+
+    public function edgeCasesDefaultToMixin(): void
+    {
+        Assert::same((new PropertyConfig())->edgeCases, EdgeCases::Mixin);
+    }
+
+    public function edgeCasesAreCarriedAsGiven(): void
+    {
+        Assert::same((new PropertyConfig(edgeCases: EdgeCases::None))->edgeCases, EdgeCases::None);
     }
 }

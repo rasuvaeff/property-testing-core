@@ -34,6 +34,30 @@ The other 4 draws in 5 sample uniformly across the full range, so the
 generator still explores the interior — bias shifts the odds, it doesn't
 replace coverage.
 
+## Turning it off
+
+The bias earns its place until the edges are exactly what a property cannot
+use: a body that discards `0` through `Assume::that()`, a range end that
+violates a precondition. Then one run in five produces a value the property
+throws away, and the discard budget pays for it.
+
+```php
+new PropertyConfig(edgeCases: EdgeCases::None);
+```
+
+`EdgeCases::None` generates uniformly. The roll that would have chosen an edge
+value still happens, which is deliberate: skipping it would shift every draw
+after the first and make the same seed mean something different in the two
+modes. Consuming it keeps them aligned, so switching the mode changes which
+values are edges rather than the whole sequence — a suite stays comparable to
+itself across the switch.
+
+jqwik's third mode, `FIRST` (generate the edge values before any random ones),
+is deliberately absent: this engine already runs
+[explicit examples](/guide/explicit-examples) and the
+[regression corpus](/guide/regression-corpus) before the random phase, which is
+the same idea with the values chosen rather than guessed.
+
 ## Shrinking is unaffected
 
 Boundary bias only changes what generation *returns*; it says nothing about

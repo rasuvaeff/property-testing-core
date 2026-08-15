@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Added `EdgeCases`, the explicit switch for the numeric boundary bias:
+  `PropertyConfig(edgeCases: EdgeCases::None)` generates uniformly instead of
+  returning an in-range edge value roughly one draw in five. The bias is right
+  until the edges are what a property cannot use — a body discarding `0`, a
+  range end that violates a precondition — where it costs one run in five and
+  the discard budget pays. The roll that chooses an edge is still consumed
+  under `None`, so the two modes stay aligned on the same seed: switching
+  changes which values are edges rather than every draw after the first, which
+  is what keeps a suite comparable to itself. jqwik's `FIRST` is deliberately
+  absent — explicit examples and the corpus already run before the random
+  phase, with values chosen rather than guessed.
 - Added `Gen::forClass()`: a generator built from what a constructor already
   declares. Per parameter, in order — an override, the `@param` psalm type, the
   native type. The docblock wins because it says more: `int` and `int<0, 100>`

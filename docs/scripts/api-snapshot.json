@@ -6618,7 +6618,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Seedable, deterministic pseudo-random number generator.",
-        "description": "Two instances created with the same seed produce identical sequences, which\nis what makes counterexamples reproducible. Backed by an object-scoped\nMersenne Twister (MT19937) engine via ext-random's \\Random\\Randomizer, so it\nis independent of PHP's global mt_rand state — important inside a test runner\nwhere other code may draw random numbers between runs.",
+        "description": "Two instances created with the same seed produce identical sequences, which\nis what makes counterexamples reproducible. Backed by an object-scoped\nMersenne Twister (MT19937) engine via ext-random's \\Random\\Randomizer, so it\nis independent of PHP's global mt_rand state — important inside a test runner\nwhere other code may draw random numbers between runs.\n\nIt also carries the \\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases choice, because the generators that act\non it already receive this and nothing else: threading a second parameter\nthrough every \\Rasuvaeff\\PropertyTesting\\ArbitraryInterface would change a published signature to\nsay something the source of randomness can say instead.",
         "deprecated": null,
         "see": [],
         "extensionTags": [],
@@ -6629,15 +6629,47 @@
             {
                 "name": "seed",
                 "type": "int",
-                "description": "",
+                "description": "The seed; two instances with the same one produce the same sequence.",
                 "default": null,
                 "promoted": false,
                 "promotedVisibility": "private",
                 "readonly": false
+            },
+            {
+                "name": "edgeCases",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "description": "Whether the numeric generators keep biasing toward boundary values.",
+                "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
             }
         ],
         "publicProperties": [],
         "publicMethods": [
+            {
+                "name": "drawsEdgeCase",
+                "static": false,
+                "params": [
+                    {
+                        "name": "denominator",
+                        "type": "int",
+                        "description": "The odds: one draw in this many is an edge value.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "bool",
+                "summary": "Whether this draw should be an edge value rather than a uniform one.",
+                "description": "The roll happens either way. Skipping it under \\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::None\nwould shift every later draw and make the same seed mean something else\nin the two modes; consuming it keeps them aligned, so switching the mode\nchanges which values are edges and not the whole sequence.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 53
+            },
             {
                 "name": "int",
                 "static": false,
@@ -6666,7 +6698,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 34
+                "startLine": 63
             },
             {
                 "name": "float",
@@ -6681,7 +6713,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 42
+                "startLine": 71
             },
             {
                 "name": "bytes",
@@ -6704,12 +6736,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 50
+                "startLine": 79
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Random.php#L22",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Random.php#L28",
         "implementedBy": []
     },
     {
@@ -7431,6 +7463,55 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/DistributionReport.php#L30",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+        "kind": "enum",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "Whether the numeric generators keep biasing toward their boundary values.",
+        "description": "The bias is normally what you want: bugs cluster at `0`, `±1` and a range's\nown ends far more than in the uniform interior, so roughly one draw in five\nreturns an edge value rather than a uniform one.\n\nIt stops being what you want when the edges are exactly what the property\ncannot use — a body that discards `0` through `Assume::that()`, or a\ngenerator whose range ends violate a precondition. Then one run in five is\nspent producing a value the property throws away, and the discard budget\ncarries the cost.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "UnitEnum"
+        ],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [],
+        "constants": [
+            {
+                "name": "Mixin",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "summary": "Edge values mixed into random generation — the default, and jqwik's `MIXIN`.",
+                "value": null
+            },
+            {
+                "name": "None",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "summary": "Uniform generation only.",
+                "value": null
+            }
+        ],
+        "enumCases": [
+            {
+                "name": "Mixin",
+                "backingValue": null
+            },
+            {
+                "name": "None",
+                "backingValue": null
+            }
+        ],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/EdgeCases.php#L22",
         "implementedBy": []
     },
     {
@@ -8273,6 +8354,15 @@
                 "readonly": true
             },
             {
+                "name": "edgeCases",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "description": "Whether the numeric generators keep biasing toward their boundary\nvalues (\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin, the default) or generate uniformly\n(\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::None). Turn them off when the edges are what the property cannot\nuse — a body discarding `0`, a range end that violates a precondition — so the discard\nbudget stops paying for one run in five.",
+                "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
                 "name": "path",
                 "type": "?string",
                 "description": "The shrink descent of an earlier failure, as reported by\n\\Rasuvaeff\\PropertyTesting\\CounterExample::$path: the runner follows those steps\ninstead of searching for them again, executing the body once per recorded step instead\nof once per candidate tried. Null searches as usual. It needs an explicit $seed (the\nsteps only mean anything against the run that produced them), and it refuses every\nconfiguration that would leave it a silent no-op: a descent switched off, capped below\nthe path's own length, or bounded by a wall clock — the last one because a path exists\nto be deterministic and a budget exists not to be.",
@@ -8318,7 +8408,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 128
+                "startLine": 134
             }
         ],
         "constants": [],

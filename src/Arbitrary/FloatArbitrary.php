@@ -43,7 +43,7 @@ final readonly class FloatArbitrary implements ArbitraryInterface
     {
         $boundaries = Boundary::floats($this->min, $this->max);
 
-        if ($boundaries !== [] && $random->int(1, self::BIAS_DENOMINATOR) === 1) {
+        if ($boundaries !== [] && $random->drawsEdgeCase(self::BIAS_DENOMINATOR)) {
             return $this->tree($boundaries[$random->int(0, count($boundaries) - 1)]);
         }
 

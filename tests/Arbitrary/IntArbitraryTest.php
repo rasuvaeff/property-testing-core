@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\Random;
+use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
@@ -166,5 +167,39 @@ final class IntArbitraryTest
     public function rejectsInvertedRange(): void
     {
         new IntArbitrary(10, 5);
+    }
+
+    public function edgeCasesOffGeneratesUniformlyOnly(): void
+    {
+        // The reason the knob exists: a property that cannot use 0, ±1 or the
+        // range ends would otherwise throw away one run in five.
+        $arbitrary = new IntArbitrary(-1_000_000, 1_000_000);
+        $random = new Random(3, EdgeCases::None);
+        $edges = 0;
+
+        for ($i = 0; $i < 500; ++$i) {
+            if (in_array($arbitrary->generate($random)->value, [0, 1, -1, -1_000_000, 1_000_000], strict: true)) {
+                ++$edges;
+            }
+        }
+
+        // A uniform draw hitting one of five specific values out of two
+        // million is not something 500 draws do.
+        Assert::same($edges, 0);
+    }
+
+    public function edgeCasesOnStillHitsTheBoundaries(): void
+    {
+        $arbitrary = new IntArbitrary(-1_000_000, 1_000_000);
+        $random = new Random(3);
+        $edges = 0;
+
+        for ($i = 0; $i < 500; ++$i) {
+            if (in_array($arbitrary->generate($random)->value, [0, 1, -1, -1_000_000, 1_000_000], strict: true)) {
+                ++$edges;
+            }
+        }
+
+        Assert::true($edges > 50);
     }
 }

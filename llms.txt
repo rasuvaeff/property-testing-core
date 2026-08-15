@@ -82,6 +82,8 @@ $definition = new PropertyDefinition(
         shrinkBudgetMs: null,   // wall-clock budget of the descent; implies ShrinkMode::Bounded
         phases: null,           // list<Phase>; null -> Phase::all(); [] throws
         derandomize: false,     // true -> an unset seed is derived from the property id
+        edgeCases: EdgeCases::Mixin, // None -> no numeric boundary bias; the roll is still consumed,
+                                     // so the two modes stay aligned on the same seed
                                 // (explicit seed still wins; seed->values mapping unchanged)
         path: null,             // replay a recorded descent: 'value:1/draw#1:0/value:3'
                                 // needs an explicit seed; rejects every no-op config

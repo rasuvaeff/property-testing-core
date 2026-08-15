@@ -18,6 +18,7 @@
 [Cc]odecov
 [Cc]ombinators
 [Dd]erandomiz(?:e|ed|es|ing)
+[Dd]ocblock(?:s)?
 [Ee]num
 [Ii]njective
 [Ii]nts
@@ -30,9 +31,13 @@
 [Rr]ollout
 [Ss]ubtree
 [Uu]nshrunk
+[Vv]ariadic
 [Vv]alidator
 [Ww]alkthrough
 flatMap
+# The Java property-testing library, cited on the from-a-class page for its
+# type-driven @ForAll.
+jqwik
 # Surname of the Swarm Testing paper's first author (ISSTA 2012), cited on the
 # swarm page. A proper noun the dictionary does not carry.
 Groce

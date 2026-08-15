@@ -10,6 +10,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\ArrayArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\BoolArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\BytesArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\CharsetStringArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\ClassArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\CommandSequenceArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ConstantArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\DateTimeArbitrary;
@@ -260,6 +261,44 @@ final class Gen
     public static function oneOf(mixed ...$values): OneOfArbitrary
     {
         return new OneOfArbitrary(...$values);
+    }
+
+    /**
+     * Instances of $class, generated from what its constructor already
+     * declares — the reflection answer to jqwik's type-driven `@ForAll` and
+     * Rust's `derive(Arbitrary)`, in a language that has no macros but does
+     * have promoted constructor properties and psalm annotations.
+     *
+     * ```php
+     * Gen::forClass(Money::class);
+     * Gen::forClass(Money::class, ['amount' => Gen::intPositive()]);
+     * ```
+     *
+     * Per parameter, in order: an override, then the `@param` docblock (psalm
+     * subset), then the native type. The docblock wins over the native type
+     * because it says more — `int` and `int<0, 100>` are the same native type
+     * and a very different value space — and a type this cannot read is an
+     * exception naming the parameter rather than a widened guess. See
+     * {@see ClassArbitrary} for the supported subset and for what a validating
+     * constructor does.
+     *
+     * @template TValue of object
+     *
+     * @param class-string<TValue> $class The class to instantiate.
+     * @param array<string, ArbitraryInterface> $overrides Generators by constructor parameter name.
+     * @param bool $skipInvalid Whether a constructor that rejects a generated value discards it and
+     *        redraws (as {@see filter()} does) instead of failing the run.
+     * @param int $maxDepth How deep to follow class-typed parameters before refusing.
+     *
+     * @return ClassArbitrary<TValue>
+     */
+    public static function forClass(
+        string $class,
+        array $overrides = [],
+        bool $skipInvalid = false,
+        int $maxDepth = 3,
+    ): ClassArbitrary {
+        return new ClassArbitrary($class, $overrides, $skipInvalid, $maxDepth);
     }
 
     /**

@@ -108,3 +108,10 @@ abstract class NotInstantiable
 {
     public function __construct(public int $x) {}
 }
+
+final readonly class WrapsNotInstantiable
+{
+    public function __construct(
+        public NotInstantiable $inner,
+    ) {}
+}

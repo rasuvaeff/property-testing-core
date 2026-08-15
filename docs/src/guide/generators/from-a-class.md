@@ -94,6 +94,15 @@ Cannot generate …\Unreadable: parameter $anything is typed array, which this
 cannot read; pass an override
 ```
 
+A class it cannot instantiate — a value object with a private constructor and
+named factories, say — names the chain that reached it, because such a class is
+usually three levels down from the one you asked for:
+
+```
+Cannot generate …\Duration: it is not instantiable (reached through
+…\BreakerConfig -> …\Ratio -> …\Duration); pass an override
+```
+
 That refusal is the design. A guessed generator does not fail here; it fails
 later, in somebody's test, as a value their code was never meant to see.
 

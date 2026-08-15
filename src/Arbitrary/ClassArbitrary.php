@@ -113,7 +113,15 @@ final readonly class ClassArbitrary implements ArbitraryInterface
         $reflection = new \ReflectionClass($class);
 
         if (!$reflection->isInstantiable()) {
-            throw new \InvalidArgumentException(sprintf('Cannot generate %s: it is not instantiable', $class));
+            // The chain matters more than the class here. A VO with a private
+            // constructor and named factories (a Duration, a Money) is usually
+            // reached from three levels up, and "Duration is not instantiable"
+            // sends the reader hunting for which parameter asked for it.
+            throw new \InvalidArgumentException(sprintf(
+                'Cannot generate %s: it is not instantiable%s; pass an override',
+                $class,
+                self::via($chain),
+            ));
         }
 
         $constructor = $reflection->getConstructor();
@@ -225,6 +233,17 @@ final readonly class ClassArbitrary implements ArbitraryInterface
             $parameter->getName(),
             $documented ?? ($native instanceof \ReflectionNamedType ? $native->getName() : 'with no usable type'),
         ));
+    }
+
+    /**
+     * ` (reached through A -> B -> C)`, or nothing when the class is the one
+     * that was asked for — a chain of one says nothing worth reading.
+     *
+     * @param list<class-string> $chain
+     */
+    private static function via(array $chain): string
+    {
+        return count($chain) < 2 ? '' : sprintf(' (reached through %s)', implode(' -> ', $chain));
     }
 
     /**

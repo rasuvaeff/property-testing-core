@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.1 — 2026-08-15
 
 - `Gen::forClass()` names the chain that reached a class it cannot instantiate:
   `Cannot generate …\Duration: it is not instantiable (reached through

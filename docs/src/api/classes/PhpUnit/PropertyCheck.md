@@ -9,7 +9,7 @@ description: "Fluent builder mapping the engine's structured PropertyResult onto
 
 `Rasuvaeff\PropertyTesting\PhpUnit\PropertyCheck`
 
-**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/PropertyCheck.php#L41) — **Version:** v0.4.0
+**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/06adc49a46c32a81485d6a6960467ced96ec57fb/src/PhpUnit/PropertyCheck.php#L42) — **Version:** v0.5.0
 
 Fluent builder mapping the engine's structured PropertyResult onto PHPUnit:
 a pass counts one assertion, every failing outcome surfaces as one
@@ -180,6 +180,25 @@ Replays the shrink descent of an earlier failure, as reported by
 `CounterExample::$path`, instead of searching for it again. It needs the
 seed of the run that produced it — the steps mean nothing against
 another one.
+
+### auto()
+
+```php
+auto(bool $auto = true): PhpUnit\PropertyCheck
+```
+
+Derive a generator from the closure's signature for every parameter the
+PropertyTesting::forAll() map does not cover — the `@param` psalm
+type when the closure has a docblock (`int<1, 300>` beats a bare `int`),
+the native type otherwise, and an error naming the parameter for
+anything unreadable. The map becomes the overrides and may be partial —
+or empty: a fully-typed property needs no map at all.
+
+Strictly opt-in, never the default: a bare `int` or `float` derives its
+full native domain, and only the property's author knows whether that is
+the intended one. There is deliberately no `PROPERTY_AUTO` environment
+variable — the environment dials the suite, while this changes what one
+property's arguments mean.
 
 ### examples()
 

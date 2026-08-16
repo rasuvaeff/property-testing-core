@@ -416,9 +416,9 @@
                 "type": "class-string<\\Rasuvaeff\\PropertyTesting\\Arbitrary\\TValue>",
                 "description": "The class to instantiate. Must be concrete and constructible.",
                 "default": null,
-                "promoted": false,
+                "promoted": true,
                 "promotedVisibility": "private",
-                "readonly": false
+                "readonly": true
             },
             {
                 "name": "overrides",
@@ -473,12 +473,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 84
+                "startLine": 79
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ClassArbitrary.php#L50",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ClassArbitrary.php#L49",
         "implementedBy": []
     },
     {
@@ -615,7 +615,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 150
+                "startLine": 148
             }
         ],
         "constants": [],
@@ -3643,7 +3643,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 61
+                "startLine": 62
             },
             {
                 "name": "intBetween",
@@ -3673,7 +3673,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 70
+                "startLine": 71
             },
             {
                 "name": "intPositive",
@@ -3688,7 +3688,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 78
+                "startLine": 79
             },
             {
                 "name": "float",
@@ -3703,7 +3703,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 86
+                "startLine": 87
             },
             {
                 "name": "floatBetween",
@@ -3733,7 +3733,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 91
+                "startLine": 92
             },
             {
                 "name": "bool",
@@ -3748,7 +3748,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 96
+                "startLine": 97
             },
             {
                 "name": "string",
@@ -3763,7 +3763,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 104
+                "startLine": 105
             },
             {
                 "name": "stringAscii",
@@ -3778,7 +3778,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 112
+                "startLine": 113
             },
             {
                 "name": "stringOf",
@@ -3808,7 +3808,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 121
+                "startLine": 122
             },
             {
                 "name": "char",
@@ -3823,7 +3823,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 129
+                "startLine": 130
             },
             {
                 "name": "stringFrom",
@@ -3860,7 +3860,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 139
+                "startLine": 140
             },
             {
                 "name": "bytes",
@@ -3890,7 +3890,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 148
+                "startLine": 149
             },
             {
                 "name": "arrayOf",
@@ -3927,7 +3927,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 162
+                "startLine": 163
             },
             {
                 "name": "nonEmptyArrayOf",
@@ -3957,7 +3957,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 176
+                "startLine": 177
             },
             {
                 "name": "uniqueArrayOf",
@@ -3994,7 +3994,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 194
+                "startLine": 195
             },
             {
                 "name": "subset",
@@ -4031,7 +4031,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 215
+                "startLine": 216
             },
             {
                 "name": "dictOf",
@@ -4075,7 +4075,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 234
+                "startLine": 235
             },
             {
                 "name": "record",
@@ -4098,7 +4098,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 247
+                "startLine": 248
             },
             {
                 "name": "oneOf",
@@ -4121,7 +4121,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 261
+                "startLine": 262
             },
             {
                 "name": "forClass",
@@ -4165,7 +4165,44 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 295
+                "startLine": 296
+            },
+            {
+                "name": "forParameters",
+                "static": true,
+                "params": [
+                    {
+                        "name": "function",
+                        "type": "\\ReflectionFunctionAbstract",
+                        "description": "The function, method or closure whose parameters to read.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "overrides",
+                        "type": "array<string,\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface>",
+                        "description": "Generators by parameter name, winning over\nanything the parameter declares.",
+                        "default": "[]",
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxDepth",
+                        "type": "int",
+                        "description": "How deep to follow class-typed parameters before refusing.",
+                        "default": "3",
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "Generators for a function's parameters, from what the signature already\ndeclares — forClass() applied to any function, method or closure\ninstead of a constructor. This is the engine half of an adapter's `auto`\nmode: a property method whose parameters are fully typed needs no\nprovider at all.",
+                "description": "```php\nGen::forParameters(new \\ReflectionMethod(BackoffTest::class, 'delayStaysWithinCap'));\nGen::forParameters($method, ['cap' => Gen::intBetween(0, 60_000)]);   // override one parameter\n```\n\nPer parameter, in order: an override, then the `@param` docblock (psalm\nsubset), then the native type — the same rules, the same supported\nsubset and the same refusals as \\Rasuvaeff\\PropertyTesting\\forClass(). Overrides may be\npartial: the parameters they name are taken as given, the rest are\nderived from the signature. A type this cannot read is an exception\nnaming the function and the parameter, never a widened guess.\n\nNo `skipInvalid` here: there is no constructor to reject a value —\nthis returns generators without executing anything, and a property body\nfilters untrusted input through \\Rasuvaeff\\PropertyTesting\\Assume, as always.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 335
             },
             {
                 "name": "swarm",
@@ -4188,7 +4225,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 326
+                "startLine": 375
             },
             {
                 "name": "elements",
@@ -4211,7 +4248,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 340
+                "startLine": 389
             },
             {
                 "name": "constant",
@@ -4234,7 +4271,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 354
+                "startLine": 403
             },
             {
                 "name": "enum",
@@ -4257,7 +4294,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 369
+                "startLine": 418
             },
             {
                 "name": "floatSpecial",
@@ -4272,7 +4309,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 391
+                "startLine": 440
             },
             {
                 "name": "intRange",
@@ -4302,7 +4339,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 413
+                "startLine": 462
             },
             {
                 "name": "recursive",
@@ -4339,7 +4376,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 434
+                "startLine": 483
             },
             {
                 "name": "nullable",
@@ -4362,7 +4399,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 462
+                "startLine": 511
             },
             {
                 "name": "map",
@@ -4392,7 +4429,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 480
+                "startLine": 529
             },
             {
                 "name": "flatMap",
@@ -4422,7 +4459,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 500
+                "startLine": 549
             },
             {
                 "name": "filter",
@@ -4452,7 +4489,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 515
+                "startLine": 564
             },
             {
                 "name": "draw",
@@ -4475,7 +4512,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 552
+                "startLine": 601
             },
             {
                 "name": "tuple",
@@ -4498,7 +4535,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 565
+                "startLine": 614
             },
             {
                 "name": "frequency",
@@ -4521,7 +4558,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 581
+                "startLine": 630
             },
             {
                 "name": "uuid",
@@ -4536,7 +4573,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 592
+                "startLine": 641
             },
             {
                 "name": "datetime",
@@ -4566,7 +4603,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 602
+                "startLine": 651
             },
             {
                 "name": "ipv4",
@@ -4581,7 +4618,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 613
+                "startLine": 662
             },
             {
                 "name": "ipv6",
@@ -4596,7 +4633,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 642
+                "startLine": 691
             },
             {
                 "name": "email",
@@ -4611,7 +4648,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 666
+                "startLine": 715
             },
             {
                 "name": "url",
@@ -4626,7 +4663,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 690
+                "startLine": 739
             },
             {
                 "name": "json",
@@ -4649,7 +4686,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 718
+                "startLine": 767
             },
             {
                 "name": "jsonString",
@@ -4672,7 +4709,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 744
+                "startLine": 793
             },
             {
                 "name": "regex",
@@ -4702,7 +4739,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 768
+                "startLine": 817
             },
             {
                 "name": "stringMatching",
@@ -4732,7 +4769,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 781
+                "startLine": 830
             },
             {
                 "name": "commands",
@@ -4776,7 +4813,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 801
+                "startLine": 850
             },
             {
                 "name": "sample",
@@ -4813,7 +4850,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 821
+                "startLine": 870
             },
             {
                 "name": "sampleShrinks",
@@ -4850,12 +4887,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 850
+                "startLine": 899
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L48",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L49",
         "implementedBy": []
     },
     {
@@ -5318,8 +5355,8 @@
         "isApi": false,
         "isAbstract": false,
         "isThrowable": false,
-        "summary": "The `@param` types a constructor's docblock declares, by parameter name.",
-        "description": "Deliberately a small reader rather than a docblock parser: it takes the type\nexpression as written and hands it to \\Rasuvaeff\\PropertyTesting\\Internal\\TypeGenerators, which is the\nonly thing that decides what a type means. Promoted properties are read from\nthe constructor docblock too, because that is where this family writes them.",
+        "summary": "The `@param` types a function's docblock declares, by parameter name.",
+        "description": "Deliberately a small reader rather than a docblock parser: it takes the type\nexpression as written and hands it to \\Rasuvaeff\\PropertyTesting\\Internal\\TypeGenerators, which is the\nonly thing that decides what a type means. Any function reflection works —\na constructor is where \\Rasuvaeff\\PropertyTesting\\Arbitrary\\ClassArbitrary\nreads promoted properties from (that is where this family writes them), and\na property method or closure is what\n\\Rasuvaeff\\PropertyTesting\\Gen::forParameters() reads.",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -5338,9 +5375,9 @@
                 "static": true,
                 "params": [
                     {
-                        "name": "constructor",
-                        "type": "\\ReflectionMethod",
-                        "description": "The constructor to read.",
+                        "name": "function",
+                        "type": "\\ReflectionFunctionAbstract",
+                        "description": "The function to read.",
                         "default": null,
                         "variadic": false
                     }
@@ -5354,12 +5391,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 29
+                "startLine": 32
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/DocblockTypes.php#L17",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/DocblockTypes.php#L20",
         "implementedBy": []
     },
     {
@@ -5518,6 +5555,131 @@
         ],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/Ipv6Formatter.php#L18",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\ParameterGenerators",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The parameters of one signature, as generators.",
+        "description": "Shared by \\Rasuvaeff\\PropertyTesting\\Arbitrary\\ClassArbitrary (a\nconstructor's parameters, instantiated) and\n\\Rasuvaeff\\PropertyTesting\\Gen::forParameters() (any function's\nparameters, handed back as a map). The resolution rules are one thing —\nan explicit override, then the `@param` docblock, then the native type —\nand $subject is the only difference between the callers: it names whose\nparameter a refusal is about.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "forConstructor",
+                "static": true,
+                "params": [
+                    {
+                        "name": "class",
+                        "type": "class-string",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "overrides",
+                        "type": "array<string,\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface>",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxDepth",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "chain",
+                        "type": "list<class-string>",
+                        "description": "The classes already being built, for the cycle message.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "summary": "The generator of one constructor's arguments, keyed by parameter name.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 39
+            },
+            {
+                "name": "forSignature",
+                "static": true,
+                "params": [
+                    {
+                        "name": "function",
+                        "type": "ReflectionFunctionAbstract",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "subject",
+                        "type": "string",
+                        "description": "Whose parameters these are, for the refusal messages.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "overrides",
+                        "type": "array<string,\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface>",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxDepth",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "chain",
+                        "type": "list<class-string>",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "Generators for every parameter of $function, keyed by name in signature\norder.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 77
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/ParameterGenerators.php#L23",
         "implementedBy": []
     },
     {
@@ -5985,8 +6147,8 @@
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.4.0",
-        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
+        "rootVersion": "v0.5.0",
+        "rootReference": "06adc49a46c32a81485d6a6960467ced96ec57fb",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\CorpusFromEnv",
         "kind": "class",
         "isApi": false,
@@ -6025,13 +6187,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/CorpusFromEnv.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/06adc49a46c32a81485d6a6960467ced96ec57fb/src/PhpUnit/CorpusFromEnv.php#L30",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.4.0",
-        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
+        "rootVersion": "v0.5.0",
+        "rootReference": "06adc49a46c32a81485d6a6960467ced96ec57fb",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\LazyPhpRedisCorpusClient",
         "kind": "class",
         "isApi": false,
@@ -6131,13 +6293,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/LazyPhpRedisCorpusClient.php#L25",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/06adc49a46c32a81485d6a6960467ced96ec57fb/src/PhpUnit/LazyPhpRedisCorpusClient.php#L25",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.4.0",
-        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
+        "rootVersion": "v0.5.0",
+        "rootReference": "06adc49a46c32a81485d6a6960467ced96ec57fb",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
         "kind": "class",
         "isApi": true,
@@ -6212,7 +6374,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 117
+                "startLine": 119
             },
             {
                 "name": "runs",
@@ -6235,7 +6397,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 128
+                "startLine": 130
             },
             {
                 "name": "seed",
@@ -6258,7 +6420,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 139
+                "startLine": 141
             },
             {
                 "name": "maxShrinks",
@@ -6281,7 +6443,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 149
+                "startLine": 151
             },
             {
                 "name": "maxDiscards",
@@ -6304,7 +6466,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 159
+                "startLine": 161
             },
             {
                 "name": "timeoutMs",
@@ -6327,7 +6489,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 169
+                "startLine": 171
             },
             {
                 "name": "budgetMs",
@@ -6350,7 +6512,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 179
+                "startLine": 181
             },
             {
                 "name": "shrink",
@@ -6373,7 +6535,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 191
+                "startLine": 193
             },
             {
                 "name": "shrinkBudgetMs",
@@ -6396,7 +6558,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 205
+                "startLine": 207
             },
             {
                 "name": "phases",
@@ -6419,7 +6581,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 219
+                "startLine": 221
             },
             {
                 "name": "derandomize",
@@ -6442,7 +6604,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 231
+                "startLine": 233
             },
             {
                 "name": "edgeCases",
@@ -6465,7 +6627,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 247
+                "startLine": 249
             },
             {
                 "name": "path",
@@ -6488,7 +6650,30 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 260
+                "startLine": 262
+            },
+            {
+                "name": "auto",
+                "static": false,
+                "params": [
+                    {
+                        "name": "auto",
+                        "type": "bool",
+                        "description": "",
+                        "default": "true",
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Derive a generator from the closure's signature for every parameter the\nPropertyTesting::forAll() map does not cover — the `@param` psalm\ntype when the closure has a docblock (`int<1, 300>` beats a bare `int`),\nthe native type otherwise, and an error naming the parameter for\nanything unreadable. The map becomes the overrides and may be partial —\nor empty: a fully-typed property needs no map at all.",
+                "description": "Strictly opt-in, never the default: a bare `int` or `float` derives its\nfull native domain, and only the property's author knows whether that is\nthe intended one. There is deliberately no `PROPERTY_AUTO` environment\nvariable — the environment dials the suite, while this changes what one\nproperty's arguments mean.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 283
             },
             {
                 "name": "examples",
@@ -6511,7 +6696,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 273
+                "startLine": 296
             },
             {
                 "name": "listeners",
@@ -6534,7 +6719,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 283
+                "startLine": 306
             },
             {
                 "name": "output",
@@ -6564,7 +6749,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 297
+                "startLine": 320
             },
             {
                 "name": "check",
@@ -6587,18 +6772,18 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 310
+                "startLine": 333
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/PropertyCheck.php#L41",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/06adc49a46c32a81485d6a6960467ced96ec57fb/src/PhpUnit/PropertyCheck.php#L42",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.4.0",
-        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
+        "rootVersion": "v0.5.0",
+        "rootReference": "06adc49a46c32a81485d6a6960467ced96ec57fb",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\RedisDsn",
         "kind": "class",
         "isApi": false,
@@ -6701,13 +6886,13 @@
             }
         ],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/RedisDsn.php#L16",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/06adc49a46c32a81485d6a6960467ced96ec57fb/src/PhpUnit/RedisDsn.php#L16",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.4.0",
-        "rootReference": "d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310",
+        "rootVersion": "v0.5.0",
+        "rootReference": "06adc49a46c32a81485d6a6960467ced96ec57fb",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -6768,20 +6953,20 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/d9d620437dc3d27ff38e9b5ba61eb27ce3d1e310/src/PhpUnit/VerboseListener.php#L27",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/06adc49a46c32a81485d6a6960467ced96ec57fb/src/PhpUnit/VerboseListener.php#L27",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.5.0",
-        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "rootVersion": "v0.6.0",
+        "rootReference": "ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34",
         "class": "Rasuvaeff\\PropertyTesting\\Property",
         "kind": "class",
         "isApi": true,
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Marks a test method as a property: the PropertyInterceptor takes over,\ngenerating random arguments from a generators method until the property has\ncompleted $runs successful checks or exhausted its discard budget.",
-        "description": "Attribute arguments in PHP must be constant expressions. A provider can be\na method name, any callable accepted by an attribute expression, or an\ninvokable provider object; callable providers return\n`array<string, ArbitraryInterface>`, keyed by parameter name. When\n$generators is null the runner falls back to a method named\n`<testMethod>Generators`.",
+        "description": "Attribute arguments in PHP must be constant expressions. A provider can be\na method name, any callable accepted by an attribute expression, or an\ninvokable provider object; callable providers return\n`array<string, ArbitraryInterface>`, keyed by parameter name. When\n$generators is null the runner falls back to a method named\n`<testMethod>Generators`.\n\nWith $auto the provider becomes optional: parameters it does not\ncover are derived from the property's own signature through\n\\Rasuvaeff\\PropertyTesting\\Gen::forParameters() — the `@param` psalm type when there is one,\nthe native type otherwise.",
         "deprecated": null,
         "see": [],
         "extensionTags": [],
@@ -6919,6 +7104,15 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "auto",
+                "type": "bool",
+                "description": "Derive a generator from the property's signature for every parameter the\nprovider does not cover — the `@param` psalm type when there is one (`int<1, 300>`\nbeats a bare `int`), the native type otherwise, and an error naming the parameter for\nanything unreadable. The provider (explicit or conventional) becomes the overrides and\nmay be partial; it may also cover everything, in which case auto derives nothing.\nDeliberately opt-in and deliberately without an environment knob: the environment\ndials the suite, while this changes what one property's arguments mean.",
+                "default": "false",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [
@@ -6938,7 +7132,7 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Property.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34/src/Property.php#L35",
         "implementedBy": []
     },
     {
@@ -10636,8 +10830,8 @@
     },
     {
         "root": "testo",
-        "rootVersion": "v0.5.0",
-        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "rootVersion": "v0.6.0",
+        "rootReference": "ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\CorpusFromEnv",
         "kind": "class",
         "isApi": false,
@@ -10676,13 +10870,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/CorpusFromEnv.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34/src/Testo/CorpusFromEnv.php#L30",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.5.0",
-        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "rootVersion": "v0.6.0",
+        "rootReference": "ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\LazyPhpRedisCorpusClient",
         "kind": "class",
         "isApi": false,
@@ -10782,13 +10976,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/LazyPhpRedisCorpusClient.php#L25",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34/src/Testo/LazyPhpRedisCorpusClient.php#L25",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.5.0",
-        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "rootVersion": "v0.6.0",
+        "rootReference": "ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\PropertyInterceptor",
         "kind": "class",
         "isApi": true,
@@ -10868,18 +11062,18 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 96
+                "startLine": 97
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/PropertyInterceptor.php#L51",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34/src/Testo/PropertyInterceptor.php#L52",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.5.0",
-        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "rootVersion": "v0.6.0",
+        "rootReference": "ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\RedisDsn",
         "kind": "class",
         "isApi": false,
@@ -10982,13 +11176,13 @@
             }
         ],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/RedisDsn.php#L16",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34/src/Testo/RedisDsn.php#L16",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.5.0",
-        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "rootVersion": "v0.6.0",
+        "rootReference": "ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\TestoTrialExecutor",
         "kind": "class",
         "isApi": false,
@@ -11073,13 +11267,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/TestoTrialExecutor.php#L28",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34/src/Testo/TestoTrialExecutor.php#L28",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.5.0",
-        "rootReference": "4a1d700e357c35d3f623c2956f8c97d4222d611f",
+        "rootVersion": "v0.6.0",
+        "rootReference": "ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -11140,7 +11334,7 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Testo/VerboseListener.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34/src/Testo/VerboseListener.php#L30",
         "implementedBy": []
     },
     {

@@ -9,7 +9,7 @@ description: "Facade with static factories for the built-in ArbitraryInterfaces.
 
 `Rasuvaeff\PropertyTesting\Gen`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L48) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L49) — **Version:** working tree
 
 Facade with static factories for the built-in ArbitraryInterfaces.
 
@@ -248,6 +248,42 @@ and a very different value space — and a type this cannot read is an
 exception naming the parameter rather than a widened guess. See
 [`Arbitrary\ClassArbitrary`](/api/classes/Arbitrary/ClassArbitrary) for the supported subset and for what a validating
 constructor does.
+
+### forParameters()
+
+```php
+static forParameters(
+    \ReflectionFunctionAbstract $function,
+    array<string,\ArbitraryInterface> $overrides = [],
+    int $maxDepth = 3,
+): array
+```
+
+Generators for a function's parameters, from what the signature already
+declares — forClass() applied to any function, method or closure
+instead of a constructor. This is the engine half of an adapter's `auto`
+mode: a property method whose parameters are fully typed needs no
+provider at all.
+
+- `$function` — The function, method or closure whose parameters to read.
+- `$overrides` — Generators by parameter name, winning over anything the parameter declares.
+- `$maxDepth` — How deep to follow class-typed parameters before refusing.
+
+```php
+Gen::forParameters(new \ReflectionMethod(BackoffTest::class, 'delayStaysWithinCap'));
+Gen::forParameters($method, ['cap' => Gen::intBetween(0, 60_000)]);   // override one parameter
+```
+
+Per parameter, in order: an override, then the `@param` docblock (psalm
+subset), then the native type — the same rules, the same supported
+subset and the same refusals as `forClass`(). Overrides may be
+partial: the parameters they name are taken as given, the rest are
+derived from the signature. A type this cannot read is an exception
+naming the function and the parameter, never a widened guess.
+
+No `skipInvalid` here: there is no constructor to reject a value —
+this returns generators without executing anything, and a property body
+filters untrusted input through [`Assume`](/api/classes/Assume), as always.
 
 ### swarm()
 

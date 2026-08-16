@@ -32,6 +32,7 @@
 [Rr]ollout
 [Ss]ubtree
 [Uu]nshrunk
+[Uu]ntrusted
 [Vv]ariadic
 [Vv]alidator
 [Ww]alkthrough

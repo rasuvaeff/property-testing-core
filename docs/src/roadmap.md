@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-description: "What the 0.2 and 0.3 releases delivered, and the direction of the property-testing package family: targeted property testing, coverage-guided search, and attribute-declared generators."
+description: "What the 0.2, 0.3 and 0.4 releases delivered, and the direction of the property-testing package family: targeted property testing and coverage-guided search."
 ---
 
 # Roadmap
@@ -11,8 +11,9 @@ item is dropped rather than shipped if its prototype does not show a
 measurable gain.
 
 Everything this page previously planned for 0.2 has shipped. Core 0.2.0 and
-0.2.1 were released on 2026-08-14 and 0.3.0 and 0.3.1 on 2026-08-15, with
-matching adapter releases; the details are in the changelog of each package.
+0.2.1 were released on 2026-08-14, 0.3.0 and 0.3.1 on 2026-08-15, and 0.4.0
+on 2026-08-16, with matching adapter releases; the details are in the
+changelog of each package.
 
 ## Shipped in 0.2 and 0.3
 
@@ -53,6 +54,27 @@ matching adapter releases; the details are in the changelog of each package.
   `PROPERTY_PATH`, `PROPERTY_DERANDOMIZE`, `PROPERTY_PHASES`,
   `PROPERTY_EDGE_CASES`, and `PROPERTY_DB=redis://…`; the PHPUnit fluent API
   gained the corresponding methods.
+
+## Shipped in 0.4 and the matching adapter minors
+
+- **Generators from any signature** (core 0.4.0) — `Gen::forParameters()`
+  applies the `forClass()` resolution rules to the parameters of any
+  function, method, or closure: an override, the `@param` psalm type, then
+  the native type, with refusals that name the function and the parameter.
+  Overrides may be partial — the parameters they name are taken as given,
+  the rest are derived.
+- **Auto-derived property arguments** — the Testo adapter's
+  `#[Property(auto: true)]` (0.6.0) and the PHPUnit adapter's fluent
+  `auto()` with an optional `forAll()` map (0.5.0) derive a generator for
+  every parameter the provider does not cover, so a fully-typed property
+  needs no provider at all. Strictly opt-in, and a provider key that is not
+  a parameter of the property is an error rather than a silent replacement.
+- **Generators in attribute arguments** (Testo adapter 0.5.0) — the
+  `#[Property]` attribute accepts callable providers: a
+  `[SharedGens::class, 'delay']` method reference on every supported PHP
+  version, an invokable provider object, and — on PHP 8.5 only — an inline
+  closure or first-class callable. The `<method>Generators()` convention
+  stays; the new forms are an addition.
 
 ## Compatibility commitments
 
@@ -113,19 +135,6 @@ needs. The split is fixed in advance:
 - it is not an AFL reimplementation: no bytecode instrumentation, no
   symbolic execution, and no replacement of the integrated rose-tree
   shrinking model.
-
-## Testo adapter: generators in attribute arguments
-
-A proposal for the Testo adapter only — the engine does not change. The
-`#[Property]` attribute would accept generators and examples in its
-arguments as `callable|string`, the same idiom Testo's own `DataProvider`
-uses. A method reference such as `[SharedGens::class, 'delay']` works on
-every supported PHP version; an inline closure in an attribute only parses
-on PHP 8.5 and is a compile error that poisons the whole file on older
-versions, so the closure form is an option for 8.5-only projects rather
-than the recommended one. The `<method>Generators()` convention stays: the
-new forms are an addition, and a generator method that needs `$this` cannot
-be expressed as a constant expression at all.
 
 ## Deferred
 

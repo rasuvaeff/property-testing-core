@@ -9,7 +9,7 @@ description: "Instances of a class, generated from what its constructor already 
 
 `Rasuvaeff\PropertyTesting\Arbitrary\ClassArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ClassArbitrary.php#L50) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ClassArbitrary.php#L49) — **Version:** working tree
 
 **Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

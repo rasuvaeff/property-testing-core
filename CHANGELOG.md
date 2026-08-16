@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-08-16
 
 - Added `Gen::forParameters(\ReflectionFunctionAbstract $function, array
   $overrides = [], int $maxDepth = 3)`: generators for a function's parameters,

@@ -23,7 +23,10 @@ Values entries are preferred: they cost a single run, and they keep working when
 the generation sequence shifts, because they carry the input rather than a
 recipe for regenerating it. Seed entries are the fallback and are dropped when
 the package's generation sequence changes (they would otherwise replay a
-different input under the guise of a regression). A values entry is also dropped
+different input under the guise of a regression). A seed entry also records how
+many runs the recorded failure survived, and its replay extends a lowered run
+count up to that attempt — otherwise the replay would pass early and prune a
+regression that is still alive. A values entry is also dropped
 when the property's signature no longer matches the recorded argument names — a
 renamed or added parameter makes the stored input a different input.
 

@@ -17,10 +17,14 @@ final readonly class CorpusEntry
 {
     /**
      * @param ?array<string, mixed> $arguments Minimised input keyed by parameter name; null for a seed entry.
+     * @param ?int $runsBeforeFailure How many runs the recorded failure survived before falsifying,
+     *        so a seed replay with a lowered runs count still reaches the failing attempt. Null for
+     *        values entries and for seed entries recorded before the field existed.
      */
     private function __construct(
         public ?array $arguments,
         public int $seed,
+        public ?int $runsBeforeFailure = null,
     ) {}
 
     /**
@@ -31,9 +35,12 @@ final readonly class CorpusEntry
         return new self($arguments, $seed);
     }
 
-    public static function seed(int $seed): self
+    /**
+     * @param ?int $runsBeforeFailure Runs the recorded failure survived; null when unknown.
+     */
+    public static function seed(int $seed, ?int $runsBeforeFailure = null): self
     {
-        return new self(null, $seed);
+        return new self(null, $seed, $runsBeforeFailure);
     }
 
     /**

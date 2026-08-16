@@ -23,7 +23,9 @@ use Testo\Test;
  * recorded by 2.8 keeps replaying after the engine moves to
  * property-testing-core); the first catches an accidental format change before
  * it ships. A deliberate format change bumps FORMAT_VERSION and regenerates
- * the fixtures in the same commit.
+ * the fixtures in the same commit; an OPTIONAL field (readers treat its
+ * absence as the previous behaviour, like `runsBeforeFailure`) may be added
+ * without a bump, with the pre-field document kept as a legacy fixture.
  */
 #[Test]
 #[Covers(FilesystemCorpus::class)]
@@ -125,6 +127,24 @@ final class CorpusFormatGoldenTest
         Assert::same(count($entries), 1);
         Assert::false($entries[0]->isValues());
         Assert::same($entries[0]->seed, 99);
+        Assert::same($entries[0]->runsBeforeFailure, 3);
+    }
+
+    /**
+     * A seed document written before `runsBeforeFailure` existed (2.8 through
+     * 0.4.x) must keep recalling — the optional field is exactly why
+     * FORMAT_VERSION did not change.
+     */
+    public function aCommittedPreFieldSeedDocumentStillRecalls(): void
+    {
+        copy(self::FIXTURES . '/legacy-seed-entry.json', $this->path('S::seeded'));
+
+        $entries = $this->storage()->recall('S::seeded', []);
+
+        Assert::same(count($entries), 1);
+        Assert::false($entries[0]->isValues());
+        Assert::same($entries[0]->seed, 99);
+        Assert::null($entries[0]->runsBeforeFailure);
     }
 
     #[BeforeTest]

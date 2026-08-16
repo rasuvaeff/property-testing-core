@@ -137,6 +137,27 @@ final class CounterExampleTest
     }
 
     /**
+     * `draw#N` pseudo-arguments are not parameters: rendered positionally they
+     * produce an example of the wrong arity, so the render must refuse and
+     * point at the seed instead.
+     */
+    public function refusesToGenerateExampleCodeForInBodyDraws(): void
+    {
+        $counterExample = new CounterExample(7, 0, [], ['xs' => [0], 'draw#1' => 0]);
+
+        try {
+            $counterExample->toExamplesCode();
+        } catch (\LogicException $exception) {
+            Assert::string($exception->getMessage())->contains('draw#1');
+            Assert::string($exception->getMessage())->contains('seed 7');
+
+            return;
+        }
+
+        Assert::fail('Expected a counterexample with an in-body draw to be refused');
+    }
+
+    /**
      * Byte-exact golden of the pretty JSON report, against the committed
      * fixture — reporters and tooling parse this shape, and the package split
      * must keep producing it. A deliberate change regenerates the fixture in

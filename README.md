@@ -582,7 +582,10 @@ $result = (new PropertyRunner())->run($definition, new CallableTrialExecutor(
 `shrunkArguments`, `shrinkSteps`, `shrinkTrials`, `skips` and the underlying
 `failure`; `toArray()`/`toJson()` return a normalized machine-readable form,
 and `toExamplesCode()` emits runnable PHP pinning the shrunk case as a
-permanent example.
+permanent example. A counterexample that cannot replay as an example — one
+holding an unexportable object or in-body `Gen::draw()` values — throws a
+`LogicException` instead of emitting broken code; replay those through the
+seed.
 
 `ValueRenderer::render($value)` produces the single-line human form used inside
 counterexample messages (strings quoted and escaped, arrays and objects

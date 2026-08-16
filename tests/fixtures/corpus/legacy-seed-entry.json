@@ -5,8 +5,7 @@
         {
             "kind": "seed",
             "seed": 99,
-            "epoch": 1,
-            "runsBeforeFailure": 3
+            "epoch": 1
         }
     ]
 }

@@ -143,8 +143,6 @@ final readonly class CommandSequenceArbitrary implements Swarmable
      * @param list<int> $indices Variant positions to keep, each in `[0, variantCount() - 1]`.
      *
      * @throws \InvalidArgumentException When an index falls outside the command generators.
-     *
-     * @return self
      */
     #[\Override]
     public function withVariants(array $indices): self

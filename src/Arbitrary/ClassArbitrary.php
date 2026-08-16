@@ -51,9 +51,6 @@ final readonly class ClassArbitrary implements ArbitraryInterface
     /** @var ArbitraryInterface<array<string, mixed>> */
     private ArbitraryInterface $arguments;
 
-    /** @var class-string<TValue> */
-    private string $class;
-
     /**
      * @param class-string<TValue> $class The class to instantiate. Must be concrete and constructible.
      * @param array<string, ArbitraryInterface> $overrides Generators by constructor parameter name,
@@ -65,13 +62,12 @@ final readonly class ClassArbitrary implements ArbitraryInterface
      *        error rather than a hang, and the message names the chain.
      */
     public function __construct(
-        string $class,
+        private string $class,
         array $overrides = [],
         private bool $skipInvalid = false,
         int $maxDepth = 3,
     ) {
-        $this->class = $class;
-        $this->arguments = ParameterGenerators::forConstructor($class, $overrides, $maxDepth, [$class]);
+        $this->arguments = ParameterGenerators::forConstructor($this->class, $overrides, $maxDepth, [$this->class]);
     }
 
     /**

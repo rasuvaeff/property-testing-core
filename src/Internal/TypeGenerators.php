@@ -53,7 +53,7 @@ final class TypeGenerators
         if (str_starts_with($type, '?')) {
             $inner = self::fromDocblock(substr($type, 1), $forClass);
 
-            return $inner === null ? null : Gen::nullable($inner);
+            return !$inner instanceof ArbitraryInterface ? null : Gen::nullable($inner);
         }
 
         $simple = self::simple($type);
@@ -111,8 +111,8 @@ final class TypeGenerators
             'string' => Gen::string(),
             'non-empty-string' => Gen::stringOf(1, 100),
             'bool' => Gen::bool(),
-            'true' => Gen::constant(true),
-            'false' => Gen::constant(false),
+            'true' => Gen::constant(value: true),
+            'false' => Gen::constant(value: false),
             'null' => Gen::constant(null),
             default => null,
         };
@@ -143,7 +143,7 @@ final class TypeGenerators
         if (str_ends_with($type, '[]')) {
             $element = self::fromDocblock(substr($type, 0, -2), $forClass);
 
-            return $element === null ? null : Gen::arrayOf($element, 0, 10);
+            return !$element instanceof ArbitraryInterface ? null : Gen::arrayOf($element, 0, 10);
         }
 
         if (preg_match('/^(non-empty-list|list|non-empty-array|array)<(.+)>\z/', $type, $matches) !== 1) {
@@ -156,7 +156,7 @@ final class TypeGenerators
         if (count($arguments) === 1) {
             $element = self::fromDocblock($arguments[0], $forClass);
 
-            return $element === null ? null : Gen::arrayOf($element, $minimum, 10);
+            return !$element instanceof ArbitraryInterface ? null : Gen::arrayOf($element, $minimum, 10);
         }
 
         if (count($arguments) !== 2 || str_ends_with($matches[1], 'list')) {
@@ -167,7 +167,7 @@ final class TypeGenerators
         $key = self::fromDocblock($arguments[0], $forClass);
         $value = self::fromDocblock($arguments[1], $forClass);
 
-        return $key === null || $value === null ? null : Gen::dictOf($key, $value, $minimum, 10);
+        return $key === null || !$value instanceof ArbitraryInterface ? null : Gen::dictOf($key, $value, $minimum, 10);
     }
 
     /**
@@ -196,7 +196,7 @@ final class TypeGenerators
         foreach ($members as $member) {
             $arbitrary = self::fromDocblock($member, $forClass);
 
-            if ($arbitrary === null) {
+            if (!$arbitrary instanceof ArbitraryInterface) {
                 return null;
             }
 

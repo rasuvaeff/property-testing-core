@@ -87,7 +87,7 @@ final readonly class PropertyRunner
         $maxDiscards = $config->maxDiscards
             ?? ($runs > intdiv(PHP_INT_MAX, 10) ? PHP_INT_MAX : $runs * 10);
         $seed = $config->seed ?? ($config->derandomize
-            ? self::derivedSeed($property->id)
+            ? $this->derivedSeed($property->id)
             : random_int(0, PHP_INT_MAX));
 
         // Discard requirements and a draw tape a previously aborted property may
@@ -129,7 +129,7 @@ final readonly class PropertyRunner
                     $replay = $this->runPhase($property, $executor, new Random($entry->seed, $config->edgeCases), $entry->seed, $runs, $maxDiscards, $listeners, null);
 
                     if ($replay->failure() instanceof \Throwable) {
-                        return $this->finish($listeners, $property->id, $replay, self::assessedCoverage($replay));
+                        return $this->finish($listeners, $property->id, $replay, $this->assessedCoverage($replay));
                     }
                 }
 
@@ -163,7 +163,7 @@ final readonly class PropertyRunner
             $this->emit($listeners, new CorpusStored($property->id, $result->counterExample()));
         }
 
-        return $this->finish($listeners, $property->id, $result, self::assessedCoverage($result));
+        return $this->finish($listeners, $property->id, $result, $this->assessedCoverage($result));
     }
 
     /**
@@ -175,7 +175,7 @@ final readonly class PropertyRunner
      * int — and the mapping from a seed to the values it generates is untouched,
      * so this changes which seed a run picks, never what that seed produces.
      */
-    private static function derivedSeed(string $propertyId): int
+    private function derivedSeed(string $propertyId): int
     {
         return (int) hexdec(substr(hash('sha256', $propertyId), 0, 15));
     }
@@ -217,7 +217,7 @@ final readonly class PropertyRunner
      * exit ends before the assessment — including the run that performs no
      * random phase at all.
      */
-    private static function assessedCoverage(PropertyResult $result): bool
+    private function assessedCoverage(PropertyResult $result): bool
     {
         return $result instanceof Passed || $result instanceof CoverageFailed;
     }

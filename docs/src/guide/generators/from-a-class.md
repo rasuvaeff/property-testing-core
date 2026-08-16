@@ -141,7 +141,7 @@ and the same refusals — to the parameters of any function, method, or closure,
 and returns the map a property needs: `array<string, ArbitraryInterface>` by
 parameter name, in signature order.
 
-Both adapters expose it as opt-in auto-derivation, so a fully-typed property
+Both adapters expose it as an opt-in `auto` mode, so a fully typed property
 needs no provider at all. Under Testo (0.6):
 
 ```php
@@ -189,7 +189,7 @@ Two deliberate edges. Auto is opt-in and stays opt-in: a bare `int` or `float`
 derives its full native domain, and only the property's author knows whether
 that is the one they meant. And under auto, a provider key that is not a
 parameter of the property is an error — merge semantics would otherwise
-silently replace a typoed entry with a signature-derived generator.
+silently replace a mistyped entry with a signature-derived generator.
 
 There is no `skipInvalid` here: nothing is executed at derivation time, and a
 property body filters untrusted input through

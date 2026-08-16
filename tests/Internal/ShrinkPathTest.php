@@ -73,7 +73,7 @@ final class ShrinkPathTest
                 /** @var list<array{name: string, index: int<0, max>}> $steps */
                 Assert::same(ShrinkPath::parse(ShrinkPath::format($steps)), $steps);
             },
-            ['steps' => Gen::nonEmptyArrayOf(self::stepGenerator(), maxSize: 6)],
+            ['steps' => Gen::nonEmptyArrayOf($this->stepGenerator(), maxSize: 6)],
             runs: 200,
             seed: 20_260_814,
         );
@@ -145,7 +145,7 @@ final class ShrinkPathTest
     /**
      * @return ArbitraryInterface<array<string, mixed>>
      */
-    private static function stepGenerator(): ArbitraryInterface
+    private function stepGenerator(): ArbitraryInterface
     {
         return Gen::record([
             'name' => Gen::frequency([

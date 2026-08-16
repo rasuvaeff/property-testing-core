@@ -162,7 +162,7 @@ final class PropertyRunnerPathTest
         Assert::same(count($listener->ofType(ShrinkTried::class)), 9);
         Assert::same(
             array_map(static fn(ShrinkTried $event): bool => $event->accepted, $listener->ofType(ShrinkTried::class)),
-            array_fill(0, 9, true),
+            array_fill(0, 9, value: true),
         );
         Assert::same(
             array_map(static fn(ShrinkAccepted $event): int => $event->step, $listener->ofType(ShrinkAccepted::class)),

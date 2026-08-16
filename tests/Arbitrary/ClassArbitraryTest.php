@@ -292,7 +292,7 @@ final class ClassArbitraryTest
     {
         // The documented escape hatch, exercised rather than promised.
         $arbitrary = new ClassArbitrary(Nested::class, [
-            'inner' => Gen::constant(new NativeTypes(1, 1.0, 'x', true)),
+            'inner' => Gen::constant(new NativeTypes(1, 1.0, 'x', active: true)),
         ], maxDepth: 0);
 
         Assert::same($arbitrary->generate(new Random(1))->value->inner->label, 'x');

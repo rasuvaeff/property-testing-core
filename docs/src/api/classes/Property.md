@@ -9,7 +9,7 @@ description: "Marks a test method as a property: the PropertyInterceptor takes o
 
 `Rasuvaeff\PropertyTesting\Property`
 
-**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/4a1d700e357c35d3f623c2956f8c97d4222d611f/src/Property.php#L30) — **Version:** v0.5.0
+**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/ddca7cf71ff4dd0814461e95fbd0bd40c8b9ac34/src/Property.php#L35) — **Version:** v0.6.0
 
 **Implements:** `Testo\Pipeline\Attribute\Interceptable`
 
@@ -23,6 +23,11 @@ invokable provider object; callable providers return
 `array<string, ArbitraryInterface>`, keyed by parameter name. When
 $generators is null the runner falls back to a method named
 `<testMethod>Generators`.
+
+With $auto the provider becomes optional: parameters it does not
+cover are derived from the property's own signature through
+[`Gen`](/api/classes/Gen)::forParameters() — the `@param` psalm type when there is one,
+the native type otherwise.
 
 ## Constructor
 
@@ -42,6 +47,7 @@ __construct(
     bool $derandomize = false,
     ?string $path = NULL,
     \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
+    bool $auto = false,
 )
 ```
 
@@ -61,6 +67,7 @@ __construct(
 | `$derandomize` | `bool` | `false` | Derives an unset seed from the property id instead of drawing one, so the same property on the same code always selects the same inputs. An explicit $seed still wins. |
 | `$path` | `?string` | `NULL` | A recorded shrink descent (`CounterExample::$path`) followed instead of searched for again. It needs the $seed of the run that produced it — the steps mean nothing against another one — and it is a debugging aid, not a fixture: editing a generator orphans it, which is what the regression corpus is for. |
 | `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | Whether the numeric generators keep biasing toward their boundary values ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::Mixin, the default) or generate uniformly ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::None). Turn them off when the edges are what this property cannot use — a body discarding `0`, a range end that violates a precondition — so the discard budget stops paying for one run in five. |
+| `$auto` | `bool` | `false` | Derive a generator from the property's signature for every parameter the provider does not cover — the `@param` psalm type when there is one (`int&lt;1, 300&gt;` beats a bare `int`), the native type otherwise, and an error naming the parameter for anything unreadable. The provider (explicit or conventional) becomes the overrides and may be partial; it may also cover everything, in which case auto derives nothing. Deliberately opt-in and deliberately without an environment knob: the environment dials the suite, while this changes what one property's arguments mean. |
 
 ## Properties
 

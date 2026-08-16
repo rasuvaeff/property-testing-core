@@ -1,6 +1,6 @@
 ---
 title: "Generating from a class"
-description: "Gen::forClass() builds a generator from what a constructor already declares — native types, and the psalm annotations that say what the values may actually be."
+description: "Gen::forClass() builds a generator from what a constructor already declares — and Gen::forParameters() applies the same rules to any signature, which is what the adapters' auto mode is made of."
 ---
 
 # Generating from a class
@@ -132,3 +132,65 @@ The instance is built by mapping over the generated arguments, so
 shrinks by shrinking the arguments and rebuilding the object, and with
 `skipInvalid` the candidates the constructor would reject are pruned from the
 descent rather than thrown from it.
+
+## The same rules for a whole property
+
+`Gen::forParameters()` (core 0.4) applies the same resolution — an override,
+the `@param` psalm type, then the native type, with the same supported subset
+and the same refusals — to the parameters of any function, method, or closure,
+and returns the map a property needs: `array<string, ArbitraryInterface>` by
+parameter name, in signature order.
+
+Both adapters expose it as opt-in auto-derivation, so a fully-typed property
+needs no provider at all. Under Testo (0.6):
+
+```php
+/**
+ * @param int<1, 300> $base
+ * @param int<1, 86400> $cap
+ */
+#[Property(auto: true)]
+public function delayStaysWithinCap(int $base, int $cap): void { /* … */ }
+```
+
+Under PHPUnit (0.5), where the docblock sits on the closure itself:
+
+```php
+$this->forAll()
+    ->auto()
+    ->check(
+        /**
+         * @param int<1, 300> $base
+         * @param int<1, 86400> $cap
+         */
+        function (int $base, int $cap): void { /* … */ },
+    );
+```
+
+The provider — the `<method>Generators` convention, an explicit `generators`
+argument, the `forAll()` map — becomes the **overrides** and may be partial:
+the parameters it names are taken as given, the rest are derived. That is the
+escape hatch for a domain no psalm type can express — a float range, a
+dependent pair built with `flatMap()`:
+
+```php
+/** @param int<1, 40> $attempt */
+#[Property(generators: 'provide', auto: true)]
+public function delayIsMonotonic(float $multiplier, int $attempt): void { /* … */ }
+
+/** @return array<string, ArbitraryInterface> */
+public static function provide(): array
+{
+    return ['multiplier' => Gen::floatBetween(1.0, 4.0)];   // the rest is derived
+}
+```
+
+Two deliberate edges. Auto is opt-in and stays opt-in: a bare `int` or `float`
+derives its full native domain, and only the property's author knows whether
+that is the one they meant. And under auto, a provider key that is not a
+parameter of the property is an error — merge semantics would otherwise
+silently replace a typoed entry with a signature-derived generator.
+
+There is no `skipInvalid` here: nothing is executed at derivation time, and a
+property body filters untrusted input through
+[`Assume`](/guide/controlling-runs/assume-vs-filter), as always.

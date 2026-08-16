@@ -105,7 +105,17 @@ final class MyClassTest
 The Testo attribute takes: `runs` (≥1, default 100), `seed` (reproducible),
 `maxShrinks` (0 = off), `maxDiscards`, `timeoutMs` (per-run deadline),
 `budgetMs` (whole random phase), `generators` / `examples` (override the
-default method names).
+default method names), `auto` (derive from the signature, below).
+
+**`auto: true` (-testo ≥0.6): the generators method can be omitted** when the
+parameters are fully described by `@param` psalm types and native types — a
+generator is derived per parameter from the property's own signature
+(`Gen::forParameters` rules). A provider (explicit or conventional) becomes
+PARTIAL overrides: name only what the type cannot express (a float range, a
+`flatMap` pair), the rest derives. With auto, a provider key that is not a
+parameter is an error. Strictly opt-in — bare `int`/`float` derive their full
+native domain. PHPUnit adapter parity (≥0.5):
+`$this->forAll()->auto()->check(/** @param int<0, 9> $n */ function (int $n): void {…})`.
 
 `PropertyConfig` (engine level, for callers that build a `PropertyDefinition`
 themselves) adds: `shrink` (`ShrinkMode::Off` reports the counterexample as
@@ -170,6 +180,8 @@ rejected at construction.
 | Dependent on previous value | `Gen::flatMap($inner, fn($x) => $dependent)` | Integrated shrinking preserved |
 | In-body draw (rare, multiple deps) | `Gen::draw($arb)` | ONLY inside a running property body; replay tape recorded |
 | Constant (for commands) | `Gen::constant($value)` | |
+| VO/config from its constructor | `Gen::forClass(Money::class, $overrides)` | Per parameter: override → `@param` psalm type (`int<0, 100>` beats `int`) → native type; unreadable types THROW naming the parameter, never a widened guess; `skipInvalid: true` discards constructor-rejected values (core ≥0.3) |
+| Generators from any signature | `Gen::forParameters($reflectionFn, $overrides)` | The forClass rules for a method/closure's parameters, returned as `array<string, ArbitraryInterface>` in signature order; overrides may be PARTIAL — named params taken as given, rest derived (core ≥0.4) |
 
 Numeric generators are **boundary-biased**: ~1 in 5 draws returns an in-range
 edge value. Sized generators never go below their minimum.

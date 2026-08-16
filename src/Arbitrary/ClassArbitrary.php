@@ -6,8 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Gen;
-use Rasuvaeff\PropertyTesting\Internal\DocblockTypes;
-use Rasuvaeff\PropertyTesting\Internal\TypeGenerators;
+use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -72,7 +71,7 @@ final readonly class ClassArbitrary implements ArbitraryInterface
         int $maxDepth = 3,
     ) {
         $this->class = $class;
-        $this->arguments = self::argumentsOf($class, $overrides, $maxDepth, [$class]);
+        $this->arguments = ParameterGenerators::forConstructor($class, $overrides, $maxDepth, [$class]);
     }
 
     /**
@@ -97,153 +96,6 @@ final readonly class ClassArbitrary implements ArbitraryInterface
             : $this->arguments;
 
         return $arguments->generate($random)->map(fn(array $arguments): object => $this->instantiate($arguments));
-    }
-
-    /**
-     * The generator of one constructor's arguments, keyed by parameter name.
-     *
-     * @param class-string $class
-     * @param array<string, ArbitraryInterface> $overrides
-     * @param list<class-string> $chain The classes already being built, for the cycle message.
-     *
-     * @return ArbitraryInterface<array<string, mixed>>
-     */
-    private static function argumentsOf(string $class, array $overrides, int $maxDepth, array $chain): ArbitraryInterface
-    {
-        $reflection = new \ReflectionClass($class);
-
-        if (!$reflection->isInstantiable()) {
-            // The chain matters more than the class here. A VO with a private
-            // constructor and named factories (a Duration, a Money) is usually
-            // reached from three levels up, and "Duration is not instantiable"
-            // sends the reader hunting for which parameter asked for it.
-            throw new \InvalidArgumentException(sprintf(
-                'Cannot generate %s: it is not instantiable%s; pass an override',
-                $class,
-                self::via($chain),
-            ));
-        }
-
-        $constructor = $reflection->getConstructor();
-
-        if (!$constructor instanceof \ReflectionMethod) {
-            return Gen::constant([]);
-        }
-
-        $documented = DocblockTypes::of($constructor);
-        $shape = [];
-
-        foreach ($constructor->getParameters() as $parameter) {
-            $name = $parameter->getName();
-
-            if (isset($overrides[$name])) {
-                $shape[$name] = $overrides[$name];
-
-                continue;
-            }
-
-            if ($parameter->isVariadic()) {
-                throw new \InvalidArgumentException(sprintf(
-                    'Cannot generate %s: parameter $%s is variadic; pass an override',
-                    $class,
-                    $name,
-                ));
-            }
-
-            $shape[$name] = self::generatorFor($class, $parameter, $documented[$name] ?? null, $maxDepth, $chain);
-        }
-
-        /** @var ArbitraryInterface<array<string, mixed>> $arguments */
-        $arguments = Gen::record($shape);
-
-        return $arguments;
-    }
-
-    /**
-     * @param class-string $class
-     * @param list<class-string> $chain
-     */
-    private static function generatorFor(
-        string $class,
-        \ReflectionParameter $parameter,
-        ?string $documented,
-        int $maxDepth,
-        array $chain,
-    ): ArbitraryInterface {
-        $forClass = static function (string $type) use ($maxDepth, $chain): ArbitraryInterface {
-            if (in_array($type, $chain, strict: true)) {
-                throw new \InvalidArgumentException(sprintf(
-                    'Cannot generate %s: it is reachable from itself (%s); pass an override to break the cycle',
-                    $type,
-                    implode(' -> ', [...$chain, $type]),
-                ));
-            }
-
-            if ($maxDepth < 1) {
-                throw new \InvalidArgumentException(sprintf(
-                    'Cannot generate %s: maximum depth reached (%s); raise maxDepth or pass an override',
-                    $type,
-                    implode(' -> ', [...$chain, $type]),
-                ));
-            }
-
-            if (enum_exists($type)) {
-                /** @var class-string<\UnitEnum> $type */
-                return Gen::enum($type);
-            }
-
-            if ($type === \DateTimeImmutable::class) {
-                return Gen::datetime();
-            }
-
-            /** @var class-string $type */
-            return Gen::map(
-                self::argumentsOf($type, [], $maxDepth - 1, [...$chain, $type]),
-                // Reflection rather than `new $type(...)`: the arguments are
-                // keyed by parameter name, which reflection applies as named
-                // arguments, and a dynamic class-string is something static
-                // analysis can follow here and cannot there.
-                static fn(array $arguments): object => (new \ReflectionClass($type))->newInstance(...$arguments),
-            );
-        };
-
-        if ($documented !== null) {
-            $fromDocblock = TypeGenerators::fromDocblock($documented, $forClass);
-
-            if ($fromDocblock instanceof ArbitraryInterface) {
-                return $fromDocblock;
-            }
-        }
-
-        $native = $parameter->getType();
-
-        if ($native instanceof \ReflectionNamedType) {
-            $generator = TypeGenerators::fromNative($native->getName(), $forClass);
-
-            if ($generator instanceof ArbitraryInterface) {
-                return $native->allowsNull()
-                    ? Gen::nullable($generator)
-                    : $generator;
-            }
-        }
-
-        throw new \InvalidArgumentException(sprintf(
-            'Cannot generate %s: parameter $%s is typed %s, which this cannot read; pass an override',
-            $class,
-            $parameter->getName(),
-            $documented ?? ($native instanceof \ReflectionNamedType ? $native->getName() : 'with no usable type'),
-        ));
-    }
-
-    /**
-     * ` (reached through A -> B -> C)`, or nothing when the class is the one
-     * that was asked for — a chain of one says nothing worth reading.
-     *
-     * @param list<class-string> $chain
-     */
-    private static function via(array $chain): string
-    {
-        return count($chain) < 2 ? '' : sprintf(' (reached through %s)', implode(' -> ', $chain));
     }
 
     /**

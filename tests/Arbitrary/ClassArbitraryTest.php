@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ClassArbitrary;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\AnnotatedTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Currency;
@@ -38,6 +39,7 @@ use Testo\Test;
  */
 #[Test]
 #[Covers(ClassArbitrary::class)]
+#[Covers(ParameterGenerators::class)]
 final class ClassArbitraryTest
 {
     public function generatesFromNativeConstructorTypes(): void

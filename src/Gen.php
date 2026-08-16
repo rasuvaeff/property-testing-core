@@ -32,6 +32,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\UniqueArrayArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UuidArbitrary;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
 use Rasuvaeff\PropertyTesting\Internal\Ipv6Formatter;
+use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Internal\RegexCompiler;
 
 /**
@@ -299,6 +300,54 @@ final class Gen
         int $maxDepth = 3,
     ): ClassArbitrary {
         return new ClassArbitrary($class, $overrides, $skipInvalid, $maxDepth);
+    }
+
+    /**
+     * Generators for a function's parameters, from what the signature already
+     * declares — {@see forClass()} applied to any function, method or closure
+     * instead of a constructor. This is the engine half of an adapter's `auto`
+     * mode: a property method whose parameters are fully typed needs no
+     * provider at all.
+     *
+     * ```php
+     * Gen::forParameters(new \ReflectionMethod(BackoffTest::class, 'delayStaysWithinCap'));
+     * Gen::forParameters($method, ['cap' => Gen::intBetween(0, 60_000)]);   // override one parameter
+     * ```
+     *
+     * Per parameter, in order: an override, then the `@param` docblock (psalm
+     * subset), then the native type — the same rules, the same supported
+     * subset and the same refusals as {@see forClass()}. Overrides may be
+     * partial: the parameters they name are taken as given, the rest are
+     * derived from the signature. A type this cannot read is an exception
+     * naming the function and the parameter, never a widened guess.
+     *
+     * No `skipInvalid` here: there is no constructor to reject a value —
+     * this returns generators without executing anything, and a property body
+     * filters untrusted input through {@see Assume}, as always.
+     *
+     * @param \ReflectionFunctionAbstract $function The function, method or closure whose parameters to read.
+     * @param array<string, ArbitraryInterface> $overrides Generators by parameter name, winning over
+     *        anything the parameter declares.
+     * @param int $maxDepth How deep to follow class-typed parameters before refusing.
+     *
+     * @return array<string, ArbitraryInterface> By parameter name, in signature order.
+     */
+    public static function forParameters(
+        \ReflectionFunctionAbstract $function,
+        array $overrides = [],
+        int $maxDepth = 3,
+    ): array {
+        $name = $function instanceof \ReflectionMethod
+            ? $function->getDeclaringClass()->getName() . '::' . $function->getName()
+            : $function->getName();
+
+        return ParameterGenerators::forSignature(
+            $function,
+            sprintf('arguments for %s()', $name),
+            $overrides,
+            $maxDepth,
+            [],
+        );
     }
 
     /**

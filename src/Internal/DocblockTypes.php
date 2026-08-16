@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Internal;
 
 /**
- * The `@param` types a constructor's docblock declares, by parameter name.
+ * The `@param` types a function's docblock declares, by parameter name.
  *
  * Deliberately a small reader rather than a docblock parser: it takes the type
  * expression as written and hands it to {@see TypeGenerators}, which is the
- * only thing that decides what a type means. Promoted properties are read from
- * the constructor docblock too, because that is where this family writes them.
+ * only thing that decides what a type means. Any function reflection works —
+ * a constructor is where {@see \Rasuvaeff\PropertyTesting\Arbitrary\ClassArbitrary}
+ * reads promoted properties from (that is where this family writes them), and
+ * a property method or closure is what
+ * {@see \Rasuvaeff\PropertyTesting\Gen::forParameters()} reads.
  *
  * @internal
  */
@@ -22,13 +25,13 @@ final class DocblockTypes
     }
 
     /**
-     * @param \ReflectionMethod $constructor The constructor to read.
+     * @param \ReflectionFunctionAbstract $function The function to read.
      *
      * @return array<string, string> Type expression by parameter name; missing for undocumented ones.
      */
-    public static function of(\ReflectionMethod $constructor): array
+    public static function of(\ReflectionFunctionAbstract $function): array
     {
-        $docblock = $constructor->getDocComment();
+        $docblock = $function->getDocComment();
 
         if ($docblock === false) {
             return [];

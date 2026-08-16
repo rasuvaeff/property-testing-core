@@ -231,6 +231,13 @@ Gen::forClass(string $class, array $overrides = [], bool $skipInvalid = false, i
 // A constructor that rejects a value throws by default (the generator does not match the domain);
 // skipInvalid: true discards and redraws through Gen::filter (100 attempts -> GenerationExhausted),
 // discarding Exceptions only, never Errors. Shrinks through the arguments, rebuilding the instance.
+Gen::forParameters(\ReflectionFunctionAbstract $function, array $overrides = [], int $maxDepth = 3)
+// NOT an arbitrary — returns array<string, ArbitraryInterface> for the function's parameters, by
+// name in signature order. The forClass rules applied to any method or closure: per parameter,
+// override -> @param psalm type -> native type; same supported subset, same refusals (naming the
+// function and the parameter, never a widened guess). Overrides may be PARTIAL: named parameters
+// are taken as given, the rest derived from the signature. No skipInvalid (nothing is executed);
+// pure function of reflection, Random not involved. Engine half of the adapters' auto mode.
 Gen::ipv4()  Gen::ipv6()  Gen::email()  Gen::url()  // ipv6: canonical RFC 5952 text, shrinks to "::"
 Gen::json(int $maxDepth = 3)  Gen::jsonString(int $maxDepth = 3)
 Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compiled to combinators

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Added `Gen::forParameters(\ReflectionFunctionAbstract $function, array
+  $overrides = [], int $maxDepth = 3)`: generators for a function's parameters,
+  by name in signature order — the `forClass()` resolution rules (override →
+  `@param` psalm type → native type, same supported subset, refusals that name
+  the function and the parameter) applied to any method or closure instead of a
+  constructor. Overrides may be partial: the parameters they name are taken as
+  given, the rest are derived from the signature. This is the engine half of
+  the adapters' upcoming `auto` mode, where a fully-typed property needs no
+  provider method at all.
+
 ## 0.3.1 — 2026-08-15
 
 - `Gen::forClass()` names the chain that reached a class it cannot instantiate:

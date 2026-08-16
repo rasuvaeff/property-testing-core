@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Docs: SKILL.md now covers `EdgeCases::None` — the attribute parameter list
+  and the boundary-bias rule (per-property opt-out for bodies that discard
+  edge values, with the PHPUnit `edgeCases()` parity and the seed-alignment
+  guarantee under `None`).
+
 ## 0.4.1 — 2026-08-16
 
 - Fixed `CounterExample::toExamplesCode()` emitting non-runnable example code

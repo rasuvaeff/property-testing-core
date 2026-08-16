@@ -105,7 +105,8 @@ final class MyClassTest
 The Testo attribute takes: `runs` (≥1, default 100), `seed` (reproducible),
 `maxShrinks` (0 = off), `maxDiscards`, `timeoutMs` (per-run deadline),
 `budgetMs` (whole random phase), `generators` / `examples` (override the
-default method names), `auto` (derive from the signature, below).
+default method names), `auto` (derive from the signature, below),
+`edgeCases` (boundary bias, below).
 
 **`auto: true` (-testo ≥0.6): the generators method can be omitted** when the
 parameters are fully described by `@param` psalm types and native types — a
@@ -184,7 +185,14 @@ rejected at construction.
 | Generators from any signature | `Gen::forParameters($reflectionFn, $overrides)` | The forClass rules for a method/closure's parameters, returned as `array<string, ArbitraryInterface>` in signature order; overrides may be PARTIAL — named params taken as given, rest derived (core ≥0.4) |
 
 Numeric generators are **boundary-biased**: ~1 in 5 draws returns an in-range
-edge value. Sized generators never go below their minimum.
+edge value. Sized generators never go below their minimum. If the body
+discards edges (`0`, range ends) through `Assume::that()`, that's one run in
+five producing a value the property throws away — the discard budget pays for
+it. Turn the bias off per property: `#[Property(edgeCases: EdgeCases::None)]`
+(-testo; default `EdgeCases::Mixin`) / `->edgeCases(EdgeCases::None)`
+(-phpunit). The edge roll still happens under `None`, so the sequence stays
+aligned on the same seed — only which values appear changes, not everything
+after the first draw.
 
 ## Choosing the phase mechanism
 

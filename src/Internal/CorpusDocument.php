@@ -102,7 +102,21 @@ final class CorpusDocument
         }
 
         if (($raw['kind'] ?? null) === 'seed') {
-            return ($raw['epoch'] ?? null) === $epoch ? CorpusEntry::seed($seed) : null;
+            if (($raw['epoch'] ?? null) !== $epoch) {
+                return null;
+            }
+
+            /** @var mixed $runsBeforeFailure */
+            $runsBeforeFailure = $raw['runsBeforeFailure'] ?? null;
+
+            // PHP_INT_MAX is excluded so `runsBeforeFailure + 1` can never
+            // overflow when the replay extends its run count.
+            return CorpusEntry::seed(
+                $seed,
+                runsBeforeFailure: is_int($runsBeforeFailure) && $runsBeforeFailure >= 0 && $runsBeforeFailure < PHP_INT_MAX
+                    ? $runsBeforeFailure
+                    : null,
+            );
         }
 
         $encoded = $raw['args'] ?? null;
@@ -157,7 +171,7 @@ final class CorpusDocument
     public static function encodeEntry(CounterExample $counterExample, array $parameterNames, int $epoch): array
     {
         return self::valuesEntry($counterExample->shrunkArguments, $parameterNames, $counterExample->seed, $epoch)
-            ?? self::seedEntry($counterExample->seed, $epoch);
+            ?? self::seedEntry($counterExample->seed, $epoch, $counterExample->runsBeforeFailure);
     }
 
     /**
@@ -204,12 +218,21 @@ final class CorpusDocument
     /**
      * @param int $seed The seed to replay the whole random phase with.
      * @param int $epoch The sequence epoch to stamp.
+     * @param ?int $runsBeforeFailure Runs the recorded failure survived; stored so a replay
+     *        can extend a lowered runs count up to the failing attempt. Omitted from the
+     *        document when null — entries without it keep the pre-field behaviour.
      *
      * @return array<string, mixed>
      */
-    public static function seedEntry(int $seed, int $epoch): array
+    public static function seedEntry(int $seed, int $epoch, ?int $runsBeforeFailure = null): array
     {
-        return ['kind' => 'seed', 'seed' => $seed, 'epoch' => $epoch];
+        $entry = ['kind' => 'seed', 'seed' => $seed, 'epoch' => $epoch];
+
+        if ($runsBeforeFailure !== null) {
+            $entry['runsBeforeFailure'] = $runsBeforeFailure;
+        }
+
+        return $entry;
     }
 
     /**

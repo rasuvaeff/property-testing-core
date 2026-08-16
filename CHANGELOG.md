@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+- Fixed `CounterExample::toExamplesCode()` emitting non-runnable example code
+  for a counterexample with in-body `Gen::draw()` values: `draw#N`
+  pseudo-arguments are not parameters, so rendered positionally they produced
+  an example of the wrong arity. It now throws a `LogicException` naming the
+  draw and pointing at seed replay, following the non-exportable-object
+  precedent (#55).
+- Fixed `Gen::regex()` silently compiling escapes outside the supported subset
+  (`\h`, `\v`, `\R`, `\Q…\E`, `\0`, `\x`, ...) to literal characters,
+  generating strings that do not match the pattern. Unknown alphanumeric
+  escapes now throw naming the escape (escaped punctuation stays literal, as
+  before); `[\b]` inside a character class generates a backspace; lazy and
+  possessive quantifiers are rejected with an honest message instead of
+  `"?" has nothing to repeat` (#56).
+- Fixed corpus seed-entry replay pruning a live regression when the configured
+  runs count was lowered below the recorded failing attempt: seed entries now
+  store `runsBeforeFailure` and the replay extends its run count up to the
+  recorded attempt. Documents written before the field keep the previous
+  behaviour; the on-disk format version is unchanged (#57).
+
 ## 0.4.0 — 2026-08-16
 
 - Added `Gen::forParameters(\ReflectionFunctionAbstract $function, array

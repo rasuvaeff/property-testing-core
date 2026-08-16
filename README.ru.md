@@ -583,7 +583,10 @@ $result = (new PropertyRunner())->run($definition, new CallableTrialExecutor(
 `shrunkArguments`, `shrinkSteps`, `shrinkTrials`, `skips` и исходный
 `failure`; `toArray()`/`toJson()` возвращают нормализованную машинную форму, а
 `toExamplesCode()` печатает исполняемый PHP, пиняющий сжатый случай как
-постоянный example.
+постоянный example. Контрпример, который невозможно воспроизвести example'ом —
+с неэкспортируемым объектом или значениями in-body `Gen::draw()` — бросает
+`LogicException` вместо генерации сломанного кода; такие случаи реплеятся
+через seed.
 
 `ValueRenderer::render($value)` даёт однострочную человеческую форму значения —
 ту же, что и в сообщении о контрпримере (строки в кавычках и с экранированием,

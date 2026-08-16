@@ -19,11 +19,12 @@ use Rasuvaeff\PropertyTesting\ArbitraryInterface;
  * Grammar (recursive descent): alternation `|` -> {@see FrequencyArbitrary};
  * concatenation -> `tuple(...)` mapped through `implode`; quantifier
  * (`* + ? {n} {n,} {n,m}`) -> `arrayOf(atom, lo, hi)` mapped through `implode`;
- * atom -> group `(...)`/`(?:...)`, class `[...]`, escape `\x`, `.`, or a literal.
+ * atom -> group `(...)`/`(?:...)`, class `[...]`, an escape, `.`, or a literal.
  * Unsupported constructs (anchors other than a single leading `^`/trailing `$`,
- * backreferences, lookaround, named/inline groups, flags) throw, naming the
- * construct — a generator that silently ignored them would emit non-matching
- * strings.
+ * backreferences, lookaround, named/inline groups, flags, lazy/possessive
+ * quantifiers, and any alphanumeric escape outside the supported shorthands)
+ * throw, naming the construct — a generator that silently ignored them would
+ * emit non-matching strings.
  *
  * @internal
  */
@@ -116,6 +117,18 @@ final class RegexCompiler
 
         if ($bounds === null) {
             return $atom;
+        }
+
+        // `?` / `+` right after a quantifier is PCRE's laziness / possessiveness
+        // modifier, not a second quantifier — name it instead of failing later
+        // with a puzzling "nothing to repeat".
+        $modifier = $this->atEnd() ? '' : $this->peek();
+
+        if ($modifier === '?' || $modifier === '+') {
+            throw new \InvalidArgumentException(sprintf(
+                'Regex %s quantifiers are not supported',
+                $modifier === '?' ? 'lazy' : 'possessive',
+            ));
         }
 
         [$min, $max] = $bounds;
@@ -310,12 +323,13 @@ final class RegexCompiler
             '1', '2', '3', '4', '5', '6', '7', '8', '9' => throw new \InvalidArgumentException(
                 sprintf('Regex backreference "\\%s" is not supported', $char),
             ),
-            default => new ConstantArbitrary($char),
+            default => new ConstantArbitrary($this->literalEscape($char)),
         };
     }
 
     /**
-     * The concrete character set of a class shorthand (`\d \w \s` and negations).
+     * The concrete character set of a class shorthand (`\d \w \s` and negations;
+     * inside a class `\b` is a backspace, not an assertion).
      *
      * @return list<string>
      */
@@ -331,8 +345,25 @@ final class RegexCompiler
             't' => ["\t"],
             'n' => ["\n"],
             'r' => ["\r"],
-            default => [$char],
+            'b' => ["\x08"],
+            default => [$this->literalEscape($char)],
         };
+    }
+
+    /**
+     * The literal character behind an escape with no shorthand of its own.
+     * PCRE's rule: `\` before a non-alphanumeric character is that character.
+     * An alphanumeric escape this subset does not implement (`\h`, `\Q`, `\0`,
+     * `\x`, ...) carries PCRE semantics of its own — compiled as a literal it
+     * would generate non-matching strings, so it throws instead.
+     */
+    private function literalEscape(string $char): string
+    {
+        if (preg_match('/\A[A-Za-z0-9]\z/', $char) === 1) {
+            throw new \InvalidArgumentException(sprintf('Regex escape "\\%s" is not supported', $char));
+        }
+
+        return $char;
     }
 
     private function readInt(): int

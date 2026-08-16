@@ -54,6 +54,7 @@ final class RegexCompilerTest
         yield 'escaped meta' => ['a\\.b\\*c'];
         yield 'unbounded lower' => ['a{2,}'];
         yield 'plus' => ['xa+y'];
+        yield 'backspace class' => ['[\\b]'];
     }
 
     #[DataProvider('deterministicPatterns')]
@@ -88,6 +89,7 @@ final class RegexCompilerTest
         yield 'literal then group' => ['xy(?:ab)', 'xyab'];
         yield 'empty group' => ['a()b', 'ab'];
         yield 'escaped dot in class' => ['[\\.]', '.'];
+        yield 'backspace in class' => ['[\\b]', "\x08"];
         yield 'single-digit nine count' => ['a{9}', 'aaaaaaaaa'];
         yield 'two-digit count' => ['a{12}', 'aaaaaaaaaaaa'];
     }
@@ -412,6 +414,63 @@ final class RegexCompilerTest
         yield 'reversed quantifier' => ['a{5,2}'];
         yield 'trailing backslash' => ['abc\\'];
         yield 'reversed range' => ['[z-a]'];
+        yield 'unknown escape \h' => ['\\h'];
+        yield 'unknown escape \v' => ['\\v'];
+        yield 'quote-literal mode \Q...\E' => ['a\\Qb+c\\E'];
+        yield 'null escape' => ['\\0'];
+        yield 'hex escape' => ['\\x41'];
+        yield 'unknown escape in class' => ['[\\h]'];
+        yield 'octal escape in class' => ['[\\1]'];
+        yield 'lazy star' => ['a*?'];
+        yield 'lazy plus' => ['a+?'];
+        yield 'lazy question' => ['a??'];
+        yield 'lazy brace quantifier' => ['a{2,4}?'];
+        yield 'possessive star' => ['a*+'];
+        yield 'possessive plus' => ['a++'];
+    }
+
+    /**
+     * The docblock contract: an unsupported construct throws NAMING the
+     * construct, so the message must say which escape or which quantifier
+     * flavour was rejected — not a downstream parse error.
+     */
+    public function namesTheUnknownEscapeInTheRejection(): void
+    {
+        try {
+            RegexCompiler::compile('\\h');
+        } catch (\InvalidArgumentException $exception) {
+            Assert::string($exception->getMessage())->contains('"\\h"');
+
+            return;
+        }
+
+        Assert::fail('Expected \\h to be rejected');
+    }
+
+    public function namesTheLazyQuantifierInTheRejection(): void
+    {
+        try {
+            RegexCompiler::compile('a*?');
+        } catch (\InvalidArgumentException $exception) {
+            Assert::string($exception->getMessage())->contains('lazy');
+
+            return;
+        }
+
+        Assert::fail('Expected a*? to be rejected');
+    }
+
+    public function namesThePossessiveQuantifierInTheRejection(): void
+    {
+        try {
+            RegexCompiler::compile('a*+');
+        } catch (\InvalidArgumentException $exception) {
+            Assert::string($exception->getMessage())->contains('possessive');
+
+            return;
+        }
+
+        Assert::fail('Expected a*+ to be rejected');
     }
 
     public function maxRepeatMustBePositive(): void

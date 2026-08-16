@@ -29,6 +29,17 @@ final class CorpusEntryTest
         Assert::false($entry->isValues());
         Assert::null($entry->arguments);
         Assert::same($entry->seed, -7);
+        Assert::null($entry->runsBeforeFailure);
+    }
+
+    public function seedEntryCarriesTheRecordedRunsBeforeFailure(): void
+    {
+        Assert::same(CorpusEntry::seed(11, runsBeforeFailure: 3)->runsBeforeFailure, 3);
+    }
+
+    public function valuesEntryNeverCarriesRunsBeforeFailure(): void
+    {
+        Assert::null(CorpusEntry::values(['x' => 1], 2)->runsBeforeFailure);
     }
 
     /**

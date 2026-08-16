@@ -84,8 +84,7 @@ final readonly class PropertyRunner
 
         $config = $property->config;
         $runs = $config->runs;
-        $maxDiscards = $config->maxDiscards
-            ?? ($runs > intdiv(PHP_INT_MAX, 10) ? PHP_INT_MAX : $runs * 10);
+        $maxDiscards = $this->maxDiscards($config->maxDiscards, $runs);
         $seed = $config->seed ?? ($config->derandomize
             ? $this->derivedSeed($property->id)
             : random_int(0, PHP_INT_MAX));
@@ -126,7 +125,13 @@ final readonly class PropertyRunner
                     // regression is a different run. Applied here it would
                     // report "path no longer applies" over the regression the
                     // corpus exists to surface.
-                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $config->edgeCases), $entry->seed, $runs, $maxDiscards, $listeners, null);
+                    //
+                    // The recorded failure fell on attempt runsBeforeFailure+1,
+                    // so a lowered runs count extends up to it — a replay that
+                    // never reaches the failing attempt would pass and prune a
+                    // live regression.
+                    $replayRuns = max($runs, ($entry->runsBeforeFailure ?? -1) + 1);
+                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $config->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $listeners, null);
 
                     if ($replay->failure() instanceof \Throwable) {
                         return $this->finish($listeners, $property->id, $replay, $this->assessedCoverage($replay));
@@ -164,6 +169,16 @@ final readonly class PropertyRunner
         }
 
         return $this->finish($listeners, $property->id, $result, $this->assessedCoverage($result));
+    }
+
+    /**
+     * The discard cap for a phase running $runs attempts: the configured value
+     * when there is one, otherwise ten discards per run (saturating instead of
+     * overflowing on huge run counts).
+     */
+    private function maxDiscards(?int $configured, int $runs): int
+    {
+        return $configured ?? ($runs > intdiv(PHP_INT_MAX, 10) ? PHP_INT_MAX : $runs * 10);
     }
 
     /**

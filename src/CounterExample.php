@@ -73,10 +73,28 @@ final readonly class CounterExample
         );
     }
 
+    /**
+     * The shrunk counterexample as a ready-to-paste `<method>Examples()` method.
+     *
+     * Refuses when the counterexample cannot actually replay as an example:
+     * a value {@see ValueRenderer::exportPhp()} cannot render, or a `draw#N`
+     * pseudo-argument — an in-body draw is not a parameter, so an example
+     * cannot carry it and the failure replays only through the seed.
+     */
     public function toExamplesCode(string $methodName = 'propertyExamples'): string
     {
         if (preg_match('/^[A-Za-z_]\w*\z/', $methodName) !== 1) {
             throw new \InvalidArgumentException(sprintf('Invalid examples method name "%s"', $methodName));
+        }
+
+        foreach (array_keys($this->shrunkArguments) as $name) {
+            if (str_starts_with($name, 'draw#')) {
+                throw new \LogicException(sprintf(
+                    'Cannot render "%s" as example code: an in-body draw is not a parameter — replay with seed %d instead',
+                    $name,
+                    $this->seed,
+                ));
+            }
         }
 
         $arguments = \Rasuvaeff\PropertyTesting\ValueRenderer::exportPhp(array_values($this->shrunkArguments));

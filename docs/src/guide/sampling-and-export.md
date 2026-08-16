@@ -36,4 +36,6 @@ $code = $violation->getCounterExample()->toExamplesCode('holdsExamples');
 ```
 
 The generated method yields arguments in parameter order. Unsupported runtime
-objects throw `LogicException` instead of producing code that cannot run.
+objects — and counterexamples with in-body `Gen::draw()` values, which are not
+parameters and replay only through the seed — throw `LogicException` instead
+of producing code that cannot run.

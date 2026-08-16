@@ -300,6 +300,53 @@ final class PropertyRunnerLifecycleTest
         Assert::same($pruned[0]->seed, 3);
     }
 
+    /**
+     * The recorded failure fell on attempt runsBeforeFailure+1. A user who
+     * lowered runs below that must not turn the replay into a pass that prunes
+     * a live regression — the replay extends to the recorded attempt.
+     */
+    public function aSeedReplayWithALoweredRunsCountExtendsToTheRecordedFailure(): void
+    {
+        $entry = CorpusEntry::seed(11, runsBeforeFailure: 3);
+        $corpus = new RecordingCorpus([$entry]);
+
+        $attempt = 0;
+        $result = (new PropertyRunner())->run(
+            $this->definition(runs: 1),
+            new CallableTrialExecutor(static function (int $value) use (&$attempt): void {
+                if (++$attempt === 4) {
+                    throw new \RuntimeException('regression is alive');
+                }
+            }),
+            [],
+            $corpus,
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        Assert::same($corpus->pruned, []);
+    }
+
+    public function aSeedReplayWithoutARecordedAttemptUsesTheConfiguredRuns(): void
+    {
+        $entry = CorpusEntry::seed(11);
+        $corpus = new RecordingCorpus([$entry]);
+
+        $calls = 0;
+        $result = (new PropertyRunner())->run(
+            $this->definition(runs: 2),
+            new CallableTrialExecutor(static function (int $value) use (&$calls): void {
+                ++$calls;
+            }),
+            [],
+            $corpus,
+        );
+
+        Assert::instanceOf($result, Passed::class);
+        // The replay ran the configured 2 attempts, then the random phase its 2.
+        Assert::same($calls, 4);
+        Assert::same($corpus->pruned, [$entry]);
+    }
+
     public function anInconclusiveSeedReplayIsReportedAndKeepsTheEntry(): void
     {
         $entry = CorpusEntry::seed(11);

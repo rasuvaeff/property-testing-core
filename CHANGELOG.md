@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 — 2026-08-16
 
 - Fixed `CounterExample::toExamplesCode()` emitting non-runnable example code
   for a counterexample with in-body `Gen::draw()` values: `draw#N`

@@ -55,13 +55,13 @@ final class ParameterGenerators
         $constructor = $reflection->getConstructor();
 
         if (!$constructor instanceof \ReflectionMethod) {
-            return Gen::constant([]);
+            /** @var array<string, mixed> $arguments */
+            $arguments = [];
+
+            return Gen::constant($arguments);
         }
 
-        /** @var ArbitraryInterface<array<string, mixed>> $arguments */
-        $arguments = Gen::record(self::forSignature($constructor, $class, $overrides, $maxDepth, $chain));
-
-        return $arguments;
+        return Gen::record(self::forSignature($constructor, $class, $overrides, $maxDepth, $chain));
     }
 
     /**

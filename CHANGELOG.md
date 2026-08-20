@@ -1,7 +1,21 @@
 # Changelog
 
-## Unreleased
+## 0.4.2 — 2026-08-20
 
+- `FilesystemCorpus` now creates its temp file with `O_EXCL` (`fopen(…, 'x')`)
+  instead of a plain write. The temp path is derived from the property id and
+  pid, so on a shared corpus directory it is predictable; a pre-planted symlink
+  would otherwise be followed and let a corpus write overwrite an arbitrary
+  file. The exclusive create refuses the existing path, turning that into a
+  skipped write (the corpus is best-effort memory, not a ledger).
+- `Gen::regex()` / `stringMatching()` now reject an explicit `{n}`/`{n,m}` bound
+  above 10,000 with a named error, instead of building a fixed-size array that
+  exhausts memory during generation. Unbounded `*`/`+`/`{n,}` were already
+  capped by `maxRepeat`; only the explicit bounds were unguarded.
+- Docs: documented that seed replay may run more attempts than the configured
+  `runs` (it extends up to the recorded failing attempt so it can reproduce the
+  regression), and that `ValueCodec::decodeEnum()` triggers the autoloader on a
+  class name from the corpus document.
 - Docs: SKILL.md now covers `EdgeCases::None` — the attribute parameter list
   and the boundary-bias rule (per-property opt-out for bodies that discard
   edge values, with the PHPUnit `edgeCases()` parity and the seed-alignment

@@ -261,6 +261,11 @@ final readonly class ValueCodec
         $class = self::stringField($encoded, 'c');
         $name = self::stringField($encoded, 'n');
 
+        // enum_exists() runs the autoloader on a class name taken straight from
+        // the corpus document. PSR-4 does not resolve a traversal name and no
+        // object is instantiated (only a case value of an existing enum is
+        // returned), but this is the one point where corpus data reaches the
+        // autoloader — keep it in view if the corpus ever spans trust domains.
         if ($class === null || $name === null || !enum_exists($class)) {
             return null;
         }

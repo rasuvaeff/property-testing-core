@@ -129,7 +129,10 @@ final readonly class PropertyRunner
                     // The recorded failure fell on attempt runsBeforeFailure+1,
                     // so a lowered runs count extends up to it — a replay that
                     // never reaches the failing attempt would pass and prune a
-                    // live regression.
+                    // live regression. Consequence: seed replay can run more
+                    // attempts than the configured runs (a lowered PROPERTY_RUNS
+                    // does not shorten it). Reproducing the recorded failure
+                    // wins over the speed dial on this phase.
                     $replayRuns = max($runs, ($entry->runsBeforeFailure ?? -1) + 1);
                     $replay = $this->runPhase($property, $executor, new Random($entry->seed, $config->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $listeners, null);
 

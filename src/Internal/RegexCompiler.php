@@ -30,6 +30,13 @@ use Rasuvaeff\PropertyTesting\ArbitraryInterface;
  */
 final class RegexCompiler
 {
+    /**
+     * Hard ceiling on an explicit `{n}`/`{n,m}` bound. Generous enough for any
+     * realistic pattern, low enough that the fixed-size array it builds cannot
+     * exhaust memory.
+     */
+    private const int MAX_BOUNDED_REPEAT = 10_000;
+
     /** @var list<string> */
     private array $chars;
 
@@ -178,6 +185,7 @@ final class RegexCompiler
     {
         ++$this->pos; // consume '{'
         $min = $this->readInt();
+        $this->guardBoundedRepeat($min);
 
         if (!$this->atEnd() && $this->peek() === '}') {
             ++$this->pos;
@@ -198,6 +206,7 @@ final class RegexCompiler
         }
 
         $max = $this->readInt();
+        $this->guardBoundedRepeat($max);
 
         if ($this->atEnd() || $this->peek() !== '}') {
             throw new \InvalidArgumentException('Malformed regex quantifier: expected "}"');
@@ -209,6 +218,24 @@ final class RegexCompiler
         }
 
         return [$min, $max];
+    }
+
+    /**
+     * An explicit `{n}`/`{n,m}` bound is honoured verbatim (unlike `*`/`+`,
+     * which `maxRepeat` caps), so an outsized count would build a fixed-size
+     * array that exhausts memory during generation. Reject it with a named
+     * error rather than silently truncating — a truncated count would generate
+     * strings that do not match the pattern.
+     */
+    private function guardBoundedRepeat(int $count): void
+    {
+        if ($count > self::MAX_BOUNDED_REPEAT) {
+            throw new \InvalidArgumentException(sprintf(
+                'Regex quantifier repeat %d exceeds the maximum bounded repeat of %d',
+                $count,
+                self::MAX_BOUNDED_REPEAT,
+            ));
+        }
     }
 
     private function atom(): ArbitraryInterface

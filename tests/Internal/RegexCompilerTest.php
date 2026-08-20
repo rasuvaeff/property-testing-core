@@ -48,6 +48,7 @@ final class RegexCompilerTest
         yield 'dot star' => ['a.*b'];
         yield 'digit escape' => ['\\d\\d\\d'];
         yield 'exact count' => ['x{4}'];
+        yield 'exact count at the bounded-repeat ceiling' => ['a{10000}'];
         yield 'range count' => ['[a-f]{2,4}'];
         yield 'mixed' => ['(foo|bar)_[0-9]{1,3}'];
         yield 'anchored' => ['^[a-z]+$'];
@@ -335,6 +336,8 @@ final class RegexCompilerTest
         yield 'question nothing to repeat' => ['?x', 'nothing to repeat'];
         yield 'brace nothing to repeat' => ['{x', 'nothing to repeat'];
         yield 'no number after brace' => ['a{x}', 'expected a number'];
+        yield 'excessive exact repeat' => ['a{20000}', 'exceeds the maximum bounded repeat'];
+        yield 'excessive range upper bound' => ['a{1,50000}', 'exceeds the maximum bounded repeat'];
         yield 'unterminated non-capturing group' => ['(?:', 'Unterminated regex group'];
         yield 'bare group modifier at end' => ['(?', 'group modifiers'];
         yield 'dash at end of unterminated class' => ['[a-', 'Unterminated regex character class'];

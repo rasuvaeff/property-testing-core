@@ -214,12 +214,28 @@ final readonly class FilesystemCorpus implements Corpus
 
         $tmp = dirname($file) . '/.' . basename($file) . '.' . $pid . '.tmp';
 
+        // O_EXCL ('x'): create the temp file, or fail if the path already
+        // exists. The path is derived from the property id and pid, so on a
+        // shared corpus directory an attacker can predict it and pre-plant a
+        // symlink; a plain write would follow it and overwrite whatever it
+        // points at. Refusing the existing path turns that arbitrary write into
+        // a skipped corpus write, which is harmless — the corpus is best-effort
+        // memory, not a ledger.
+        $handle = @fopen($tmp, 'x');
+
+        if ($handle === false) {
+            return;
+        }
+
         // The length check keeps a full disk from shrinking the corpus: a
         // partially written temp file renamed over the previous document would
         // be the very torn write the temp file exists to prevent — only worse,
         // because the rename makes it durable. On any short or failed write the
         // previous document stays untouched.
-        if (@file_put_contents($tmp, $payload) !== \strlen($payload)) {
+        $written = @fwrite($handle, $payload);
+        @fclose($handle);
+
+        if ($written !== \strlen($payload)) {
             @unlink($tmp);
 
             return;

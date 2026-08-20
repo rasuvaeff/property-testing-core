@@ -432,6 +432,36 @@ final class FilesystemCorpusTest
         Assert::same($this->storage()->recall(self::ID, ['x']), []);
     }
 
+    /**
+     * The temp path is derived from the property id and pid, so an attacker
+     * sharing the corpus directory can predict it and pre-plant a symlink at
+     * it. The O_EXCL create must refuse that path instead of writing through
+     * the link and overwriting whatever it points at.
+     */
+    public function refusesToFollowASymlinkPlantedAtTheTempPath(): void
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            // symlink() needs a privilege on Windows; the O_EXCL guard is the
+            // POSIX-relevant path, and the short-write test covers the rest.
+            return;
+        }
+
+        $victim = $this->dir . '/victim.txt';
+        file_put_contents($victim, 'original');
+
+        $tmp = $this->dir . '/.' . sha1(self::ID) . '.json.' . getmypid() . '.tmp';
+        symlink($victim, $tmp);
+
+        try {
+            $this->storage()->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
+
+            Assert::same(file_get_contents($victim), 'original');
+            Assert::false(is_file($this->file()));
+        } finally {
+            @unlink($tmp);
+        }
+    }
+
     public function rememberCreatesTheDirectory(): void
     {
         $nested = $this->dir . '/nested/db';

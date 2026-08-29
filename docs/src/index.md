@@ -51,6 +51,11 @@ features:
 Install core plus exactly the adapter your test suite already uses; `composer why testo/testo`
 stays empty if you never asked for it.
 
+## Built on the engine
+
+- <img src="/logo-mark.svg" width="20" height="20" alt="" style="display: inline-block; vertical-align: middle; border-radius: 4px; margin-right: 4px;" /> **[`property-testing-openapi`](https://github.com/rasuvaeff/property-testing-openapi)** — property-based contract testing for an existing API from its own OpenAPI document: generated valid and negative request cases, an operation suite with no-5xx oracles, and pre-transport validation via [`openapi-contract`](https://github.com/rasuvaeff/openapi-contract). The runner surface works unchanged under Testo and PHPUnit, with the same `PROPERTY_RUNS`/`PROPERTY_SEED`/`PROPERTY_DB` environment.
+- **[`property-testing-names`](https://github.com/rasuvaeff/property-testing-names)** — realistic person-name generators (`en`/`ru`, gender-consistent parts) for properties whose inputs are people.
+
 ## See it fail, then see it shrink
 
 <div class="terminal-sample">

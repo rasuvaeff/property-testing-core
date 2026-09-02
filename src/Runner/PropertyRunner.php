@@ -824,7 +824,7 @@ final readonly class PropertyRunner
             return false;
         }
 
-        return $original === null
+        return !$original instanceof \Throwable
             || !$outcome->failure instanceof \Throwable
             || $outcome->failure::class === $original::class;
     }

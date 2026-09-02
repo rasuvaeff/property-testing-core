@@ -14,6 +14,8 @@ use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
+use Rasuvaeff\PropertyTesting\Runner\TrialExecutor;
+use Rasuvaeff\PropertyTesting\Runner\TrialOutcome;
 use Rasuvaeff\PropertyTesting\Tests\Support\ChainArbitrary;
 use Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener;
 use Rasuvaeff\PropertyTesting\Tests\Support\ThrowingShrinkArbitrary;
@@ -260,6 +262,35 @@ final class PropertyRunnerShrinkTest
         foreach ($listener->ofType(ShrinkAccepted::class) as $event) {
             Assert::true(is_int($event->after) && $event->after >= 100);
         }
+    }
+
+    public function aCandidateThatFailsWithoutAnExceptionIsAcceptedWhateverTheOriginalWas(): void
+    {
+        // A trial executor may report a failure without a throwable (an
+        // adapter's non-exception failure status). There is nothing to compare
+        // the original's exception class against, so the candidate counts.
+        $result = (new PropertyRunner())->run(
+            $this->definition(['value' => Gen::intBetween(0, 10_000)], ['value']),
+            new class implements TrialExecutor {
+                #[\Override]
+                public function execute(array $arguments): TrialOutcome
+                {
+                    $value = $arguments['value'];
+
+                    if (!is_int($value) || $value < 100) {
+                        return TrialOutcome::passed();
+                    }
+
+                    return $value >= 1_000
+                        ? TrialOutcome::failed(new \RuntimeException(sprintf('%d is not below 1000', $value)))
+                        : TrialOutcome::failed();
+                }
+            },
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        Assert::same($result->counterExample()->originalArguments, ['value' => 3989]);
+        Assert::same($result->counterExample()->shrunkArguments, ['value' => 100]);
     }
 
     public function aCandidateEnumerationThatThrowsEndsWithoutLosingTheCounterexample(): void

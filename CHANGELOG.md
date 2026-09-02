@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+- A seed entry in the regression corpus now records the `EdgeCases` mode
+  the failure was found under (`edgeCases: mixin|none`, read as `mixin` by
+  documents that predate the field — the only mode there was), and the
+  replay runs under that mode rather than the current configuration's. The
+  modes share the roll but not the values it selects, so a suite that
+  switched modes replayed other values, passed, and pruned a live
+  regression. `CounterExample` carries the mode as `$edgeCases`, in
+  `toArray()` too; `Random` exposes it as `$edgeCases`. The document format
+  policy is now written down: within a format version the document grows
+  only by optional fields, which older readers ignore and newer readers
+  default; the version changes only when an existing field changes.
+- Shrinking accepts a candidate only when it fails with the same exception
+  class as the original run. A smaller input that trips a different error
+  (a `TypeError` in the body's setup below the assertion's boundary) used to
+  be accepted, and the reported minimal counterexample minimised that other
+  bug — the descent now stops at the boundary of the failure that was found.
+- `Corpus::prune()` finds a values entry recalled under a reordered
+  signature: `hydrate()` accepts the reorder and hands the arguments back in
+  the current order, so the re-encoded entry no longer matched the stored
+  bytes and the fixed regression replayed on every run. Entry identity keys
+  the arguments by name.
+- `FilesystemCorpus` reclaims an orphaned temp file: a writer killed between
+  create and rename, under a pid that came around again (pid 1 in a
+  container, a recycled range under paratest), left a regular file that made
+  the exclusive create refuse every later write of that property for good.
+  The write runs under the property's lock, so a regular file at the temp
+  path can only be such an orphan; a symlink or a directory keeps the
+  refusal.
+- Documentation: `timeoutMs` is measured when the run returns — it reports a
+  run that overran, it cannot interrupt a body that hangs — and shrink
+  trials are not timed; the README, `llms.txt` and the skill said or implied
+  otherwise.
 - A shrink candidate that cannot be built no longer escapes the descent and
   discards the counterexample the random phase found. `Shrinkable::map()`
   skips a candidate the transformation refuses with an exception (a

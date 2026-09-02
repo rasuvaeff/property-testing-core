@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
+use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus;
 use Rasuvaeff\PropertyTesting\Tests\Support\Priority;
 use Testo\Assert;
@@ -128,6 +129,37 @@ final class CorpusFormatGoldenTest
         Assert::false($entries[0]->isValues());
         Assert::same($entries[0]->seed, 99);
         Assert::same($entries[0]->runsBeforeFailure, 3);
+        Assert::same($entries[0]->edgeCases, EdgeCases::Mixin);
+    }
+
+    public function writingASeedEntryFoundWithoutEdgeCasesProducesTheCommittedDocument(): void
+    {
+        $this->storage()->remember(
+            'S::seeded-none',
+            new CounterExample(
+                seed: 99,
+                runsBeforeFailure: 3,
+                originalArguments: ['draw#1' => 5],
+                shrunkArguments: ['draw#1' => 4],
+                edgeCases: EdgeCases::None,
+            ),
+            [],
+        );
+
+        Assert::same(
+            file_get_contents($this->path('S::seeded-none')),
+            file_get_contents(self::FIXTURES . '/seed-entry-none.json'),
+        );
+    }
+
+    public function aCommittedSeedDocumentRecallsItsEdgeCaseMode(): void
+    {
+        copy(self::FIXTURES . '/seed-entry-none.json', $this->path('S::seeded-none'));
+
+        $entries = $this->storage()->recall('S::seeded-none', []);
+
+        Assert::same(count($entries), 1);
+        Assert::same($entries[0]->edgeCases, EdgeCases::None);
     }
 
     /**
@@ -145,6 +177,8 @@ final class CorpusFormatGoldenTest
         Assert::false($entries[0]->isValues());
         Assert::same($entries[0]->seed, 99);
         Assert::null($entries[0]->runsBeforeFailure);
+        // Mixin was the only mode a pre-field document could have been recorded under.
+        Assert::same($entries[0]->edgeCases, EdgeCases::Mixin);
     }
 
     #[BeforeTest]

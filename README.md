@@ -105,7 +105,11 @@ Property falsified after 0 successful run(s); seed=42
 The `Changed:` line diffs the original against the shrunk counterexample —
 arguments the shrinker left untouched are omitted. `trial(s)` counts every
 candidate the shrinker ran (accepted and rejected); `shrink step(s)` counts
-only the accepted ones. Reproduce the exact run by pinning the reported seed in
+only the accepted ones. A candidate is accepted only when it fails the same way
+the original run did — the same exception class — so the descent minimises the
+bug that was found instead of sliding into a different one (a smaller input that
+trips a `TypeError` in the body's setup is not a smaller counterexample of an
+assertion failure). Reproduce the exact run by pinning the reported seed in
 `PropertyConfig`.
 
 See [`examples/standalone_runner.php`](examples/standalone_runner.php) for the
@@ -326,7 +330,7 @@ no environment:
 | `seed` | `null` | Random-phase seed; null draws one (reported in failures) |
 | `maxShrinks` | `null` | Cap on accepted shrink steps; 0 disables shrinking |
 | `maxDiscards` | `null` | Discard budget; null resolves to `runs * 10` |
-| `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded` |
+| `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded`. Measured when the run returns: it reports a run that overran, it does not interrupt a body that hangs. Shrink trials are not timed |
 | `budgetMs` | `null` | Wall-clock budget for the whole random phase → `TimeBudgetExceeded` |
 | `shrink` | `null` | `ShrinkMode::Off` reports the counterexample as generated; null resolves to `Full` |
 | `shrinkBudgetMs` | `null` | Wall-clock budget for the shrink descent; implies `ShrinkMode::Bounded` |
@@ -451,7 +455,7 @@ keep working after the migration.
 | Entry (`CorpusEntry`) | When | Replay |
 |---|---|---|
 | Values | Every minimised argument is representable as data (null/scalars/arrays/enum cases/byte strings) | One run with the exact recorded input |
-| Seed | Objects, closures, or in-body `Gen::draw()` values in the counterexample | The whole random phase, re-run with that seed; fenced off by the sequence epoch |
+| Seed | Objects, closures, or in-body `Gen::draw()` values in the counterexample | The whole random phase, re-run with that seed under the `EdgeCases` mode the failure was recorded with; fenced off by the sequence epoch |
 
 A corpus is the only memory a property has between runs, and most
 falsifications happen in CI — on a machine that is destroyed when the job ends.

@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Internal;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
+use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 
 /**
  * The on-disk shape of a corpus, without the disk.
@@ -23,6 +24,13 @@ use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
  * version and sequence epoch stay public constants on
  * {@see \Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus} — they are the
  * published contract, and they are passed in here rather than duplicated.
+ *
+ * Within one format version the document grows only by optional fields
+ * (`runsBeforeFailure` in 0.4.1, `edgeCases` in 0.5.0): a reader treats a
+ * missing field as what it meant before the field existed, and ignores a
+ * field it does not know. The version changes only when an existing field
+ * changes meaning or shape — then an older reader must not read the document
+ * at all, and {@see decode()} returns nothing for it.
  *
  * @internal
  */
@@ -109,6 +117,19 @@ final class CorpusDocument
             /** @var mixed $runsBeforeFailure */
             $runsBeforeFailure = $raw['runsBeforeFailure'] ?? null;
 
+            // Before the field existed, Mixin was the only mode a seed could
+            // have been recorded under. A mode this reader does not know
+            // cannot be replayed faithfully, so the entry is unusable.
+            $edgeCases = match (array_key_exists('edgeCases', $raw) ? $raw['edgeCases'] : 'mixin') {
+                'mixin' => EdgeCases::Mixin,
+                'none' => EdgeCases::None,
+                default => null,
+            };
+
+            if (!$edgeCases instanceof EdgeCases) {
+                return null;
+            }
+
             // PHP_INT_MAX is excluded so `runsBeforeFailure + 1` can never
             // overflow when the replay extends its run count.
             return CorpusEntry::seed(
@@ -116,6 +137,7 @@ final class CorpusDocument
                 runsBeforeFailure: is_int($runsBeforeFailure) && $runsBeforeFailure >= 0 && $runsBeforeFailure < PHP_INT_MAX
                     ? $runsBeforeFailure
                     : null,
+                edgeCases: $edgeCases,
             );
         }
 
@@ -171,7 +193,7 @@ final class CorpusDocument
     public static function encodeEntry(CounterExample $counterExample, array $parameterNames, int $epoch): array
     {
         return self::valuesEntry($counterExample->shrunkArguments, $parameterNames, $counterExample->seed, $epoch)
-            ?? self::seedEntry($counterExample->seed, $epoch, $counterExample->runsBeforeFailure);
+            ?? self::seedEntry($counterExample->seed, $epoch, $counterExample->runsBeforeFailure, $counterExample->edgeCases);
     }
 
     /**
@@ -221,16 +243,20 @@ final class CorpusDocument
      * @param ?int $runsBeforeFailure Runs the recorded failure survived; stored so a replay
      *        can extend a lowered runs count up to the failing attempt. Omitted from the
      *        document when null — entries without it keep the pre-field behaviour.
+     * @param EdgeCases $edgeCases The mode the seed reproduces the failure under; always
+     *        stored, read back as {@see EdgeCases::Mixin} by documents that predate it.
      *
      * @return array<string, mixed>
      */
-    public static function seedEntry(int $seed, int $epoch, ?int $runsBeforeFailure = null): array
+    public static function seedEntry(int $seed, int $epoch, ?int $runsBeforeFailure = null, EdgeCases $edgeCases = EdgeCases::Mixin): array
     {
         $entry = ['kind' => 'seed', 'seed' => $seed, 'epoch' => $epoch];
 
         if ($runsBeforeFailure !== null) {
             $entry['runsBeforeFailure'] = $runsBeforeFailure;
         }
+
+        $entry['edgeCases'] = strtolower($edgeCases->name);
 
         return $entry;
     }
@@ -240,13 +266,25 @@ final class CorpusDocument
      * (the same minimal input recorded twice is one regression), a seed entry is
      * its seed.
      *
+     * The arguments are keyed by name, not by position: {@see hydrate()} accepts
+     * a reordered signature and hands the entry back in the current order, so a
+     * pruned entry re-encodes with its arguments in a different order than the
+     * stored bytes — the key must not see that difference.
+     *
      * @param array<string, mixed> $raw The stored entry.
      */
     public static function keyOf(array $raw): string
     {
         try {
+            /** @var mixed $arguments */
+            $arguments = $raw['args'] ?? null;
+
+            if (is_array($arguments)) {
+                ksort($arguments);
+            }
+
             return ($raw['kind'] ?? null) === 'values'
-                ? 'v:' . json_encode($raw['args'] ?? null, JSON_THROW_ON_ERROR)
+                ? 'v:' . json_encode($arguments, JSON_THROW_ON_ERROR)
                 : 's:' . json_encode($raw['seed'] ?? null, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             return 'x:' . serialize($raw['kind'] ?? null);

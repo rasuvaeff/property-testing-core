@@ -433,6 +433,38 @@ final class FilesystemCorpusTest
     }
 
     /**
+     * A regular file at the temp path is an orphan: the write runs under the
+     * property's lock, so nobody else can be writing there, and a writer killed
+     * between create and rename under a pid that came around again (pid 1 in a
+     * container) would otherwise refuse every later write of this property.
+     */
+    public function reclaimsAnOrphanedTempFile(): void
+    {
+        $tmp = $this->dir . '/.' . sha1(self::ID) . '.json.' . getmypid() . '.tmp';
+        file_put_contents($tmp, '{"format": 1, "property": "stale", "entries": []}');
+
+        $this->storage()->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
+
+        Assert::false(file_exists($tmp));
+        Assert::same(count($this->storage()->recall(self::ID, ['x'])), 1);
+    }
+
+    public function prunesAnEntryRecalledUnderAReorderedSignature(): void
+    {
+        // hydrate() accepts a reordered signature; the entry it hands back must
+        // still identify the stored bytes, or prune() silently keeps it and the
+        // fixed regression replays on every run.
+        $this->storage()->remember(self::ID, $this->counterExample(['a' => 1, 'b' => 2], 1), ['a', 'b']);
+
+        $entries = $this->storage()->recall(self::ID, ['b', 'a']);
+        Assert::same(count($entries), 1);
+
+        $this->storage()->prune(self::ID, $entries[0]);
+
+        Assert::same($this->storage()->recall(self::ID, ['b', 'a']), []);
+    }
+
+    /**
      * The temp path is derived from the property id and pid, so an attacker
      * sharing the corpus directory can predict it and pre-plant a symlink at
      * it. The O_EXCL create must refuse that path instead of writing through

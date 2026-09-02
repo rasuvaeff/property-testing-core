@@ -147,7 +147,7 @@ final readonly class FilesystemCorpus implements Corpus
                 // so the key identifies the same stored entry.
                 $encoded = $entry->isValues()
                     ? CorpusDocument::valuesEntry($entry->arguments, array_keys($entry->arguments), $entry->seed, self::SEQUENCE_EPOCH)
-                    : CorpusDocument::seedEntry($entry->seed, self::SEQUENCE_EPOCH);
+                    : CorpusDocument::seedEntry($entry->seed, self::SEQUENCE_EPOCH, $entry->runsBeforeFailure, $entry->edgeCases);
                 $key = $encoded === null ? null : CorpusDocument::keyOf($encoded);
 
                 $kept = array_values(array_filter(
@@ -224,7 +224,22 @@ final readonly class FilesystemCorpus implements Corpus
         $handle = @fopen($tmp, 'x');
 
         if ($handle === false) {
-            return;
+            // The write runs under the property's lock, so no other writer can
+            // be using this path right now: a regular file here is an orphan
+            // left by a writer killed between create and rename, under a pid
+            // that has come around again (pid 1 in a container, a recycled
+            // range under paratest). Left alone it would refuse every later
+            // write of this property for good. Reclaim it; anything else at
+            // the path — a symlink, a directory — keeps the refusal.
+            if (!$this->reclaimOrphan($tmp)) {
+                return;
+            }
+
+            $handle = @fopen($tmp, 'x');
+
+            if ($handle === false) {
+                return;
+            }
         }
 
         // The length check keeps a full disk from shrinking the corpus: a
@@ -247,6 +262,22 @@ final readonly class FilesystemCorpus implements Corpus
             // simply keeps its previous state.
             @unlink($tmp);
         }
+    }
+
+    /**
+     * Whether an orphaned temp file at $tmp was removed. Only a regular file
+     * that is not a symlink qualifies — a link is exactly the planted path the
+     * exclusive create exists to refuse.
+     */
+    private function reclaimOrphan(string $tmp): bool
+    {
+        clearstatcache(true, $tmp);
+
+        if (is_link($tmp) || !is_file($tmp)) {
+            return false;
+        }
+
+        return @unlink($tmp);
     }
 
     /**

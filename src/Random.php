@@ -35,7 +35,7 @@ final readonly class Random
      */
     public function __construct(
         int $seed,
-        private EdgeCases $edgeCases = EdgeCases::Mixin,
+        public EdgeCases $edgeCases = EdgeCases::Mixin,
     ) {
         $this->randomizer = new Randomizer(new Mt19937($seed));
     }

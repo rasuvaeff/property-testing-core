@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting;
 
+use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
+
 /**
  * Minimal failing input for a property, captured at falsification time.
  *
@@ -30,6 +32,9 @@ final readonly class CounterExample
      *        A debugging aid, not a durable identifier: it indexes into each node's shrink
      *        candidates, so editing a generator orphans it — the regression corpus is what survives
      *        a refactor.
+     * @param EdgeCases $edgeCases The boundary-value mode the failing run was generated under. The
+     *        seed reproduces the failure only under the same mode (the modes share the roll but not
+     *        the values it selects), so a seed replay — the corpus above all — carries it along.
      */
     public function __construct(
         public int $seed,
@@ -41,6 +46,7 @@ final readonly class CounterExample
         public int $skips = 0,
         public int $shrinkTrials = 0,
         public string $path = '',
+        public EdgeCases $edgeCases = EdgeCases::Mixin,
     ) {}
 
     /**
@@ -62,6 +68,7 @@ final readonly class CounterExample
                 ? ['type' => $this->failure::class, 'message' => $this->failure->getMessage()]
                 : null,
             'skips' => $this->skips,
+            'edgeCases' => $this->edgeCases->name,
         ];
     }
 

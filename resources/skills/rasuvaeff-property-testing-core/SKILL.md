@@ -203,7 +203,7 @@ after the first draw.
 | Body inputs are sometimes invalid | `Gen::flatMap` / `Gen::draw` to **construct** valid ones; `Assume::that($valid)` only when construction is impossible |
 | Need "every branch hit at least N%" | `Classify::cover($condition, $label, $minPercent)` — fails with `CoverageFailed` even if every run passed |
 | Just want distribution in the report | `Classify::when($condition, $label)` / `Classify::label($label)` — tags only, no gate |
-| Body has wall-clock risk (catastrophic regex, deep recursion) | `#[Property(timeoutMs: 1000)]` — single run over deadline = `DeadlineExceeded` |
+| Body has wall-clock risk (catastrophic regex, deep recursion) | `#[Property(timeoutMs: 1000)]` — single run over deadline = `DeadlineExceeded`. Measured when the run returns — it reports an overrun, it cannot interrupt a body that never returns; a truly hanging body needs a timeout inside the body |
 | Whole random phase has SLA | `#[Property(budgetMs: 5000)]` — `TimeBudgetExceeded` |
 
 ### `<method>Examples()` — the underused one

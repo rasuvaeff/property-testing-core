@@ -40,7 +40,9 @@ Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
 - `runs` means successful checks; `Assume::that(false)` discards the attempt.
   Discards are capped by `maxDiscards` (default `runs * 10`) -> `GaveUp`.
 - Shrinking is integrated: `generate(Random)` returns a `Shrinkable` (value +
-  lazy tree of smaller candidates). There is NO `shrink(mixed)` method. Greedy
+  lazy tree of smaller candidates). There is NO `shrink(mixed)` method. A shrink
+  candidate is accepted only when it fails with the SAME exception class as the
+  original run (a different failure is not a smaller counterexample). Greedy
   per-parameter descent; best-effort minimal.
 - Corpus format is byte-compatible with `rasuvaeff/property-testing` 2.8
   (`FORMAT_VERSION` 1): one JSON file per property, max 8 values + 2 seed
@@ -76,7 +78,7 @@ $definition = new PropertyDefinition(
         seed: null,         // null -> random, reported on failure
         maxShrinks: null,   // cap on ACCEPTED shrink steps; 0 = no shrinking
         maxDiscards: null,  // null -> runs * 10
-        timeoutMs: null,    // per-run wall-clock deadline
+        timeoutMs: null,    // per-run wall-clock deadline, measured when the run RETURNS (does not interrupt a hung body; shrink trials untimed)
         budgetMs: null,     // whole-random-phase wall-clock budget
         shrink: null,           // ShrinkMode::Off|Bounded|Full; null -> Full
         shrinkBudgetMs: null,   // wall-clock budget of the descent; implies ShrinkMode::Bounded

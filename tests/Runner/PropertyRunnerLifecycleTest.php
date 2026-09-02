@@ -24,6 +24,7 @@ use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
 use Rasuvaeff\PropertyTesting\Runner\CoverageFailed;
 use Rasuvaeff\PropertyTesting\Runner\DeadlineExceeded;
+use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Rasuvaeff\PropertyTesting\Runner\ExampleFailed;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\GaveUp;
@@ -323,6 +324,38 @@ final class PropertyRunnerLifecycleTest
         );
 
         Assert::instanceOf($result, Falsified::class);
+        Assert::same($corpus->pruned, []);
+    }
+
+    /**
+     * The seed reproduces the recorded values only under the boundary mode it
+     * was recorded with, so the replay uses the entry's mode even when the
+     * suite has switched modes since — otherwise the replay would generate
+     * other values, pass, and prune a live regression.
+     */
+    public function aSeedReplayRunsUnderTheModeTheEntryWasRecordedWith(): void
+    {
+        $entry = CorpusEntry::seed(11, edgeCases: EdgeCases::Mixin);
+        $corpus = new RecordingCorpus([$entry]);
+
+        $result = (new PropertyRunner())->run(
+            new PropertyDefinition(
+                id: 'lifecycle::property',
+                name: 'property',
+                generators: ['value' => Gen::intBetween(0, 10)],
+                parameterNames: ['value'],
+                config: new PropertyConfig(runs: 5, seed: 42, edgeCases: EdgeCases::None),
+            ),
+            new CallableTrialExecutor(static function (int $value): void {
+                throw new \RuntimeException('regression is alive');
+            }),
+            [],
+            $corpus,
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        Assert::same($result->counterExample()->edgeCases, EdgeCases::Mixin);
+        Assert::same($result->counterExample()->seed, 11);
         Assert::same($corpus->pruned, []);
     }
 

@@ -16,5 +16,6 @@
         "type": "RuntimeException",
         "message": "x>50"
     },
-    "skips": 1
+    "skips": 1,
+    "edgeCases": "Mixin"
 }

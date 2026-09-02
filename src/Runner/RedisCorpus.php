@@ -130,7 +130,7 @@ final readonly class RedisCorpus implements Corpus
         // key identifies the same stored entry.
         $encoded = $entry->isValues()
             ? CorpusDocument::valuesEntry($entry->arguments, array_keys($entry->arguments), $entry->seed, FilesystemCorpus::SEQUENCE_EPOCH)
-            : CorpusDocument::seedEntry($entry->seed, FilesystemCorpus::SEQUENCE_EPOCH);
+            : CorpusDocument::seedEntry($entry->seed, FilesystemCorpus::SEQUENCE_EPOCH, $entry->runsBeforeFailure, $entry->edgeCases);
         $key = $encoded === null ? null : CorpusDocument::keyOf($encoded);
 
         $this->rewrite(

@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -106,18 +107,10 @@ final readonly class UniqueArrayArbitrary implements ArbitraryInterface
                 return;
             }
 
-            // 1. Length first: any slice of a distinct list stays distinct.
-            if ($this->minSize === 0) {
-                yield $this->tree([]);
-            }
-
-            $length = count($elements);
-            while ($length > 1) {
-                $length = intdiv($length, 2);
-
-                if ($length >= $this->minSize) {
-                    yield $this->tree(array_slice($elements, 0, $length));
-                }
+            // 1. Length first: any subsequence of a distinct list stays distinct,
+            //    so blocks can be removed from any offset.
+            foreach (BlockRemovals::of(count($elements), $this->minSize) as [$offset, $length]) {
+                yield $this->tree([...array_slice($elements, 0, $offset), ...array_slice($elements, $offset + $length)]);
             }
 
             // 2. Then elements: shrink one element at a time through its own

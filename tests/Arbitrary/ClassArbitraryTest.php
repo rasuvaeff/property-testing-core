@@ -7,15 +7,23 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ClassArbitrary;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\Internal\DocblockTypes;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
+use Rasuvaeff\PropertyTesting\Internal\TypeGenerators;
 use Rasuvaeff\PropertyTesting\Random;
+use Rasuvaeff\PropertyTesting\Shrinkable;
+use Rasuvaeff\PropertyTesting\Tests\Support\Aliased\AliasedTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\AnnotatedTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Currency;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Cyclic;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\DocblockClassTypes;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\GenericCollection;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NarrowedFloat;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NativeTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Nested;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NoConstructor;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NotInstantiable;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Ordered;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Unreadable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Validating;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Variadic;
@@ -40,6 +48,8 @@ use Testo\Test;
 #[Test]
 #[Covers(ClassArbitrary::class)]
 #[Covers(ParameterGenerators::class)]
+#[Covers(DocblockTypes::class)]
+#[Covers(TypeGenerators::class)]
 final class ClassArbitraryTest
 {
     public function generatesFromNativeConstructorTypes(): void
@@ -165,6 +175,158 @@ final class ClassArbitraryTest
 
         Assert::true($counts !== []);
         Assert::true(min($counts) < $node->value->count);
+    }
+
+    public function classNamesInsideDocblockTypesAreFollowed(): void
+    {
+        // `list<NativeTypes>`, `Currency|null` (on a mixed parameter), `'a'|null`,
+        // `list<\DateTimeImmutable>`, `non-empty-list<Currency>`: every class
+        // the docblock names resolves the way the code beneath it would.
+        $random = new Random(5);
+        $arbitrary = new ClassArbitrary(DocblockClassTypes::class);
+        $sawCurrency = false;
+        $sawNullCurrency = false;
+        $sawStatus = false;
+        $sawNullStatus = false;
+
+        for ($i = 0; $i < 60; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::instanceOf($value, DocblockClassTypes::class);
+            Assert::true(count($value->items) <= 10);
+            Assert::true(count($value->currencies) >= 1);
+
+            foreach ($value->items as $item) {
+                Assert::instanceOf($item, NativeTypes::class);
+            }
+
+            foreach ($value->dates as $date) {
+                Assert::instanceOf($date, \DateTimeImmutable::class);
+            }
+
+            foreach ($value->currencies as $currency) {
+                Assert::instanceOf($currency, Currency::class);
+            }
+
+            Assert::true($value->currency === null || $value->currency instanceof Currency);
+            $sawCurrency = $sawCurrency || $value->currency instanceof Currency;
+            $sawNullCurrency = $sawNullCurrency || !$value->currency instanceof Currency;
+            $sawStatus = $sawStatus || in_array($value->status, ['draft', 'published'], strict: true);
+            $sawNullStatus = $sawNullStatus || $value->status === null;
+        }
+
+        Assert::true($sawCurrency && $sawNullCurrency);
+        Assert::true($sawStatus && $sawNullStatus);
+    }
+
+    public function docblockNamesResolveThroughTheFileImports(): void
+    {
+        // `Money` is `use … as Money`, `Wrapped` comes from a group import,
+        // `NativeTypes` from the same group — and none of them lives in the
+        // declaring namespace.
+        $value = (new ClassArbitrary(AliasedTypes::class))->generate(new Random(3))->value;
+
+        Assert::instanceOf($value, AliasedTypes::class);
+        Assert::true(count($value->moneys) >= 1);
+
+        foreach ($value->moneys as $money) {
+            Assert::instanceOf($money, Currency::class);
+        }
+
+        foreach ($value->wrapped as $wrapped) {
+            Assert::instanceOf($wrapped, Nested::class);
+        }
+
+        foreach ($value->items as $item) {
+            Assert::instanceOf($item, NativeTypes::class);
+        }
+    }
+
+    public function aDocblockTypeItCannotReadOnAScalarIsRefusedNotWidened(): void
+    {
+        // `float<0.0, 1.0>` is outside the readable subset. Falling back to the
+        // native `float` would generate the whole line for a parameter that
+        // promises the unit interval — the widened guess the class rules out.
+        try {
+            new ClassArbitrary(NarrowedFloat::class);
+
+            Assert::fail('expected the narrowed float to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same(
+                $e->getMessage(),
+                'Cannot generate ' . NarrowedFloat::class . ': parameter $ratio is documented as float<0.0, 1.0>, which this cannot read; pass an override',
+            );
+        }
+    }
+
+    public function aDocblockTypeItCannotReadOnAClassFallsBackToTheClass(): void
+    {
+        // Generics on a class type (`NativeTypes<int>`) narrow nothing the
+        // constructor can observe, so the native class is generated.
+        $value = (new ClassArbitrary(GenericCollection::class))->generate(new Random(1))->value;
+
+        Assert::instanceOf($value, GenericCollection::class);
+        Assert::instanceOf($value->inner, NativeTypes::class);
+    }
+
+    public function anOverrideNamingNoParameterIsRefused(): void
+    {
+        try {
+            new ClassArbitrary(NativeTypes::class, ['cuont' => Gen::int(), 'label' => Gen::constant('x')]);
+
+            Assert::fail('expected the misspelt override to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same(
+                $e->getMessage(),
+                'Cannot generate ' . NativeTypes::class . ': override for $cuont names no parameter of it',
+            );
+        }
+    }
+
+    public function aCandidateTheConstructorRejectsIsSkippedWhileShrinking(): void
+    {
+        // Shrinking `high` toward 0 proposes values below `low`, which the
+        // constructor refuses. Without skipInvalid the generated value is
+        // trusted, but a refused candidate is still no value at all: it is
+        // skipped, and the candidates the constructor accepts are offered.
+        $arbitrary = new ClassArbitrary(Ordered::class, [
+            'low' => Gen::intBetween(0, 10),
+            'high' => Gen::intBetween(0, 10),
+        ]);
+        $node = null;
+
+        // Without skipInvalid a generated value the constructor refuses
+        // propagates (see aRejectedValuePropagatesByDefault); skip those seeds.
+        for ($seed = 0; $seed < 1_000 && !$node instanceof Shrinkable; ++$seed) {
+            try {
+                $generated = $arbitrary->generate(new Random($seed));
+            } catch (\InvalidArgumentException) {
+                continue;
+            }
+
+            if ($generated->value instanceof Ordered && $generated->value->low > 0 && $generated->value->high > $generated->value->low) {
+                $node = $generated;
+            }
+        }
+
+        Assert::instanceOf($node, Shrinkable::class);
+        Assert::instanceOf($node->value, Ordered::class);
+
+        $children = Trees::childValues($node);
+
+        Assert::true($children !== []);
+
+        $highs = [];
+
+        foreach ($children as $child) {
+            Assert::instanceOf($child, Ordered::class);
+            Assert::true($child->low <= $child->high);
+            $highs[] = $child->high;
+        }
+
+        // The candidate high=0 was refused (low > 0); a smaller accepted high follows it.
+        Assert::false(in_array(0, $highs, strict: true));
+        Assert::true(min($highs) < $node->value->high);
     }
 
     public function aRejectedValuePropagatesByDefault(): void

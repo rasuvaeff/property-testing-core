@@ -43,6 +43,7 @@ Framework-agnostic **движок** property-based тестирования дл
 - PHP 8.3+
 - `ext-mbstring`
 - `ext-random`
+- `ext-tokenizer`
 
 ## Установка
 
@@ -169,12 +170,12 @@ property.
 | `Gen::float()` | `FloatArbitrary`, `[0.0, 1.0)` | к `0.0` |
 | `Gen::floatBetween($min, $max)` | `FloatArbitrary`, `[$min, $max]` | к `0.0`, в пределах диапазона |
 | `Gen::bool()` | `BoolArbitrary`, `true` / `false` | `true` -> `false` |
-| `Gen::string()` | `StringArbitrary`, Unicode, длина 0..100 | к `''`, затем по длине, затем каждый символ к `a` |
+| `Gen::string()` | `StringArbitrary`, Unicode, длина 0..100 | к `''`, затем удалением блоков символов с любой позиции (вплоть до одиночных), затем каждый символ к `a` |
 | `Gen::stringAscii()` | `StringArbitrary`, печатный ASCII, длина 0..100 | к `''`, затем по длине, затем каждый символ к `a` |
 | `Gen::stringOf($min, $max)` | `StringArbitrary`, Unicode, ограниченная длина | к `''`, затем по длине, затем каждый символ к `a` |
 | `Gen::stringFrom($alphabet, $min, $max)` | `CharsetStringArbitrary`, символы из фиксированного алфавита (multibyte OK) | к `''`, затем по длине, затем каждый символ к первому символу алфавита |
 | `Gen::bytes($min, $max)` | `BytesArbitrary`, сырые байтовые строки (байты 0..255) | к `''`, затем по длине, затем каждый байт к `"\x00"` |
-| `Gen::arrayOf($element, $min, $max)` | `ArrayArbitrary`, списки из `$element`, размер 0..100 по умолчанию | к `[]`, затем по длине, затем каждый элемент |
+| `Gen::arrayOf($element, $min, $max)` | `ArrayArbitrary`, списки из `$element`, размер 0..100 по умолчанию | к `[]`, затем удалением блоков элементов с любой позиции (вплоть до одиночных), затем каждый элемент |
 | `Gen::nonEmptyArrayOf($element, $max)` | `ArrayArbitrary`, непустые списки | по длине (не ниже 1), затем каждый элемент |
 | `Gen::uniqueArrayOf($element, $min, $max)` | `UniqueArrayArbitrary`, списки попарно различных элементов | как `arrayOf`, но кандидаты, совпадающие с другим элементом, пропускаются |
 | `Gen::subset($values, $min, $max)` | `SubsetArbitrary`, подмножества фиксированного упорядоченного множества — различные члены `$values` в исходном порядке; дубликаты в источнике отвергаются | сначала размер (к пустому множеству), затем каждый элемент к более ранним позициям источника — минимальное подмножество — короткий префикс |
@@ -205,7 +206,7 @@ property.
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | строки, соответствующие подмножеству regex (компилируется в комбинаторы) | более короткие/простые совпадения (через скомпилированные деревья) |
 | `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, валидные последовательности команд для stateful-тестирования | сбрасывает блоки команд, затем упрощает каждую |
 | `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm-тестирование: каждый случай видит лишь непустое подмножество вариантов обёрнутого генератора выбора (`oneOf`, `elements`, `frequency`, `commands`) | внутри подмножества, из которого случай получился, — обратно до полного алфавита не расширяется |
-| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор: psalm-тип из `@param`, если он есть (`int<0, 100>`, `non-empty-string`, `list<T>`, `'a'\|'b'`), иначе нативный; всё, что прочитать нельзя, — исключение, а не догадка | через сгенерированные аргументы, пересобирая экземпляр |
+| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор: psalm-тип из `@param`, если он есть (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; имена классов резолвятся через namespace и `use`-импорты файла), иначе нативный; всё, что прочитать нельзя, — исключение, а не догадка, как и override с именем несуществующего параметра | через сгенерированные аргументы, пересобирая экземпляр |
 | `Gen::forParameters($function, $overrides)` | не arbitrary, а карта: `array<string, ArbitraryInterface>` для параметров `ReflectionFunctionAbstract` (метода или кложуры), по именам в порядке сигнатуры — правила `forClass`, применённые к любой сигнатуре; overrides могут быть частичными, остальное достраивается; всё нечитаемое — исключение с именем функции и параметра | каждая запись shrink'ается через свой генератор |
 
 Числовые генераторы (`int*`, `float*`) **boundary-biased**: примерно каждый

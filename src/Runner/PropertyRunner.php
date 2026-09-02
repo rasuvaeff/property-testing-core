@@ -716,7 +716,7 @@ final readonly class PropertyRunner
                 // so both sides must agree on what they are counting.
                 $index = -1;
 
-                foreach ($current[$name]->shrinks() as $candidate) {
+                foreach ($this->candidates($current[$name]) as $candidate) {
                     ++$index;
 
                     // A candidate whose value equals the current one (possible under a
@@ -764,7 +764,7 @@ final readonly class PropertyRunner
 
                 $index = -1;
 
-                foreach ($currentTape[$position]->shrinks() as $candidate) {
+                foreach ($this->candidates($currentTape[$position]) as $candidate) {
                     ++$index;
 
                     if ($candidate->value === $currentTape[$position]->value) {
@@ -912,7 +912,7 @@ final readonly class PropertyRunner
     {
         $position = 0;
 
-        foreach ($node->shrinks() as $candidate) {
+        foreach ($this->candidates($node) as $candidate) {
             if ($position === $index) {
                 return $candidate;
             }
@@ -921,6 +921,34 @@ final readonly class PropertyRunner
         }
 
         return null;
+    }
+
+    /**
+     * The shrink candidates of a node, ending where their enumeration throws.
+     *
+     * Candidates are built lazily, so building one can fail: a `Gen::map()`
+     * transformation that refuses the smaller value with an `Error`, a
+     * dependent generator that cannot produce anything under the smaller
+     * source, a user-written {@see Shrinkable} tree with a bug in it. An
+     * exception escaping the descent would discard the counterexample the
+     * random phase already found — the one outcome shrinking must never
+     * produce. The enumeration that threw cannot be resumed, so it is treated
+     * as exhausted: the candidates yielded before the throw count, the
+     * descent continues with the next node, and a replayed path indexing past
+     * that point reports the candidate as missing rather than re-throwing.
+     *
+     * @param Shrinkable<mixed> $node
+     * @return \Generator<int, Shrinkable<mixed>>
+     */
+    private function candidates(Shrinkable $node): \Generator
+    {
+        try {
+            foreach ($node->shrinks() as $candidate) {
+                yield $candidate;
+            }
+        } catch (\Throwable) {
+            return;
+        }
     }
 
     /**

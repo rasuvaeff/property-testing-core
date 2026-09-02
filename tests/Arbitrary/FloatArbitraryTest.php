@@ -10,6 +10,7 @@ use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
 use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
 use Testo\Test;
 
 #[Test]
@@ -95,6 +96,93 @@ final class FloatArbitraryTest
         for ($i = 0; $i < 1000; ++$i) {
             Assert::true($arbitrary->generate($random)->value < 1.0);
         }
+    }
+
+    public function aSpanOfAFewUlpsStaysBelowTheExclusiveUpperBound(): void
+    {
+        // ulp(1e16) is 2: for a fraction of 0.5 and above, min + fraction * span
+        // rounds up to max itself. The domain is [min, max), so that draw
+        // lands on min instead.
+        $arbitrary = new FloatArbitrary(1e16, 1e16 + 2.0);
+        $random = new Random(3);
+        $sawMin = false;
+
+        for ($i = 0; $i < 500; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::true($value >= 1e16);
+            Assert::true($value < 1e16 + 2.0);
+            $sawMin = $sawMin || $value === 1e16;
+        }
+
+        Assert::true($sawMin);
+    }
+
+    #[DataProvider('nonFiniteBounds')]
+    public function rejectsANonFiniteBound(float $min, float $max): void
+    {
+        try {
+            new FloatArbitrary($min, $max);
+
+            Assert::fail('expected the non-finite bound to be rejected');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Min and max must be finite');
+        }
+    }
+
+    /**
+     * @return iterable<string, array{float, float}>
+     */
+    public static function nonFiniteBounds(): iterable
+    {
+        yield 'NAN min' => [NAN, 1.0];
+        yield 'NAN max' => [0.0, NAN];
+        yield 'INF max' => [0.0, INF];
+        yield '-INF min' => [-INF, 0.0];
+    }
+
+    public function theUpperBoundGuardDoesNotCollapseDrawsOntoMin(): void
+    {
+        // The guard only catches a draw that rounded onto max; a span computed
+        // wrongly (or a value interpolated past max) would send a large share
+        // of draws to min, which the boundary bias alone never does.
+        $arbitrary = new FloatArbitrary(2.0, 6.0);
+        $random = new Random(9);
+        $atMin = 0;
+        $upperHalf = 0;
+
+        for ($i = 0; $i < 1000; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::true($value >= 2.0 && $value < 6.0);
+            $atMin += $value === 2.0 ? 1 : 0;
+            $upperHalf += $value >= 4.0 ? 1 : 0;
+        }
+
+        Assert::true($atMin < 250);
+        Assert::true($upperHalf > 300);
+    }
+
+    public function fullFloatRangeReachesBothSignsWithoutCollapsing(): void
+    {
+        // The endpoint interpolation for an infinite span must actually spread
+        // draws across the range, not resolve to one endpoint or to min.
+        $arbitrary = new FloatArbitrary(-PHP_FLOAT_MAX, PHP_FLOAT_MAX);
+        $random = new Random(11);
+        $positive = 0;
+        $negative = 0;
+        $atMin = 0;
+
+        for ($i = 0; $i < 300; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            $positive += $value > 1.0 ? 1 : 0;
+            $negative += $value < -1.0 ? 1 : 0;
+            $atMin += $value === -PHP_FLOAT_MAX ? 1 : 0;
+        }
+
+        Assert::true($positive > 50 && $negative > 50);
+        Assert::true($atMin < 75);
     }
 
     public function generateSequenceIsPinnedForAFixedSeed(): void

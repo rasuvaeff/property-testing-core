@@ -8,6 +8,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\ConstantArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Internal\RegexCompiler;
+use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
@@ -474,6 +475,56 @@ final class RegexCompilerTest
         }
 
         Assert::fail('Expected a*+ to be rejected');
+    }
+
+    #[DataProvider('oversizedPatterns')]
+    public function aPatternThatCouldOutgrowMemoryIsRejectedAtCompileTime(string $pattern, int $maxRepeat, string $needle): void
+    {
+        // Each quantifier alone is within its bound; the product is not.
+        try {
+            RegexCompiler::compile($pattern, $maxRepeat);
+        } catch (\InvalidArgumentException $exception) {
+            Assert::string($exception->getMessage())->contains($needle);
+
+            return;
+        }
+
+        Assert::fail(sprintf('Expected /%s/ to be rejected', $pattern));
+    }
+
+    /**
+     * @return iterable<string, array{string, int, string}>
+     */
+    public static function oversizedPatterns(): iterable
+    {
+        yield 'nested bounded quantifiers' => ['(a{10000}){10000}', 8, 'can generate up to 100000000 characters'];
+        yield 'nested bounded, just above' => ['(a{5001}){2}', 8, 'can generate up to 10002 characters'];
+        // Checked level by level: the fifth star is where 8^5 crosses the bound.
+        yield 'nested unbounded quantifiers' => ['((((((a*)*)*)*)*)*)*', 8, 'can generate up to 32768 characters'];
+        yield 'concatenation of bounded quantifiers' => ['a{5000}b{5000}c{5000}', 8, 'can generate up to 15000 characters'];
+        yield 'maxRepeat above the bound' => ['a*', 10_001, 'maxRepeat 10001 exceeds the maximum bounded repeat of 10000'];
+    }
+
+    #[DataProvider('patternsAtTheCeiling')]
+    public function aPatternWithinTheCeilingCompiles(string $pattern, int $maxRepeat): void
+    {
+        $value = RegexCompiler::compile($pattern, $maxRepeat)->generate(new Random(1))->value;
+
+        Assert::true(is_string($value));
+        Assert::true(preg_match('/^(?:' . $pattern . ')$/', $value) === 1);
+    }
+
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function patternsAtTheCeiling(): iterable
+    {
+        yield 'single bounded quantifier at the bound' => ['a{10000}', 8];
+        yield 'nested bounded exactly at the bound' => ['(a{100}){100}', 8];
+        yield 'nested unbounded under the bound' => ['((a*)*)*', 8];
+        yield 'alternation takes the widest branch' => ['a{10000}|b', 8];
+        yield 'zero quantifier contributes nothing' => ['(a{10000}){0}b{10000}', 8];
+        yield 'maxRepeat at the bound' => ['a?', 10_000];
     }
 
     public function maxRepeatMustBePositive(): void

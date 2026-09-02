@@ -37,6 +37,14 @@ final class RegexCompiler
      */
     private const int MAX_BOUNDED_REPEAT = 10_000;
 
+    /**
+     * Hard ceiling on the longest string a whole pattern can generate. The
+     * per-quantifier bound above caps one repetition; nested quantifiers
+     * multiply (`(a{10000}){10000}` is 10^8 characters), and so does a
+     * `maxRepeat` above the bound, so the product is what memory sees.
+     */
+    private const int MAX_GENERATED_LENGTH = 10_000;
+
     /** @var list<string> */
     private array $chars;
 
@@ -54,6 +62,13 @@ final class RegexCompiler
         if ($maxRepeat < 1) {
             throw new \InvalidArgumentException('Regex maxRepeat must be greater than or equal to 1');
         }
+        if ($maxRepeat > self::MAX_BOUNDED_REPEAT) {
+            throw new \InvalidArgumentException(sprintf(
+                'Regex maxRepeat %d exceeds the maximum bounded repeat of %d',
+                $maxRepeat,
+                self::MAX_BOUNDED_REPEAT,
+            ));
+        }
 
         // A single leading ^ / trailing $ is redundant when the whole string is
         // generated, so accept them as no-ops. An escaped \$ stays literal.
@@ -66,7 +81,7 @@ final class RegexCompiler
         }
 
         $compiler = new self($body, $maxRepeat);
-        $arbitrary = $compiler->alternation();
+        [$arbitrary] = $compiler->alternation();
 
         if (!$compiler->atEnd()) {
             throw new \InvalidArgumentException(sprintf(
@@ -79,51 +94,71 @@ final class RegexCompiler
         return $arbitrary;
     }
 
-    private function alternation(): ArbitraryInterface
+    /**
+     * Every parser below returns the arbitrary together with the longest
+     * string it can generate, so the total is bounded where it is built
+     * ({@see self::MAX_GENERATED_LENGTH}) rather than discovered at
+     * generation time as an exhausted memory limit.
+     *
+     * @return array{0: ArbitraryInterface, 1: int}
+     */
+    private function alternation(): array
     {
-        $branches = [$this->concatenation()];
+        [$first, $width] = $this->concatenation();
+        $branches = [$first];
 
         while (!$this->atEnd() && $this->peek() === '|') {
             ++$this->pos;
-            $branches[] = $this->concatenation();
+            [$branch, $branchWidth] = $this->concatenation();
+            $branches[] = $branch;
+            $width = max($width, $branchWidth);
         }
 
         if (count($branches) === 1) {
-            return $branches[0];
+            return [$branches[0], $width];
         }
 
-        return new FrequencyArbitrary(array_map(
+        return [new FrequencyArbitrary(array_map(
             static fn(ArbitraryInterface $branch): array => [1, $branch],
             $branches,
-        ));
+        )), $width];
     }
 
-    private function concatenation(): ArbitraryInterface
+    /**
+     * @return array{0: ArbitraryInterface, 1: int}
+     */
+    private function concatenation(): array
     {
         $parts = [];
+        $width = 0;
 
         while (!$this->atEnd() && $this->peek() !== '|' && $this->peek() !== ')') {
-            $parts[] = $this->quantified();
+            [$part, $partWidth] = $this->quantified();
+            $parts[] = $part;
+            $width = $this->guardGeneratedLength($width + $partWidth);
         }
 
         if ($parts === []) {
-            return new ConstantArbitrary('');
+            return [new ConstantArbitrary(''), 0];
         }
 
         if (count($parts) === 1) {
-            return $parts[0];
+            return [$parts[0], $width];
         }
 
-        return new MappedArbitrary(new TupleArbitrary(...$parts), $this->joiner());
+        return [new MappedArbitrary(new TupleArbitrary(...$parts), $this->joiner()), $width];
     }
 
-    private function quantified(): ArbitraryInterface
+    /**
+     * @return array{0: ArbitraryInterface, 1: int}
+     */
+    private function quantified(): array
     {
-        $atom = $this->atom();
+        [$atom, $atomWidth] = $this->atom();
         $bounds = $this->quantifier();
 
         if ($bounds === null) {
-            return $atom;
+            return [$atom, $atomWidth];
         }
 
         // `?` / `+` right after a quantifier is PCRE's laziness / possessiveness
@@ -143,10 +178,32 @@ final class RegexCompiler
         // A `{0}` / `{0,0}` quantifier means the atom never appears — an empty
         // string, not a zero-length repetition ArrayArbitrary would reject.
         if ($max === 0) {
-            return new ConstantArbitrary('');
+            return [new ConstantArbitrary(''), 0];
         }
 
-        return new MappedArbitrary(new ArrayArbitrary($atom, $min, $max), $this->joiner());
+        // Both factors are already within MAX_BOUNDED_REPEAT, so the product
+        // cannot overflow before it is checked.
+        $width = $this->guardGeneratedLength($atomWidth * $max);
+
+        return [new MappedArbitrary(new ArrayArbitrary($atom, $min, $max), $this->joiner()), $width];
+    }
+
+    /**
+     * The width unchanged when it is within the ceiling, otherwise a named
+     * error: the pattern as a whole would generate more than memory should
+     * hold, however each quantifier looks on its own.
+     */
+    private function guardGeneratedLength(int $width): int
+    {
+        if ($width > self::MAX_GENERATED_LENGTH) {
+            throw new \InvalidArgumentException(sprintf(
+                'Regex pattern can generate up to %d characters, above the maximum of %d',
+                $width,
+                self::MAX_GENERATED_LENGTH,
+            ));
+        }
+
+        return $width;
     }
 
     /**
@@ -238,26 +295,32 @@ final class RegexCompiler
         }
     }
 
-    private function atom(): ArbitraryInterface
+    /**
+     * @return array{0: ArbitraryInterface, 1: int}
+     */
+    private function atom(): array
     {
         $char = $this->peek();
 
         return match (true) {
             $char === '(' => $this->group(),
-            $char === '[' => $this->characterClass(),
-            $char === '\\' => $this->escape(),
-            $char === '.' => $this->consumeAndReturn($this->oneOf($this->printable())),
+            $char === '[' => [$this->characterClass(), 1],
+            $char === '\\' => [$this->escape(), 1],
+            $char === '.' => [$this->consumeAndReturn($this->oneOf($this->printable())), 1],
             $char === '^', $char === '$' => throw new \InvalidArgumentException(
                 'Regex anchors are only supported as a single leading "^" or trailing "$"',
             ),
             $char === '*', $char === '+', $char === '?', $char === '{' => throw new \InvalidArgumentException(
                 sprintf('Regex quantifier "%s" has nothing to repeat', $char),
             ),
-            default => $this->consumeAndReturn(new ConstantArbitrary($char)),
+            default => [$this->consumeAndReturn(new ConstantArbitrary($char)), 1],
         };
     }
 
-    private function group(): ArbitraryInterface
+    /**
+     * @return array{0: ArbitraryInterface, 1: int}
+     */
+    private function group(): array
     {
         ++$this->pos; // consume '('
 

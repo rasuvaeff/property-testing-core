@@ -92,18 +92,20 @@ final class CharsetStringArbitraryTest
 
     public function multibyteLengthPhaseHalvesPerCharacterNotPerByte(): void
     {
-        // Four 2-byte codepoints: the half prefix must be 2 CHARACTERS via
-        // mb_substr, and the character phase must substitute whole codepoints.
+        // Four 2-byte codepoints: blocks are removed in CHARACTERS via
+        // mb_str_split, and the character phase substitutes whole codepoints.
         $node = Trees::generateWhere(
             new CharsetStringArbitrary('βγδ', 0, 6),
             static fn(mixed $v): bool => is_string($v) && mb_strlen($v, 'UTF-8') === 4,
         );
-        $value = $node->value;
+        $value = (string) $node->value;
         $candidates = Trees::childValues($node);
 
         Assert::same($candidates[0], '');
-        Assert::same($candidates[1], mb_substr((string) $value, 0, 2, 'UTF-8'));
-        Assert::same($candidates[2], mb_substr((string) $value, 0, 1, 'UTF-8'));
+        Assert::same($candidates[1], mb_substr($value, 2, null, 'UTF-8'));
+        Assert::same($candidates[2], mb_substr($value, 0, 2, 'UTF-8'));
+        Assert::same($candidates[3], mb_substr($value, 1, null, 'UTF-8'));
+        Assert::same($candidates[6], mb_substr($value, 0, 3, 'UTF-8'));
 
         foreach ($candidates as $candidate) {
             Assert::same(mb_check_encoding($candidate, 'UTF-8'), expected: true);
@@ -125,28 +127,32 @@ final class CharsetStringArbitraryTest
 
     public function shrinkKeepsTheMinimumLengthCandidate(): void
     {
-        // With minLength 2 the length-floor prefix (exactly 2 chars) is produced.
+        // With minLength 2 the length floor (exactly 2 chars) is reachable by
+        // descent, and the descent never goes below it.
         $node = Trees::generateWhere(
             new CharsetStringArbitrary('bcd', 2, 12),
             static fn(mixed $v): bool => is_string($v) && strlen($v) === 8,
         );
 
-        Assert::true(in_array(substr((string) $node->value, 0, 2), Trees::childValues($node), strict: true));
+        $floor = Trees::descendWhile($node, static fn(mixed $v): bool => is_string($v) && strlen($v) >= 2)->value;
+
+        Assert::true(is_string($floor) && strlen($floor) === 2);
     }
 
-    public function shrinkTriesEmptyStringFirstThenExactHalfPrefixes(): void
+    public function shrinkRemovesBlocksOfCharactersLongestFirstFromEveryOffset(): void
     {
         $node = Trees::generateWhere(
             new CharsetStringArbitrary('bcd', 0, 12),
             static fn(mixed $v): bool => is_string($v) && strlen($v) === 8,
         );
-        $value = $node->value;
+        $value = (string) $node->value;
         $candidates = Trees::childValues($node);
 
         Assert::same($candidates[0], '');
-        Assert::same($candidates[1], substr((string) $value, 0, 4));
-        Assert::same($candidates[2], substr((string) $value, 0, 2));
-        Assert::same($candidates[3], substr((string) $value, 0, 1));
+        Assert::same($candidates[1], substr($value, 4));
+        Assert::same($candidates[2], substr($value, 0, 4));
+        Assert::same($candidates[3], substr($value, 2));
+        Assert::same($candidates[14], substr($value, 0, 7));
     }
 
     public function shrinkYieldsTheEmptyStringExactlyOnce(): void

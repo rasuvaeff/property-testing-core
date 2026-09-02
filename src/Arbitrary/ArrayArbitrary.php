@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
 /**
  * Generates lists whose elements come from a delegate arbitrary and shrinks
- * them by length toward the empty array, then element-by-element through each
- * element's own shrink tree.
+ * them by length toward the empty array (removing blocks of elements, down
+ * to single ones, from every position), then element-by-element through
+ * each element's own shrink tree.
  *
  * Element shrink trees are captured at generation time, so elements produced
  * by transformed arbitraries ({@see \Rasuvaeff\PropertyTesting\Gen::map()},
@@ -72,21 +74,14 @@ final readonly class ArrayArbitrary implements ArbitraryInterface
                 return;
             }
 
-            // 1. Length first: empty array, then progressively shorter halves of the
-            //    original. Dropping elements is the most aggressive simplification.
-            //    Never shrink below minSize, so the candidate stays in the generated
+            // 1. Length first: remove contiguous blocks — the whole list, then
+            //    halves, quarters, …, single elements, from every offset. Dropping
+            //    elements is the most aggressive simplification, and single
+            //    removal is what isolates a failing element in the middle. Never
+            //    shrink below minSize, so the candidate stays in the generated
             //    domain (e.g. a nonEmptyArrayOf never shrinks to []).
-            if ($this->minSize === 0) {
-                yield $this->tree([]);
-            }
-
-            $length = count($elements);
-            while ($length > 1) {
-                $length = intdiv($length, 2);
-
-                if ($length >= $this->minSize) {
-                    yield $this->tree(array_slice($elements, 0, $length));
-                }
+            foreach (BlockRemovals::of(count($elements), $this->minSize) as [$offset, $length]) {
+                yield $this->tree([...array_slice($elements, 0, $offset), ...array_slice($elements, $offset + $length)]);
             }
 
             // 2. Then elements: shrink one element at a time through its own tree,

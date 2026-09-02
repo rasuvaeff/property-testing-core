@@ -41,6 +41,7 @@ shrink it to a minimal counterexample you can actually read.
 - PHP 8.3+
 - `ext-mbstring`
 - `ext-random`
+- `ext-tokenizer`
 
 ## Installation
 
@@ -170,10 +171,10 @@ through their source domain.
 | `Gen::bool()` | `BoolArbitrary`, `true` / `false` | `true` -> `false` |
 | `Gen::string()` | `StringArbitrary`, Unicode, length 0..100 | toward `''`, then by length, then each character toward `a` |
 | `Gen::stringAscii()` | `StringArbitrary`, printable ASCII, length 0..100 | toward `''`, then by length, then each character toward `a` |
-| `Gen::stringOf($min, $max)` | `StringArbitrary`, Unicode, bounded length | toward `''`, then by length, then each character toward `a` |
+| `Gen::stringOf($min, $max)` | `StringArbitrary`, Unicode, bounded length | toward `''`, then by removing blocks of characters from any position (down to single ones), then each character toward `a` |
 | `Gen::stringFrom($alphabet, $min, $max)` | `CharsetStringArbitrary`, characters from a fixed alphabet (multibyte OK) | toward `''`, then by length, then each character toward the first alphabet character |
 | `Gen::bytes($min, $max)` | `BytesArbitrary`, raw byte strings (bytes 0..255) | toward `''`, then by length, then each byte toward `"\x00"` |
-| `Gen::arrayOf($element, $min, $max)` | `ArrayArbitrary`, lists of `$element`, size 0..100 by default | toward `[]`, then by length, then each element |
+| `Gen::arrayOf($element, $min, $max)` | `ArrayArbitrary`, lists of `$element`, size 0..100 by default | toward `[]`, then by removing blocks of elements from any position (down to single ones), then each element |
 | `Gen::nonEmptyArrayOf($element, $max)` | `ArrayArbitrary`, non-empty lists | by length (never below 1), then each element |
 | `Gen::uniqueArrayOf($element, $min, $max)` | `UniqueArrayArbitrary`, lists of pairwise-distinct elements | like `arrayOf`, but element candidates colliding with another element are skipped |
 | `Gen::subset($values, $min, $max)` | `SubsetArbitrary`, subsets of a fixed ordered set — distinct members of `$values` in source order; duplicates in the source are rejected | size first (toward the empty set), then each kept element toward earlier source positions — the minimal subset is a short prefix |
@@ -204,7 +205,7 @@ through their source domain.
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators) | shorter/simpler matches (via the compiled trees) |
 | `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
 | `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |
-| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — the `@param` psalm type when there is one (`int<0, 100>`, `non-empty-string`, `list<T>`, `'a'\|'b'`), the native type otherwise; anything unreadable throws instead of guessing | through the generated arguments, rebuilding the instance |
+| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — the `@param` psalm type when there is one (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; class names resolve through the file's namespace and `use` imports), the native type otherwise; anything unreadable throws instead of guessing, an override naming no parameter too | through the generated arguments, rebuilding the instance |
 | `Gen::forParameters($function, $overrides)` | not an arbitrary but a map: `array<string, ArbitraryInterface>` for the parameters of a `ReflectionFunctionAbstract` (method or closure), by name in signature order — the `forClass` rules applied to any signature; overrides may be partial, the rest is derived; anything unreadable throws naming the function and the parameter | each entry shrinks through its own generator |
 
 Numeric generators (`int*`, `float*`) are **boundary-biased**: roughly one draw in

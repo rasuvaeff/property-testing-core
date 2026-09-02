@@ -80,16 +80,16 @@ Buggy $-anchored validator falsified:
 
 Property falsified after 40 successful run(s); seed=42
   Original: identifier="quxz5\n"
-  Shrunk:   identifier="aaaaa\n" (5 shrink step(s), 18 trial(s))
-  Changed:  identifier="quxz5\n" -> "aaaaa\n"
-  Failure:  $-anchor and \z-anchor disagree on 'aaaaa
+  Shrunk:   identifier="a\n" (3 shrink step(s), 9 trial(s))
+  Changed:  identifier="quxz5\n" -> "a\n"
+  Failure:  $-anchor and \z-anchor disagree on 'a
 ': $ says accept, \z says reject
-  Path:     identifier:2/identifier:2/identifier:2/identifier:2/identifier:2
+  Path:     identifier:0/identifier:1/identifier:2
 ```
 
 Forty passing runs on identifiers without a trailing newline, then the
 41st draw includes one — the shrinker strips it down to the shortest
-identifier that still reproduces the disagreement, five `a`s plus the
+identifier that still reproduces the disagreement, a single `a` plus the
 newline.
 
 ## The fix

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Internal;
 
+use Closure;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Gen;
 
@@ -82,7 +83,21 @@ final class ParameterGenerators
         array $chain,
     ): array {
         $documented = DocblockTypes::of($function);
+        $resolveClass = self::classResolver($function);
         $shape = [];
+
+        $unknown = array_diff_key($overrides, array_flip(array_map(
+            static fn(\ReflectionParameter $parameter): string => $parameter->getName(),
+            $function->getParameters(),
+        )));
+
+        if ($unknown !== []) {
+            throw new \InvalidArgumentException(sprintf(
+                'Cannot generate %s: override for $%s names no parameter of it',
+                $subject,
+                implode(', $', array_keys($unknown)),
+            ));
+        }
 
         foreach ($function->getParameters() as $parameter) {
             $name = $parameter->getName();
@@ -101,14 +116,58 @@ final class ParameterGenerators
                 ));
             }
 
-            $shape[$name] = self::generatorFor($subject, $parameter, $documented[$name] ?? null, $maxDepth, $chain);
+            $shape[$name] = self::generatorFor($subject, $parameter, $documented[$name] ?? null, $maxDepth, $chain, $resolveClass);
         }
 
         return $shape;
     }
 
     /**
+     * The class a name written in $function's docblock denotes, or null.
+     *
+     * A fully qualified name is taken as is. An unqualified one is looked up
+     * the way PHP would in that file: an imported alias by its first segment,
+     * then the declaring namespace, then the global namespace — so
+     * `LineItem` in a docblock means what `LineItem` means in the code
+     * beneath it.
+     *
+     * @return Closure(string): ?string
+     */
+    private static function classResolver(\ReflectionFunctionAbstract $function): Closure
+    {
+        $imports = DocblockTypes::imports($function);
+
+        return static function (string $name) use ($imports): ?string {
+            $exists = static fn(string $class): bool => class_exists($class) || interface_exists($class) || enum_exists($class);
+
+            if (str_starts_with($name, '\\')) {
+                $class = substr($name, 1);
+
+                return $exists($class) ? $class : null;
+            }
+
+            $segments = explode('\\', $name);
+            $alias = $imports['aliases'][strtolower($segments[0])] ?? null;
+
+            $candidates = [
+                ...($alias === null ? [] : [implode('\\', [$alias, ...array_slice($segments, 1)])]),
+                ...($imports['namespace'] === '' ? [] : [$imports['namespace'] . '\\' . $name]),
+                $name,
+            ];
+
+            foreach ($candidates as $candidate) {
+                if ($exists($candidate)) {
+                    return $candidate;
+                }
+            }
+
+            return null;
+        };
+    }
+
+    /**
      * @param list<class-string> $chain
+     * @param Closure(string): ?string $resolveClass
      */
     private static function generatorFor(
         string $subject,
@@ -116,6 +175,7 @@ final class ParameterGenerators
         ?string $documented,
         int $maxDepth,
         array $chain,
+        Closure $resolveClass,
     ): ArbitraryInterface {
         $forClass = static function (string $type) use ($maxDepth, $chain): ArbitraryInterface {
             if (in_array($type, $chain, strict: true)) {
@@ -154,15 +214,30 @@ final class ParameterGenerators
             );
         };
 
+        $native = $parameter->getType();
+
         if ($documented !== null) {
-            $fromDocblock = TypeGenerators::fromDocblock($documented, $forClass);
+            $fromDocblock = TypeGenerators::fromDocblock($documented, $forClass, $resolveClass);
 
             if ($fromDocblock instanceof ArbitraryInterface) {
                 return $fromDocblock;
             }
-        }
 
-        $native = $parameter->getType();
+            // A docblock type outside the readable subset says more than the
+            // native type — that is why it was written — and generating from
+            // the native type instead would be the widened guess the class
+            // promises never to make: `float<0.0, 1.0>` is not `float`. The
+            // one exception is a native class type, whose docblock can only
+            // narrow its generics (`Collection<Item>`), never its values.
+            if (!$native instanceof \ReflectionNamedType || $native->isBuiltin()) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Cannot generate %s: parameter $%s is documented as %s, which this cannot read; pass an override',
+                    $subject,
+                    $parameter->getName(),
+                    $documented,
+                ));
+            }
+        }
 
         if ($native instanceof \ReflectionNamedType) {
             $generator = TypeGenerators::fromNative($native->getName(), $forClass);

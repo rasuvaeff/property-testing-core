@@ -8,7 +8,11 @@ use Rasuvaeff\PropertyTesting\Arbitrary\ConstantArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\FlatMappedArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\TupleArbitrary;
+use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\GenerationExhausted;
 use Rasuvaeff\PropertyTesting\Random;
+use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
@@ -107,6 +111,35 @@ final class FlatMappedArbitraryTest
         $minimal = Trees::descendWhile($node, static fn(mixed $v): bool => is_int($v) && $v > 3);
 
         Assert::same($minimal->value, 4);
+    }
+
+    public function aSourceCandidateTheDependentSideCannotSatisfyIsSkipped(): void
+    {
+        // The dependent side is the source value itself, refused at 0: the
+        // source candidate 0 exhausts generation, is no value at all and is
+        // skipped — the source candidates after it (4, 6, 7 for a source of 8)
+        // are still offered, and the constant dependent adds none of its own.
+        $arbitrary = new FlatMappedArbitrary(
+            new IntArbitrary(0, 10),
+            static fn(int $n): ArbitraryInterface => Gen::filter(Gen::constant($n), static fn(int $m): bool => $m >= 1),
+        );
+
+        $node = null;
+
+        for ($seed = 0; $seed < 1_000 && !$node instanceof Shrinkable; ++$seed) {
+            try {
+                $generated = $arbitrary->generate(new Random($seed));
+            } catch (GenerationExhausted) {
+                continue;
+            }
+
+            if ($generated->value === 8) {
+                $node = $generated;
+            }
+        }
+
+        Assert::instanceOf($node, Shrinkable::class);
+        Assert::same(Trees::childValues($node), [4, 6, 7]);
     }
 
     #[ExpectException(\InvalidArgumentException::class)]

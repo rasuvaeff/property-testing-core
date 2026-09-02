@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
+use Testo\Assert\ExpectException;
 use Testo\Codecov\Covers;
 use Testo\Test;
 
@@ -77,6 +78,48 @@ final class ShrinkableTest
         Assert::same($mapped->value, 40);
         Assert::same(Trees::childValues($mapped), [20, 30]);
         Assert::same(Trees::valuesToDepth($mapped, 2), [20, 10, 30]);
+    }
+
+    public function mapSkipsACandidateTheTransformationRefuses(): void
+    {
+        // The refused candidate and its subtree disappear; its siblings stay.
+        $node = Shrinkable::of(4, static fn(): array => [
+            Shrinkable::of(2, static fn(): array => [Shrinkable::leaf(1)]),
+            Shrinkable::leaf(3),
+        ]);
+
+        $mapped = $node->map(static function (int $x): int {
+            if ($x === 2) {
+                throw new \InvalidArgumentException('2 is refused');
+            }
+
+            return $x * 10;
+        });
+
+        Assert::same($mapped->value, 40);
+        Assert::same(Trees::childValues($mapped), [30]);
+    }
+
+    #[ExpectException(\TypeError::class)]
+    public function mapPropagatesAnErrorFromACandidate(): void
+    {
+        $node = Shrinkable::of(4, static fn(): array => [Shrinkable::leaf(2)]);
+
+        Trees::childValues($node->map(static function (int $x): int {
+            if ($x === 2) {
+                throw new \TypeError('broken transformation');
+            }
+
+            return $x;
+        }));
+    }
+
+    #[ExpectException(\InvalidArgumentException::class)]
+    public function mapPropagatesARefusalOfTheRootValue(): void
+    {
+        Shrinkable::leaf(4)->map(static function (int $x): int {
+            throw new \InvalidArgumentException(sprintf('%d is refused', $x));
+        });
     }
 
     public function mapIsLazyOnChildren(): void

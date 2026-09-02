@@ -27,6 +27,24 @@ final class OneOfArbitraryTest
         }
     }
 
+    public function namedArgumentsArePickedByPosition(): void
+    {
+        // A string-keyed variadic (named arguments, a spread map) must not
+        // leave the enumeration looking for index 0 that no longer exists.
+        $arbitrary = new OneOfArbitrary(...['ok' => 'a', 'err' => 'b']);
+        $random = new Random(1);
+        $seen = [];
+
+        for ($i = 0; $i < 30; ++$i) {
+            $seen[$arbitrary->generate($random)->value] = true;
+        }
+
+        $values = array_keys($seen);
+        sort($values);
+
+        Assert::same($values, ['a', 'b']);
+    }
+
     public function generateCanProduceEveryValueIncludingTheEndpoints(): void
     {
         // Every index in [0, count - 1] must be reachable, so the first and last

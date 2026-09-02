@@ -25,7 +25,8 @@
     "require": {
         "php": "8.3 - 8.5",
         "ext-mbstring": "*",
-        "ext-random": "*"
+        "ext-random": "*",
+        "ext-tokenizer": "*"
     },
     "require-dev": {
         "ergebnis/composer-normalize": "^2.51",

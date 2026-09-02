@@ -99,9 +99,20 @@ final readonly class FlatMappedArbitrary implements ArbitraryInterface
     private function shrinksFor(Shrinkable $outer, Shrinkable $inner, int $seed): iterable
     {
         // 1. Shrink the source value: rebuild the dependent arbitrary from the
-        //    smaller source value and regenerate with the captured seed.
+        //    smaller source value and regenerate with the captured seed. A
+        //    smaller source the dependent side refuses — a filter no longer
+        //    satisfiable ({@see GenerationExhausted}), a range the smaller
+        //    bound turns empty — is not a smaller value; skip it and its
+        //    subtree, the way {@see Shrinkable::map()} skips a refused
+        //    candidate. Only exceptions count; an Error propagates.
         foreach ($outer->shrinks() as $smallerOuter) {
-            yield $this->bind($smallerOuter, $seed);
+            try {
+                $rebound = $this->bind($smallerOuter, $seed);
+            } catch (\Exception) {
+                continue;
+            }
+
+            yield $rebound;
         }
 
         // 2. Shrink the dependent value through its own tree, keeping the

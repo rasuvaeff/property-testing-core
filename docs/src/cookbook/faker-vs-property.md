@@ -83,10 +83,10 @@ Shrinkable data (a string over an alphabet):
 
 Property falsified after 14 successful run(s); seed=3
   Original: name="aaééaé", limit=3
-  Shrunk:   name="aaé", limit=3 (1 shrink step(s), 7 trial(s))
+  Shrunk:   name="aaé", limit=3 (1 shrink step(s), 10 trial(s))
   Changed:  name="aaééaé" -> "aaé"
   Failure:  truncateDisplayName("aaé", 3) returned bytes that are not valid UTF-8
-  Path:     name:0
+  Path:     name:1
 ```
 
 Both found the bug. Read what they say about it.

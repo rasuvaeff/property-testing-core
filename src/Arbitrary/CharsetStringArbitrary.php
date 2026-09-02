@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -72,26 +73,18 @@ final readonly class CharsetStringArbitrary implements ArbitraryInterface
                 return;
             }
 
-            // 1. Length first: empty string, then halves of the original, counted
-            //    in characters so multibyte alphabets never split mid-codepoint.
-            //    Never shrink below minLength.
-            if ($this->minLength === 0) {
-                yield $this->tree('');
-            }
+            // 1. Length first: remove blocks of characters (all, halves, …, single
+            //    characters) from every offset, counted in characters so multibyte
+            //    alphabets never split mid-codepoint. Never shrink below minLength.
+            $chars = mb_str_split($value, 1, 'UTF-8');
 
-            $length = mb_strlen($value, 'UTF-8');
-            while ($length > 1) {
-                $length = intdiv($length, 2);
-
-                if ($length >= $this->minLength) {
-                    yield $this->tree(mb_substr($value, 0, $length, 'UTF-8'));
-                }
+            foreach (BlockRemovals::of(count($chars), $this->minLength) as [$offset, $length]) {
+                yield $this->tree(implode('', [...array_slice($chars, 0, $offset), ...array_slice($chars, $offset + $length)]));
             }
 
             // 2. Then characters: drive each character toward the first alphabet
             //    character, one position at a time. Each candidate has one fewer
             //    non-canonical character, so this phase terminates.
-            $chars = mb_str_split($value, 1, 'UTF-8');
             foreach ($chars as $index => $char) {
                 if ($char === $this->chars[0]) {
                     continue;

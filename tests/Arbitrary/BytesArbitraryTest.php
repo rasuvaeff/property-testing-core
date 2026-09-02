@@ -82,19 +82,20 @@ final class BytesArbitraryTest
         Assert::true($sawEmpty);
     }
 
-    public function shrinkTriesEmptyStringFirstThenExactHalfPrefixes(): void
+    public function shrinkRemovesBlocksOfBytesLongestFirstFromEveryOffset(): void
     {
         $node = Trees::generateWhere(
             new BytesArbitrary(0, 12),
             static fn(mixed $v): bool => is_string($v) && strlen($v) === 8,
         );
-        $value = $node->value;
+        $value = (string) $node->value;
         $candidates = Trees::childValues($node);
 
         Assert::same($candidates[0], '');
-        Assert::same($candidates[1], substr((string) $value, 0, 4));
-        Assert::same($candidates[2], substr((string) $value, 0, 2));
-        Assert::same($candidates[3], substr((string) $value, 0, 1));
+        Assert::same($candidates[1], substr($value, 4));
+        Assert::same($candidates[2], substr($value, 0, 4));
+        Assert::same($candidates[3], substr($value, 2));
+        Assert::same($candidates[14], substr($value, 0, 7));
     }
 
     public function shrinkYieldsTheEmptyStringExactlyOnce(): void
@@ -156,13 +157,16 @@ final class BytesArbitraryTest
 
     public function shrinkKeepsTheMinimumLengthCandidate(): void
     {
-        // With minLength 2 the length-floor prefix (exactly 2 bytes) is produced.
+        // With minLength 2 the length floor (exactly 2 bytes) is reachable by
+        // descent, and the descent never goes below it.
         $node = Trees::generateWhere(
             new BytesArbitrary(2, 12),
             static fn(mixed $v): bool => is_string($v) && strlen($v) === 8,
         );
 
-        Assert::true(in_array(substr((string) $node->value, 0, 2), Trees::childValues($node), strict: true));
+        $floor = Trees::descendWhile($node, static fn(mixed $v): bool => is_string($v) && strlen($v) >= 2)->value;
+
+        Assert::true(is_string($floor) && strlen($floor) === 2);
     }
 
     public function shrinkNeverEscapesBelowMinimumLength(): void

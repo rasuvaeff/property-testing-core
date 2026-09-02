@@ -188,7 +188,7 @@ phase and are dropped when `SEQUENCE_EPOCH` changes.
 `RunStarted(attempt, arguments)`, `RunPassed(labels, elapsedNs)`,
 `RunDiscarded`, `RunFailed(failure, elapsedNs)`, `ShrinkTried(parameter,
 candidate, accepted)`, `ShrinkAccepted(step, parameter, before, after)`,
-`CorpusReplayed/CorpusPruned/CorpusStored`,
+`CorpusReplayed/CorpusPruned/CorpusStored/CorpusFailed` (the corpus threw; property continues without it),
 `PropertyFinished(propertyId, ?failure, ?distribution)`.
 
 ```php
@@ -206,7 +206,9 @@ Gen::intPositive()                      // IntArbitrary, 1..PHP_INT_MAX
 Gen::float()                            // FloatArbitrary, [0.0, 1.0)
 Gen::floatBetween(float $min, float $max)  // FloatArbitrary, [$min, $max]
 Gen::bool()                             // BoolArbitrary
-Gen::string()                           // StringArbitrary, Unicode, len 0..100
+Gen::string()                           // StringArbitrary, Unicode, len 0..100; per char: 50% ASCII printable, 10% troublemakers
+                                        // (quotes, backslash, combining, ZWJ, RTL override, BOM, astral emoji...), 10% Latin-1/Ext,
+                                        // 10% rest of BMP, 20% uniform U+0001..U+10FFFF (no surrogates)
 Gen::stringAscii()                      // StringArbitrary, printable ASCII
 Gen::stringOf(int $minLen, int $maxLen) // StringArbitrary, bounded length
 Gen::stringFrom(string $alphabet, int $minLen = 0, int $maxLen = 100) // CharsetStringArbitrary
@@ -223,7 +225,7 @@ Gen::enum(SomeEnum::class)              // OneOfArbitrary over enum cases
 Gen::constant(mixed $value)             // ConstantArbitrary
 Gen::char()                             // StringArbitrary, one ASCII char
 Gen::uuid()                             // UuidArbitrary, v4 UUIDs
-Gen::datetime(?DateTimeImmutable $min, ?DateTimeImmutable $max) // DateTimeArbitrary, UTC
+Gen::datetime(?DateTimeImmutable $min, ?DateTimeImmutable $max) // DateTimeArbitrary, UTC, microsecond precision; shrinks toward epoch via int ladder
 Gen::floatSpecial()                     // OneOfArbitrary over NAN/±INF/-0.0/float edges
 Gen::intRange(int $min, int $max)       // FlatMappedArbitrary: ordered [lo, hi]
 Gen::recursive(ArbitraryInterface $leaf, Closure $wrap, int $maxDepth = 3)

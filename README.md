@@ -173,7 +173,7 @@ through their source domain.
 | `Gen::float()` | `FloatArbitrary`, `[0.0, 1.0)` | toward `0.0` |
 | `Gen::floatBetween($min, $max)` | `FloatArbitrary`, `[$min, $max]` | toward `0.0`, clamped to range |
 | `Gen::bool()` | `BoolArbitrary`, `true` / `false` | `true` -> `false` |
-| `Gen::string()` | `StringArbitrary`, Unicode, length 0..100 | toward `''`, then by length, then each character toward `a` |
+| `Gen::string()` | `StringArbitrary`, Unicode, length 0..100 — half the characters ASCII printable, a tenth troublemakers (quotes, backslash, combining marks, zero-width joiner, right-to-left override, byte order mark, astral emoji, …), a tenth Latin-1/Latin Extended, a tenth the rest of the BMP, a fifth uniform over U+0001..U+10FFFF | toward `''`, then by removing blocks of characters from any position (down to single ones), then each character toward `a` |
 | `Gen::stringAscii()` | `StringArbitrary`, printable ASCII, length 0..100 | toward `''`, then by length, then each character toward `a` |
 | `Gen::stringOf($min, $max)` | `StringArbitrary`, Unicode, bounded length | toward `''`, then by removing blocks of characters from any position (down to single ones), then each character toward `a` |
 | `Gen::stringFrom($alphabet, $min, $max)` | `CharsetStringArbitrary`, characters from a fixed alphabet (multibyte OK) | toward `''`, then by length, then each character toward the first alphabet character |
@@ -189,7 +189,7 @@ through their source domain.
 | `Gen::constant($value)` | `ConstantArbitrary`, always `$value` | does not shrink |
 | `Gen::char()` | `StringArbitrary`, a single printable ASCII character | toward `a` |
 | `Gen::uuid()` | `UuidArbitrary`, RFC 4122 v4 UUID strings | does not shrink |
-| `Gen::datetime($min, $max)` | `DateTimeArbitrary`, UTC `DateTimeImmutable`, timestamp in `[$min, $max]` | toward the Unix epoch, clamped |
+| `Gen::datetime($min, $max)` | `DateTimeArbitrary`, UTC `DateTimeImmutable` with microsecond precision, in `[$min, $max]` (fractions kept) | toward the Unix epoch through an integer ladder, clamped |
 | `Gen::floatSpecial()` | `OneOfArbitrary` over `NAN`, `±INF`, `-0.0` and the float representation edges | toward earlier-listed specials |
 | `Gen::intRange($min, $max)` | `FlatMappedArbitrary`, ordered pairs `[lo, hi]` with `lo <= hi` | both bounds shrink, order always holds |
 | `Gen::recursive($leaf, $wrap, $maxDepth)` | bounded recursive structures: `$wrap` lifts the previous level's arbitrary | within the branch that generated the value |
@@ -536,6 +536,7 @@ IDE integration attaches without any engine change:
 | `RunStarted` / `RunPassed` / `RunDiscarded` / `RunFailed` | Around each random run (arguments, draws, labels, elapsed time) |
 | `ShrinkTried` / `ShrinkAccepted` | Per shrink candidate / per accepted step |
 | `CorpusReplayed` / `CorpusPruned` / `CorpusStored` | Corpus activity |
+| `CorpusFailed` | The corpus threw (a Redis server down, a client error); the property went on without it for the rest of the run |
 
 Events carry engine data only — never framework types. A listener exception
 aborts the run (an observer's failure is an infrastructure failure, not

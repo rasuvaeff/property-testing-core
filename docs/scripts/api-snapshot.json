@@ -75,6 +75,7 @@
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\TupleArbitrary",
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\UniqueArrayArbitrary",
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\UuidArbitrary",
+            "Rasuvaeff\\PropertyTesting\\Internal\\LeafFallbackArbitrary",
             "Rasuvaeff\\PropertyTesting\\Swarmable"
         ]
     },
@@ -702,8 +703,8 @@
         "isApi": true,
         "isAbstract": false,
         "isThrowable": false,
-        "summary": "Generates UTC DateTimeImmutable values with a Unix timestamp drawn\nuniformly from an inclusive range, and shrinks toward the Unix epoch\n(1970-01-01T00:00:00Z), clamped to the configured range.",
-        "description": "",
+        "summary": "Generates UTC DateTimeImmutable values with microsecond precision,\ndrawn uniformly from an inclusive range, and shrinks toward the Unix epoch\n(1970-01-01T00:00:00Z) through an integer ladder — clamped to the\nconfigured range, the way IntArbitrary shrinks toward zero.",
+        "description": "The bounds keep their fraction: `min = 12:00:00.5` never generates\n`12:00:00.0`, and a value at `.999999` is as likely as one on the second.",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -719,8 +720,8 @@
         "constructorParams": [
             {
                 "name": "min",
-                "type": "?DateTimeImmutable",
-                "description": "",
+                "type": "?\\DateTimeImmutable",
+                "description": "The earliest moment, fraction included; the Unix epoch when null.",
                 "default": "NULL",
                 "promoted": false,
                 "promotedVisibility": "private",
@@ -728,8 +729,8 @@
             },
             {
                 "name": "max",
-                "type": "?DateTimeImmutable",
-                "description": "",
+                "type": "?\\DateTimeImmutable",
+                "description": "The latest moment, fraction included; 2100-01-01T00:00:00Z when null.",
                 "default": "NULL",
                 "promoted": false,
                 "promotedVisibility": "private",
@@ -753,7 +754,12 @@
                 "returnType": "Rasuvaeff\\PropertyTesting\\Shrinkable",
                 "summary": "Produce one random value from this arbitrary's space, together with its\nshrink tree. Candidates must be ordered most aggressive first (typically\ntoward a zero/empty/identity element) and every branch of the tree must\nbe finite, so shrinking terminates.",
                 "description": "",
-                "throws": [],
+                "throws": [
+                    {
+                        "type": "\\LogicException",
+                        "description": "When PHP cannot build a moment from the drawn microseconds — a\nrange within the integer bounds never triggers it."
+                    }
+                ],
                 "throwsInBody": false,
                 "inheritedFrom": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
                 "see": [],
@@ -761,12 +767,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 39
+                "startLine": 56
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/DateTimeArbitrary.php#L20",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/DateTimeArbitrary.php#L25",
         "implementedBy": []
     },
     {
@@ -1673,7 +1679,7 @@
             {
                 "name": "unicode",
                 "type": "bool",
-                "description": "When true, characters are drawn from the full Unicode codepoint space (U+0001..U+10FFFF, excluding surrogates); otherwise ASCII printable.",
+                "description": "When true, characters are drawn from the whole Unicode codepoint space\nwith a distribution that keeps the string readable and adversarial at once: half\nthe characters are ASCII printable, a tenth come from a list of troublemakers\n(quotes, backslash, combining marks, zero-width joiner, right-to-left override,\nbyte order mark, astral emoji, …), a tenth from the Latin-1/Latin Extended block,\na tenth from the rest of the Basic Multilingual Plane, and a fifth uniformly from\nU+0001..U+10FFFF (surrogates excluded). Otherwise ASCII printable only.",
                 "default": "false",
                 "promoted": true,
                 "promotedVisibility": "private",
@@ -1705,7 +1711,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 48
+                "startLine": 89
             }
         ],
         "constants": [],
@@ -2600,6 +2606,61 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Event\\CorpusFailed",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The corpus threw — a Redis server that refused the connection, a database\nthat could not be selected, a client error — and the property continues\nwithout it: no recorded failure was replayed (when it happened on recall)\nor none was stored (on remember/prune). The corpus is memory, not a\nverdict, so its infrastructure failing must not fail the property; the\nevent is how a listener (the adapter's verbose trace) makes it visible.",
+        "description": "",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Event\\PropertyEvent"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "propertyId",
+                "type": "string",
+                "description": "The property whose corpus operation failed.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "operation",
+                "type": "\"recall\"|\"remember\"|\"prune\"",
+                "description": "Which operation threw.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "failure",
+                "type": "\\Throwable",
+                "description": "What the corpus threw.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Event/CorpusFailed.php#L17",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\Event\\CorpusPruned",
         "kind": "class",
         "isApi": true,
@@ -2904,6 +2965,7 @@
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Event/PropertyEvent.php#L16",
         "implementedBy": [
+            "Rasuvaeff\\PropertyTesting\\Event\\CorpusFailed",
             "Rasuvaeff\\PropertyTesting\\Event\\CorpusPruned",
             "Rasuvaeff\\PropertyTesting\\Event\\CorpusReplayed",
             "Rasuvaeff\\PropertyTesting\\Event\\CorpusStored",
@@ -3652,7 +3714,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 62
+                "startLine": 63
             },
             {
                 "name": "intBetween",
@@ -3682,7 +3744,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 71
+                "startLine": 72
             },
             {
                 "name": "intPositive",
@@ -3697,7 +3759,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 79
+                "startLine": 80
             },
             {
                 "name": "float",
@@ -3712,7 +3774,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 87
+                "startLine": 88
             },
             {
                 "name": "floatBetween",
@@ -3742,7 +3804,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 92
+                "startLine": 93
             },
             {
                 "name": "bool",
@@ -3757,7 +3819,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 97
+                "startLine": 98
             },
             {
                 "name": "string",
@@ -3772,7 +3834,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 105
+                "startLine": 106
             },
             {
                 "name": "stringAscii",
@@ -3787,7 +3849,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 113
+                "startLine": 114
             },
             {
                 "name": "stringOf",
@@ -3817,7 +3879,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 122
+                "startLine": 123
             },
             {
                 "name": "char",
@@ -3832,7 +3894,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 130
+                "startLine": 131
             },
             {
                 "name": "stringFrom",
@@ -3869,7 +3931,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 140
+                "startLine": 141
             },
             {
                 "name": "bytes",
@@ -3899,7 +3961,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 149
+                "startLine": 150
             },
             {
                 "name": "arrayOf",
@@ -3936,7 +3998,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 163
+                "startLine": 164
             },
             {
                 "name": "nonEmptyArrayOf",
@@ -3966,7 +4028,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 177
+                "startLine": 178
             },
             {
                 "name": "uniqueArrayOf",
@@ -4003,7 +4065,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 195
+                "startLine": 196
             },
             {
                 "name": "subset",
@@ -4040,7 +4102,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 216
+                "startLine": 217
             },
             {
                 "name": "dictOf",
@@ -4084,7 +4146,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 235
+                "startLine": 236
             },
             {
                 "name": "record",
@@ -4107,7 +4169,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 248
+                "startLine": 249
             },
             {
                 "name": "oneOf",
@@ -4130,7 +4192,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 262
+                "startLine": 263
             },
             {
                 "name": "forClass",
@@ -4174,7 +4236,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 296
+                "startLine": 297
             },
             {
                 "name": "forParameters",
@@ -4211,7 +4273,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 335
+                "startLine": 336
             },
             {
                 "name": "swarm",
@@ -4234,7 +4296,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 375
+                "startLine": 376
             },
             {
                 "name": "elements",
@@ -4257,7 +4319,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 389
+                "startLine": 390
             },
             {
                 "name": "constant",
@@ -4280,7 +4342,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 403
+                "startLine": 404
             },
             {
                 "name": "enum",
@@ -4303,7 +4365,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 418
+                "startLine": 419
             },
             {
                 "name": "floatSpecial",
@@ -4318,7 +4380,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 440
+                "startLine": 441
             },
             {
                 "name": "intRange",
@@ -4348,7 +4410,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 462
+                "startLine": 463
             },
             {
                 "name": "recursive",
@@ -4378,14 +4440,14 @@
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
                 "summary": "Recursive structures with a bounded depth: $wrap receives the arbitrary\nfor the previous level and returns the next one (e.g. wrap a value in an\narray). At every level generation picks the leaf or the wrapped branch\nwith equal odds, so nesting is possible but not forced. Keep the branch\nfan-out small (bounded array sizes) — breadth multiplies per level.",
-                "description": "",
+                "description": "Every level shrinks to its leaf first, so a nested value minimises to\nthe plain value it wraps, not merely to an empty container.",
                 "throws": [],
                 "throwsInBody": true,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 483
+                "startLine": 486
             },
             {
                 "name": "nullable",
@@ -4408,7 +4470,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 511
+                "startLine": 514
             },
             {
                 "name": "map",
@@ -4438,7 +4500,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 529
+                "startLine": 532
             },
             {
                 "name": "flatMap",
@@ -4468,7 +4530,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 549
+                "startLine": 552
             },
             {
                 "name": "filter",
@@ -4498,7 +4560,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 564
+                "startLine": 567
             },
             {
                 "name": "draw",
@@ -4521,7 +4583,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 601
+                "startLine": 604
             },
             {
                 "name": "tuple",
@@ -4544,7 +4606,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 614
+                "startLine": 617
             },
             {
                 "name": "frequency",
@@ -4567,7 +4629,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 630
+                "startLine": 633
             },
             {
                 "name": "uuid",
@@ -4582,7 +4644,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 641
+                "startLine": 644
             },
             {
                 "name": "datetime",
@@ -4612,7 +4674,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 651
+                "startLine": 654
             },
             {
                 "name": "ipv4",
@@ -4627,7 +4689,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 662
+                "startLine": 665
             },
             {
                 "name": "ipv6",
@@ -4642,7 +4704,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 691
+                "startLine": 694
             },
             {
                 "name": "email",
@@ -4657,7 +4719,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 715
+                "startLine": 718
             },
             {
                 "name": "url",
@@ -4672,7 +4734,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 739
+                "startLine": 742
             },
             {
                 "name": "json",
@@ -4695,7 +4757,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 767
+                "startLine": 770
             },
             {
                 "name": "jsonString",
@@ -4718,7 +4780,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 793
+                "startLine": 796
             },
             {
                 "name": "regex",
@@ -4748,7 +4810,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 820
+                "startLine": 823
             },
             {
                 "name": "stringMatching",
@@ -4778,7 +4840,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 833
+                "startLine": 836
             },
             {
                 "name": "commands",
@@ -4822,7 +4884,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 853
+                "startLine": 856
             },
             {
                 "name": "sample",
@@ -4859,7 +4921,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 873
+                "startLine": 876
             },
             {
                 "name": "sampleShrinks",
@@ -4896,12 +4958,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 902
+                "startLine": 905
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L49",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L50",
         "implementedBy": []
     },
     {
@@ -5202,6 +5264,36 @@
                 "startLine": 88
             },
             {
+                "name": "isForeignFormat",
+                "static": true,
+                "params": [
+                    {
+                        "name": "content",
+                        "type": "string",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "format",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "bool",
+                "summary": "Whether $content is a document of another format version — readable\nJSON with a `format` that is not $format. Corrupt content is not\nforeign: it holds nothing worth keeping.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 101
+            },
+            {
                 "name": "hydrate",
                 "static": true,
                 "params": [
@@ -5236,7 +5328,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 104
+                "startLine": 121
             },
             {
                 "name": "encodeEntry",
@@ -5273,7 +5365,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 193
+                "startLine": 210
             },
             {
                 "name": "valuesEntry",
@@ -5317,7 +5409,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 210
+                "startLine": 227
             },
             {
                 "name": "seedEntry",
@@ -5361,7 +5453,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 251
+                "startLine": 268
             },
             {
                 "name": "keyOf",
@@ -5384,7 +5476,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 276
+                "startLine": 293
             },
             {
                 "name": "cap",
@@ -5421,7 +5513,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 303
+                "startLine": 320
             }
         ],
         "constants": [],
@@ -5661,6 +5753,131 @@
         ],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/Ipv6Formatter.php#L18",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\LeafFallbackArbitrary",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "One level of \\Rasuvaeff\\PropertyTesting\\Gen::recursive(): the choice\nbetween the leaf and the wrapped branch, with the leaf offered as the first\nshrink candidate of whatever was chosen.",
+        "description": "\\Rasuvaeff\\PropertyTesting\\Arbitrary\\FrequencyArbitrary shrinks inside the branch it picked and never\nacross branches, so a nested structure could shrink to an empty container\nbut never to the plain value it wraps — `[[[1]]]` reached `[]`, not `1`. The\nleaf's seed is drawn at generation time, so the candidate is the same on\nevery enumeration and on every replay.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "template": [
+                "TValue of mixed = mixed"
+            ],
+            "implements": [
+                "\\Rasuvaeff\\PropertyTesting\\Swarmable<\\Rasuvaeff\\PropertyTesting\\Internal\\TValue>"
+            ],
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Swarmable",
+            "Rasuvaeff\\PropertyTesting\\ArbitraryInterface"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "choice",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Arbitrary\\FrequencyArbitrary<\\Rasuvaeff\\PropertyTesting\\Internal\\TValue>",
+                "description": "The leaf-or-wrapped choice of this level.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "leaf",
+                "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\Internal\\TValue>",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "generate",
+                "static": false,
+                "params": [
+                    {
+                        "name": "random",
+                        "type": "Rasuvaeff\\PropertyTesting\\Random",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Shrinkable",
+                "summary": "Produce one random value from this arbitrary's space, together with its\nshrink tree. Candidates must be ordered most aggressive first (typically\ntoward a zero/empty/identity element) and every branch of the tree must\nbe finite, so shrinking terminates.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 43
+            },
+            {
+                "name": "variantCount",
+                "static": false,
+                "params": [],
+                "returnType": "int",
+                "summary": "How many variants this generator chooses among. Must be positive: a\nchoice generator with nothing to choose from is not a choice, and\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\SwarmArbitrary rejects a\nsource that reports otherwise rather than drawing from an empty\nalphabet. Deliberately typed `int` and not `int<1, max>` — the bound is\na promise implementations make, and a swarm still checks it at runtime\nbecause it cannot analyse the implementations it will be handed.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Swarmable",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 58
+            },
+            {
+                "name": "withVariants",
+                "static": false,
+                "params": [
+                    {
+                        "name": "indices",
+                        "type": "list<int>",
+                        "description": "Variant positions to keep, each in\n`[0, variantCount() - 1]`; an index outside that range is a\nprogrammer error and throws.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Internal\\LeafFallbackArbitrary",
+                "summary": "A copy of this generator that chooses only among the variants at\n$indices.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Swarmable",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 64
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/LeafFallbackArbitrary.php#L28",
         "implementedBy": []
     },
     {
@@ -8749,7 +8966,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 63
+                "startLine": 70
             },
             {
                 "name": "recall",
@@ -8781,7 +8998,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 88
+                "startLine": 95
             },
             {
                 "name": "remember",
@@ -8820,7 +9037,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 117
+                "startLine": 124
             },
             {
                 "name": "prune",
@@ -8852,7 +9069,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 141
+                "startLine": 152
             }
         ],
         "constants": [
@@ -8866,7 +9083,7 @@
                 "name": "SEQUENCE_EPOCH",
                 "type": "int",
                 "summary": "Generation-sequence epoch. Seed entries reproduce a failure only while the\nseed→values mapping holds, so bump this in any release that shifts the\ngenerated sequence (new boundary bias, changed draw order, a rewritten\narbitrary) — older seed entries are then dropped instead of replaying a\ndifferent input under the guise of a regression. Values entries carry the\ninput itself and are unaffected.",
-                "value": 1
+                "value": 2
             }
         ],
         "enumCases": [],
@@ -9694,12 +9911,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 77
+                "startLine": 78
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L55",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L56",
         "implementedBy": []
     },
     {
@@ -9999,6 +10216,12 @@
                 "type": "string",
                 "summary": "Sets, deletes or refuses, atomically.",
                 "value": "local current = redis.call('GET', KEYS[1])\nlocal expected = ARGV[1]\nlocal document = ARGV[2]\n\nif current == false then\n    current = ''\nend\n\nif current ~= expected then\n    return 0\nend\n\nif document == '' then\n    redis.call('DEL', KEYS[1])\nelse\n    redis.call('SET', KEYS[1], document)\nend\n\nreturn 1"
+            },
+            {
+                "name": "SHA",
+                "type": "string",
+                "summary": "`sha1(CAS)`, what `EVALSHA` addresses the script by once the server has\nseen it: the script text then travels once per server, not once per\nwrite. A server that does not know it answers `NOSCRIPT`, and the\nclients fall back to `EVAL` for that call.",
+                "value": "9e09f173b33c3a42dbc633a126866de36b55e619"
             }
         ],
         "enumCases": [],
@@ -10274,7 +10497,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 24
+                "startLine": 25
             },
             {
                 "name": "compareAndSet",
@@ -10305,20 +10528,25 @@
                 "returnType": "bool",
                 "summary": "Stores $document for $key only if the stored value is still $expected —\nthe whole read-modify-write of a corpus write, made safe without holding\na lock across a round trip.",
                 "description": "",
-                "throws": [],
-                "throwsInBody": false,
+                "throws": [
+                    {
+                        "type": "\\Predis\\Response\\ServerException",
+                        "description": "When the server refuses the script for a reason other than not\nknowing it yet (`NOSCRIPT` is answered with a plain `EVAL`)."
+                    }
+                ],
+                "throwsInBody": true,
                 "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
                 "see": [],
                 "deprecated": null,
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 35
+                "startLine": 40
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/PredisCorpusClient.php#L14",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/PredisCorpusClient.php#L15",
         "implementedBy": []
     },
     {
@@ -11470,7 +11698,8 @@
         "implementedBy": [
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\CommandSequenceArbitrary",
             "Rasuvaeff\\PropertyTesting\\Arbitrary\\FrequencyArbitrary",
-            "Rasuvaeff\\PropertyTesting\\Arbitrary\\OneOfArbitrary"
+            "Rasuvaeff\\PropertyTesting\\Arbitrary\\OneOfArbitrary",
+            "Rasuvaeff\\PropertyTesting\\Internal\\LeafFallbackArbitrary"
         ]
     },
     {

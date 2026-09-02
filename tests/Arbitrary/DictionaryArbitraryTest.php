@@ -8,6 +8,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\BoolArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ConstantArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\DictionaryArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\StringArbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\GenerationExhausted;
@@ -80,6 +81,20 @@ final class DictionaryArbitraryTest
         }
 
         Assert::true($sawEmpty);
+    }
+
+    public function anIntegerLookingStringKeyIsRedrawnSoTheKeysStayStrings(): void
+    {
+        // "12" would be stored under int 12; the declared key type is string.
+        $arbitrary = new DictionaryArbitrary(new OneOfArbitrary('12', '-3', '0', 'a', 'b', '007', '1.5'), new IntArbitrary(0, 1), 1, 3);
+        $random = new Random(3);
+
+        for ($i = 0; $i < 100; ++$i) {
+            foreach (array_keys($arbitrary->generate($random)->value) as $key) {
+                Assert::true(is_string($key));
+                Assert::true(in_array($key, ['a', 'b', '007', '1.5'], strict: true));
+            }
+        }
     }
 
     public function shrinkRemovesBlocksOfEntriesLongestFirstPreservingKeys(): void

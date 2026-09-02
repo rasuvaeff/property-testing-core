@@ -32,7 +32,7 @@ property (`<sha1(id)>.json`) keeps it gitignore-friendly.
 | Constant | Type | Value | Description |
 |---|---|---|---|
 | `FORMAT_VERSION` | `int` | `1` | On-disk layout version. A file written by a different version is ignored wholesale rather than guessed at. |
-| `SEQUENCE_EPOCH` | `int` | `1` | Generation-sequence epoch. Seed entries reproduce a failure only while the seed→values mapping holds, so bump this in any release that shifts the generated sequence (new boundary bias, changed draw order, a rewritten arbitrary) — older seed entries are then dropped instead of replaying a different input under the guise of a regression. Values entries carry the input itself and are unaffected. |
+| `SEQUENCE_EPOCH` | `int` | `2` | Generation-sequence epoch. Seed entries reproduce a failure only while the seed→values mapping holds, so bump this in any release that shifts the generated sequence (new boundary bias, changed draw order, a rewritten arbitrary) — older seed entries are then dropped instead of replaying a different input under the guise of a regression. Values entries carry the input itself and are unaffected. |
 
 ## Constructor
 

@@ -9,6 +9,7 @@ use Rasuvaeff\PropertyTesting\Classify;
 use Rasuvaeff\PropertyTesting\CounterExample;
 use Rasuvaeff\PropertyTesting\CoverageViolationException;
 use Rasuvaeff\PropertyTesting\DeadlineExceededException;
+use Rasuvaeff\PropertyTesting\Event\CorpusFailed;
 use Rasuvaeff\PropertyTesting\Event\CorpusPruned;
 use Rasuvaeff\PropertyTesting\Event\CorpusReplayed;
 use Rasuvaeff\PropertyTesting\Event\CorpusStored;
@@ -109,8 +110,20 @@ final readonly class PropertyRunner
         // any way — is reported immediately; only an entry whose replay passes
         // cleanly is pruned. An inconclusive replay must not delete the
         // recorded regression.
+        // A corpus that throws (a Redis server refusing the connection, a
+        // client error) is reported as a CorpusFailed event and dropped for the
+        // rest of this run: the corpus is memory, not a verdict, and its
+        // infrastructure failing must not fail — or abort — the property.
         if ($corpus instanceof Corpus && $property->replayRegressions && $config->runs(Phase::Corpus)) {
-            foreach ($corpus->recall($property->id, $property->parameterNames) as $entry) {
+            try {
+                $recalled = $corpus->recall($property->id, $property->parameterNames);
+            } catch (\Throwable $failure) {
+                $this->emit($listeners, new CorpusFailed($property->id, 'recall', $failure));
+                $recalled = [];
+                $corpus = null;
+            }
+
+            foreach ($recalled as $entry) {
                 if ($entry->isValues()) {
                     $this->emit($listeners, new CorpusReplayed($property->id, isValues: true, arguments: $entry->arguments, seed: $entry->seed));
                     $replay = $this->replayRegression($property, $executor, $entry->arguments, $entry->seed);
@@ -147,7 +160,12 @@ final readonly class PropertyRunner
                     }
                 }
 
-                $corpus->prune($property->id, $entry);
+                if ($corpus instanceof Corpus && !$this->corpusCall($listeners, $property->id, 'prune', static function () use ($corpus, $property, $entry): void {
+                    $corpus->prune($property->id, $entry);
+                })) {
+                    $corpus = null;
+                }
+
                 $this->emit($listeners, new CorpusPruned($property->id, $entry->isValues(), $entry->seed));
             }
         }
@@ -173,8 +191,13 @@ final readonly class PropertyRunner
         $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $listeners, $config->path);
 
         if ($corpus instanceof Corpus && $result instanceof Falsified) {
-            $corpus->remember($property->id, $result->counterExample(), $property->parameterNames);
-            $this->emit($listeners, new CorpusStored($property->id, $result->counterExample()));
+            $counterExample = $result->counterExample();
+
+            if ($this->corpusCall($listeners, $property->id, 'remember', static function () use ($corpus, $property, $counterExample): void {
+                $corpus->remember($property->id, $counterExample, $property->parameterNames);
+            })) {
+                $this->emit($listeners, new CorpusStored($property->id, $counterExample));
+            }
         }
 
         return $this->finish($listeners, $property->id, $result, $this->assessedCoverage($result));
@@ -645,6 +668,28 @@ final readonly class PropertyRunner
         }
 
         return null;
+    }
+
+    /**
+     * Whether one corpus operation completed. When it threw, the failure is
+     * announced as a {@see CorpusFailed} — visible without being the
+     * property's — and the caller drops the corpus for the rest of the run.
+     *
+     * @param list<PropertyListener> $listeners
+     * @param 'remember'|'prune' $operation
+     * @param \Closure(): void $call
+     */
+    private function corpusCall(array $listeners, string $propertyId, string $operation, \Closure $call): bool
+    {
+        try {
+            $call();
+        } catch (\Throwable $failure) {
+            $this->emit($listeners, new CorpusFailed($propertyId, $operation, $failure));
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

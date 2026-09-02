@@ -28,6 +28,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\UniqueArrayArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UuidArbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Internal\LeafFallbackArbitrary;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\PushCommand;
 use Rasuvaeff\PropertyTesting\Tests\Support\Priority;
@@ -39,6 +40,7 @@ use Testo\Test;
 
 #[Test]
 #[Covers(Gen::class)]
+#[Covers(LeafFallbackArbitrary::class)]
 final class GenTest
 {
     public function intReturnsUnboundedIntArbitrary(): void
@@ -465,6 +467,39 @@ final class GenTest
         }
     }
 
+    public function recursiveShrinksANestedValueToItsLeaf(): void
+    {
+        // Cross-shrink: every level offers a leaf value first, so a property
+        // that fails for every input minimises a nested value to a bare leaf
+        // (the way fast-check's oneof withCrossShrink does) — not to an empty
+        // container, which is where the container's own shrinks stop.
+        $arbitrary = Gen::recursive(
+            Gen::constant(1),
+            static fn(ArbitraryInterface $inner): ArbitraryInterface => Gen::arrayOf($inner, 1, 3),
+            maxDepth: 3,
+        );
+        $node = Trees::generateWhere($arbitrary, static fn(mixed $v): bool => is_array($v) && $v !== [] && is_array($v[0]));
+
+        Assert::same(Trees::childValues($node)[0], 1);
+        Assert::same(Trees::descendWhile($node, static fn(mixed $v): bool => true)->value, 1);
+    }
+
+    public function jsonShrinksANestedDocumentToAScalar(): void
+    {
+        // A property that fails for every document minimises to a scalar leaf
+        // through the cross-shrink, never stopping at [] or {}.
+        $node = Trees::generateWhere(Gen::json(3), static fn(mixed $v): bool => is_array($v) && $v !== []);
+        $minimal = Trees::descendWhile($node, static fn(mixed $v): bool => true);
+
+        Assert::false(is_array($minimal->value));
+        Assert::false(is_array(Trees::childValues($node)[0]));
+    }
+
+    public function recursiveStaysSwarmable(): void
+    {
+        Assert::instanceOf(Gen::swarm(Gen::json(2)), ArbitraryInterface::class);
+    }
+
     public function recursiveNestsUpToTheMaximumDepth(): void
     {
         $arbitrary = Gen::recursive(
@@ -561,7 +596,7 @@ final class GenTest
     public function dictOfReachesTheEmptyMap(): void
     {
         // The factory must configure minSize 0 so an empty map is reachable.
-        $arbitrary = Gen::dictOf(Gen::stringOf(1, 5), Gen::int());
+        $arbitrary = Gen::dictOf(Gen::stringOf(1, 5), Gen::int(), 0, 3);
         $random = new Random(1);
         $sawEmpty = false;
 

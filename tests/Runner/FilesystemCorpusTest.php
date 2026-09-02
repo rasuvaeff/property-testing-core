@@ -568,16 +568,50 @@ final class FilesystemCorpusTest
         Assert::same($leftovers, []);
     }
 
-    /**
-     * The lock file lives next to the corpus file so each property id gets its
-     * own lock. After a write it must exist (it is not removed: it is reused
-     * across calls and costs nothing on disk).
-     */
-    public function lockFileLivesNextToTheCorpus(): void
+    public function aDocumentOfAnotherFormatVersionIsLeftAsItIs(): void
     {
+        // Reading it yields nothing (foreign), and writing would replace the
+        // other version's memory: that version keeps it, this one goes without.
+        if (!is_dir($this->dir)) {
+            mkdir($this->dir, recursive: true);
+        }
+
+        $foreign = '{"format": 99, "property": "P::p", "entries": [{"kind": "future"}]}';
+        file_put_contents($this->file(), $foreign);
+
+        $this->storage()->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
+        $this->storage()->prune(self::ID, CorpusEntry::values(['x' => 1], 1));
+
+        Assert::same(file_get_contents($this->file()), $foreign);
+        Assert::same($this->storage()->recall(self::ID, ['x']), []);
+    }
+
+    public function oneLockFileServesTheWholeDirectory(): void
+    {
+        // Per-property lock files could never be removed safely and grew one
+        // per property for good; the directory has one, never removed.
+        $this->storage()->remember('A::a', $this->counterExample(['x' => 1], 1), ['x']);
+        $this->storage()->remember('B::b', $this->counterExample(['x' => 2], 2), ['x']);
+
+        Assert::true(is_file($this->dir . '/.corpus.lock'));
+        Assert::false(is_file($this->dir . '/' . sha1('A::a') . '.json.lock'));
+        Assert::same(glob($this->dir . '/*.lock') ?: [], []);
+    }
+
+    public function aSymlinkPlantedAtTheLockPathIsNotFollowed(): void
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            return;
+        }
+
+        $victim = $this->dir . '/victim.txt';
+        file_put_contents($victim, 'original');
+        symlink($victim, $this->dir . '/.corpus.lock');
+
         $this->storage()->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
 
-        Assert::true(is_file($this->dir . '/' . sha1(self::ID) . '.json.lock'));
+        Assert::same(file_get_contents($victim), 'original');
+        Assert::false(is_file($this->file()));
     }
 
     /**
@@ -589,7 +623,7 @@ final class FilesystemCorpusTest
     public function lockFileIsReusedAcrossCalls(): void
     {
         $this->storage()->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
-        $lockPath = $this->dir . '/' . sha1(self::ID) . '.json.lock';
+        $lockPath = $this->dir . '/.corpus.lock';
         $inodeBefore = fileinode($lockPath);
 
         $this->storage()->remember(self::ID, $this->counterExample(['x' => 2], 2), ['x']);
@@ -598,20 +632,6 @@ final class FilesystemCorpusTest
         Assert::same($inodeAfter, $inodeBefore);
     }
 
-    /**
-     * Two property ids get two separate lock files. The corpus path includes
-     * the property id hash, so a mangled path (e.g. mutant dropping the id from
-     * the path) would have both properties share a single lock and serialise
-     * unrelated writes.
-     */
-    public function lockFilesAreKeyedByPropertyId(): void
-    {
-        $this->storage()->remember('A::a', $this->counterExample(['x' => 1], 1), ['x']);
-        $this->storage()->remember('B::b', $this->counterExample(['x' => 2], 2), ['x']);
-
-        Assert::true(is_file($this->dir . '/' . sha1('A::a') . '.json.lock'));
-        Assert::true(is_file($this->dir . '/' . sha1('B::b') . '.json.lock'));
-    }
 
     /**
      * A write that cannot complete must leave the previous document intact.
@@ -670,7 +690,7 @@ final class FilesystemCorpusTest
         $storage = $this->storage();
         $storage->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
 
-        $lock = fopen($this->file() . '.lock', 'c');
+        $lock = fopen($this->dir . '/.corpus.lock', 'c');
         Assert::true(\is_resource($lock));
         Assert::true(flock($lock, LOCK_SH));
 

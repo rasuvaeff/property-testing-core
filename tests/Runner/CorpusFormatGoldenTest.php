@@ -194,6 +194,7 @@ final class CorpusFormatGoldenTest
         array_map(unlink(...), array_merge(
             glob($this->dir . '/*.json') ?: [],
             glob($this->dir . '/*.lock') ?: [],
+            glob($this->dir . '/.corpus.lock') ?: [],
         ));
         rmdir($this->dir);
     }

@@ -92,9 +92,9 @@ final class SeedDeterminismVectorsTest
             Gen::string(...),
             107,
             [
-                'hex:f2a0ae9df385b4b7f0a1a79af4828c8af3bcb9b2f1af8487f1bdb1a7f29f8f8af290aebcf3aab29bf2a78593f387a385f199b496f2b394b6f2acb095f3a0a3a9f188b297f0abbbbdf383a49bf0aa9089e9bda9f2888397f0ae8098f1b9b680f395bcb4f3a1b8afe6918df19e84b7f38cb39ff0bc83a2f3a688a7f18681aef28c9ea4f3bf9aaaf2929a9af39e9885f0a09e89f2a09891f0bbae85f3ba8ab2f1b6beb5f2b28ca1f0b9a5a2',
-                'hex:e8bf9bf0beaabef1a0a7b4f184bf96f1b0a9b1f3a58ab7f3879991f48ea08ef0a7acb0f28791bbf39b9e93f094bebff18e93b8f184bb98f0b79894f39c99b5f386a2adf09f9186f18eb68af1be879ff39eab8ef2828186e6bdb4f3ac9da1f295baa7f2ae90b1f48ea2a8f2b0ba9cf2a49ebdf3a39e82f3a087b6f3888996f2aab482f3a586bef3ac94aaf3aa9f81f48c8bbdf2808398f28684b6f1bc8280f28a81aaf1928eb4f3b1b0a6f38cab81f3bba9aef29da68df28698a4f18896b4',
-                'hex:f2bda79af292b5bdf1858198f1b881bdf0b38f95f4879c83f191b6bdf19ea6a6f2b9a89ef2ae879af28b91b1f3ad95a0f29297af',
+                'hex:7dc7be76ecb5b63bc4b3f2b394b64271c392f288839726674d27f18681aef3bf9aaae0bb8621f09f91a82a4ff0beaabef184bf9658f48ea08ef28791bbf094bebfc68430e6a5a8f1be879f52373b7a70c2adf09f91a85637f1bc82802a',
+                'hex:c2b5e7929df3a584a5265c36c389f2ae879a40213020f0b9a5916ec881e5a288eb9b92f3849d8a65c381f181a795eb80a5c384ee91a3c98b7279eca6b644f1a39e8af2b58682674d22243ac583e2808fe3ba99f092ba8bc3ade9a9b52846ea8680c4b3f2b2b889e88a8cf29c978947f289829c33ecb5a6f3b7b08976f3a081817924efbfbdefbfbdf1a3988a387bcc81726a356b40e5a387c580f486b395f39d838f7ce6b3a3f380ab96f3818f82f19081bb5ec3a3f2b98f84567c3fe583a9f3a985a16fe9bdb4367325f1b6b8ac',
+                '',
             ],
         ];
 
@@ -201,11 +201,11 @@ final class SeedDeterminismVectorsTest
             static fn(): ArbitraryInterface => Gen::datetime(),
             121,
             [
-                'datetime:1985-02-25T06:50:42+00:00',
-                'datetime:2077-09-07T21:25:41+00:00',
-                'datetime:1998-09-08T07:30:16+00:00',
-                'datetime:2001-09-15T15:04:20+00:00',
-                'datetime:2079-12-13T01:56:17+00:00',
+                'datetime:2063-10-21T08:55:55+00:00',
+                'datetime:2033-01-09T12:18:34+00:00',
+                'datetime:2089-02-20T05:45:59+00:00',
+                'datetime:2073-07-15T23:24:07+00:00',
+                'datetime:2004-09-05T21:42:37+00:00',
             ],
         ];
 
@@ -260,7 +260,7 @@ final class SeedDeterminismVectorsTest
         yield 'json' => [
             static fn(): ArbitraryInterface => Gen::json(2),
             126,
-            [null, true, 'uj9 7738', [745, -600.0489853838493], 1000],
+            [true, [], -527, false, -600.0489853838493],
         ];
     }
 

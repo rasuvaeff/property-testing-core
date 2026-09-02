@@ -66,6 +66,20 @@ final class RedisCorpusTest
         Assert::same($client->documents['property-testing:corpus:' . sha1(self::ID)], $onDisk);
     }
 
+    public function aDocumentOfAnotherFormatVersionIsLeftAsItIs(): void
+    {
+        $client = new InMemoryCorpusClient();
+        $corpus = $this->corpus($client);
+        $foreign = '{"format": 99, "property": "P::p", "entries": [{"kind": "future"}]}';
+        Assert::true($client->compareAndSet('property-testing:corpus:' . sha1('P::p'), null, $foreign));
+
+        $corpus->remember('P::p', $this->counterExample(['x' => 1], 1), ['x']);
+        $corpus->prune('P::p', CorpusEntry::values(['x' => 1], 1));
+
+        Assert::same($client->get('property-testing:corpus:' . sha1('P::p')), $foreign);
+        Assert::same($corpus->recall('P::p', ['x']), []);
+    }
+
     public function anEmptyCorpusIsAnAbsentKey(): void
     {
         // Pruning the last entry deletes the key rather than storing an empty

@@ -174,7 +174,7 @@ property.
 | `Gen::float()` | `FloatArbitrary`, `[0.0, 1.0)` | к `0.0` |
 | `Gen::floatBetween($min, $max)` | `FloatArbitrary`, `[$min, $max]` | к `0.0`, в пределах диапазона |
 | `Gen::bool()` | `BoolArbitrary`, `true` / `false` | `true` -> `false` |
-| `Gen::string()` | `StringArbitrary`, Unicode, длина 0..100 | к `''`, затем удалением блоков символов с любой позиции (вплоть до одиночных), затем каждый символ к `a` |
+| `Gen::string()` | `StringArbitrary`, Unicode, длина 0..100 — половина символов ASCII printable, десятая часть «трудные» символы (кавычки, backslash, combining-знаки, zero-width joiner, right-to-left override, BOM, астральные эмодзи, …), десятая часть Latin-1/Latin Extended, десятая — остальной BMP, пятая — равномерно по U+0001..U+10FFFF | к `''`, затем удалением блоков символов с любой позиции (вплоть до одиночных), затем каждый символ к `a` |
 | `Gen::stringAscii()` | `StringArbitrary`, печатный ASCII, длина 0..100 | к `''`, затем по длине, затем каждый символ к `a` |
 | `Gen::stringOf($min, $max)` | `StringArbitrary`, Unicode, ограниченная длина | к `''`, затем по длине, затем каждый символ к `a` |
 | `Gen::stringFrom($alphabet, $min, $max)` | `CharsetStringArbitrary`, символы из фиксированного алфавита (multibyte OK) | к `''`, затем по длине, затем каждый символ к первому символу алфавита |
@@ -190,7 +190,7 @@ property.
 | `Gen::constant($value)` | `ConstantArbitrary`, всегда `$value` | не сжимается |
 | `Gen::char()` | `StringArbitrary`, один печатный ASCII-символ | к `a` |
 | `Gen::uuid()` | `UuidArbitrary`, RFC 4122 v4 UUID-строки | не сжимается |
-| `Gen::datetime($min, $max)` | `DateTimeArbitrary`, UTC `DateTimeImmutable`, timestamp в `[$min, $max]` | к Unix-эпохе, в пределах диапазона |
+| `Gen::datetime($min, $max)` | `DateTimeArbitrary`, UTC `DateTimeImmutable` с микросекундной точностью, в `[$min, $max]` (дробные части границ сохраняются) | к Unix-эпохе через целочисленную лестницу, в пределах диапазона |
 | `Gen::floatSpecial()` | `OneOfArbitrary` по `NAN`, `±INF`, `-0.0` и краям представления float | к раньше перечисленным special-значениям |
 | `Gen::intRange($min, $max)` | `FlatMappedArbitrary`, упорядоченные пары `[lo, hi]` с `lo <= hi` | обе границы сжимаются, порядок всегда сохраняется |
 | `Gen::recursive($leaf, $wrap, $maxDepth)` | ограниченные рекурсивные структуры: `$wrap` поднимает arbitrary предыдущего уровня | внутри породившей значение ветви |
@@ -535,6 +535,7 @@ $id)` в PHPUnit-адаптере): переданный id берётся ка�
 | `RunStarted` / `RunPassed` / `RunDiscarded` / `RunFailed` | Вокруг каждого случайного прогона (аргументы, draws, метки, время) |
 | `ShrinkTried` / `ShrinkAccepted` | На каждый shrink-кандидат / принятый шаг |
 | `CorpusReplayed` / `CorpusPruned` / `CorpusStored` | Активность корпуса |
+| `CorpusFailed` | Корпус бросил исключение (Redis недоступен, ошибка клиента); property продолжила без него до конца прогона |
 
 События несут только данные движка — никогда типы фреймворков. Исключение
 listener'а прерывает прогон (падение наблюдателя — инфраструктурная авария, а

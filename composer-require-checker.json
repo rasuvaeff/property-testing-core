@@ -2,6 +2,7 @@
     "symbol-whitelist": [
         "Predis\\Client",
         "Predis\\ClientInterface",
+        "Predis\\Response\\ServerException",
         "Redis"
     ],
     "php-core-extensions": [

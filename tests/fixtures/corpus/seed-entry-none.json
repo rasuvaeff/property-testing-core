@@ -1,13 +1,13 @@
 {
     "format": 1,
-    "property": "S::seeded",
+    "property": "S::seeded-none",
     "entries": [
         {
             "kind": "seed",
             "seed": 99,
             "epoch": 1,
             "runsBeforeFailure": 3,
-            "edgeCases": "mixin"
+            "edgeCases": "none"
         }
     ]
 }

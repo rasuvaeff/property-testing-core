@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Tests;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
+use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
 use Testo\Codecov\Covers;
@@ -106,7 +107,7 @@ final class CounterExampleTest
             $counterExample->toJson(),
             '{"seed":1,"runsBeforeFailure":0,"originalArguments":[],'
             . '"shrunkArguments":{"s":"<\ufffd"},"shrinkSteps":0,"shrinkTrials":0,'
-            . '"path":"","failure":null,"skips":0}',
+            . '"path":"","failure":null,"skips":0,"edgeCases":"Mixin"}',
         );
     }
 
@@ -163,6 +164,12 @@ final class CounterExampleTest
      * must keep producing it. A deliberate change regenerates the fixture in
      * the same commit.
      */
+    public function toArrayCarriesTheEdgeCaseMode(): void
+    {
+        Assert::same((new CounterExample(1, 0, [], [], edgeCases: EdgeCases::None))->toArray()['edgeCases'], 'None');
+        Assert::same((new CounterExample(1, 0, [], []))->toArray()['edgeCases'], 'Mixin');
+    }
+
     public function prettyJsonMatchesTheCommittedFixture(): void
     {
         $counterExample = new CounterExample(

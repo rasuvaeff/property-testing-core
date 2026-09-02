@@ -105,7 +105,11 @@ Property falsified after 0 successful run(s); seed=42
 The `Changed:` line diffs the original against the shrunk counterexample —
 arguments the shrinker left untouched are omitted. `trial(s)` counts every
 candidate the shrinker ran (accepted and rejected); `shrink step(s)` counts
-only the accepted ones. Reproduce the exact run by pinning the reported seed in
+only the accepted ones. A candidate is accepted only when it fails the same way
+the original run did — the same exception class — so the descent minimises the
+bug that was found instead of sliding into a different one (a smaller input that
+trips a `TypeError` in the body's setup is not a smaller counterexample of an
+assertion failure). Reproduce the exact run by pinning the reported seed in
 `PropertyConfig`.
 
 See [`examples/standalone_runner.php`](examples/standalone_runner.php) for the
@@ -326,7 +330,7 @@ no environment:
 | `seed` | `null` | Random-phase seed; null draws one (reported in failures) |
 | `maxShrinks` | `null` | Cap on accepted shrink steps; 0 disables shrinking |
 | `maxDiscards` | `null` | Discard budget; null resolves to `runs * 10` |
-| `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded` |
+| `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded`. Measured when the run returns: it reports a run that overran, it does not interrupt a body that hangs. Shrink trials are not timed |
 | `budgetMs` | `null` | Wall-clock budget for the whole random phase → `TimeBudgetExceeded` |
 | `shrink` | `null` | `ShrinkMode::Off` reports the counterexample as generated; null resolves to `Full` |
 | `shrinkBudgetMs` | `null` | Wall-clock budget for the shrink descent; implies `ShrinkMode::Bounded` |
@@ -430,9 +434,17 @@ tuples run before the random phase, never shrunk), and `replayRegressions`
 (adapters turn it off when the property pins its own seed).
 
 The `PROPERTY_RUNS` / `PROPERTY_SEED` / `PROPERTY_VERBOSE` / `PROPERTY_DB`
-environment variables are **adapter** conventions: the adapters resolve them
-into a `PropertyConfig` and a `Corpus`. The one helper the engine ships is
-`FilesystemCorpus::fromEnv()`, which reads `PROPERTY_DB` when *you* call it.
+environment variables are **adapter** conventions: the adapters read them and
+resolve them into a `PropertyConfig` and a `Corpus`. What the engine ships is
+the *meaning* of the values, so both adapters agree on it:
+`EnvironmentOverrides::runs()` / `seed()` / `phases()` / `edgeCases()` /
+`flag()` / `string()` parse a raw `getenv()` value (unset or empty → `null`, a
+malformed one → `InvalidArgumentException` naming the variable), and
+`CorpusFactory::fromDsn()` turns a `PROPERTY_DB` value into a corpus — a
+directory path is a `FilesystemCorpus`, `redis://host[:port][/db][?prefix=key-prefix]`
+(or `rediss://` for TLS) a `RedisCorpus` over `ext-redis` or predis, any other
+scheme an error, the same instance for the same value within a process.
+`FilesystemCorpus::fromEnv()` still reads `PROPERTY_DB` when *you* call it.
 
 ### Regression corpus
 
@@ -451,7 +463,7 @@ keep working after the migration.
 | Entry (`CorpusEntry`) | When | Replay |
 |---|---|---|
 | Values | Every minimised argument is representable as data (null/scalars/arrays/enum cases/byte strings) | One run with the exact recorded input |
-| Seed | Objects, closures, or in-body `Gen::draw()` values in the counterexample | The whole random phase, re-run with that seed; fenced off by the sequence epoch |
+| Seed | Objects, closures, or in-body `Gen::draw()` values in the counterexample | The whole random phase, re-run with that seed under the `EdgeCases` mode the failure was recorded with; fenced off by the sequence epoch |
 
 A corpus is the only memory a property has between runs, and most
 falsifications happen in CI — on a machine that is destroyed when the job ends.

@@ -20,11 +20,14 @@ final readonly class CorpusEntry
      * @param ?int $runsBeforeFailure How many runs the recorded failure survived before falsifying,
      *        so a seed replay with a lowered runs count still reaches the failing attempt. Null for
      *        values entries and for seed entries recorded before the field existed.
+     * @param EdgeCases $edgeCases The mode a seed entry replays under; {@see EdgeCases::Mixin} for
+     *        values entries, where it plays no part.
      */
     private function __construct(
         public ?array $arguments,
         public int $seed,
         public ?int $runsBeforeFailure = null,
+        public EdgeCases $edgeCases = EdgeCases::Mixin,
     ) {}
 
     /**
@@ -37,10 +40,13 @@ final readonly class CorpusEntry
 
     /**
      * @param ?int $runsBeforeFailure Runs the recorded failure survived; null when unknown.
+     * @param EdgeCases $edgeCases The boundary-value mode the failure was found under — the mode a
+     *        replay must use for the seed to produce the same values. Entries recorded before the
+     *        field existed carry {@see EdgeCases::Mixin}, the only mode there was.
      */
-    public static function seed(int $seed, ?int $runsBeforeFailure = null): self
+    public static function seed(int $seed, ?int $runsBeforeFailure = null, EdgeCases $edgeCases = EdgeCases::Mixin): self
     {
-        return new self(null, $seed, $runsBeforeFailure);
+        return new self(null, $seed, $runsBeforeFailure, $edgeCases);
     }
 
     /**

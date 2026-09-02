@@ -9,7 +9,7 @@ description: "Generates raw byte strings (every byte 0..255, not printable text)
 
 `Rasuvaeff\PropertyTesting\Arbitrary\BytesArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/BytesArbitrary.php#L19) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/BytesArbitrary.php#L20) — **Version:** working tree
 
 **Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

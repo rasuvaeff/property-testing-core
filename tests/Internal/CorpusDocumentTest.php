@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Internal;
 use Rasuvaeff\PropertyTesting\CounterExample;
 use Rasuvaeff\PropertyTesting\Internal\CorpusDocument;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
+use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -22,7 +23,7 @@ final class CorpusDocumentTest
     {
         Assert::same(
             CorpusDocument::seedEntry(99, self::EPOCH),
-            ['kind' => 'seed', 'seed' => 99, 'epoch' => self::EPOCH],
+            ['kind' => 'seed', 'seed' => 99, 'epoch' => self::EPOCH, 'edgeCases' => 'mixin'],
         );
     }
 
@@ -30,7 +31,7 @@ final class CorpusDocumentTest
     {
         Assert::same(
             CorpusDocument::seedEntry(99, self::EPOCH, runsBeforeFailure: 3),
-            ['kind' => 'seed', 'seed' => 99, 'epoch' => self::EPOCH, 'runsBeforeFailure' => 3],
+            ['kind' => 'seed', 'seed' => 99, 'epoch' => self::EPOCH, 'runsBeforeFailure' => 3, 'edgeCases' => 'mixin'],
         );
     }
 
@@ -51,7 +52,7 @@ final class CorpusDocumentTest
             self::EPOCH,
         );
 
-        Assert::same($entry, ['kind' => 'seed', 'seed' => 7, 'epoch' => self::EPOCH, 'runsBeforeFailure' => 4]);
+        Assert::same($entry, ['kind' => 'seed', 'seed' => 7, 'epoch' => self::EPOCH, 'runsBeforeFailure' => 4, 'edgeCases' => 'mixin']);
     }
 
     public function hydrateReadsRunsBeforeFailure(): void
@@ -96,6 +97,61 @@ final class CorpusDocumentTest
         yield 'negative' => [-1];
         yield 'not an int' => ['3'];
         yield 'PHP_INT_MAX (would overflow the +1 extension)' => [PHP_INT_MAX];
+    }
+
+    public function seedEntryStoresTheEdgeCaseMode(): void
+    {
+        Assert::same(
+            CorpusDocument::seedEntry(99, self::EPOCH, edgeCases: EdgeCases::None),
+            ['kind' => 'seed', 'seed' => 99, 'epoch' => self::EPOCH, 'edgeCases' => 'none'],
+        );
+        Assert::same(CorpusDocument::seedEntry(99, self::EPOCH)['edgeCases'], 'mixin');
+    }
+
+    public function hydrateReadsTheEdgeCaseMode(): void
+    {
+        $entry = CorpusDocument::hydrate(['kind' => 'seed', 'seed' => 99, 'epoch' => self::EPOCH, 'edgeCases' => 'none'], [], self::EPOCH);
+
+        Assert::instanceOf($entry, CorpusEntry::class);
+        Assert::same($entry->edgeCases, EdgeCases::None);
+    }
+
+    public function hydrateReadsAPreFieldSeedEntryAsMixin(): void
+    {
+        $entry = CorpusDocument::hydrate(['kind' => 'seed', 'seed' => 99, 'epoch' => self::EPOCH], [], self::EPOCH);
+
+        Assert::instanceOf($entry, CorpusEntry::class);
+        Assert::same($entry->edgeCases, EdgeCases::Mixin);
+    }
+
+    #[DataProvider('unknownEdgeCaseModes')]
+    public function hydrateDropsASeedEntryWithAModeItCannotReplay(mixed $mode): void
+    {
+        // A mode this reader does not know cannot reproduce the recorded values.
+        Assert::null(CorpusDocument::hydrate(['kind' => 'seed', 'seed' => 99, 'epoch' => self::EPOCH, 'edgeCases' => $mode], [], self::EPOCH));
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function unknownEdgeCaseModes(): iterable
+    {
+        yield 'unknown name' => ['targeted'];
+        yield 'wrong case' => ['Mixin'];
+        yield 'not a string' => [1];
+        yield 'null' => [null];
+    }
+
+    public function keyOfIgnoresTheOrderOfTheArguments(): void
+    {
+        // hydrate() hands a reordered signature back in the current order, so
+        // a pruned entry re-encodes with its arguments in a different order
+        // than the stored bytes — same input, same key.
+        $stored = ['kind' => 'values', 'seed' => 1, 'epoch' => self::EPOCH, 'args' => ['a' => 1, 'b' => 2]];
+        $reencoded = ['kind' => 'values', 'seed' => 1, 'epoch' => self::EPOCH, 'args' => ['b' => 2, 'a' => 1]];
+
+        Assert::same(CorpusDocument::keyOf($stored), CorpusDocument::keyOf($reencoded));
+        Assert::true(CorpusDocument::keyOf($stored) !== CorpusDocument::keyOf(['kind' => 'values', 'seed' => 1, 'epoch' => self::EPOCH, 'args' => ['a' => 2, 'b' => 1]]));
     }
 
     public function hydrateStillFencesSeedEntriesByEpoch(): void

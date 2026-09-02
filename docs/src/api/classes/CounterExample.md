@@ -9,7 +9,7 @@ description: "Minimal failing input for a property, captured at falsification ti
 
 `Rasuvaeff\PropertyTesting\CounterExample`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/CounterExample.php#L15) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/CounterExample.php#L17) — **Version:** working tree
 
 Minimal failing input for a property, captured at falsification time.
 
@@ -29,6 +29,7 @@ __construct(
     int $skips = 0,
     int $shrinkTrials = 0,
     string $path = '',
+    \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
 )
 ```
 
@@ -43,6 +44,7 @@ __construct(
 | `$skips` | `int` | `0` | Number of runs discarded via [`Assume`](/api/classes/Assume)::that() before the failure. |
 | `$shrinkTrials` | `int` | `0` | Total number of shrink candidates tried (accepted and rejected). |
 | `$path` | `string` | `''` | The accepted shrink steps that lead from the original arguments to the minimised ones, as `name:index` segments joined by `/`. Passed back through [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$path (together with the seed) it replays this descent instead of searching for it again. Empty when nothing shrank. A debugging aid, not a durable identifier: it indexes into each node's shrink candidates, so editing a generator orphans it — the regression corpus is what survives a refactor. |
+| `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | The boundary-value mode the failing run was generated under. The seed reproduces the failure only under the same mode (the modes share the roll but not the values it selects), so a seed replay — the corpus above all — carries it along. |
 
 ## Methods
 
@@ -65,4 +67,11 @@ toJson(bool $pretty = false): string
 ```php
 toExamplesCode(string $methodName = 'propertyExamples'): string
 ```
+
+The shrunk counterexample as a ready-to-paste `<method>Examples()` method.
+
+Refuses when the counterexample cannot actually replay as an example:
+a value [`ValueRenderer`](/api/classes/ValueRenderer)::exportPhp() cannot render, or a `draw#N`
+pseudo-argument — an in-body draw is not a parameter, so an example
+cannot carry it and the failure replays only through the seed.
 

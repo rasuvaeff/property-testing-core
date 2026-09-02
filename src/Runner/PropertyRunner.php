@@ -133,8 +133,14 @@ final readonly class PropertyRunner
                     // attempts than the configured runs (a lowered PROPERTY_RUNS
                     // does not shorten it). Reproducing the recorded failure
                     // wins over the speed dial on this phase.
+                    //
+                    // The seed reproduces the recorded values only under the
+                    // boundary mode it was recorded with (the modes share the
+                    // roll, not the values it selects), so the replay uses the
+                    // entry's mode, not the current configuration's: a suite
+                    // that switched modes since must still see its regression.
                     $replayRuns = max($runs, ($entry->runsBeforeFailure ?? -1) + 1);
-                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $config->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $listeners, null);
+                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $entry->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $listeners, null);
 
                     if ($replay->failure() instanceof \Throwable) {
                         return $this->finish($listeners, $property->id, $replay, $this->assessedCoverage($replay));
@@ -377,7 +383,7 @@ final readonly class PropertyRunner
             if ($outcome->isFailed()) {
                 $this->emit($listeners, new RunFailed($property->id, $attempts, $arguments, $this->drawArguments($draws), $outcome->failure, $runElapsedNs));
                 $descent = $path === null
-                    ? $this->shrink($property->id, $executor, $trees, $draws, $random, $maxShrinks, $shrinkMode, $shrinkBudgetMs, $listeners)
+                    ? $this->shrink($property->id, $executor, $trees, $draws, $random, $maxShrinks, $shrinkMode, $shrinkBudgetMs, $listeners, $outcome->failure)
                     : $this->replayPath($property->id, $executor, $trees, $draws, $random, $path, $listeners);
 
                 // Drain the coverage requirements like every other exit path:
@@ -406,6 +412,7 @@ final readonly class PropertyRunner
                     skips: $skips,
                     shrinkTrials: $shrinkTrials,
                     path: $shrinkPath,
+                    edgeCases: $random->edgeCases,
                 )));
             }
 
@@ -668,6 +675,12 @@ final readonly class PropertyRunner
      * @param ?int $budgetMs Wall-clock budget of the whole descent; non-null exactly when $mode is
      *        {@see ShrinkMode::Bounded}.
      * @param list<PropertyListener> $listeners
+     * @param ?\Throwable $failure What the original run failed with. A candidate is accepted only
+     *        when it fails the same way — the same exception class — so the descent minimises
+     *        the bug that was found rather than sliding into a different one (a smaller input
+     *        that trips a `TypeError` in the body's setup is not a smaller counterexample of an
+     *        assertion failure). Null, or a run that failed without an exception, accepts any
+     *        failure.
      * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string} The
      *         minimised arguments, the minimised draws (as `draw#N` pseudo-arguments), the number
      *         of accepted shrink steps, the failure of the last accepted candidate (null when
@@ -686,6 +699,7 @@ final readonly class PropertyRunner
         ShrinkMode $mode,
         ?int $budgetMs,
         array $listeners,
+        ?\Throwable $failure = null,
     ): array {
         if ($mode === ShrinkMode::Off) {
             return [$this->values($trees), $this->drawArguments($tape), 0, null, 0, ''];
@@ -733,7 +747,7 @@ final readonly class PropertyRunner
                     [$outcome, $recorded] = $this->trial($executor, $trial, $currentTape, $random);
                     ++$trials;
 
-                    $accepted = $outcome->isFailed();
+                    $accepted = $this->failsTheSameWay($outcome, $failure);
                     $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, $accepted));
 
                     if ($accepted) {
@@ -775,7 +789,7 @@ final readonly class PropertyRunner
                     [$outcome, $recorded] = $this->trial($executor, $current, $trialTape, $random);
                     ++$trials;
 
-                    $accepted = $outcome->isFailed();
+                    $accepted = $this->failsTheSameWay($outcome, $failure);
                     $this->emit($listeners, new ShrinkTried($propertyId, 'draw#' . ($position + 1), $candidate->value, $accepted));
 
                     if ($accepted) {
@@ -796,6 +810,23 @@ final readonly class PropertyRunner
         } while ($improved);
 
         return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps)];
+    }
+
+    /**
+     * Whether a shrink trial counts as a smaller counterexample: it failed,
+     * and with the same kind of failure the original run had (see
+     * {@see shrink()}). Without an original exception to compare against, or
+     * without one on the trial, any failure counts.
+     */
+    private function failsTheSameWay(TrialOutcome $outcome, ?\Throwable $original): bool
+    {
+        if (!$outcome->isFailed()) {
+            return false;
+        }
+
+        return !$original instanceof \Throwable
+            || !$outcome->failure instanceof \Throwable
+            || $outcome->failure::class === $original::class;
     }
 
     /**

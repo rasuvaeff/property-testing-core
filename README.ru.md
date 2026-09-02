@@ -107,7 +107,11 @@ Property falsified after 0 successful run(s); seed=42
 Строка `Changed:` показывает разницу между исходным и сжатым контрпримером —
 аргументы, которые shrinker не тронул, опущены. `trial(s)` — все кандидаты
 shrinker'а (принятые и отвергнутые); `shrink step(s)` — только принятые.
-Точное воспроизведение прогона — запиньте seed из отчёта в `PropertyConfig`.
+Кандидат принимается, только если падает так же, как исходный прогон — с тем
+же классом исключения: спуск минимизирует найденный баг, а не сползает в
+другой (меньший вход, роняющий `TypeError` в подготовке тела, — не меньший
+контрпример для assertion-падения). Точное воспроизведение прогона — запиньте
+seed из отчёта в `PropertyConfig`.
 
 Полный исполняемый скрипт —
 [`examples/standalone_runner.php`](examples/standalone_runner.php).
@@ -329,7 +333,7 @@ distribution-отчёта — работа адаптера.
 | `seed` | `null` | Seed случайной фазы; null — случайный (попадает в отчёт об ошибке) |
 | `maxShrinks` | `null` | Лимит принятых shrink-шагов; 0 отключает shrinking |
 | `maxDiscards` | `null` | Бюджет discard'ов; null = `runs * 10` |
-| `timeoutMs` | `null` | Wall-clock дедлайн одного прогона → `DeadlineExceeded` |
+| `timeoutMs` | `null` | Wall-clock дедлайн одного прогона → `DeadlineExceeded`. Измеряется по возврату из тела: сообщает о прогоне, который превысил лимит, но не прерывает зависшее тело. Shrink-попытки не хронометрируются |
 | `budgetMs` | `null` | Wall-clock бюджет всей случайной фазы → `TimeBudgetExceeded` |
 | `shrink` | `null` | `ShrinkMode::Off` отдаёт контрпример как сгенерирован; null = `Full` |
 | `shrinkBudgetMs` | `null` | Wall-clock бюджет спуска; включает `ShrinkMode::Bounded` |
@@ -432,10 +436,18 @@ new PropertyConfig();                                          // все фаз�
 `replayRegressions` (адаптеры выключают его, когда property пинит свой seed).
 
 Переменные окружения `PROPERTY_RUNS` / `PROPERTY_SEED` / `PROPERTY_VERBOSE` /
-`PROPERTY_DB` — конвенции **адаптеров**: адаптеры разрешают их в
-`PropertyConfig` и `Corpus`. Единственный helper движка —
-`FilesystemCorpus::fromEnv()`, читающий `PROPERTY_DB`, когда его вызываете
-*вы*.
+`PROPERTY_DB` — конвенции **адаптеров**: адаптеры читают их и разрешают в
+`PropertyConfig` и `Corpus`. Движок поставляет *смысл* значений, чтобы оба
+адаптера понимали их одинаково: `EnvironmentOverrides::runs()` / `seed()` /
+`phases()` / `edgeCases()` / `flag()` / `string()` разбирают сырое значение из
+`getenv()` (не задано или пусто → `null`, испорчено →
+`InvalidArgumentException` с именем переменной), а `CorpusFactory::fromDsn()`
+превращает значение `PROPERTY_DB` в корпус: путь к каталогу —
+`FilesystemCorpus`, `redis://host[:port][/db][?prefix=key-prefix]` (или
+`rediss://` для TLS) — `RedisCorpus` поверх `ext-redis` или predis, любая
+другая схема — ошибка; один и тот же экземпляр на одно значение в процессе.
+`FilesystemCorpus::fromEnv()` по-прежнему читает `PROPERTY_DB`, когда его
+вызываете *вы*.
 
 ### Регрессионный корпус
 
@@ -454,7 +466,7 @@ property (`<sha1(id)>.json`, максимум 8 values-записей и 2 seed-
 | Запись (`CorpusEntry`) | Когда | Replay |
 |---|---|---|
 | Values | Каждый минимизированный аргумент представим как данные (null/скаляры/массивы/enum-case'ы/байтовые строки) | Один прогон с точным записанным входом |
-| Seed | Объекты, замыкания или значения `Gen::draw()` в контрпримере | Вся случайная фаза с этим seed; отгораживается sequence epoch |
+| Seed | Объекты, замыкания или значения `Gen::draw()` в контрпримере | Вся случайная фаза с этим seed в том режиме `EdgeCases`, в котором падение было записано; отгораживается sequence epoch |
 
 Корпус — единственная память property между прогонами, а большинство
 фальсификаций случается в CI, на машине, которая исчезает вместе с job'ом.

@@ -14,6 +14,8 @@ use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
+use Rasuvaeff\PropertyTesting\Runner\TrialExecutor;
+use Rasuvaeff\PropertyTesting\Runner\TrialOutcome;
 use Rasuvaeff\PropertyTesting\Tests\Support\ChainArbitrary;
 use Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener;
 use Rasuvaeff\PropertyTesting\Tests\Support\ThrowingShrinkArbitrary;
@@ -223,6 +225,72 @@ final class PropertyRunnerShrinkTest
             array_map(static fn(ShrinkAccepted $event): int => $event->step, $accepted),
             [1, 2, 3, 4, 5],
         );
+    }
+
+    public function shrinkingKeepsToTheKindOfFailureThatWasFound(): void
+    {
+        // Small inputs trip the body's setup with a different exception. A
+        // candidate that fails differently is not a smaller counterexample of
+        // the assertion that was found: the descent stops at the assertion's
+        // own boundary instead of sliding into the setup failure at 0.
+        $listener = new CollectingListener();
+
+        $result = (new PropertyRunner())->run(
+            $this->definition(['value' => Gen::intBetween(0, 10_000)], ['value']),
+            new CallableTrialExecutor(static function (int $value): void {
+                if ($value < 50) {
+                    throw new \LogicException('setup cannot handle a small value');
+                }
+
+                if ($value >= 100) {
+                    throw new \RuntimeException(sprintf('%d is not below 100', $value));
+                }
+            }),
+            [$listener],
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->originalArguments, ['value' => 3989]);
+        Assert::same($example->shrunkArguments, ['value' => 100]);
+        Assert::instanceOf($example->failure, \RuntimeException::class);
+
+        // 0 is tried (and refused) on every pass; nothing below 100 is ever accepted.
+        $tried = $listener->ofType(ShrinkTried::class);
+        Assert::true(array_filter($tried, static fn(ShrinkTried $event): bool => !$event->accepted && $event->candidate === 0) !== []);
+
+        foreach ($listener->ofType(ShrinkAccepted::class) as $event) {
+            Assert::true(is_int($event->after) && $event->after >= 100);
+        }
+    }
+
+    public function aCandidateThatFailsWithoutAnExceptionIsAcceptedWhateverTheOriginalWas(): void
+    {
+        // A trial executor may report a failure without a throwable (an
+        // adapter's non-exception failure status). There is nothing to compare
+        // the original's exception class against, so the candidate counts.
+        $result = (new PropertyRunner())->run(
+            $this->definition(['value' => Gen::intBetween(0, 10_000)], ['value']),
+            new class implements TrialExecutor {
+                #[\Override]
+                public function execute(array $arguments): TrialOutcome
+                {
+                    $value = $arguments['value'];
+
+                    if (!is_int($value) || $value < 100) {
+                        return TrialOutcome::passed();
+                    }
+
+                    return $value >= 1_000
+                        ? TrialOutcome::failed(new \RuntimeException(sprintf('%d is not below 1000', $value)))
+                        : TrialOutcome::failed();
+                }
+            },
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        Assert::same($result->counterExample()->originalArguments, ['value' => 3989]);
+        Assert::same($result->counterExample()->shrunkArguments, ['value' => 100]);
     }
 
     public function aCandidateEnumerationThatThrowsEndsWithoutLosingTheCounterexample(): void

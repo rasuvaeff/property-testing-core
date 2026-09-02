@@ -75,10 +75,10 @@ Buggy rollout bucketing falsified:
 
 Property falsified after 22 successful run(s); seed=5
   Original: subject="opcqcb45ni5", p1=16, delta=30
-  Shrunk:   subject="opcqcbaani5", p1=16, delta=1 (8 shrink step(s), 129 trial(s))
-  Changed:  subject="opcqcb45ni5" -> "opcqcbaani5", delta=30 -> 1
-  Failure:  subject 'opcqcbaani5' is in the 16% rollout but not the 17% rollout
-  Path:     subject:9/delta:1/subject:9/delta:1/delta:2/delta:1/delta:1/delta:1
+  Shrunk:   subject="bania", p1=7, delta=1 (11 shrink step(s), 97 trial(s))
+  Changed:  subject="opcqcb45ni5" -> "bania", p1=16 -> 7, delta=30 -> 1
+  Failure:  subject 'bania' is in the 7% rollout but not the 8% rollout
+  Path:     subject:24/delta:1/subject:0/delta:1/subject:12/p1:3/delta:1/subject:4/p1:1/delta:1/delta:1
 ```
 
 Twenty-two passing runs, then a subject/percentage pair that violates

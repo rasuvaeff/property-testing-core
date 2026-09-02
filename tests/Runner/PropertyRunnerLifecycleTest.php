@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 
 use Rasuvaeff\PropertyTesting\Assume;
 use Rasuvaeff\PropertyTesting\Classify;
+use Rasuvaeff\PropertyTesting\Event\CorpusFailed;
 use Rasuvaeff\PropertyTesting\Event\CorpusPruned;
 use Rasuvaeff\PropertyTesting\Event\CorpusReplayed;
 use Rasuvaeff\PropertyTesting\Event\CorpusStored;
@@ -30,6 +31,7 @@ use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\GaveUp;
 use Rasuvaeff\PropertyTesting\Runner\GenerationFailed;
 use Rasuvaeff\PropertyTesting\Runner\Passed;
+use Rasuvaeff\PropertyTesting\Runner\Phase;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
@@ -40,6 +42,7 @@ use Rasuvaeff\PropertyTesting\Runner\TrialOutcome;
 use Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener;
 use Rasuvaeff\PropertyTesting\Tests\Support\FakeClock;
 use Rasuvaeff\PropertyTesting\Tests\Support\RecordingCorpus;
+use Rasuvaeff\PropertyTesting\Tests\Support\ThrowingCorpus;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
 use Testo\Codecov\Covers;
@@ -357,6 +360,59 @@ final class PropertyRunnerLifecycleTest
         Assert::same($result->counterExample()->edgeCases, EdgeCases::Mixin);
         Assert::same($result->counterExample()->seed, 11);
         Assert::same($corpus->pruned, []);
+    }
+
+    public function aCorpusThatThrowsIsReportedAndDroppedNotTheProperty(): void
+    {
+        // The corpus is memory, not a verdict: a backend that is down must not
+        // fail or abort the property. Its failure is a CorpusFailed event, and
+        // the corpus is not asked again during this run.
+        $corpus = new ThrowingCorpus();
+        $listener = new CollectingListener();
+
+        $result = (new PropertyRunner())->run(
+            $this->definition(runs: 5),
+            new CallableTrialExecutor(static function (int $value): void {
+                throw new \RuntimeException('always fails');
+            }),
+            [$listener],
+            $corpus,
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        Assert::same($corpus->calls, ['recall']);
+
+        $failed = $listener->ofType(CorpusFailed::class);
+        Assert::same(count($failed), 1);
+        Assert::same($failed[0]->operation, 'recall');
+        Assert::same($failed[0]->failure->getMessage(), 'corpus backend is down');
+        Assert::same($listener->ofType(CorpusStored::class), []);
+    }
+
+    public function aCorpusThatThrowsOnRememberStillLetsThePropertyFinish(): void
+    {
+        $corpus = new ThrowingCorpus();
+        $listener = new CollectingListener();
+
+        $result = (new PropertyRunner())->run(
+            new PropertyDefinition(
+                id: 'lifecycle::property',
+                name: 'property',
+                generators: ['value' => Gen::intBetween(0, 10)],
+                parameterNames: ['value'],
+                config: new PropertyConfig(runs: 5, seed: 42, phases: [Phase::Random, Phase::Shrink]),
+            ),
+            new CallableTrialExecutor(static function (int $value): void {
+                throw new \RuntimeException('always fails');
+            }),
+            [$listener],
+            $corpus,
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        Assert::same($corpus->calls, ['remember']);
+        Assert::same($listener->ofType(CorpusFailed::class)[0]->operation, 'remember');
+        Assert::same($listener->ofType(CorpusStored::class), []);
     }
 
     public function aSeedReplayWithoutARecordedAttemptUsesTheConfiguredRuns(): void

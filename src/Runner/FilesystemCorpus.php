@@ -41,7 +41,7 @@ final readonly class FilesystemCorpus implements Corpus
      * different input under the guise of a regression. Values entries carry the
      * input itself and are unaffected.
      */
-    public const int SEQUENCE_EPOCH = 1;
+    public const int SEQUENCE_EPOCH = 2;
 
     /**
      * A values entry costs one run; a seed entry costs a whole random phase
@@ -51,6 +51,13 @@ final readonly class FilesystemCorpus implements Corpus
     private const int MAX_VALUE_ENTRIES = 8;
 
     private const int MAX_SEED_ENTRIES = 2;
+
+    /**
+     * The directory's lock file; never removed (see {@see withLock()}). The
+     * per-property `<sha1>.json.lock` files of 0.5 and earlier are left alone —
+     * a process on that version may still hold one.
+     */
+    private const string LOCK_FILE = '.corpus.lock';
 
     public function __construct(
         private string $directory,
@@ -119,6 +126,10 @@ final readonly class FilesystemCorpus implements Corpus
         $this->withLock(
             $id,
             function () use ($id, $counterExample, $parameterNames): void {
+                if ($this->holdsForeignFormat($id)) {
+                    return;
+                }
+
                 $entry = CorpusDocument::encodeEntry($counterExample, $parameterNames, self::SEQUENCE_EPOCH);
                 $key = CorpusDocument::keyOf($entry);
 
@@ -143,6 +154,10 @@ final readonly class FilesystemCorpus implements Corpus
         $this->withLock(
             $id,
             function () use ($id, $entry): void {
+                if ($this->holdsForeignFormat($id)) {
+                    return;
+                }
+
                 // A hydrated entry re-encodes to the very bytes it was read from,
                 // so the key identifies the same stored entry.
                 $encoded = $entry->isValues()
@@ -289,10 +304,25 @@ final readonly class FilesystemCorpus implements Corpus
             @mkdir($this->directory, 0o777, recursive: true);
         }
 
-        $lock = fopen($this->path($id) . '.lock', 'c');
+        // One lock for the directory rather than one per property: a lock file
+        // cannot be removed safely once created (a waiter may hold the old
+        // inode while a newcomer creates a fresh one, and two writers proceed),
+        // so per-property locks accumulated one file per property for good.
+        // Writes are rare and short; serialising them across properties costs
+        // nothing measurable.
+        $path = rtrim($this->directory, '/') . '/' . self::LOCK_FILE;
+
+        if (is_link($path)) {
+            // A pre-planted link would be opened for writing (nothing is ever
+            // written through it, but the same threat model refuses the temp
+            // path). The corpus is best-effort memory: skip, do not follow.
+            return;
+        }
+
+        $lock = fopen($path, 'c');
 
         if ($lock === false) {
-            throw new \RuntimeException(sprintf('Could not open lock file for property "%s"', $id));
+            throw new \RuntimeException(sprintf('Could not open the corpus lock file for property "%s"', $id));
         }
 
         try {
@@ -305,6 +335,25 @@ final readonly class FilesystemCorpus implements Corpus
             flock($lock, LOCK_UN);
             fclose($lock);
         }
+    }
+
+    /**
+     * Whether the property's document was written by another format version.
+     * Such a document reads as empty, and a write would replace it — the
+     * newer (or older) version's entries lost without a trace. It is left as
+     * it is; that version keeps its memory and this one goes without.
+     */
+    private function holdsForeignFormat(string $id): bool
+    {
+        $file = $this->path($id);
+
+        if (!is_file($file)) {
+            return false;
+        }
+
+        $content = @file_get_contents($file);
+
+        return is_string($content) && CorpusDocument::isForeignFormat($content, self::FORMAT_VERSION);
     }
 
     private function path(string $id): string

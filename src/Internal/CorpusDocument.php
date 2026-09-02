@@ -94,6 +94,23 @@ final class CorpusDocument
     }
 
     /**
+     * Whether $content is a document of another format version — readable
+     * JSON with a `format` that is not $format. Corrupt content is not
+     * foreign: it holds nothing worth keeping.
+     */
+    public static function isForeignFormat(string $content, int $format): bool
+    {
+        try {
+            /** @var mixed $document */
+            $document = json_decode($content, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return false;
+        }
+
+        return is_array($document) && array_key_exists('format', $document) && $document['format'] !== $format;
+    }
+
+    /**
      * A raw stored entry as a usable {@see CorpusEntry}, or null when it is
      * corrupt or no longer applicable.
      *

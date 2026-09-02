@@ -154,6 +154,16 @@ final class CorpusDocumentTest
         Assert::true(CorpusDocument::keyOf($stored) !== CorpusDocument::keyOf(['kind' => 'values', 'seed' => 1, 'epoch' => self::EPOCH, 'args' => ['a' => 2, 'b' => 1]]));
     }
 
+    public function aDocumentOfAnotherFormatVersionIsForeignCorruptContentIsNot(): void
+    {
+        Assert::true(CorpusDocument::isForeignFormat('{"format": 99, "entries": []}', 1));
+        Assert::true(CorpusDocument::isForeignFormat('{"format": "1", "entries": []}', 1));
+        Assert::false(CorpusDocument::isForeignFormat('{"format": 1, "entries": []}', 1));
+        Assert::false(CorpusDocument::isForeignFormat('{"entries": []}', 1));
+        Assert::false(CorpusDocument::isForeignFormat('not json', 1));
+        Assert::false(CorpusDocument::isForeignFormat('[1, 2]', 1));
+    }
+
     public function hydrateStillFencesSeedEntriesByEpoch(): void
     {
         Assert::null(CorpusDocument::hydrate(

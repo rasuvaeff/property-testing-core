@@ -44,6 +44,14 @@ final class CorpusScript
         return 1
         LUA;
 
+    /**
+     * `sha1(CAS)`, what `EVALSHA` addresses the script by once the server has
+     * seen it: the script text then travels once per server, not once per
+     * write. A server that does not know it answers `NOSCRIPT`, and the
+     * clients fall back to `EVAL` for that call.
+     */
+    public const string SHA = '9e09f173b33c3a42dbc633a126866de36b55e619';
+
     private function __construct()
     {
         // Constant holder; not instantiable.

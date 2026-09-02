@@ -32,6 +32,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\UniqueArrayArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UuidArbitrary;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
 use Rasuvaeff\PropertyTesting\Internal\Ipv6Formatter;
+use Rasuvaeff\PropertyTesting\Internal\LeafFallbackArbitrary;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Internal\RegexCompiler;
 
@@ -477,6 +478,8 @@ final class Gen
      * array). At every level generation picks the leaf or the wrapped branch
      * with equal odds, so nesting is possible but not forced. Keep the branch
      * fan-out small (bounded array sizes) — breadth multiplies per level.
+     * Every level shrinks to its leaf first, so a nested value minimises to
+     * the plain value it wraps, not merely to an empty container.
      *
      * @param Closure(ArbitraryInterface): ArbitraryInterface $wrap
      */
@@ -499,7 +502,7 @@ final class Gen
                 ));
             }
 
-            $arbitrary = new FrequencyArbitrary([[1, $leaf], [1, $wrapped]]);
+            $arbitrary = new LeafFallbackArbitrary(new FrequencyArbitrary([[1, $leaf], [1, $wrapped]]), $leaf);
         }
 
         return $arbitrary;

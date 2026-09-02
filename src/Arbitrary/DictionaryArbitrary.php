@@ -89,7 +89,11 @@ final readonly class DictionaryArbitrary implements ArbitraryInterface
                 ));
             }
 
-            if (array_key_exists($key, $entries)) {
+            // PHP stores a canonical integer string ("12", "-3", "0") under
+            // the integer key, and the map would no longer be the
+            // array<string, T> a string key generator declares. Such a key is
+            // redrawn, the way a collision is.
+            if (array_key_exists($key, $entries) || (is_string($key) && (string) (int) $key === $key)) {
                 continue;
             }
 

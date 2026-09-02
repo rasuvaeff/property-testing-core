@@ -153,6 +153,12 @@ final readonly class RedisCorpus implements Corpus
 
         for ($attempt = 0; $attempt < self::MAX_ATTEMPTS; ++$attempt) {
             $stored = $this->client->get($key);
+
+            if ($stored !== null && CorpusDocument::isForeignFormat($stored, FilesystemCorpus::FORMAT_VERSION)) {
+                // Another format version's memory; leave it to that version.
+                return;
+            }
+
             $entries = $change($stored === null ? [] : CorpusDocument::decode($stored, FilesystemCorpus::FORMAT_VERSION));
 
             $document = $entries === []

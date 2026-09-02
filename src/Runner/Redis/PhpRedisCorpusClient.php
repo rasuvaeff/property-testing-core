@@ -31,8 +31,16 @@ final readonly class PhpRedisCorpusClient implements CorpusClient
     #[\Override]
     public function compareAndSet(string $key, ?string $expected, ?string $document): bool
     {
+        $arguments = [$key, $expected ?? '', $document ?? ''];
+
         /** @var mixed $written */
-        $written = $this->client->eval(CorpusScript::CAS, [$key, $expected ?? '', $document ?? ''], 1);
+        $written = $this->client->evalSha(CorpusScript::SHA, $arguments, 1);
+
+        if ($written === false && str_contains((string) $this->client->getLastError(), 'NOSCRIPT')) {
+            $this->client->clearLastError();
+            /** @var mixed $written */
+            $written = $this->client->eval(CorpusScript::CAS, $arguments, 1);
+        }
 
         return (int) $written === 1;
     }

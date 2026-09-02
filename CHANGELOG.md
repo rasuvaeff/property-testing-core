@@ -1,5 +1,49 @@
 # Changelog
 
+## Unreleased
+
+- `Gen::string()` / `stringOf()` / `char()` draw characters with a distribution
+  that keeps strings readable and adversarial at once — half ASCII printable,
+  a tenth from a list of troublemakers (quotes, backslash, `<>&`, tab and
+  newlines, no-break space, soft hyphen, combining marks, zero-width space
+  and joiner, right-to-left mark and override, line separator, byte order
+  mark, replacement character, astral emoji, tag characters), a tenth
+  Latin-1/Latin Extended, a tenth the rest of the Basic Multilingual Plane,
+  a fifth uniform over U+0001..U+10FFFF — instead of uniformly over 1.1
+  million codepoints, which met a quote once in a million characters and
+  produced strings that were never ASCII. This changes the sequence a seed
+  produces: `FilesystemCorpus::SEQUENCE_EPOCH` is now 2, and seed entries
+  recorded by 0.5 and earlier are dropped from the corpus (values entries
+  are unaffected).
+- `Gen::recursive()` — and `Gen::json()` on top of it — shrink every level to
+  its leaf first, so a nested value minimises to the plain value it wraps:
+  `[[[1]]]` reaches `1`, not merely `[]`. Each level draws the leaf's seed at
+  generation time (the sequence shifts, covered by the epoch above).
+- `Gen::datetime()` generates with microsecond precision and shrinks toward
+  the epoch through an integer ladder. Bounds keep their fraction
+  (`min = 12:00:00.5` no longer generates `12:00:00.0`), and "any date after
+  2000 fails" now minimises to the boundary instead of stopping at the
+  original because the single epoch candidate passed.
+- `Gen::dictOf()` with a string key generator redraws a canonical integer
+  string (`"12"`, `"-3"`, `"0"`), which PHP would store under the integer
+  key — the map stays the `array<string, T>` it declares.
+- A corpus that throws (a Redis server refusing the connection, a client
+  error) no longer escapes `PropertyRunner::run()`: the failure is a new
+  `CorpusFailed` event (property id, operation, throwable) and the corpus is
+  dropped for the rest of that run. The engine's promise that it never
+  throws for a property outcome now covers the corpus.
+- `FilesystemCorpus` takes one lock for the directory (`.corpus.lock`)
+  instead of one `.lock` per property: a per-property lock file could never
+  be removed safely and accumulated one file per property for good. A
+  symlink at the lock path is refused, like the temp path.
+- Both backends leave a document written by another format version as it
+  is: it read as empty, and a write replaced it — the other version's memory
+  lost without a trace. `CorpusDocument::isForeignFormat()` tells it apart
+  from corrupt content, which is still replaced.
+- The Redis clients address the compare-and-set script by `EVALSHA`
+  (`CorpusScript::SHA`) and fall back to `EVAL` on `NOSCRIPT`: the script
+  text travels once per server, not once per write.
+
 ## 0.5.0 — 2026-09-02
 
 - The code both adapters carried byte for byte now lives here, so a DSN

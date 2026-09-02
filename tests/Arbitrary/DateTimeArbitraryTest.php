@@ -48,17 +48,26 @@ final class DateTimeArbitraryTest
         Assert::same($max, 13);
     }
 
-    public function shrinkMovesTowardTheEpoch(): void
+    public function shrinkMovesTowardTheEpochThroughAnIntegerLadder(): void
     {
+        // The epoch first, then the bisections of an int shrink — so "any date
+        // after 2000 fails" minimises to the boundary instead of stopping at
+        // the original because the one candidate passed.
         $node = Trees::generateWhere(
             new DateTimeArbitrary(),
-            static fn(mixed $v): bool => $v instanceof DateTimeImmutable && $v->getTimestamp() !== 0,
+            static fn(mixed $v): bool => $v instanceof DateTimeImmutable && $v->getTimestamp() > 1_000,
         );
-
         $candidates = Trees::childValues($node);
 
-        Assert::same(count($candidates), 1);
+        Assert::true(count($candidates) > 1);
         Assert::same($candidates[0]->getTimestamp(), 0);
+
+        $minimal = Trees::descendWhile(
+            $node,
+            static fn(mixed $v): bool => $v instanceof DateTimeImmutable && $v >= new DateTimeImmutable('2000-01-01T00:00:00Z'),
+        );
+
+        Assert::same($minimal->value->format('Y-m-d\TH:i:s.uP'), '2000-01-01T00:00:00.000000+00:00');
     }
 
     public function shrinkClampsTheEpochIntoTheRange(): void
@@ -98,16 +107,59 @@ final class DateTimeArbitraryTest
             static fn(mixed $v): bool => $v instanceof DateTimeImmutable && $v->getTimestamp() !== 0,
         );
 
+        $epoch = Trees::childValues($node)[0];
+        Assert::same($epoch->getTimestamp(), 0);
+
         foreach ($node->shrinks() as $child) {
-            Assert::same(Trees::childValues($child), []);
+            if ($child->value->getTimestamp() === 0) {
+                Assert::same(Trees::childValues($child), []);
+            }
+        }
+    }
+
+    public function boundsKeepTheirMicroseconds(): void
+    {
+        // min = 12:00:00.5 must never generate 12:00:00.0, and .999999 is a
+        // value like any other.
+        $min = new DateTimeImmutable('2024-05-01T12:00:00.500000Z');
+        $max = new DateTimeImmutable('2024-05-01T12:00:00.999999Z');
+        $arbitrary = new DateTimeArbitrary($min, $max);
+        $random = new Random(2);
+        $sawFraction = false;
+
+        for ($i = 0; $i < 300; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::true($value >= $min && $value <= $max);
+            Assert::same($value->getTimezone()->getName(), 'UTC');
+            $sawFraction = $sawFraction || (int) $value->format('u') !== 0;
+        }
+
+        Assert::true($sawFraction);
+    }
+
+    public function aNegativeMomentWithAFractionIsBuiltCorrectly(): void
+    {
+        // intdiv truncates toward zero: -0.5 s is second -1 plus 500000 µs.
+        $min = new DateTimeImmutable('1969-12-31T23:59:59.500000Z');
+        $max = new DateTimeImmutable('1969-12-31T23:59:59.750000Z');
+        $arbitrary = new DateTimeArbitrary($min, $max);
+        $random = new Random(5);
+
+        for ($i = 0; $i < 100; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::true($value >= $min && $value <= $max);
+            Assert::same($value->format('Y-m-d\TH:i:s'), '1969-12-31T23:59:59');
         }
     }
 
     public function defaultRangeDrawIsExactForAGivenSeed(): void
     {
         // Pins the default bounds (epoch .. 2100-01-01) byte-exactly: shifting
-        // either default by one changes the uniform draw for this seed.
-        Assert::same((new DateTimeArbitrary())->generate(new Random(1))->value->getTimestamp(), 1_791_095_845);
+        // either default by one microsecond changes the draw for this seed.
+        Assert::same((new DateTimeArbitrary())->generate(new Random(1))->value->format('U.u'), '4102444800.000000');
+        Assert::same((new DateTimeArbitrary())->generate(new Random(3))->value->format('U.u'), (new DateTimeArbitrary())->generate(new Random(3))->value->format('U.u'));
     }
 
     public function acceptsADegenerateRange(): void

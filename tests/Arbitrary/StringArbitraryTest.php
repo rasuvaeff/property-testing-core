@@ -247,32 +247,58 @@ final class StringArbitraryTest
 
     public function unicodeGenerationIsCodepointExactForAFixedSeed(): void
     {
-        // Pins the exact mapping of the codepoint draw int(1, 0x10FFFF):
-        // shifting the lower bound to 0 or 2 relabels every accepted draw, so
-        // every generated character moves.
+        // Pins the category roll and every range bound: a shifted weight or a
+        // moved bound relabels the draws and every generated character moves.
         $value = (new StringArbitrary(5, 5, unicode: true))->generate(new Random(1))->value;
 
-        Assert::same($value, "\u{38FF0}\u{F3A65}\u{12254}\u{77F00}\u{FC577}");
+        Assert::same($value, "\u{F3A65}\u{77F00}I[d");
     }
 
-    public function unicodeRedrawsBothSurrogateRangeEndpoints(): void
+    public function unicodeNeverProducesASurrogateOrAnUnencodableCharacter(): void
     {
-        // Found by replaying the Randomizer: seed 1035942's first codepoint
-        // draw is exactly U+D800 and seed 360281's is exactly U+DFFF. Both
-        // surrogate endpoints must be rejected and redrawn — accepting either
-        // makes mb_chr() fail and collapses the character to ''.
-        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(1035942))->value, "\u{198D9}");
-        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(360281))->value, "\u{2F6C9}");
+        // The BMP and full-range branches redraw surrogates, which mb_chr()
+        // cannot encode and which would collapse the character to ''.
+        $arbitrary = new StringArbitrary(1, 1, unicode: true);
+        $random = new Random(9);
+
+        for ($i = 0; $i < 5_000; ++$i) {
+            $char = $arbitrary->generate($random)->value;
+
+            Assert::true($char !== '' && mb_check_encoding($char, 'UTF-8'));
+            $codepoint = mb_ord($char, 'UTF-8');
+            Assert::true($codepoint >= 1 && $codepoint <= 0x10FFFF);
+            Assert::false($codepoint >= 0xD800 && $codepoint <= 0xDFFF);
+        }
     }
 
-    public function unicodeUpperBoundIsExactlyU10FFFF(): void
+    public function unicodeDrawsAreReadableAndAdversarialAtOnce(): void
     {
-        // Seed 2037009 draws exactly U+10FFFF, which must be accepted — a max
-        // one lower would reject and redraw it. Seed 2629515 is where a max of
-        // 0x110000 would accept the unencodable codepoint 0x110000 (mb_chr()
-        // fails, yielding ''); the real bound redraws to U+0960 instead.
-        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(2037009))->value, "\u{10FFFF}");
-        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(2629515))->value, "\u{0960}");
+        // Half ASCII so the strings stay readable; troublemakers, Latin,
+        // the rest of the BMP and the astral planes all present — the
+        // characters parsers trip over are drawn, not hoped for.
+        $arbitrary = new StringArbitrary(1, 1, unicode: true);
+        $random = new Random(7);
+        $ascii = 0;
+        $latin = 0;
+        $bmp = 0;
+        $astral = 0;
+        $seen = [];
+
+        for ($i = 0; $i < 3_000; ++$i) {
+            $codepoint = mb_ord($arbitrary->generate($random)->value, 'UTF-8');
+            $seen[$codepoint] = true;
+            $ascii += $codepoint < 0x80 ? 1 : 0;
+            $latin += $codepoint >= 0xA1 && $codepoint <= 0x24F ? 1 : 0;
+            $bmp += $codepoint >= 0x250 && $codepoint <= 0xFFFF ? 1 : 0;
+            $astral += $codepoint > 0xFFFF ? 1 : 0;
+        }
+
+        Assert::true($ascii > 1_200 && $ascii < 1_900);
+        Assert::true($latin > 150 && $bmp > 200 && $astral > 400);
+
+        foreach ([0x22, 0x27, 0x5C, 0x200D, 0x202E, 0xFEFF, 0x1F600] as $troublemaker) {
+            Assert::true(isset($seen[$troublemaker]));
+        }
     }
 
     #[ExpectException(\InvalidArgumentException::class)]

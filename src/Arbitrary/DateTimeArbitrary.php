@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
 /**
- * Generates UTC {@see DateTimeImmutable} values with a Unix timestamp drawn
- * uniformly from an inclusive range, and shrinks toward the Unix epoch
- * (1970-01-01T00:00:00Z), clamped to the configured range.
+ * Generates UTC {@see DateTimeImmutable} values with microsecond precision,
+ * drawn uniformly from an inclusive range, and shrinks toward the Unix epoch
+ * (1970-01-01T00:00:00Z) through an integer ladder — clamped to the
+ * configured range, the way {@see IntArbitrary} shrinks toward zero.
+ *
+ * The bounds keep their fraction: `min = 12:00:00.5` never generates
+ * `12:00:00.0`, and a value at `.999999` is as likely as one on the second.
  *
  * @implements ArbitraryInterface<DateTimeImmutable>
  * @api
@@ -21,33 +26,53 @@ final readonly class DateTimeArbitrary implements ArbitraryInterface
 {
     private const int DEFAULT_MAX_TIMESTAMP = 4_102_444_800; // 2100-01-01T00:00:00Z
 
-    private int $minTimestamp;
+    private const int MICROSECONDS = 1_000_000;
 
-    private int $maxTimestamp;
+    private IntArbitrary $microseconds;
 
     public function __construct(?DateTimeImmutable $min = null, ?DateTimeImmutable $max = null)
     {
-        $this->minTimestamp = $min?->getTimestamp() ?? 0;
-        $this->maxTimestamp = $max?->getTimestamp() ?? self::DEFAULT_MAX_TIMESTAMP;
+        $minMicro = $min instanceof DateTimeImmutable ? self::toMicroseconds($min) : 0;
+        $maxMicro = $max instanceof DateTimeImmutable ? self::toMicroseconds($max) : self::DEFAULT_MAX_TIMESTAMP * self::MICROSECONDS;
 
-        if ($this->minTimestamp > $this->maxTimestamp) {
+        if ($minMicro > $maxMicro) {
             throw new \InvalidArgumentException('Min must be less than or equal to max');
         }
+
+        $this->microseconds = new IntArbitrary($minMicro, $maxMicro);
     }
 
     #[\Override]
     public function generate(Random $random): Shrinkable
     {
-        $timestamp = $random->int($this->minTimestamp, $this->maxTimestamp);
+        return $this->microseconds->generate($random)->map(self::fromMicroseconds(...));
+    }
 
-        return Shrinkable::of(new DateTimeImmutable('@' . $timestamp), function () use ($timestamp): \Generator {
-            // Shrink toward the epoch, clamped into the configured range (mirrors
-            // IntArbitrary/FloatArbitrary: the target is the nearest in-range bound).
-            $target = max($this->minTimestamp, min($this->maxTimestamp, 0));
+    private static function toMicroseconds(DateTimeImmutable $moment): int
+    {
+        return $moment->getTimestamp() * self::MICROSECONDS + (int) $moment->format('u');
+    }
 
-            if ($timestamp !== $target) {
-                yield Shrinkable::leaf(new DateTimeImmutable('@' . $target));
-            }
-        });
+    private static function fromMicroseconds(int $microseconds): DateTimeImmutable
+    {
+        $seconds = intdiv($microseconds, self::MICROSECONDS);
+        $fraction = $microseconds - $seconds * self::MICROSECONDS;
+
+        // intdiv truncates toward zero; a negative moment with a fraction sits
+        // in the second before its truncated quotient.
+        if ($fraction < 0) {
+            --$seconds;
+            $fraction += self::MICROSECONDS;
+        }
+
+        // A `U` format yields the +00:00 offset zone; the named UTC zone is
+        // what the pre-microsecond arbitrary produced and what callers compare.
+        $moment = DateTimeImmutable::createFromFormat('U.u', sprintf('%d.%06d', $seconds, $fraction));
+
+        if (!$moment instanceof DateTimeImmutable) {
+            throw new \LogicException(sprintf('Could not build a DateTimeImmutable from %d microseconds', $microseconds));
+        }
+
+        return $moment->setTimezone(new DateTimeZone('UTC'));
     }
 }

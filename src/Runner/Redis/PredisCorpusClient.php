@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Runner\Redis;
 
 use Predis\ClientInterface;
+use Predis\Response\ServerException;
 
 /**
  * {@see CorpusClient} over predis.
@@ -37,10 +38,21 @@ final readonly class PredisCorpusClient implements CorpusClient
         // createCommand/executeCommand are real ClientInterface methods; the
         // magic get()/eval() @method annotations are not resolvable by psalm
         // across every supported predis release.
-        /** @var mixed $written */
-        $written = $this->client->executeCommand(
-            $this->client->createCommand('EVAL', [CorpusScript::CAS, 1, $key, $expected ?? '', $document ?? '']),
-        );
+        try {
+            /** @var mixed $written */
+            $written = $this->client->executeCommand(
+                $this->client->createCommand('EVALSHA', [CorpusScript::SHA, 1, $key, $expected ?? '', $document ?? '']),
+            );
+        } catch (ServerException $refusal) {
+            if (!str_contains($refusal->getMessage(), 'NOSCRIPT')) {
+                throw $refusal;
+            }
+
+            /** @var mixed $written */
+            $written = $this->client->executeCommand(
+                $this->client->createCommand('EVAL', [CorpusScript::CAS, 1, $key, $expected ?? '', $document ?? '']),
+            );
+        }
 
         return (int) $written === 1;
     }

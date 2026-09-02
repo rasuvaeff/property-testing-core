@@ -254,6 +254,29 @@ final class StringArbitraryTest
         Assert::same($value, "\u{F3A65}\u{77F00}I[d");
     }
 
+    public function aLongUnicodeStringIsByteExactForAFixedSeed(): void
+    {
+        // 120 characters visit every branch of the category roll several
+        // times: any weight or bound moved by one changes some character.
+        $value = (new StringArbitrary(120, 120, unicode: true))->generate(new Random(2024))->value;
+
+        Assert::same(
+            bin2hex($value),
+            '514b2f78f3af859a26f0a3adbef2bfab8821635df281a9b2265e61f289adbbe783a6c3b56ccc81e8a086e3ad957fe8ab863d2cf190b786c8b8c98f2ef39487963372c59220e1b1a776e9889b36c8b8e99f985b242827f3908392f38cafbd6c736369e2bc82432c3773f09f9880e2808b5354eb8abb393c7556c3a40d315178f485b2bf222e316d68c6baf1a18690c6aae280ae43c598c39b2073223e7e5ae5afa4e8a5afc48c3e7368c68be78cb6637cf3aaa2947e79e59cb17a0953e4b684c5a6f1bab18ec7b631e3bd98f0aba3967e27c3bcf48396a3f298a6ba27f3b186a5',
+        );
+    }
+
+    public function theBmpBranchRedrawsBothSurrogateEndpoints(): void
+    {
+        // Found by replaying the Randomizer (length draw, category roll, then
+        // the codepoint): seed 81904 rolls the BMP branch and draws exactly
+        // U+DFFF first; seed 946435 draws exactly U+D800. Both must be redrawn
+        // — accepting either makes mb_chr() fail and collapses the character
+        // to ''.
+        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(81904))->value, "\u{F5CD}");
+        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(946435))->value, "\u{2B35}");
+    }
+
     public function unicodeNeverProducesASurrogateOrAnUnencodableCharacter(): void
     {
         // The BMP and full-range branches redraw surrogates, which mb_chr()

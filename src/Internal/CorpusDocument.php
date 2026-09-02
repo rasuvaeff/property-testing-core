@@ -100,12 +100,8 @@ final class CorpusDocument
      */
     public static function isForeignFormat(string $content, int $format): bool
     {
-        try {
-            /** @var mixed $document */
-            $document = json_decode($content, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return false;
-        }
+        /** @var mixed $document */
+        $document = json_decode($content, associative: true);
 
         return is_array($document) && array_key_exists('format', $document) && $document['format'] !== $format;
     }

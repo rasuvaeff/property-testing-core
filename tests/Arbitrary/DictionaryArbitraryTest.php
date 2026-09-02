@@ -92,7 +92,7 @@ final class DictionaryArbitraryTest
         for ($i = 0; $i < 100; ++$i) {
             foreach (array_keys($arbitrary->generate($random)->value) as $key) {
                 Assert::true(is_string($key));
-                Assert::true(in_array($key, ['a', 'b', '007', '1.5'], true));
+                Assert::true(in_array($key, ['a', 'b', '007', '1.5'], strict: true));
             }
         }
     }

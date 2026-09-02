@@ -38,13 +38,11 @@ final readonly class DateTimeArbitrary implements ArbitraryInterface
      */
     public function __construct(?DateTimeImmutable $min = null, ?DateTimeImmutable $max = null)
     {
-        $minMicro = $min instanceof DateTimeImmutable ? self::toMicroseconds($min) : 0;
-        $maxMicro = $max instanceof DateTimeImmutable ? self::toMicroseconds($max) : self::DEFAULT_MAX_TIMESTAMP * self::MICROSECONDS;
+        $minMicro = $min instanceof DateTimeImmutable ? $this->toMicroseconds($min) : 0;
+        $maxMicro = $max instanceof DateTimeImmutable ? $this->toMicroseconds($max) : self::DEFAULT_MAX_TIMESTAMP * self::MICROSECONDS;
 
-        if ($minMicro > $maxMicro) {
-            throw new \InvalidArgumentException('Min must be less than or equal to max');
-        }
-
+        // IntArbitrary refuses an inverted range with the message this class
+        // always used; one check, not two.
         $this->microseconds = new IntArbitrary($minMicro, $maxMicro);
     }
 
@@ -55,15 +53,15 @@ final readonly class DateTimeArbitrary implements ArbitraryInterface
     #[\Override]
     public function generate(Random $random): Shrinkable
     {
-        return $this->microseconds->generate($random)->map(self::fromMicroseconds(...));
+        return $this->microseconds->generate($random)->map($this->fromMicroseconds(...));
     }
 
-    private static function toMicroseconds(DateTimeImmutable $moment): int
+    private function toMicroseconds(DateTimeImmutable $moment): int
     {
         return $moment->getTimestamp() * self::MICROSECONDS + (int) $moment->format('u');
     }
 
-    private static function fromMicroseconds(int $microseconds): DateTimeImmutable
+    private function fromMicroseconds(int $microseconds): DateTimeImmutable
     {
         $seconds = intdiv($microseconds, self::MICROSECONDS);
         $fraction = $microseconds - $seconds * self::MICROSECONDS;

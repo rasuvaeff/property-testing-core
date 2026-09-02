@@ -362,6 +362,21 @@ final class PropertyRunnerLifecycleTest
         Assert::same($corpus->pruned, []);
     }
 
+    public function everyPassingEntryIsPrunedNotOnlyTheFirst(): void
+    {
+        $corpus = new RecordingCorpus([CorpusEntry::values(['value' => 1], seed: 3), CorpusEntry::values(['value' => 2], seed: 4)]);
+
+        $result = (new PropertyRunner())->run(
+            $this->definition(runs: 5),
+            new CallableTrialExecutor(static function (int $value): void {}),
+            [],
+            $corpus,
+        );
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same(count($corpus->pruned), 2);
+    }
+
     public function aCorpusThatThrowsIsReportedAndDroppedNotTheProperty(): void
     {
         // The corpus is memory, not a verdict: a backend that is down must not

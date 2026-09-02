@@ -117,6 +117,43 @@ final class DateTimeArbitraryTest
         }
     }
 
+    public function theDefaultRangeStartsExactlyAtTheEpoch(): void
+    {
+        // Shrinking a default-range moment all the way down lands on
+        // 0.000000: a default minimum one microsecond off would show here.
+        $node = Trees::generateWhere(
+            new DateTimeArbitrary(),
+            static fn(mixed $v): bool => $v instanceof DateTimeImmutable && $v->getTimestamp() > 1_000,
+        );
+
+        Assert::same(Trees::descendWhile($node, static fn(mixed $v): bool => true)->value->format('U.u'), '0.000000');
+    }
+
+    public function theDefaultRangeNeverProducesAMomentBeforeTheEpoch(): void
+    {
+        // The boundary bias picks the minimum itself now and then: a default
+        // minimum one microsecond below the epoch would surface as a negative
+        // moment within a few hundred draws.
+        $arbitrary = new DateTimeArbitrary();
+        $random = new Random(13);
+
+        for ($i = 0; $i < 500; ++$i) {
+            Assert::true($arbitrary->generate($random)->value->format('U.u') >= '0.000000');
+            Assert::true($arbitrary->generate($random)->value->getTimestamp() >= 0);
+        }
+    }
+
+    public function anInvertedRangeIsRefused(): void
+    {
+        try {
+            new DateTimeArbitrary(new DateTimeImmutable('2024-01-01T00:00:00.000001Z'), new DateTimeImmutable('2024-01-01T00:00:00.000000Z'));
+
+            Assert::fail('expected the inverted range to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Min must be less than or equal to max');
+        }
+    }
+
     public function boundsKeepTheirMicroseconds(): void
     {
         // min = 12:00:00.5 must never generate 12:00:00.0, and .999999 is a

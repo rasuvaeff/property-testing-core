@@ -282,11 +282,7 @@ final readonly class FilesystemCorpus implements Corpus
      */
     private function reclaimOrphan(string $tmp): bool
     {
-        if (is_link($tmp) || !is_file($tmp)) {
-            return false;
-        }
-
-        return @unlink($tmp);
+        return !is_link($tmp) && is_file($tmp) && @unlink($tmp);
     }
 
     /**

@@ -115,13 +115,15 @@ final readonly class PropertyRunner
         // rest of this run: the corpus is memory, not a verdict, and its
         // infrastructure failing must not fail — or abort — the property.
         if ($corpus instanceof Corpus && $property->replayRegressions && $config->runs(Phase::Corpus)) {
-            $recalled = $this->corpusCall($listeners, $property->id, 'recall', static fn(): array => $corpus->recall($property->id, $property->parameterNames));
-
-            if ($recalled === null) {
+            try {
+                $recalled = $corpus->recall($property->id, $property->parameterNames);
+            } catch (\Throwable $failure) {
+                $this->emit($listeners, new CorpusFailed($property->id, 'recall', $failure));
+                $recalled = [];
                 $corpus = null;
             }
 
-            foreach ($recalled ?? [] as $entry) {
+            foreach ($recalled as $entry) {
                 if ($entry->isValues()) {
                     $this->emit($listeners, new CorpusReplayed($property->id, isValues: true, arguments: $entry->arguments, seed: $entry->seed));
                     $replay = $this->replayRegression($property, $executor, $entry->arguments, $entry->seed);
@@ -158,11 +160,9 @@ final readonly class PropertyRunner
                     }
                 }
 
-                if ($corpus instanceof Corpus && $this->corpusCall($listeners, $property->id, 'prune', static function () use ($corpus, $property, $entry): bool {
+                if ($corpus instanceof Corpus && !$this->corpusCall($listeners, $property->id, 'prune', static function () use ($corpus, $property, $entry): void {
                     $corpus->prune($property->id, $entry);
-
-                    return true;
-                }) === null) {
+                })) {
                     $corpus = null;
                 }
 
@@ -193,11 +193,9 @@ final readonly class PropertyRunner
         if ($corpus instanceof Corpus && $result instanceof Falsified) {
             $counterExample = $result->counterExample();
 
-            if ($this->corpusCall($listeners, $property->id, 'remember', static function () use ($corpus, $property, $counterExample): bool {
+            if ($this->corpusCall($listeners, $property->id, 'remember', static function () use ($corpus, $property, $counterExample): void {
                 $corpus->remember($property->id, $counterExample, $property->parameterNames);
-
-                return true;
-            }) !== null) {
+            })) {
                 $this->emit($listeners, new CorpusStored($property->id, $counterExample));
             }
         }
@@ -673,25 +671,25 @@ final readonly class PropertyRunner
     }
 
     /**
-     * One corpus operation, or null when it threw — announced as a
-     * {@see CorpusFailed} so the failure is visible without being the
-     * property's. The caller drops the corpus for the rest of the run.
+     * Whether one corpus operation completed. When it threw, the failure is
+     * announced as a {@see CorpusFailed} — visible without being the
+     * property's — and the caller drops the corpus for the rest of the run.
      *
-     * @template T
      * @param list<PropertyListener> $listeners
-     * @param 'recall'|'remember'|'prune' $operation
-     * @param \Closure(): T $call
-     * @return ?T
+     * @param 'remember'|'prune' $operation
+     * @param \Closure(): void $call
      */
-    private function corpusCall(array $listeners, string $propertyId, string $operation, \Closure $call): mixed
+    private function corpusCall(array $listeners, string $propertyId, string $operation, \Closure $call): bool
     {
         try {
-            return $call();
+            $call();
         } catch (\Throwable $failure) {
             $this->emit($listeners, new CorpusFailed($propertyId, $operation, $failure));
 
-            return null;
+            return false;
         }
+
+        return true;
     }
 
     /**

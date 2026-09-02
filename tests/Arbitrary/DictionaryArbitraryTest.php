@@ -82,18 +82,21 @@ final class DictionaryArbitraryTest
         Assert::true($sawEmpty);
     }
 
-    public function shrinkTriesEmptyMapFirstThenHalvesPreservingKeys(): void
+    public function shrinkRemovesBlocksOfEntriesLongestFirstPreservingKeys(): void
     {
         $node = Trees::generateWhere(
             new DictionaryArbitrary(new StringArbitrary(5, 5), new IntArbitrary(0, 10), 0, 8),
             static fn(mixed $v): bool => is_array($v) && count($v) === 4,
         );
         $value = $node->value;
-        $candidates = Trees::childValues($node);
+        $keys = array_keys($value);
+        $without = static fn(int ...$drop): array => array_diff_key($value, array_flip(array_map(static fn(int $i): string|int => $keys[$i], $drop)));
 
-        Assert::same($candidates[0], []);
-        Assert::same($candidates[1], array_slice($value, 0, 2, preserve_keys: true));
-        Assert::same($candidates[2], array_slice($value, 0, 1, preserve_keys: true));
+        Assert::same(array_slice(Trees::childValues($node), 0, 7), [
+            [],
+            $without(0, 1), $without(2, 3),
+            $without(0), $without(1), $without(2), $without(3),
+        ]);
     }
 
     public function shrinkYieldsTheEmptyMapExactlyOnce(): void
@@ -143,14 +146,16 @@ final class DictionaryArbitraryTest
 
     public function shrinkKeepsTheMinimumSizeCandidate(): void
     {
-        // With minSize 1 the size-floor slice (one entry) must be produced.
+        // With minSize 1 the size floor (one entry) is reachable by descent,
+        // and the descent never goes below it.
         $node = Trees::generateWhere(
             new DictionaryArbitrary(new StringArbitrary(5, 5), new IntArbitrary(), 1, 8),
             static fn(mixed $v): bool => is_array($v) && count($v) === 4,
         );
-        $value = $node->value;
 
-        Assert::true(in_array(array_slice($value, 0, 1, preserve_keys: true), Trees::childValues($node), strict: true));
+        $floor = Trees::descendWhile($node, static fn(mixed $v): bool => is_array($v) && count($v) >= 1)->value;
+
+        Assert::true(is_array($floor) && count($floor) === 1);
     }
 
     public function shrinkNeverEscapesBelowMinimumSize(): void

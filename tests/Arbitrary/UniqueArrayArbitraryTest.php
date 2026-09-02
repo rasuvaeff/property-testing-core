@@ -87,18 +87,19 @@ final class UniqueArrayArbitraryTest
         }
     }
 
-    public function shrinkTriesEmptyArrayFirstThenExactHalfPrefixes(): void
+    public function shrinkRemovesBlocksLongestFirstFromEveryOffset(): void
     {
         $node = Trees::generateWhere(
             new UniqueArrayArbitrary(new IntArbitrary(0, 1000), 0, 8),
             static fn(mixed $v): bool => is_array($v) && count($v) === 4,
         );
-        $value = $node->value;
-        $candidates = Trees::childValues($node);
+        [$a, $b, $c, $d] = $node->value;
 
-        Assert::same($candidates[0], []);
-        Assert::same($candidates[1], array_slice($value, 0, 2));
-        Assert::same($candidates[2], array_slice($value, 0, 1));
+        Assert::same(array_slice(Trees::childValues($node), 0, 7), [
+            [],
+            [$c, $d], [$a, $b],
+            [$b, $c, $d], [$a, $c, $d], [$a, $b, $d], [$a, $b, $c],
+        ]);
     }
 
     public function everyShrinkCandidateStaysPairwiseDistinct(): void
@@ -178,13 +179,16 @@ final class UniqueArrayArbitraryTest
 
     public function shrinkKeepsTheMinimumSizeCandidate(): void
     {
-        // With minSize 1 the size-floor slice (one element) must be produced.
+        // With minSize 1 the size floor (one element) is reachable by descent,
+        // and the descent never goes below it.
         $node = Trees::generateWhere(
             new UniqueArrayArbitrary(new IntArbitrary(0, 1000), 1, 8),
             static fn(mixed $v): bool => is_array($v) && count($v) === 4,
         );
 
-        Assert::true(in_array(array_slice($node->value, 0, 1), Trees::childValues($node), strict: true));
+        $floor = Trees::descendWhile($node, static fn(mixed $v): bool => is_array($v) && count($v) >= 1)->value;
+
+        Assert::true(is_array($floor) && count($floor) === 1);
     }
 
     public function shrinkNeverEscapesBelowMinimumSize(): void

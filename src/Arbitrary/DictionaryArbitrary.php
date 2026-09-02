@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -124,20 +125,15 @@ final readonly class DictionaryArbitrary implements ArbitraryInterface
                 return;
             }
 
-            // 1. Size first: empty map, then progressively smaller halves, preserving
-            //    keys so the candidate stays a valid map. Never shrink below minSize,
-            //    so the candidate stays within the generated domain.
-            if ($this->minSize === 0) {
-                yield $this->tree([]);
-            }
-
-            $size = count($entries);
-            while ($size > 1) {
-                $size = intdiv($size, 2);
-
-                if ($size >= $this->minSize) {
-                    yield $this->tree(array_slice($entries, 0, $size, preserve_keys: true));
-                }
+            // 1. Size first: remove blocks of entries (all, halves, …, single
+            //    entries) from every position, preserving keys so the candidate
+            //    stays a valid map. Never shrink below minSize, so the candidate
+            //    stays within the generated domain.
+            foreach (BlockRemovals::of(count($entries), $this->minSize) as [$offset, $length]) {
+                yield $this->tree(
+                    array_slice($entries, 0, $offset, preserve_keys: true)
+                    + array_slice($entries, $offset + $length, preserve_keys: true),
+                );
             }
 
             // 2. Then values: shrink one value at a time through its own tree,

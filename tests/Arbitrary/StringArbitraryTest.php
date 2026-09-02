@@ -28,19 +28,40 @@ final class StringArbitraryTest
         }
     }
 
-    public function shrinkTriesEmptyStringFirstThenExactHalfPrefixes(): void
+    public function shrinkRemovesBlocksOfCharactersLongestFirstFromEveryOffset(): void
     {
+        // Whole string, aligned halves, quarters, pairs, single characters:
+        // 1 + 2 + 4 + 8 = 15 length candidates for eight characters, each
+        // strictly shorter, before any character is touched.
         $node = Trees::generateWhere(
             new StringArbitrary(0, 12),
             static fn(mixed $v): bool => is_string($v) && strlen($v) === 8,
         );
-        $value = $node->value;
+        $value = (string) $node->value;
         $candidates = Trees::childValues($node);
 
         Assert::same($candidates[0], '');
-        Assert::same($candidates[1], substr((string) $value, 0, 4));
-        Assert::same($candidates[2], substr((string) $value, 0, 2));
-        Assert::same($candidates[3], substr((string) $value, 0, 1));
+        Assert::same($candidates[1], substr($value, 4));
+        Assert::same($candidates[2], substr($value, 0, 4));
+        Assert::same($candidates[3], substr($value, 2));
+        Assert::same($candidates[14], substr($value, 0, 7));
+
+        foreach (array_slice($candidates, 0, 15) as $candidate) {
+            Assert::true(is_string($candidate) && strlen($candidate) < 8);
+        }
+    }
+
+    public function greedyDescentIsolatesAFailingCharacter(): void
+    {
+        // "No x in the string", failing on "..x": prefix halving keeps the x;
+        // single removal reaches "x".
+        $node = Trees::generateWhere(
+            new StringArbitrary(0, 8),
+            static fn(mixed $v): bool => is_string($v) && strlen($v) >= 3 && str_ends_with($v, 'x') && substr_count($v, 'x') === 1,
+        );
+        $fails = static fn(mixed $v): bool => is_string($v) && str_contains($v, 'x');
+
+        Assert::same(Trees::descendWhile($node, $fails)->value, 'x');
     }
 
     public function shrinkReducesCharactersTowardLowercaseA(): void
@@ -108,20 +129,26 @@ final class StringArbitraryTest
 
     public function unicodeLengthPhaseHalvesPerCharacterNotPerByte(): void
     {
-        // With multibyte codepoints the half-length prefix must be taken with
-        // mb_substr: a byte-based slice would cut codepoints in half.
+        // With multibyte codepoints the blocks must be removed per character:
+        // a byte-based slice would cut codepoints in half.
         $node = Trees::generateWhere(
             new StringArbitrary(0, 6, unicode: true),
             static fn(mixed $v): bool => is_string($v)
                 && mb_strlen($v, 'UTF-8') === 4
                 && strlen($v) > 4,
         );
-        $value = $node->value;
+        $value = (string) $node->value;
         $candidates = Trees::childValues($node);
 
         Assert::same($candidates[0], '');
-        Assert::same($candidates[1], mb_substr((string) $value, 0, 2, 'UTF-8'));
-        Assert::same($candidates[2], mb_substr((string) $value, 0, 1, 'UTF-8'));
+        Assert::same($candidates[1], mb_substr($value, 2, null, 'UTF-8'));
+        Assert::same($candidates[2], mb_substr($value, 0, 2, 'UTF-8'));
+        Assert::same($candidates[3], mb_substr($value, 1, null, 'UTF-8'));
+        Assert::same($candidates[6], mb_substr($value, 0, 3, 'UTF-8'));
+
+        foreach ($candidates as $candidate) {
+            Assert::same(mb_check_encoding((string) $candidate, 'UTF-8'), expected: true);
+        }
     }
 
     public function shrinkNeverEscapesBelowMinimumLength(): void
@@ -139,13 +166,16 @@ final class StringArbitraryTest
 
     public function shrinkKeepsTheMinimumLengthCandidate(): void
     {
-        // With minLength 2 the length-floor prefix (exactly 2 chars) is produced.
+        // With minLength 2 the length floor (exactly 2 chars) is reachable by
+        // descent, and the descent never goes below it.
         $node = Trees::generateWhere(
             new StringArbitrary(2, 100),
             static fn(mixed $v): bool => is_string($v) && strlen($v) === 8,
         );
 
-        Assert::true(in_array(substr((string) $node->value, 0, 2), Trees::childValues($node), strict: true));
+        $floor = Trees::descendWhile($node, static fn(mixed $v): bool => is_string($v) && strlen($v) >= 2)->value;
+
+        Assert::true(is_string($floor) && strlen($floor) === 2);
     }
 
     public function shrinkOfEmptyStringYieldsNothing(): void

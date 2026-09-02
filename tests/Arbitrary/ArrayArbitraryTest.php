@@ -48,18 +48,34 @@ final class ArrayArbitraryTest
         Assert::true($sawEmpty);
     }
 
-    public function shrinkTriesEmptyArrayFirstThenExactHalfPrefixes(): void
+    public function shrinkRemovesBlocksLongestFirstFromEveryOffset(): void
     {
+        // The whole list, then aligned halves, then single elements — the
+        // length phase is exactly these seven for four elements, in this order.
         $node = Trees::generateWhere(
             new ArrayArbitrary(new IntArbitrary(0, 10), 0, 8),
             static fn(mixed $v): bool => is_array($v) && count($v) === 4,
         );
-        $value = $node->value;
-        $candidates = Trees::childValues($node);
+        [$a, $b, $c, $d] = $node->value;
 
-        Assert::same($candidates[0], []);
-        Assert::same($candidates[1], array_slice($value, 0, 2));
-        Assert::same($candidates[2], array_slice($value, 0, 1));
+        Assert::same(array_slice(Trees::childValues($node), 0, 7), [
+            [],
+            [$c, $d], [$a, $b],
+            [$b, $c, $d], [$a, $c, $d], [$a, $b, $d], [$a, $b, $c],
+        ]);
+    }
+
+    public function greedyDescentIsolatesAFailingElement(): void
+    {
+        // "No 42 in the list", failing on [.., .., 42]: prefix halving alone
+        // keeps 42 in every shorter candidate; single removal reaches [42].
+        $node = Trees::generateWhere(
+            new ArrayArbitrary(new IntArbitrary(0, 50), 0, 8),
+            static fn(mixed $v): bool => is_array($v) && count($v) >= 3 && in_array(42, $v, true) && $v[count($v) - 1] === 42,
+        );
+        $fails = static fn(mixed $v): bool => is_array($v) && in_array(42, $v, true);
+
+        Assert::same(Trees::descendWhile($node, $fails)->value, [42]);
     }
 
     public function shrinkElementPhaseShrinksEachPositionInPlace(): void
@@ -103,15 +119,18 @@ final class ArrayArbitraryTest
         }
     }
 
-    public function nonEmptyShrinkKeepsTheMinimumSizeCandidate(): void
+    public function nonEmptyShrinkReachesTheMinimumSizeCandidate(): void
     {
-        // The length-floor candidate (size === minSize) must be produced.
+        // The length floor (size === minSize) is reachable by descent: from
+        // four elements, blocks of two and one leave two, and one more
+        // removal lands on the floor.
         $node = Trees::generateWhere(
             new ArrayArbitrary(new IntArbitrary(7, 7), 1, 8),
             static fn(mixed $v): bool => is_array($v) && count($v) === 4,
         );
 
-        Assert::true(in_array([7], Trees::childValues($node), strict: true));
+        Assert::true(in_array([7], Trees::valuesToDepth($node, 2), strict: true));
+        Assert::same(Trees::descendWhile($node, static fn(mixed $v): bool => is_array($v) && $v !== [])->value, [7]);
     }
 
     public function shrinkOfEmptyArrayYieldsNothing(): void

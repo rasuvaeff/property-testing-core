@@ -39,6 +39,16 @@
   upper bound when the span is within a few ulps of `min` (`1e16 .. 1e16 + 2`
   rounded up to `max`), and rejects a `NAN`/`INF` bound instead of generating
   `NAN` forever.
+- Lists, unique lists, maps, strings, charset strings and byte strings now
+  shrink by removing contiguous blocks of elements from every position —
+  the whole sequence, then aligned halves, quarters, …, single elements —
+  before shrinking elements in place, the way QuickCheck's `shrinkList` and
+  Hedgehog do. The previous length phase only halved prefixes, so a failing
+  element in the middle or at the end could never be isolated: `[7, 3, 42]`
+  under "no 42 allowed" stopped at `[0, 0, 42]`, and now reaches `[42]`.
+  Generation is unchanged (same seed, same values); a shrink path recorded
+  against a sequence generator before this release indexes different
+  candidates and is reported as stale by path replay.
 - `Gen::oneOf()` / `OneOfArbitrary` accept a string-keyed variadic (named
   arguments, a spread map) — the values are picked by position instead of
   reading a missing index 0.

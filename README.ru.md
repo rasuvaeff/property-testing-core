@@ -170,12 +170,12 @@ property.
 | `Gen::float()` | `FloatArbitrary`, `[0.0, 1.0)` | к `0.0` |
 | `Gen::floatBetween($min, $max)` | `FloatArbitrary`, `[$min, $max]` | к `0.0`, в пределах диапазона |
 | `Gen::bool()` | `BoolArbitrary`, `true` / `false` | `true` -> `false` |
-| `Gen::string()` | `StringArbitrary`, Unicode, длина 0..100 | к `''`, затем по длине, затем каждый символ к `a` |
+| `Gen::string()` | `StringArbitrary`, Unicode, длина 0..100 | к `''`, затем удалением блоков символов с любой позиции (вплоть до одиночных), затем каждый символ к `a` |
 | `Gen::stringAscii()` | `StringArbitrary`, печатный ASCII, длина 0..100 | к `''`, затем по длине, затем каждый символ к `a` |
 | `Gen::stringOf($min, $max)` | `StringArbitrary`, Unicode, ограниченная длина | к `''`, затем по длине, затем каждый символ к `a` |
 | `Gen::stringFrom($alphabet, $min, $max)` | `CharsetStringArbitrary`, символы из фиксированного алфавита (multibyte OK) | к `''`, затем по длине, затем каждый символ к первому символу алфавита |
 | `Gen::bytes($min, $max)` | `BytesArbitrary`, сырые байтовые строки (байты 0..255) | к `''`, затем по длине, затем каждый байт к `"\x00"` |
-| `Gen::arrayOf($element, $min, $max)` | `ArrayArbitrary`, списки из `$element`, размер 0..100 по умолчанию | к `[]`, затем по длине, затем каждый элемент |
+| `Gen::arrayOf($element, $min, $max)` | `ArrayArbitrary`, списки из `$element`, размер 0..100 по умолчанию | к `[]`, затем удалением блоков элементов с любой позиции (вплоть до одиночных), затем каждый элемент |
 | `Gen::nonEmptyArrayOf($element, $max)` | `ArrayArbitrary`, непустые списки | по длине (не ниже 1), затем каждый элемент |
 | `Gen::uniqueArrayOf($element, $min, $max)` | `UniqueArrayArbitrary`, списки попарно различных элементов | как `arrayOf`, но кандидаты, совпадающие с другим элементом, пропускаются |
 | `Gen::subset($values, $min, $max)` | `SubsetArbitrary`, подмножества фиксированного упорядоченного множества — различные члены `$values` в исходном порядке; дубликаты в источнике отвергаются | сначала размер (к пустому множеству), затем каждый элемент к более ранним позициям источника — минимальное подмножество — короткий префикс |

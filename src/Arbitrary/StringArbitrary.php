@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -66,27 +67,20 @@ final readonly class StringArbitrary implements ArbitraryInterface
                 return;
             }
 
-            // 1. Length first: empty string, then halves of the original. Counted in
-            //    characters (not bytes) so multibyte strings never split mid-codepoint.
-            //    Never shrink below minLength, so the candidate stays in the generated
-            //    domain (e.g. stringOf(5, 10) never shrinks to '').
-            if ($this->minLength === 0) {
-                yield $this->tree('');
-            }
+            // 1. Length first: remove blocks of characters (all, halves, …, single
+            //    characters) from every offset. Counted in characters (not bytes) so
+            //    multibyte strings never split mid-codepoint. Never shrink below
+            //    minLength, so the candidate stays in the generated domain (e.g.
+            //    stringOf(5, 10) never shrinks to '').
+            $chars = mb_str_split($value, 1, 'UTF-8');
 
-            $length = mb_strlen($value, 'UTF-8');
-            while ($length > 1) {
-                $length = intdiv($length, 2);
-
-                if ($length >= $this->minLength) {
-                    yield $this->tree(mb_substr($value, 0, $length, 'UTF-8'));
-                }
+            foreach (BlockRemovals::of(count($chars), $this->minLength) as [$offset, $length]) {
+                yield $this->tree(implode('', [...array_slice($chars, 0, $offset), ...array_slice($chars, $offset + $length)]));
             }
 
             // 2. Then characters: drive each character toward 'a', the canonical
             //    simplest character, one position at a time. Each candidate has one
             //    fewer non-'a' character, so this phase also terminates.
-            $chars = mb_str_split($value, 1, 'UTF-8');
             foreach ($chars as $index => $char) {
                 if ($char === 'a') {
                     continue;

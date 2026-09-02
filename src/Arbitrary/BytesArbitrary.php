@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -47,19 +48,10 @@ final readonly class BytesArbitrary implements ArbitraryInterface
                 return;
             }
 
-            // 1. Length first: empty string, then halves of the original.
-            //    Never shrink below minLength.
-            if ($this->minLength === 0) {
-                yield $this->tree('');
-            }
-
-            $length = strlen($value);
-            while ($length > 1) {
-                $length = intdiv($length, 2);
-
-                if ($length >= $this->minLength) {
-                    yield $this->tree(substr($value, 0, $length));
-                }
+            // 1. Length first: remove blocks of bytes (all, halves, …, single
+            //    bytes) from every offset. Never shrink below minLength.
+            foreach (BlockRemovals::of(strlen($value), $this->minLength) as [$offset, $length]) {
+                yield $this->tree(substr($value, 0, $offset) . substr($value, $offset + $length));
             }
 
             // 2. Then bytes: drive each byte toward "\x00", the canonical

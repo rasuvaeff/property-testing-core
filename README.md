@@ -171,10 +171,10 @@ through their source domain.
 | `Gen::bool()` | `BoolArbitrary`, `true` / `false` | `true` -> `false` |
 | `Gen::string()` | `StringArbitrary`, Unicode, length 0..100 | toward `''`, then by length, then each character toward `a` |
 | `Gen::stringAscii()` | `StringArbitrary`, printable ASCII, length 0..100 | toward `''`, then by length, then each character toward `a` |
-| `Gen::stringOf($min, $max)` | `StringArbitrary`, Unicode, bounded length | toward `''`, then by length, then each character toward `a` |
+| `Gen::stringOf($min, $max)` | `StringArbitrary`, Unicode, bounded length | toward `''`, then by removing blocks of characters from any position (down to single ones), then each character toward `a` |
 | `Gen::stringFrom($alphabet, $min, $max)` | `CharsetStringArbitrary`, characters from a fixed alphabet (multibyte OK) | toward `''`, then by length, then each character toward the first alphabet character |
 | `Gen::bytes($min, $max)` | `BytesArbitrary`, raw byte strings (bytes 0..255) | toward `''`, then by length, then each byte toward `"\x00"` |
-| `Gen::arrayOf($element, $min, $max)` | `ArrayArbitrary`, lists of `$element`, size 0..100 by default | toward `[]`, then by length, then each element |
+| `Gen::arrayOf($element, $min, $max)` | `ArrayArbitrary`, lists of `$element`, size 0..100 by default | toward `[]`, then by removing blocks of elements from any position (down to single ones), then each element |
 | `Gen::nonEmptyArrayOf($element, $max)` | `ArrayArbitrary`, non-empty lists | by length (never below 1), then each element |
 | `Gen::uniqueArrayOf($element, $min, $max)` | `UniqueArrayArbitrary`, lists of pairwise-distinct elements | like `arrayOf`, but element candidates colliding with another element are skipped |
 | `Gen::subset($values, $min, $max)` | `SubsetArbitrary`, subsets of a fixed ordered set — distinct members of `$values` in source order; duplicates in the source are rejected | size first (toward the empty set), then each kept element toward earlier source positions — the minimal subset is a short prefix |

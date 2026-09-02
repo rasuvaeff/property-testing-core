@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-09-02
 
 - The code both adapters carried byte for byte now lives here, so a DSN
   and a `PROPERTY_*` value mean the same thing under Testo and PHPUnit:

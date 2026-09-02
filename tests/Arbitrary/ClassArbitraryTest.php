@@ -179,9 +179,9 @@ final class ClassArbitraryTest
 
     public function classNamesInsideDocblockTypesAreFollowed(): void
     {
-        // `list<NativeTypes>`, `Currency|null`, `'a'|null`, `\DateTimeImmutable`,
-        // `non-empty-list<Currency>`: every class the docblock names resolves
-        // the way the code beneath it would resolve it.
+        // `list<NativeTypes>`, `Currency|null` (on a mixed parameter), `'a'|null`,
+        // `list<\DateTimeImmutable>`, `non-empty-list<Currency>`: every class
+        // the docblock names resolves the way the code beneath it would.
         $random = new Random(5);
         $arbitrary = new ClassArbitrary(DocblockClassTypes::class);
         $sawCurrency = false;
@@ -200,13 +200,18 @@ final class ClassArbitraryTest
                 Assert::instanceOf($item, NativeTypes::class);
             }
 
+            foreach ($value->dates as $date) {
+                Assert::instanceOf($date, \DateTimeImmutable::class);
+            }
+
             foreach ($value->currencies as $currency) {
                 Assert::instanceOf($currency, Currency::class);
             }
 
+            Assert::true($value->currency === null || $value->currency instanceof Currency);
             $sawCurrency = $sawCurrency || $value->currency instanceof Currency;
-            $sawNullCurrency = $sawNullCurrency || $value->currency === null;
-            $sawStatus = $sawStatus || in_array($value->status, ['draft', 'published'], true);
+            $sawNullCurrency = $sawNullCurrency || !$value->currency instanceof Currency;
+            $sawStatus = $sawStatus || in_array($value->status, ['draft', 'published'], strict: true);
             $sawNullStatus = $sawNullStatus || $value->status === null;
         }
 
@@ -222,7 +227,15 @@ final class ClassArbitraryTest
         $value = (new ClassArbitrary(AliasedTypes::class))->generate(new Random(3))->value;
 
         Assert::instanceOf($value, AliasedTypes::class);
-        Assert::instanceOf($value->money, Currency::class);
+        Assert::true(count($value->moneys) >= 1);
+
+        foreach ($value->moneys as $money) {
+            Assert::instanceOf($money, Currency::class);
+        }
+
+        foreach ($value->wrapped as $wrapped) {
+            Assert::instanceOf($wrapped, Nested::class);
+        }
 
         foreach ($value->items as $item) {
             Assert::instanceOf($item, NativeTypes::class);
@@ -312,7 +325,7 @@ final class ClassArbitraryTest
         }
 
         // The candidate high=0 was refused (low > 0); a smaller accepted high follows it.
-        Assert::false(in_array(0, $highs, true));
+        Assert::false(in_array(0, $highs, strict: true));
         Assert::true(min($highs) < $node->value->high);
     }
 

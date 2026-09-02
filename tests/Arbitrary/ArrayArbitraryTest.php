@@ -71,9 +71,9 @@ final class ArrayArbitraryTest
         // keeps 42 in every shorter candidate; single removal reaches [42].
         $node = Trees::generateWhere(
             new ArrayArbitrary(new IntArbitrary(0, 50), 0, 8),
-            static fn(mixed $v): bool => is_array($v) && count($v) >= 3 && in_array(42, $v, true) && $v[count($v) - 1] === 42,
+            static fn(mixed $v): bool => is_array($v) && count($v) >= 3 && in_array(42, $v, strict: true) && $v[count($v) - 1] === 42,
         );
-        $fails = static fn(mixed $v): bool => is_array($v) && in_array(42, $v, true);
+        $fails = static fn(mixed $v): bool => is_array($v) && in_array(42, $v, strict: true);
 
         Assert::same(Trees::descendWhile($node, $fails)->value, [42]);
     }

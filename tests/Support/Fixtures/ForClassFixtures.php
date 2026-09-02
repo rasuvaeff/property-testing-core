@@ -80,14 +80,14 @@ final readonly class DocblockClassTypes
      * @param list<NativeTypes> $items
      * @param Currency|null $currency
      * @param 'draft'|'published'|null $status
-     * @param \DateTimeImmutable $at
+     * @param list<\DateTimeImmutable> $dates
      * @param non-empty-list<Currency> $currencies
      */
     public function __construct(
         public array $items,
-        public ?Currency $currency,
+        public mixed $currency,
         public ?string $status,
-        public \DateTimeImmutable $at,
+        public array $dates,
         public array $currencies,
     ) {}
 }

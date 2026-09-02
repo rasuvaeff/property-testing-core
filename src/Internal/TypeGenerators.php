@@ -56,7 +56,7 @@ final class TypeGenerators
         if (str_starts_with($type, '?')) {
             $inner = self::fromDocblock(substr($type, 1), $forClass, $resolveClass);
 
-            return !$inner instanceof ArbitraryInterface ? null : Gen::nullable($inner);
+            return $inner instanceof ArbitraryInterface ? Gen::nullable($inner) : null;
         }
 
         $simple = self::simple($type);
@@ -173,7 +173,7 @@ final class TypeGenerators
         if (str_ends_with($type, '[]')) {
             $element = self::fromDocblock(substr($type, 0, -2), $forClass, $resolveClass);
 
-            return !$element instanceof ArbitraryInterface ? null : Gen::arrayOf($element, 0, 10);
+            return $element instanceof ArbitraryInterface ? Gen::arrayOf($element, 0, 10) : null;
         }
 
         if (preg_match('/^(non-empty-list|list|non-empty-array|array)<(.+)>\z/', $type, $matches) !== 1) {
@@ -186,7 +186,7 @@ final class TypeGenerators
         if (count($arguments) === 1) {
             $element = self::fromDocblock($arguments[0], $forClass, $resolveClass);
 
-            return !$element instanceof ArbitraryInterface ? null : Gen::arrayOf($element, $minimum, 10);
+            return $element instanceof ArbitraryInterface ? Gen::arrayOf($element, $minimum, 10) : null;
         }
 
         if (count($arguments) !== 2 || str_ends_with($matches[1], 'list')) {

@@ -17,12 +17,12 @@ final readonly class AliasedTypes
 {
     /**
      * @param list<NativeTypes> $items
-     * @param Money $money
-     * @param Wrapped|null $wrapped
+     * @param non-empty-list<Money> $moneys
+     * @param list<Wrapped> $wrapped
      */
     public function __construct(
         public array $items,
-        public Money $money,
-        public ?Wrapped $wrapped,
+        public array $moneys,
+        public array $wrapped,
     ) {}
 }

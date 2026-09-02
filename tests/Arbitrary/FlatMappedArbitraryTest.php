@@ -115,13 +115,13 @@ final class FlatMappedArbitraryTest
 
     public function aSourceCandidateTheDependentSideCannotSatisfyIsSkipped(): void
     {
-        // m < n: shrinking the source n to 0 leaves the filter unsatisfiable,
-        // which exhausts generation. That candidate is no value at all and is
-        // skipped; the remaining source candidates and the dependent ladder
-        // are still offered, and none of them breaks the invariant.
+        // The dependent side is the source value itself, refused at 0: the
+        // source candidate 0 exhausts generation, is no value at all and is
+        // skipped — the source candidates after it (4, 6, 7 for a source of 8)
+        // are still offered, and the constant dependent adds none of its own.
         $arbitrary = new FlatMappedArbitrary(
             new IntArbitrary(0, 10),
-            static fn(int $n): ArbitraryInterface => Gen::filter(new IntArbitrary(0, 10), static fn(int $m): bool => $m < $n),
+            static fn(int $n): ArbitraryInterface => Gen::filter(Gen::constant($n), static fn(int $m): bool => $m >= 1),
         );
 
         $node = null;
@@ -133,20 +133,13 @@ final class FlatMappedArbitraryTest
                 continue;
             }
 
-            if (is_int($generated->value) && $generated->value >= 2) {
+            if ($generated->value === 8) {
                 $node = $generated;
             }
         }
 
         Assert::instanceOf($node, Shrinkable::class);
-
-        $children = Trees::childValues($node);
-
-        Assert::true($children !== []);
-
-        foreach ($children as $child) {
-            Assert::true(is_int($child) && $child < 10);
-        }
+        Assert::same(Trees::childValues($node), [4, 6, 7]);
     }
 
     #[ExpectException(\InvalidArgumentException::class)]

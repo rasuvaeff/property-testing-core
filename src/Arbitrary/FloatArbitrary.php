@@ -72,7 +72,7 @@ final readonly class FloatArbitrary implements ArbitraryInterface
      */
     private function withinRange(float $value): float
     {
-        return $value >= $this->max && $this->min < $this->max ? $this->min : $value;
+        return $value < $this->max ? $value : $this->min;
     }
 
     /** @return Shrinkable<float> */

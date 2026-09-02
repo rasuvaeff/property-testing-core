@@ -141,6 +141,50 @@ final class FloatArbitraryTest
         yield '-INF min' => [-INF, 0.0];
     }
 
+    public function theUpperBoundGuardDoesNotCollapseDrawsOntoMin(): void
+    {
+        // The guard only catches a draw that rounded onto max; a span computed
+        // wrongly (or a value interpolated past max) would send a large share
+        // of draws to min, which the boundary bias alone never does.
+        $arbitrary = new FloatArbitrary(2.0, 6.0);
+        $random = new Random(9);
+        $atMin = 0;
+        $upperHalf = 0;
+
+        for ($i = 0; $i < 1000; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::true($value >= 2.0 && $value < 6.0);
+            $atMin += $value === 2.0 ? 1 : 0;
+            $upperHalf += $value >= 4.0 ? 1 : 0;
+        }
+
+        Assert::true($atMin < 250);
+        Assert::true($upperHalf > 300);
+    }
+
+    public function fullFloatRangeReachesBothSignsWithoutCollapsing(): void
+    {
+        // The endpoint interpolation for an infinite span must actually spread
+        // draws across the range, not resolve to one endpoint or to min.
+        $arbitrary = new FloatArbitrary(-PHP_FLOAT_MAX, PHP_FLOAT_MAX);
+        $random = new Random(11);
+        $positive = 0;
+        $negative = 0;
+        $atMin = 0;
+
+        for ($i = 0; $i < 300; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            $positive += $value > 1.0 ? 1 : 0;
+            $negative += $value < -1.0 ? 1 : 0;
+            $atMin += $value === -PHP_FLOAT_MAX ? 1 : 0;
+        }
+
+        Assert::true($positive > 50 && $negative > 50);
+        Assert::true($atMin < 75);
+    }
+
     public function generateSequenceIsPinnedForAFixedSeed(): void
     {
         // Pins the exact interleaving of the bias draw (int(1, 5) === 1) with

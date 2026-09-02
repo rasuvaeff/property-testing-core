@@ -48,9 +48,14 @@ final class CorpusScript
      * `sha1(CAS)`, what `EVALSHA` addresses the script by once the server has
      * seen it: the script text then travels once per server, not once per
      * write. A server that does not know it answers `NOSCRIPT`, and the
-     * clients fall back to `EVAL` for that call.
+     * clients fall back to `EVAL` for that call. Computed from the constant
+     * rather than written down: a checkout that rewrites line endings would
+     * change the script's bytes, and the digest must be of the bytes sent.
      */
-    public const string SHA = '9e09f173b33c3a42dbc633a126866de36b55e619';
+    public static function sha(): string
+    {
+        return sha1(self::CAS);
+    }
 
     private function __construct()
     {

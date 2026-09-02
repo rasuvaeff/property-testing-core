@@ -34,7 +34,7 @@ final readonly class PhpRedisCorpusClient implements CorpusClient
         $arguments = [$key, $expected ?? '', $document ?? ''];
 
         /** @var mixed $written */
-        $written = $this->client->evalSha(CorpusScript::SHA, $arguments, 1);
+        $written = $this->client->evalSha(CorpusScript::sha(), $arguments, 1);
 
         if ($written === false && str_contains((string) $this->client->getLastError(), 'NOSCRIPT')) {
             $this->client->clearLastError();

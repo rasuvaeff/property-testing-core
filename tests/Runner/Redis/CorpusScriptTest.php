@@ -13,10 +13,12 @@ use Testo\Test;
 #[Covers(CorpusScript::class)]
 final class CorpusScriptTest
 {
-    public function theShaIsTheScriptsSha1(): void
+    public function theShaIsTheScriptsSha1AndIsStable(): void
     {
-        // EVALSHA addresses the script by exactly this digest; a stale one
-        // would fall back to EVAL on every write and never notice.
-        Assert::same(CorpusScript::SHA, sha1(CorpusScript::CAS));
+        // EVALSHA addresses the script by exactly this digest of the bytes
+        // sent — whatever line endings the checkout gave the constant.
+        Assert::same(CorpusScript::sha(), sha1(CorpusScript::CAS));
+        Assert::same(CorpusScript::sha(), CorpusScript::sha());
+        Assert::same(strlen(CorpusScript::sha()), 40);
     }
 }

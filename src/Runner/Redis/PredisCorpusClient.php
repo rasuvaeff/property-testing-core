@@ -45,7 +45,7 @@ final readonly class PredisCorpusClient implements CorpusClient
         try {
             /** @var mixed $written */
             $written = $this->client->executeCommand(
-                $this->client->createCommand('EVALSHA', [CorpusScript::SHA, 1, $key, $expected ?? '', $document ?? '']),
+                $this->client->createCommand('EVALSHA', [CorpusScript::sha(), 1, $key, $expected ?? '', $document ?? '']),
             );
         } catch (ServerException $refusal) {
             if (!str_contains($refusal->getMessage(), 'NOSCRIPT')) {

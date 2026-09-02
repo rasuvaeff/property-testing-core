@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0 — 2026-09-02
+## 0.6.0 — 2026-09-03
 
 - `Gen::string()` / `stringOf()` / `char()` draw characters with a distribution
   that keeps strings readable and adversarial at once — half ASCII printable,

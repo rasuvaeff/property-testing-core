@@ -572,7 +572,10 @@ final class FilesystemCorpusTest
     {
         // Reading it yields nothing (foreign), and writing would replace the
         // other version's memory: that version keeps it, this one goes without.
-        mkdir($this->dir, recursive: true);
+        if (!is_dir($this->dir)) {
+            mkdir($this->dir, recursive: true);
+        }
+
         $foreign = '{"format": 99, "property": "P::p", "entries": [{"kind": "future"}]}';
         file_put_contents($this->file(), $foreign);
 

@@ -256,6 +256,16 @@ jobs:
       - name: Test with coverage
         run: composer test:coverage:ci
 
+      - name: Diagnose the initial run the Infection bridge performs (temporary)
+        run: |
+          set +e
+          php vendor/bin/testo run --type=!bench --teamcity --coverage --coverage-xml=/tmp/diag-coverage --junit=/tmp/diag-junit.xml > /tmp/diag.out 2> /tmp/diag.err
+          echo "exit=$?"
+          echo "--- stdout tail"; tail -c 3000 /tmp/diag.out
+          echo "--- stderr"; head -c 5000 /tmp/diag.err
+          grep -c 'testFailed' /tmp/diag.out || true
+          grep -o "##teamcity\[testFailed[^]]*" /tmp/diag.out | head -5 || true
+
       - name: Mutation testing
         run: composer mutation
 

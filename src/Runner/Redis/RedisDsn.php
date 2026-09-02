@@ -32,8 +32,12 @@ final readonly class RedisDsn
     /**
      * @param non-empty-string $host The host as a client connects to it: an IPv6 literal without
      *        the brackets the URI form wraps it in.
-     * @param int<0, max> $database
-     * @param non-empty-string $prefix
+     * @param int $port The TCP port; {@see DEFAULT_PORT} when the DSN names none.
+     * @param int<0, max> $database The database index to `SELECT`; {@see DEFAULT_DATABASE} when
+     *        the DSN has no path.
+     * @param non-empty-string $prefix The key prefix every corpus key starts with;
+     *        {@see DEFAULT_PREFIX} when the DSN has no `prefix` query parameter.
+     * @param bool $tls Whether the connection is TLS (`rediss://`).
      */
     public function __construct(
         public string $host,
@@ -70,6 +74,9 @@ final readonly class RedisDsn
 
     /**
      * @param string $dsn The DSN, already known to use the `redis` or `rediss` scheme.
+     *
+     * @throws \InvalidArgumentException When the DSN carries credentials, names no host, has a path
+     *         that is not a database index, or has a query parameter other than `prefix`.
      */
     public static function parse(string $dsn): self
     {

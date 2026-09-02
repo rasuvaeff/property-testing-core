@@ -38,7 +38,11 @@ final class EnvironmentOverrides
     /**
      * `PROPERTY_RUNS`: a positive integer.
      *
+     * @param string|false $value The variable's value as `getenv()` reports it; `false` when unset.
+     *
      * @return ?positive-int
+     *
+     * @throws \InvalidArgumentException When the value is not a positive integer within range.
      */
     public static function runs(string|false $value): ?int
     {
@@ -59,6 +63,10 @@ final class EnvironmentOverrides
      * `PROPERTY_SEED`: an integer. A value past the integer range would
      * saturate to PHP_INT_MAX under a cast, and a replay under "the same"
      * seed would then be a different run.
+     *
+     * @param string|false $value The variable's value as `getenv()` reports it; `false` when unset.
+     *
+     * @throws \InvalidArgumentException When the value is not an integer within range.
      */
     public static function seed(string|false $value): ?int
     {
@@ -95,7 +103,11 @@ final class EnvironmentOverrides
      * unknown name is an error rather than a skipped stage — a run that
      * silently performed fewer stages would report green having checked less.
      *
+     * @param string|false $value The variable's value as `getenv()` reports it; `false` when unset.
+     *
      * @return ?list<Phase>
+     *
+     * @throws \InvalidArgumentException When a name is not a phase.
      */
     public static function phases(string|false $value): ?array
     {
@@ -128,6 +140,10 @@ final class EnvironmentOverrides
      * value is an error rather than a silent fallback — a suite that quietly
      * kept the bias it was told to drop would spend the discard budget it was
      * trying to save.
+     *
+     * @param string|false $value The variable's value as `getenv()` reports it; `false` when unset.
+     *
+     * @throws \InvalidArgumentException When the value is neither `mixin` nor `none`.
      */
     public static function edgeCases(string|false $value): ?EdgeCases
     {
@@ -148,6 +164,8 @@ final class EnvironmentOverrides
     /**
      * A switch such as `PROPERTY_DERANDOMIZE` or `PROPERTY_VERBOSE`: unset
      * and empty mean "not given" (null), `0` means off, anything else on.
+     *
+     * @param string|false $value The variable's value as `getenv()` reports it; `false` when unset.
      */
     public static function flag(string|false $value): ?bool
     {
@@ -161,6 +179,8 @@ final class EnvironmentOverrides
     /**
      * A free-form value such as `PROPERTY_PATH` or `PROPERTY_DB`: the string,
      * or null when unset or empty.
+     *
+     * @param string|false $value The variable's value as `getenv()` reports it; `false` when unset.
      *
      * @return ?non-empty-string
      */

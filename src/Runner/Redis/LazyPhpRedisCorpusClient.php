@@ -23,22 +23,34 @@ final class LazyPhpRedisCorpusClient implements CorpusClient
 {
     private ?PhpRedisCorpusClient $client = null;
 
+    /**
+     * @param RedisDsn $dsn Where to connect on first use.
+     */
     public function __construct(
         private readonly RedisDsn $dsn,
     ) {}
 
+    /**
+     * @throws \RuntimeException When the first use cannot connect or select the database.
+     */
     #[\Override]
     public function get(string $key): ?string
     {
         return $this->client()->get($key);
     }
 
+    /**
+     * @throws \RuntimeException When the first use cannot connect or select the database.
+     */
     #[\Override]
     public function compareAndSet(string $key, ?string $expected, ?string $document): bool
     {
         return $this->client()->compareAndSet($key, $expected, $document);
     }
 
+    /**
+     * @throws \RuntimeException
+     */
     private function client(): PhpRedisCorpusClient
     {
         if ($this->client instanceof PhpRedisCorpusClient) {

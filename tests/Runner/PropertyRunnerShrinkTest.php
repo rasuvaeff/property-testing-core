@@ -16,6 +16,7 @@ use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
 use Rasuvaeff\PropertyTesting\Tests\Support\ChainArbitrary;
 use Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener;
+use Rasuvaeff\PropertyTesting\Tests\Support\ThrowingShrinkArbitrary;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
@@ -222,6 +223,54 @@ final class PropertyRunnerShrinkTest
             array_map(static fn(ShrinkAccepted $event): int => $event->step, $accepted),
             [1, 2, 3, 4, 5],
         );
+    }
+
+    public function aCandidateEnumerationThatThrowsEndsWithoutLosingTheCounterexample(): void
+    {
+        // The tree yields one passing candidate (0) and then breaks. The throw
+        // ends that node's enumeration; the counterexample the random phase
+        // found is reported as is, with the one trial that was made.
+        $listener = new CollectingListener();
+
+        $result = (new PropertyRunner())->run(
+            $this->definition(['value' => new ThrowingShrinkArbitrary()], ['value']),
+            new CallableTrialExecutor(static function (int $value): void {
+                if ($value >= 5) {
+                    throw new \RuntimeException(sprintf('%d is not below 5', $value));
+                }
+            }),
+            [$listener],
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->originalArguments, ['value' => 10]);
+        Assert::same($example->shrunkArguments, ['value' => 10]);
+        Assert::same($example->shrinkSteps, 0);
+        Assert::same($example->shrinkTrials, 1);
+        Assert::same(count($listener->ofType(ShrinkTried::class)), 1);
+        Assert::same(count($listener->ofType(ShrinkAccepted::class)), 0);
+    }
+
+    public function aDrawWhoseEnumerationThrowsEndsWithoutLosingTheCounterexample(): void
+    {
+        $result = (new PropertyRunner())->run(
+            $this->definition([], [], runs: 50),
+            new CallableTrialExecutor(static function (): void {
+                $draw = Gen::draw(new ThrowingShrinkArbitrary());
+
+                if ($draw >= 5) {
+                    throw new \RuntimeException(sprintf('draw %d too big', $draw));
+                }
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->originalArguments, ['draw#1' => 10]);
+        Assert::same($example->shrunkArguments, ['draw#1' => 10]);
+        Assert::same($example->shrinkSteps, 0);
+        Assert::same($example->shrinkTrials, 1);
     }
 
     public function counterexampleMergesParametersAndDraws(): void

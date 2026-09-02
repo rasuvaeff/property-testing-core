@@ -8,7 +8,11 @@ use Rasuvaeff\PropertyTesting\Arbitrary\ConstantArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\FlatMappedArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\TupleArbitrary;
+use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\GenerationExhausted;
 use Rasuvaeff\PropertyTesting\Random;
+use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
@@ -107,6 +111,42 @@ final class FlatMappedArbitraryTest
         $minimal = Trees::descendWhile($node, static fn(mixed $v): bool => is_int($v) && $v > 3);
 
         Assert::same($minimal->value, 4);
+    }
+
+    public function aSourceCandidateTheDependentSideCannotSatisfyIsSkipped(): void
+    {
+        // m < n: shrinking the source n to 0 leaves the filter unsatisfiable,
+        // which exhausts generation. That candidate is no value at all and is
+        // skipped; the remaining source candidates and the dependent ladder
+        // are still offered, and none of them breaks the invariant.
+        $arbitrary = new FlatMappedArbitrary(
+            new IntArbitrary(0, 10),
+            static fn(int $n): ArbitraryInterface => Gen::filter(new IntArbitrary(0, 10), static fn(int $m): bool => $m < $n),
+        );
+
+        $node = null;
+
+        for ($seed = 0; $seed < 1_000 && !$node instanceof Shrinkable; ++$seed) {
+            try {
+                $generated = $arbitrary->generate(new Random($seed));
+            } catch (GenerationExhausted) {
+                continue;
+            }
+
+            if (is_int($generated->value) && $generated->value >= 2) {
+                $node = $generated;
+            }
+        }
+
+        Assert::instanceOf($node, Shrinkable::class);
+
+        $children = Trees::childValues($node);
+
+        Assert::true($children !== []);
+
+        foreach ($children as $child) {
+            Assert::true(is_int($child) && $child < 10);
+        }
     }
 
     #[ExpectException(\InvalidArgumentException::class)]

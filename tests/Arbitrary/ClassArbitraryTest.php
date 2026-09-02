@@ -9,6 +9,7 @@ use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\GenerationExhausted;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Random;
+use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\AnnotatedTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Currency;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Cyclic;
@@ -16,6 +17,7 @@ use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NativeTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Nested;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NoConstructor;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NotInstantiable;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Ordered;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Unreadable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Validating;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Variadic;
@@ -165,6 +167,52 @@ final class ClassArbitraryTest
 
         Assert::true($counts !== []);
         Assert::true(min($counts) < $node->value->count);
+    }
+
+    public function aCandidateTheConstructorRejectsIsSkippedWhileShrinking(): void
+    {
+        // Shrinking `high` toward 0 proposes values below `low`, which the
+        // constructor refuses. Without skipInvalid the generated value is
+        // trusted, but a refused candidate is still no value at all: it is
+        // skipped, and the candidates the constructor accepts are offered.
+        $arbitrary = new ClassArbitrary(Ordered::class, [
+            'low' => Gen::intBetween(0, 10),
+            'high' => Gen::intBetween(0, 10),
+        ]);
+        $node = null;
+
+        // Without skipInvalid a generated value the constructor refuses
+        // propagates (see aRejectedValuePropagatesByDefault); skip those seeds.
+        for ($seed = 0; $seed < 1_000 && !$node instanceof Shrinkable; ++$seed) {
+            try {
+                $generated = $arbitrary->generate(new Random($seed));
+            } catch (\InvalidArgumentException) {
+                continue;
+            }
+
+            if ($generated->value instanceof Ordered && $generated->value->low > 0 && $generated->value->high > $generated->value->low) {
+                $node = $generated;
+            }
+        }
+
+        Assert::instanceOf($node, Shrinkable::class);
+        Assert::instanceOf($node->value, Ordered::class);
+
+        $children = Trees::childValues($node);
+
+        Assert::true($children !== []);
+
+        $highs = [];
+
+        foreach ($children as $child) {
+            Assert::instanceOf($child, Ordered::class);
+            Assert::true($child->low <= $child->high);
+            $highs[] = $child->high;
+        }
+
+        // The candidate high=0 was refused (low > 0); a smaller accepted high follows it.
+        Assert::false(in_array(0, $highs, true));
+        Assert::true(min($highs) < $node->value->high);
     }
 
     public function aRejectedValuePropagatesByDefault(): void

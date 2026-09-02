@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- A shrink candidate that cannot be built no longer escapes the descent and
+  discards the counterexample the random phase found. `Shrinkable::map()`
+  skips a candidate the transformation refuses with an exception (a
+  validating constructor under `Gen::forClass()` or `Gen::map()`), and
+  `Gen::flatMap()` skips a source candidate under which the dependent side
+  has nothing to generate — each together with its subtree, siblings still
+  offered. As a safety net, `PropertyRunner` treats a candidate enumeration
+  that throws (an `Error` in a transformation, a broken hand-written
+  `Shrinkable` tree) as exhausted at that point: the candidates yielded before
+  it count, the descent continues with the next node, and a replayed path
+  indexing past the break reports the candidate as missing.
+
 ## 0.4.2 — 2026-08-20
 
 - `FilesystemCorpus` now creates its temp file with `O_EXCL` (`fopen(…, 'x')`)

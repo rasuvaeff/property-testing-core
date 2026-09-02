@@ -20,6 +20,7 @@ use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
 use Rasuvaeff\PropertyTesting\Runner\ShrinkMode;
 use Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener;
 use Rasuvaeff\PropertyTesting\Tests\Support\RecordingCorpus;
+use Rasuvaeff\PropertyTesting\Tests\Support\ThrowingShrinkArbitrary;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -268,6 +269,21 @@ final class PropertyRunnerPathTest
             1,
             'draw#1:0',
             'names something this run does not have',
+        ];
+
+        // The enumeration breaks after its first candidate: a path indexing
+        // past that point finds no candidate, and the throw does not escape.
+        yield 'enumeration that throws' => [
+            'value:1',
+            static function (int $value): void {
+                if ($value >= 5) {
+                    throw new \RuntimeException(sprintf('%d is not below 5', $value));
+                }
+            },
+            new ThrowingShrinkArbitrary(),
+            1,
+            'value:1',
+            'has no such candidate any more',
         ];
 
         yield 'shorter enumeration' => [

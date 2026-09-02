@@ -74,6 +74,18 @@ final readonly class Validating
     }
 }
 
+final readonly class Ordered
+{
+    public function __construct(
+        public int $low,
+        public int $high,
+    ) {
+        if ($low > $high) {
+            throw new \InvalidArgumentException('low must not exceed high');
+        }
+    }
+}
+
 final readonly class Cyclic
 {
     public function __construct(

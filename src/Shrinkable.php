@@ -80,6 +80,18 @@ final readonly class Shrinkable
      * Transform the whole tree through a pure function: the value and, lazily,
      * every shrink candidate. This is what makes {@see Gen::map()} shrink.
      *
+     * A candidate the transformation refuses — it throws an `Exception` for
+     * the smaller source value, the way a validating constructor does — is
+     * not a smaller value, it is no value at all: the candidate is skipped
+     * together with its subtree and the enumeration moves on to the next
+     * sibling. Only exceptions are treated as a refusal; an `Error` (a
+     * `TypeError` above all) says the transformation itself is broken and
+     * propagates, so a bug does not silently empty a value space.
+     *
+     * The root value is transformed eagerly, and an exception there
+     * propagates from this call: the value being mapped was generated, not
+     * proposed as a smaller variant, so there is nothing to skip to.
+     *
      * @template TOutput
      *
      * @param Closure(TValue): TOutput $map
@@ -92,7 +104,13 @@ final readonly class Shrinkable
 
         return new self($map($this->value), static function () use ($map, $shrinks): \Generator {
             foreach ($shrinks() as $shrinkable) {
-                yield $shrinkable->map($map);
+                try {
+                    $mapped = $shrinkable->map($map);
+                } catch (\Exception) {
+                    continue;
+                }
+
+                yield $mapped;
             }
         });
     }

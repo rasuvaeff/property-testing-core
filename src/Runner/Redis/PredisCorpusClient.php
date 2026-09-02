@@ -32,6 +32,10 @@ final readonly class PredisCorpusClient implements CorpusClient
         return is_string($document) ? $document : null;
     }
 
+    /**
+     * @throws ServerException When the server refuses the script for a reason other than not
+     *         knowing it yet (`NOSCRIPT` is answered with a plain `EVAL`).
+     */
     #[\Override]
     public function compareAndSet(string $key, ?string $expected, ?string $document): bool
     {

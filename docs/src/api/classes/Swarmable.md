@@ -13,7 +13,7 @@ description: "A generator that picks among a fixed, countable set of variants an
 
 **Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
-**Implemented by:** [`Arbitrary\CommandSequenceArbitrary`](/api/classes/Arbitrary/CommandSequenceArbitrary), [`Arbitrary\FrequencyArbitrary`](/api/classes/Arbitrary/FrequencyArbitrary), [`Arbitrary\OneOfArbitrary`](/api/classes/Arbitrary/OneOfArbitrary)
+**Implemented by:** [`Arbitrary\CommandSequenceArbitrary`](/api/classes/Arbitrary/CommandSequenceArbitrary), [`Arbitrary\FrequencyArbitrary`](/api/classes/Arbitrary/FrequencyArbitrary), [`Arbitrary\OneOfArbitrary`](/api/classes/Arbitrary/OneOfArbitrary), `Internal\LeafFallbackArbitrary`
 
 **Type parameters:**
 

@@ -30,6 +30,12 @@ final readonly class DateTimeArbitrary implements ArbitraryInterface
 
     private IntArbitrary $microseconds;
 
+    /**
+     * @param ?DateTimeImmutable $min The earliest moment, fraction included; the Unix epoch when null.
+     * @param ?DateTimeImmutable $max The latest moment, fraction included; 2100-01-01T00:00:00Z when null.
+     *
+     * @throws \InvalidArgumentException When $min is after $max.
+     */
     public function __construct(?DateTimeImmutable $min = null, ?DateTimeImmutable $max = null)
     {
         $minMicro = $min instanceof DateTimeImmutable ? self::toMicroseconds($min) : 0;
@@ -42,6 +48,10 @@ final readonly class DateTimeArbitrary implements ArbitraryInterface
         $this->microseconds = new IntArbitrary($minMicro, $maxMicro);
     }
 
+    /**
+     * @throws \LogicException When PHP cannot build a moment from the drawn microseconds — a
+     *         range within the integer bounds never triggers it.
+     */
     #[\Override]
     public function generate(Random $random): Shrinkable
     {

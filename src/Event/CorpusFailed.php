@@ -17,7 +17,9 @@ namespace Rasuvaeff\PropertyTesting\Event;
 final readonly class CorpusFailed implements PropertyEvent
 {
     /**
-     * @param 'recall'|'remember'|'prune' $operation
+     * @param string $propertyId The property whose corpus operation failed.
+     * @param 'recall'|'remember'|'prune' $operation Which operation threw.
+     * @param \Throwable $failure What the corpus threw.
      */
     public function __construct(
         public string $propertyId,

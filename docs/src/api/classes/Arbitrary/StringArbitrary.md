@@ -34,7 +34,7 @@ __construct(
 |---|---|---|---|
 | `$minLength` | `int` | `0` |  |
 | `$maxLength` | `int` | `100` |  |
-| `$unicode` | `bool` | `false` | When true, characters are drawn from the full Unicode codepoint space (U+0001..U+10FFFF, excluding surrogates); otherwise ASCII printable. |
+| `$unicode` | `bool` | `false` | When true, characters are drawn from the whole Unicode codepoint space with a distribution that keeps the string readable and adversarial at once: half the characters are ASCII printable, a tenth come from a list of troublemakers (quotes, backslash, combining marks, zero-width joiner, right-to-left override, byte order mark, astral emoji, …), a tenth from the Latin-1/Latin Extended block, a tenth from the rest of the Basic Multilingual Plane, and a fifth uniformly from U+0001..U+10FFFF (surrogates excluded). Otherwise ASCII printable only. |
 
 ## Methods
 

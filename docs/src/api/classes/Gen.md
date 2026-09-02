@@ -9,7 +9,7 @@ description: "Facade with static factories for the built-in ArbitraryInterfaces.
 
 `Rasuvaeff\PropertyTesting\Gen`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L49) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L50) — **Version:** working tree
 
 Facade with static factories for the built-in ArbitraryInterfaces.
 
@@ -369,6 +369,9 @@ for the previous level and returns the next one (e.g. wrap a value in an
 array). At every level generation picks the leaf or the wrapped branch
 with equal odds, so nesting is possible but not forced. Keep the branch
 fan-out small (bounded array sizes) — breadth multiplies per level.
+
+Every level shrinks to its leaf first, so a nested value minimises to
+the plain value it wraps, not merely to an empty container.
 
 ### nullable()
 

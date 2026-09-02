@@ -9,7 +9,7 @@ description: "CorpusClient over predis."
 
 `Rasuvaeff\PropertyTesting\Runner\Redis\PredisCorpusClient`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/PredisCorpusClient.php#L14) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/PredisCorpusClient.php#L15) — **Version:** working tree
 
 **Implements:** [`Runner\Redis\CorpusClient`](/api/classes/Runner/Redis/CorpusClient)
 
@@ -60,4 +60,9 @@ a lock across a round trip.
 - `$key` — The corpus key, already namespaced by the caller.
 - `$expected` — The document the caller read, or null when the key was absent.
 - `$document` — The document to store, or null to delete the key (an empty corpus is an absent key, exactly as an empty corpus is an absent file on disk).
+
+**Throws:**
+
+- `Predis\Response\ServerException` — When the server refuses the script for a reason other than not
+knowing it yet (`NOSCRIPT` is answered with a plain `EVAL`).
 

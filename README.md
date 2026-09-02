@@ -434,9 +434,17 @@ tuples run before the random phase, never shrunk), and `replayRegressions`
 (adapters turn it off when the property pins its own seed).
 
 The `PROPERTY_RUNS` / `PROPERTY_SEED` / `PROPERTY_VERBOSE` / `PROPERTY_DB`
-environment variables are **adapter** conventions: the adapters resolve them
-into a `PropertyConfig` and a `Corpus`. The one helper the engine ships is
-`FilesystemCorpus::fromEnv()`, which reads `PROPERTY_DB` when *you* call it.
+environment variables are **adapter** conventions: the adapters read them and
+resolve them into a `PropertyConfig` and a `Corpus`. What the engine ships is
+the *meaning* of the values, so both adapters agree on it:
+`EnvironmentOverrides::runs()` / `seed()` / `phases()` / `edgeCases()` /
+`flag()` / `string()` parse a raw `getenv()` value (unset or empty → `null`, a
+malformed one → `InvalidArgumentException` naming the variable), and
+`CorpusFactory::fromDsn()` turns a `PROPERTY_DB` value into a corpus — a
+directory path is a `FilesystemCorpus`, `redis://host[:port][/db][?prefix=key-prefix]`
+(or `rediss://` for TLS) a `RedisCorpus` over `ext-redis` or predis, any other
+scheme an error, the same instance for the same value within a process.
+`FilesystemCorpus::fromEnv()` still reads `PROPERTY_DB` when *you* call it.
 
 ### Regression corpus
 

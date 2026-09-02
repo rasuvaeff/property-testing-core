@@ -22,8 +22,12 @@ Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
 - The runner NEVER reads environment variables, never prints, never exits, and
   never throws to report a property outcome — it returns a structured
   `PropertyResult`. `PROPERTY_RUNS`/`PROPERTY_SEED`/`PROPERTY_VERBOSE`/
-  `PROPERTY_DB` are adapter conventions; the only env helper here is
-  `FilesystemCorpus::fromEnv()` (reads `PROPERTY_DB` when YOU call it).
+  `PROPERTY_DB` are adapter conventions: the adapter READS the variable and hands
+  the value to `EnvironmentOverrides::runs()/seed()/phases()/edgeCases()/flag()/string()`
+  (unset/empty -> null, malformed -> InvalidArgumentException naming the variable) and
+  `CorpusFactory::fromDsn()` (path -> FilesystemCorpus; `redis://host[:port][/db][?prefix=]`
+  or `rediss://` -> RedisCorpus via ext-redis or predis, memoized per value; other scheme ->
+  error). `FilesystemCorpus::fromEnv()` reads `PROPERTY_DB` when YOU call it.
 - Sequential-only: `Classify` and the in-body draw tape are process-local
   statics armed/drained around each body execution. Do not run properties
   concurrently in one process.
@@ -165,6 +169,13 @@ new RedisCorpus(new PredisCorpusClient($client), prefix: 'suite:', maxValues: 8,
 // quietly after RedisCorpus::MAX_ATTEMPTS — a corpus is memory, not a ledger. Byte-identical
 // document to FilesystemCorpus, so moving between backends is a copy.
 FilesystemCorpus::fromEnv();            // ?self from PROPERTY_DB
+CorpusFactory::fromDsn('/tmp/corpus');  // Corpus from a PROPERTY_DB value; memoized per value
+CorpusFactory::fromDsn('redis://redis:6379/2?prefix=suite-a:'); // RedisCorpus; rediss:// = TLS;
+                                        // path = database index, prefix = query; other schemes throw
+RedisDsn::parse($dsn);                  // host, port, database, prefix, tls; credentials in userinfo refused
+new LazyPhpRedisCorpusClient(RedisDsn::parse($dsn)); // ext-redis client that connects on first use
+EnvironmentOverrides::runs(getenv('PROPERTY_RUNS'));   // ?positive-int; PHASES -> ?list<Phase>; EDGE_CASES -> ?EdgeCases;
+                                        // seed -> ?int (range-checked); flag -> ?bool ('0' = off); string -> ?non-empty-string
 ```
 
 Values entries (data-representable minimised input) replay as ONE run; seed

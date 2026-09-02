@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- The code both adapters carried byte for byte now lives here, so a DSN
+  and a `PROPERTY_*` value mean the same thing under Testo and PHPUnit:
+  `Runner\CorpusFactory::fromDsn()` (directory path or Redis DSN, memoized
+  per value, `ext-redis` preferred, predis otherwise, any other scheme
+  refused), `Runner\Redis\RedisDsn` and `Runner\Redis\LazyPhpRedisCorpusClient`,
+  and `Runner\EnvironmentOverrides` with the parsers for `PROPERTY_RUNS`,
+  `PROPERTY_SEED`, `PROPERTY_PHASES`, `PROPERTY_EDGE_CASES` and the flag and
+  string variables. The engine still never reads the environment: the
+  adapter reads a variable and hands the value over. `PROPERTY_RUNS` and
+  `PROPERTY_SEED` past the integer range are refused instead of saturating
+  to `PHP_INT_MAX` under a cast.
+- The Redis DSN has the shape everything else gives it (the IANA
+  registration, predis, Symfony): `redis://host[:port][/db][?prefix=key-prefix]`,
+  `rediss://` for TLS, an IPv6 literal in brackets. The path is the database
+  index; the key prefix moved to the `prefix` query parameter. The pre-0.5
+  form `redis://host/suite-a:` — the path as the prefix — is refused with the
+  new spelling in the message rather than silently selecting a database. A
+  refused connection or database is an error, no longer a corpus that is
+  quietly empty.
 - A seed entry in the regression corpus now records the `EdgeCases` mode
   the failure was found under (`edgeCases: mixin|none`, read as `mixin` by
   documents that predate the field — the only mode there was), and the

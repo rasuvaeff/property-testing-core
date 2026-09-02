@@ -1,5 +1,6 @@
 {
     "symbol-whitelist": [
+        "Predis\\Client",
         "Predis\\ClientInterface",
         "Redis"
     ],

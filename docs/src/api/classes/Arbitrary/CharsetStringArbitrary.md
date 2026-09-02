@@ -9,7 +9,7 @@ description: "Generates strings whose characters come from a fixed alphabet, and
 
 `Rasuvaeff\PropertyTesting\Arbitrary\CharsetStringArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CharsetStringArbitrary.php#L23) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CharsetStringArbitrary.php#L24) — **Version:** working tree
 
 **Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

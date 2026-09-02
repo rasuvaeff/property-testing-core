@@ -9,7 +9,7 @@ description: "Generates lists of pairwise-distinct elements (strict comparison) 
 
 `Rasuvaeff\PropertyTesting\Arbitrary\UniqueArrayArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/UniqueArrayArbitrary.php#L29) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/UniqueArrayArbitrary.php#L30) — **Version:** working tree
 
 **Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

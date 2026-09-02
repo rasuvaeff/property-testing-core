@@ -87,7 +87,7 @@
         "isApi": true,
         "isAbstract": false,
         "isThrowable": false,
-        "summary": "Generates lists whose elements come from a delegate arbitrary and shrinks\nthem by length toward the empty array, then element-by-element through each\nelement's own shrink tree.",
+        "summary": "Generates lists whose elements come from a delegate arbitrary and shrinks\nthem by length toward the empty array (removing blocks of elements, down\nto single ones, from every position), then element-by-element through\neach element's own shrink tree.",
         "description": "Element shrink trees are captured at generation time, so elements produced\nby transformed arbitraries (\\Rasuvaeff\\PropertyTesting\\Gen::map(),\n\\Rasuvaeff\\PropertyTesting\\Gen::flatMap()) shrink correctly.",
         "deprecated": null,
         "see": [],
@@ -158,12 +158,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 49
+                "startLine": 51
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ArrayArbitrary.php#L24",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ArrayArbitrary.php#L26",
         "implementedBy": []
     },
     {
@@ -291,12 +291,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 37
+                "startLine": 38
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/BytesArbitrary.php#L19",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/BytesArbitrary.php#L20",
         "implementedBy": []
     },
     {
@@ -376,12 +376,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 55
+                "startLine": 56
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CharsetStringArbitrary.php#L23",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CharsetStringArbitrary.php#L24",
         "implementedBy": []
     },
     {
@@ -859,12 +859,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 64
+                "startLine": 65
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/DictionaryArbitrary.php#L31",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/DictionaryArbitrary.php#L32",
         "implementedBy": []
     },
     {
@@ -1094,7 +1094,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 42
+                "startLine": 45
             }
         ],
         "constants": [],
@@ -1506,7 +1506,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 47
+                "startLine": 50
             },
             {
                 "name": "variantCount",
@@ -1523,7 +1523,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 53
+                "startLine": 56
             },
             {
                 "name": "withVariants",
@@ -1553,7 +1553,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 66
+                "startLine": 69
             }
         ],
         "constants": [],
@@ -1705,12 +1705,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 47
+                "startLine": 48
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/StringArbitrary.php#L22",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/StringArbitrary.php#L23",
         "implementedBy": []
     },
     {
@@ -2018,12 +2018,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 56
+                "startLine": 57
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/UniqueArrayArbitrary.php#L29",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/UniqueArrayArbitrary.php#L30",
         "implementedBy": []
     },
     {
@@ -2423,6 +2423,15 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "edgeCases",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "description": "The boundary-value mode the failing run was generated under. The\nseed reproduces the failure only under the same mode (the modes share the roll but not\nthe values it selects), so a seed replay — the corpus above all — carries it along.",
+                "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [],
@@ -2440,7 +2449,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 51
+                "startLine": 57
             },
             {
                 "name": "toJson",
@@ -2463,7 +2472,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 68
+                "startLine": 75
             },
             {
                 "name": "toExamplesCode",
@@ -2478,20 +2487,20 @@
                     }
                 ],
                 "returnType": "string",
-                "summary": "",
-                "description": "",
+                "summary": "The shrunk counterexample as a ready-to-paste `<method>Examples()` method.",
+                "description": "Refuses when the counterexample cannot actually replay as an example:\na value \\Rasuvaeff\\PropertyTesting\\ValueRenderer::exportPhp() cannot render, or a `draw#N`\npseudo-argument — an in-body draw is not a parameter, so an example\ncannot carry it and the failure replays only through the seed.",
                 "throws": [],
                 "throwsInBody": true,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 76
+                "startLine": 91
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/CounterExample.php#L15",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/CounterExample.php#L17",
         "implementedBy": []
     },
     {
@@ -4732,14 +4741,14 @@
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
                 "summary": "Strings matching a regular-expression subset. The pattern is compiled to\nordinary combinators, so matches shrink toward shorter/simpler strings.",
-                "description": "Supported: literals, `.`, character classes `[...]` (ranges, negation,\n`\\d\\w\\s` and their negations), the escapes `\\d\\w\\s\\D\\W\\S\\t\\n\\r` plus\n`\\`-escaped metacharacters, quantifiers `* + ? {n} {n,} {n,m}`,\nalternation `|`, and groups `(...)` / `(?:...)`. A single leading `^` and\ntrailing `$` are accepted as no-ops. Anchors elsewhere, backreferences,\nlookaround, named/inline groups, and flags throw an\n\\InvalidArgumentException naming the construct.",
+                "description": "Supported: literals, `.`, character classes `[...]` (ranges, negation,\n`\\d\\w\\s` and their negations, `[\\b]` as a backspace), the escapes\n`\\d\\w\\s\\D\\W\\S\\t\\n\\r` plus `\\`-escaped punctuation (the literal\ncharacter), quantifiers `* + ? {n} {n,} {n,m}`, alternation `|`, and\ngroups `(...)` / `(?:...)`. A single leading `^` and trailing `$` are\naccepted as no-ops. Anchors elsewhere, backreferences, lookaround,\nnamed/inline groups, flags, lazy/possessive quantifiers, and any other\nalphanumeric escape (`\\h`, `\\Q…\\E`, `\\0`, ...) throw an\n\\InvalidArgumentException naming the construct — compiled as\nliterals they would generate non-matching strings.",
                 "throws": [],
                 "throwsInBody": false,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 817
+                "startLine": 820
             },
             {
                 "name": "stringMatching",
@@ -4769,7 +4778,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 830
+                "startLine": 833
             },
             {
                 "name": "commands",
@@ -4813,7 +4822,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 850
+                "startLine": 853
             },
             {
                 "name": "sample",
@@ -4850,7 +4859,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 870
+                "startLine": 873
             },
             {
                 "name": "sampleShrinks",
@@ -4887,7 +4896,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 899
+                "startLine": 902
             }
         ],
         "constants": [],
@@ -4949,6 +4958,66 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/GenerationExhausted.php#L26",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\BlockRemovals",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The contiguous blocks a sequence shrinks by removing, longest first.",
+        "description": "Shared by every sequence-shaped arbitrary (lists, strings, bytes, maps):\na length phase that only halves prefixes can never isolate a failing\nelement in the middle or at the end — `[7, 3, 42]` with \"no 42 allowed\"\nwould keep `42` in every shorter candidate. Removing aligned blocks of\nevery power-of-two size from every offset (the whole sequence, then\nhalves, quarters, …, single elements) is what QuickCheck's `shrinkList`\nand Hedgehog's list shrinker do, and it reaches `[42]`.\n\nEach removal strictly shortens the sequence, so a shrink tree built from\nthese is finite by induction on length.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "of",
+                "static": true,
+                "params": [
+                    {
+                        "name": "count",
+                        "type": "int",
+                        "description": "The sequence length.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "minSize",
+                        "type": "int",
+                        "description": "The length a removal may never go below.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Generator",
+                "summary": "",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 36
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/BlockRemovals.php#L23",
         "implementedBy": []
     },
     {
@@ -5051,7 +5120,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "The on-disk shape of a corpus, without the disk.",
-        "description": "Everything a \\Rasuvaeff\\PropertyTesting\\Runner\\Corpus does that is not\nstorage lives here: parsing a document, rendering one, turning a stored entry\nback into a \\Rasuvaeff\\PropertyTesting\\Runner\\CorpusEntry (or refusing to), encoding a counterexample,\nidentifying an entry for dedup, and capping how many are kept. A backend is\nthen only the part that is actually different — where the bytes go and how a\nread-modify-write is made safe.\n\nThe point of the split is not tidiness: it is that two backends store the\n*same document*, so a corpus written to a directory and a corpus written to\nRedis are the same artifact, and moving between them is a copy. The format\nversion and sequence epoch stay public constants on\n\\Rasuvaeff\\PropertyTesting\\Runner\\FilesystemCorpus — they are the\npublished contract, and they are passed in here rather than duplicated.",
+        "description": "Everything a \\Rasuvaeff\\PropertyTesting\\Runner\\Corpus does that is not\nstorage lives here: parsing a document, rendering one, turning a stored entry\nback into a \\Rasuvaeff\\PropertyTesting\\Runner\\CorpusEntry (or refusing to), encoding a counterexample,\nidentifying an entry for dedup, and capping how many are kept. A backend is\nthen only the part that is actually different — where the bytes go and how a\nread-modify-write is made safe.\n\nThe point of the split is not tidiness: it is that two backends store the\n*same document*, so a corpus written to a directory and a corpus written to\nRedis are the same artifact, and moving between them is a copy. The format\nversion and sequence epoch stay public constants on\n\\Rasuvaeff\\PropertyTesting\\Runner\\FilesystemCorpus — they are the\npublished contract, and they are passed in here rather than duplicated.\n\nWithin one format version the document grows only by optional fields\n(`runsBeforeFailure` in 0.4.1, `edgeCases` in 0.5.0): a reader treats a\nmissing field as what it meant before the field existed, and ignores a\nfield it does not know. The version changes only when an existing field\nchanges meaning or shape — then an older reader must not read the document\nat all, and \\Rasuvaeff\\PropertyTesting\\Internal\\decode() returns nothing for it.",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -5093,7 +5162,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 47
+                "startLine": 55
             },
             {
                 "name": "encode",
@@ -5130,7 +5199,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 80
+                "startLine": 88
             },
             {
                 "name": "hydrate",
@@ -5167,7 +5236,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 96
+                "startLine": 104
             },
             {
                 "name": "encodeEntry",
@@ -5204,7 +5273,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 157
+                "startLine": 193
             },
             {
                 "name": "valuesEntry",
@@ -5248,7 +5317,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 174
+                "startLine": 210
             },
             {
                 "name": "seedEntry",
@@ -5267,6 +5336,20 @@
                         "description": "The sequence epoch to stamp.",
                         "default": null,
                         "variadic": false
+                    },
+                    {
+                        "name": "runsBeforeFailure",
+                        "type": "?int",
+                        "description": "Runs the recorded failure survived; stored so a replay\ncan extend a lowered runs count up to the failing attempt. Omitted from the\ndocument when null — entries without it keep the pre-field behaviour.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "edgeCases",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                        "description": "The mode the seed reproduces the failure under; always\nstored, read back as \\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin by documents that predate it.",
+                        "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
+                        "variadic": false
                     }
                 ],
                 "returnType": "array",
@@ -5278,7 +5361,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 210
+                "startLine": 251
             },
             {
                 "name": "keyOf",
@@ -5294,14 +5377,14 @@
                 ],
                 "returnType": "string",
                 "summary": "Identity of an entry for dedup and pruning: a values entry is its arguments\n(the same minimal input recorded twice is one regression), a seed entry is\nits seed.",
-                "description": "",
+                "description": "The arguments are keyed by name, not by position: \\Rasuvaeff\\PropertyTesting\\Internal\\hydrate() accepts\na reordered signature and hands the entry back in the current order, so a\npruned entry re-encodes with its arguments in a different order than the\nstored bytes — the key must not see that difference.",
                 "throws": [],
                 "throwsInBody": false,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 222
+                "startLine": 276
             },
             {
                 "name": "cap",
@@ -5338,12 +5421,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 242
+                "startLine": 303
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/CorpusDocument.php#L29",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/CorpusDocument.php#L37",
         "implementedBy": []
     },
     {
@@ -5392,6 +5475,29 @@
                 "deprecated": null,
                 "attributes": [],
                 "startLine": 32
+            },
+            {
+                "name": "imports",
+                "static": true,
+                "params": [
+                    {
+                        "name": "function",
+                        "type": "ReflectionFunctionAbstract",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "The class names a docblock in $function's file can use unqualified,\nas the declaring namespace and the `use` aliases in effect there.",
+                "description": "A docblock names classes the way the source does — `LineItem`, not\n`\\App\\Order\\LineItem` — and reflection reports no import table, so the\nfile is read once for it. Only top-level `namespace` and `use` are\nhonoured (the forms the family writes); a function outside any file\n(an `eval`'d closure) has neither.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 69
             }
         ],
         "constants": [],
@@ -5623,7 +5729,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 39
+                "startLine": 40
             },
             {
                 "name": "forSignature",
@@ -5674,12 +5780,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 77
+                "startLine": 78
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/ParameterGenerators.php#L23",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/ParameterGenerators.php#L24",
         "implementedBy": []
     },
     {
@@ -5692,7 +5798,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Compiles a regular-expression subset into ordinary combinators so generated\nstrings shrink through the existing arbitrary trees (no bespoke shrink logic).",
-        "description": "Grammar (recursive descent): alternation `|` -> \\Rasuvaeff\\PropertyTesting\\Arbitrary\\FrequencyArbitrary;\nconcatenation -> `tuple(...)` mapped through `implode`; quantifier\n(`* + ? {n} {n,} {n,m}`) -> `arrayOf(atom, lo, hi)` mapped through `implode`;\natom -> group `(...)`/`(?:...)`, class `[...]`, escape `\\x`, `.`, or a literal.\nUnsupported constructs (anchors other than a single leading `^`/trailing `$`,\nbackreferences, lookaround, named/inline groups, flags) throw, naming the\nconstruct — a generator that silently ignored them would emit non-matching\nstrings.",
+        "description": "Grammar (recursive descent): alternation `|` -> \\Rasuvaeff\\PropertyTesting\\Arbitrary\\FrequencyArbitrary;\nconcatenation -> `tuple(...)` mapped through `implode`; quantifier\n(`* + ? {n} {n,} {n,m}`) -> `arrayOf(atom, lo, hi)` mapped through `implode`;\natom -> group `(...)`/`(?:...)`, class `[...]`, an escape, `.`, or a literal.\nUnsupported constructs (anchors other than a single leading `^`/trailing `$`,\nbackreferences, lookaround, named/inline groups, flags, lazy/possessive\nquantifiers, and any alphanumeric escape outside the supported shorthands)\nthrow, naming the construct — a generator that silently ignored them would\nemit non-matching strings.",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -5753,12 +5859,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 44
+                "startLine": 60
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/RegexCompiler.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/RegexCompiler.php#L31",
         "implementedBy": []
     },
     {
@@ -5909,6 +6015,13 @@
                         "description": "Resolver for a class type — recursion\nlives with the caller, which is what tracks depth and cycles.",
                         "default": null,
                         "variadic": false
+                    },
+                    {
+                        "name": "resolveClass",
+                        "type": "callable",
+                        "description": "The class a name written in the docblock\ndenotes, fully qualified, or null when it is not a class the caller knows —\nthe caller owns the declaring file's imports.",
+                        "default": null,
+                        "variadic": false
                     }
                 ],
                 "returnType": "?Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
@@ -5920,7 +6033,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 44
+                "startLine": 47
             },
             {
                 "name": "fromNative",
@@ -5950,7 +6063,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 86
+                "startLine": 115
             }
         ],
         "constants": [],
@@ -7323,7 +7436,7 @@
                 "description": "Whether the numeric generators keep biasing toward boundary values.",
                 "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
                 "promoted": true,
-                "promotedVisibility": "private",
+                "promotedVisibility": "public",
                 "readonly": true
             }
         ],
@@ -7780,6 +7893,24 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "runsBeforeFailure",
+                "type": "?int",
+                "description": "How many runs the recorded failure survived before falsifying,\nso a seed replay with a lowered runs count still reaches the failing attempt. Null for\nvalues entries and for seed entries recorded before the field existed.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "edgeCases",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "description": "The mode a seed entry replays under; \\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin for\nvalues entries, where it plays no part.",
+                "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [],
@@ -7812,7 +7943,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 29
+                "startLine": 36
             },
             {
                 "name": "seed",
@@ -7823,6 +7954,20 @@
                         "type": "int",
                         "description": "",
                         "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "runsBeforeFailure",
+                        "type": "?int",
+                        "description": "Runs the recorded failure survived; null when unknown.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "edgeCases",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                        "description": "The boundary-value mode the failure was found under — the mode a\nreplay must use for the seed to produce the same values. Entries recorded before the\nfield existed carry \\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin, the only mode there was.",
+                        "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
                         "variadic": false
                     }
                 ],
@@ -7835,7 +7980,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 34
+                "startLine": 47
             },
             {
                 "name": "isValues",
@@ -7850,12 +7995,66 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 42
+                "startLine": 55
             }
         ],
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/CorpusEntry.php#L16",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\CorpusFactory",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The corpus a `PROPERTY_DB` value names.",
+        "description": "A plain path is a \\Rasuvaeff\\PropertyTesting\\Runner\\FilesystemCorpus; `redis://` and `rediss://` are a\n\\Rasuvaeff\\PropertyTesting\\Runner\\RedisCorpus over `ext-redis` when it is loaded, predis otherwise;\nany other scheme is refused. The adapter reads the environment (the engine\nnever does — golden rule) and hands the value here, so the two adapters\nmean the same thing by the same DSN.\n\n```php\n$corpus = CorpusFactory::fromDsn('/tmp/corpus');\n$corpus = CorpusFactory::fromDsn('redis://redis:6379/2?prefix=suite-a:');\n```",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "fromDsn",
+                "static": true,
+                "params": [
+                    {
+                        "name": "dsn",
+                        "type": "string",
+                        "description": "A directory path, or a `redis://` / `rediss://` DSN.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Runner\\Corpus",
+                "summary": "The corpus for a `PROPERTY_DB` value, the same instance for the same\nvalue within a process.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "For a scheme that is not redis/rediss, an unusable Redis\nDSN, or a Redis DSN without any Redis client available."
+                    }
+                ],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 61
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/CorpusFactory.php#L28",
         "implementedBy": []
     },
     {
@@ -8194,6 +8393,190 @@
             }
         ],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/EdgeCases.php#L22",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\EnvironmentOverrides",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The values of the `PROPERTY_*` environment variables, parsed.",
+        "description": "The adapters read the environment — the engine never does — and every one\nof them has to turn the same strings into the same values with the same\nrefusals, or `PROPERTY_RUNS=abc` would mean one thing under Testo and\nanother under PHPUnit. Each parser takes the raw value as `getenv()` hands\nit over (`false` when unset) and answers with the parsed value, or null\nwhen the variable is unset or empty and the caller's own default applies.\n\n```php\n$runs = EnvironmentOverrides::runs(getenv('PROPERTY_RUNS')) ?? $attribute->runs;\n```",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "runs",
+                "static": true,
+                "params": [
+                    {
+                        "name": "value",
+                        "type": "string|false",
+                        "description": "The variable's value as `getenv()` reports it; `false` when unset.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?int",
+                "summary": "`PROPERTY_RUNS`: a positive integer.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When the value is not a positive integer within range."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 47
+            },
+            {
+                "name": "seed",
+                "static": true,
+                "params": [
+                    {
+                        "name": "value",
+                        "type": "string|false",
+                        "description": "The variable's value as `getenv()` reports it; `false` when unset.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?int",
+                "summary": "`PROPERTY_SEED`: an integer. A value past the integer range would\nsaturate to PHP_INT_MAX under a cast, and a replay under \"the same\"\nseed would then be a different run.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When the value is not an integer within range."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 71
+            },
+            {
+                "name": "phases",
+                "static": true,
+                "params": [
+                    {
+                        "name": "value",
+                        "type": "string|false",
+                        "description": "The variable's value as `getenv()` reports it; `false` when unset.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?array",
+                "summary": "`PROPERTY_PHASES`: a comma-separated list of phase names,\ncase-insensitive (`examples,corpus` is the fast pull-request gate). An\nunknown name is an error rather than a skipped stage — a run that\nsilently performed fewer stages would report green having checked less.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When a name is not a phase."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 112
+            },
+            {
+                "name": "edgeCases",
+                "static": true,
+                "params": [
+                    {
+                        "name": "value",
+                        "type": "string|false",
+                        "description": "The variable's value as `getenv()` reports it; `false` when unset.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "summary": "`PROPERTY_EDGE_CASES`: `mixin` or `none`, case-insensitive. An unknown\nvalue is an error rather than a silent fallback — a suite that quietly\nkept the bias it was told to drop would spend the discard budget it was\ntrying to save.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When the value is neither `mixin` nor `none`."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 148
+            },
+            {
+                "name": "flag",
+                "static": true,
+                "params": [
+                    {
+                        "name": "value",
+                        "type": "string|false",
+                        "description": "The variable's value as `getenv()` reports it; `false` when unset.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?bool",
+                "summary": "A switch such as `PROPERTY_DERANDOMIZE` or `PROPERTY_VERBOSE`: unset\nand empty mean \"not given\" (null), `0` means off, anything else on.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 170
+            },
+            {
+                "name": "string",
+                "static": true,
+                "params": [
+                    {
+                        "name": "value",
+                        "type": "string|false",
+                        "description": "The variable's value as `getenv()` reports it; `false` when unset.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?string",
+                "summary": "A free-form value such as `PROPERTY_PATH` or `PROPERTY_DB`: the string,\nor null when unset or empty.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 187
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/EnvironmentOverrides.php#L23",
         "implementedBy": []
     },
     {
@@ -9579,6 +9962,7 @@
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/CorpusClient.php#L21",
         "implementedBy": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\LazyPhpRedisCorpusClient",
             "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PhpRedisCorpusClient",
             "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PredisCorpusClient",
             "Rasuvaeff\\PropertyTesting\\Testo\\LazyPhpRedisCorpusClient",
@@ -9619,6 +10003,118 @@
         ],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/CorpusScript.php#L15",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\LazyPhpRedisCorpusClient",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "A PhpRedisCorpusClient that connects on first use.",
+        "description": "\\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PhpRedisCorpusClient takes an already-connected `\\Redis` — the right\ncontract for a class that does not own the connection — but resolving a\nDSN must not open a socket. A suite that names a corpus it never touches\n(every property pinned by an explicit seed, say) would otherwise fail at\nstartup against a server it never needed, and CI proved it: the eager\nversion was red everywhere the extension was installed and Redis was not\nrunning.\n\npredis is lazy by construction, so only this side needed the wrapper.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "dsn",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\RedisDsn",
+                "description": "Where to connect on first use.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "get",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?string",
+                "summary": "The stored document for $key, or null when the key does not exist.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\RuntimeException",
+                        "description": "When the first use cannot connect or select the database."
+                    }
+                ],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 37
+            },
+            {
+                "name": "compareAndSet",
+                "static": false,
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "description": "The corpus key, already namespaced by the caller.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "expected",
+                        "type": "?string",
+                        "description": "The document the caller read, or null when the key was absent.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "document",
+                        "type": "?string",
+                        "description": "The document to store, or null to delete the key (an empty corpus\nis an absent key, exactly as an empty corpus is an absent file on disk).",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "bool",
+                "summary": "Stores $document for $key only if the stored value is still $expected —\nthe whole read-modify-write of a corpus write, made safe without holding\na lock across a round trip.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\RuntimeException",
+                        "description": "When the first use cannot connect or select the database."
+                    }
+                ],
+                "throwsInBody": false,
+                "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\CorpusClient",
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 46
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/LazyPhpRedisCorpusClient.php#L22",
         "implementedBy": []
     },
     {
@@ -9823,6 +10319,155 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/PredisCorpusClient.php#L14",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\RedisDsn",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "`redis://host[:port][/db][?prefix=key-prefix]` (or `rediss://` for TLS),\ntaken apart.",
+        "description": "The shape is the one the IANA registration, predis and Symfony agree on:\nthe path is the database index, TLS is the `rediss` scheme, and anything\nelse — the key prefix — is a query parameter. A path that is not a\ndatabase index is refused rather than reinterpreted, so a DSN means the\nsame thing here as everywhere else it could be pasted into.\n\nParsing lives in its own type because it is the part with answers worth\nasserting — a default port and a default prefix are decisions, and a\nresolver that also builds clients hides them behind a connection.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "host",
+                "type": "non-empty-string",
+                "description": "The host as a client connects to it: an IPv6 literal without\nthe brackets the URI form wraps it in.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "port",
+                "type": "int",
+                "description": "The TCP port; \\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\DEFAULT_PORT when the DSN names none.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "database",
+                "type": "int<0, max>",
+                "description": "The database index to `SELECT`; \\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\DEFAULT_DATABASE when\nthe DSN has no path.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "prefix",
+                "type": "non-empty-string",
+                "description": "The key prefix every corpus key starts with;\n\\Rasuvaeff\\PropertyTesting\\Runner\\Redis\\DEFAULT_PREFIX when the DSN has no `prefix` query parameter.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "tls",
+                "type": "bool",
+                "description": "Whether the connection is TLS (`rediss://`).",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "toPredisParameters",
+                "static": false,
+                "params": [],
+                "returnType": "array",
+                "summary": "The connection parameters predis takes.",
+                "description": "Here rather than at the call site so the shape is something a test can\nassert: an array literal built where the client is constructed can only\nbe checked by connecting to a server.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 59
+            },
+            {
+                "name": "phpRedisHost",
+                "static": false,
+                "params": [],
+                "returnType": "string",
+                "summary": "The host as `ext-redis` connects to it: `tls://` in front for TLS,\nwhich is how phpredis selects the transport.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 70
+            },
+            {
+                "name": "parse",
+                "static": true,
+                "params": [
+                    {
+                        "name": "dsn",
+                        "type": "string",
+                        "description": "The DSN, already known to use the `redis` or `rediss` scheme.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\RedisDsn",
+                "summary": "",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When the DSN carries credentials, names no host, has a path\nthat is not a database index, or has a query parameter other than `prefix`."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 81
+            }
+        ],
+        "constants": [
+            {
+                "name": "DEFAULT_PORT",
+                "type": "int",
+                "summary": "",
+                "value": 6379
+            },
+            {
+                "name": "DEFAULT_DATABASE",
+                "type": "int",
+                "summary": "",
+                "value": 0
+            },
+            {
+                "name": "DEFAULT_PREFIX",
+                "type": "string",
+                "summary": "The engine's own default, so a DSN without a prefix behaves like the plain constructor.",
+                "value": "property-testing:corpus:"
+            }
+        ],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/RedisDsn.php#L23",
         "implementedBy": []
     },
     {
@@ -10403,14 +11048,14 @@
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\Shrinkable",
                 "summary": "Transform the whole tree through a pure function: the value and, lazily,\nevery shrink candidate. This is what makes Gen::map() shrink.",
-                "description": "",
+                "description": "A candidate the transformation refuses — it throws an `Exception` for\nthe smaller source value, the way a validating constructor does — is\nnot a smaller value, it is no value at all: the candidate is skipped\ntogether with its subtree and the enumeration moves on to the next\nsibling. Only exceptions are treated as a refusal; an `Error` (a\n`TypeError` above all) says the transformation itself is broken and\npropagates, so a bug does not silently empty a value space.\n\nThe root value is transformed eagerly, and an exception there\npropagates from this call: the value being mapped was generated, not\nproposed as a smaller variant, so there is nothing to skip to.",
                 "throws": [],
                 "throwsInBody": false,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 89
+                "startLine": 101
             }
         ],
         "constants": [],

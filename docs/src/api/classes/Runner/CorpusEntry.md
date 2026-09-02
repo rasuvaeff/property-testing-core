@@ -23,6 +23,8 @@ re-running the whole random phase).
 __construct(
     ?array<string,mixed> $arguments,
     int $seed,
+    ?int $runsBeforeFailure = NULL,
+    \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
 )
 ```
 
@@ -30,6 +32,8 @@ __construct(
 |---|---|---|---|
 | `$arguments` | `?array<string,mixed>` | *required* | Minimised input keyed by parameter name; null for a seed entry. |
 | `$seed` | `int` | *required* |  |
+| `$runsBeforeFailure` | `?int` | `NULL` | How many runs the recorded failure survived before falsifying, so a seed replay with a lowered runs count still reaches the failing attempt. Null for values entries and for seed entries recorded before the field existed. |
+| `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | The mode a seed entry replays under; [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::Mixin for values entries, where it plays no part. |
 
 ## Methods
 
@@ -42,8 +46,15 @@ static values(array<string,mixed> $arguments, int $seed): Runner\CorpusEntry
 ### seed()
 
 ```php
-static seed(int $seed): Runner\CorpusEntry
+static seed(
+    int $seed,
+    ?int $runsBeforeFailure = NULL,
+    \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
+): Runner\CorpusEntry
 ```
+
+- `$runsBeforeFailure` — Runs the recorded failure survived; null when unknown.
+- `$edgeCases` — The boundary-value mode the failure was found under — the mode a replay must use for the seed to produce the same values. Entries recorded before the field existed carry [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::Mixin, the only mode there was.
 
 ### isValues()
 

@@ -572,12 +572,15 @@ ordinary combinators, so matches shrink toward shorter/simpler strings.
 - `$maxRepeat` — Upper bound generation uses for unbounded quantifiers (`*`, `+`, `{n,}`).
 
 Supported: literals, `.`, character classes `[...]` (ranges, negation,
-``d\w\s`` and their negations), the escapes ``d\w\s\D\W\S\t\n\r`` plus
-`\`-escaped metacharacters, quantifiers `* + ? {n} {n,} {n,m}`,
-alternation `|`, and groups `(...)` / `(?:...)`. A single leading `^` and
-trailing `$` are accepted as no-ops. Anchors elsewhere, backreferences,
-lookaround, named/inline groups, and flags throw an
-\InvalidArgumentException naming the construct.
+``d\w\s`` and their negations, `[\b]` as a backspace), the escapes
+``d\w\s\D\W\S\t\n\r`` plus `\`-escaped punctuation (the literal
+character), quantifiers `* + ? {n} {n,} {n,m}`, alternation `|`, and
+groups `(...)` / `(?:...)`. A single leading `^` and trailing `$` are
+accepted as no-ops. Anchors elsewhere, backreferences, lookaround,
+named/inline groups, flags, lazy/possessive quantifiers, and any other
+alphanumeric escape (`\h`, `\Q…\E`, `\0`, ...) throw an
+\InvalidArgumentException naming the construct — compiled as
+literals they would generate non-matching strings.
 
 ### stringMatching()
 

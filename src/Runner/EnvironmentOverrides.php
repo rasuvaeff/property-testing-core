@@ -76,17 +76,14 @@ final class EnvironmentOverrides
     }
 
     /**
-     * The integer a string spells, or null when it spells none — including a
-     * number past the integer range: a digit pattern would accept it and the
-     * cast would saturate to PHP_INT_MAX silently, so the cast has to spell
-     * the same string back.
+     * The integer a string spells, or null when it spells none. The cast has
+     * to spell the same string back: that refuses a sign or a space in the
+     * wrong place, a float, an exponent — and a number past the integer
+     * range, which a digit pattern would accept and the cast would saturate
+     * to PHP_INT_MAX silently.
      */
     private static function integer(string $value): ?int
     {
-        if (preg_match('/^-?(0|[1-9]\d*)\z/', $value) !== 1) {
-            return null;
-        }
-
         $integer = (int) $value;
 
         return (string) $integer === $value ? $integer : null;

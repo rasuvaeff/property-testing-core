@@ -111,7 +111,7 @@ final readonly class RedisDsn
         $database = self::DEFAULT_DATABASE;
 
         if ($path !== '') {
-            if (preg_match('/^\d+\z/', $path) !== 1 || (int) $path < 0) {
+            if (preg_match('/^\d+\z/', $path) !== 1) {
                 throw new \InvalidArgumentException(sprintf(
                     'PROPERTY_DB="%s" has a path that is not a database index; the key prefix goes in the query: redis://host[:port][/db]?prefix=%s',
                     $dsn,

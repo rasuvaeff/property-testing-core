@@ -63,6 +63,9 @@ final class EnvironmentOverridesTest
         yield 'negative' => ['-5'];
         yield 'word' => ['abc'];
         yield 'float' => ['1.5'];
+        yield 'leading zero' => ['007'];
+        yield 'leading space' => [' 5'];
+        yield 'exponent' => ['1e3'];
         yield 'past the integer range: a cast would saturate silently' => ['99999999999999999999'];
     }
 
@@ -92,6 +95,8 @@ final class EnvironmentOverridesTest
     {
         yield 'word' => ['seed'];
         yield 'float' => ['4.2'];
+        yield 'negative zero' => ['-0'];
+        yield 'plus sign' => ['+5'];
         yield 'past the integer range' => ['9223372036854775808'];
     }
 
@@ -121,7 +126,7 @@ final class EnvironmentOverridesTest
     public function anUnknownEdgeCaseModeIsAnError(): void
     {
         try {
-            EnvironmentOverrides::edgeCases('some');
+            EnvironmentOverrides::edgeCases(' some ');
 
             Assert::fail('expected the mode to be refused');
         } catch (\InvalidArgumentException $e) {

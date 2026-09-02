@@ -86,6 +86,7 @@ final class RedisDsnTest
         yield 'legacy prefix path' => ['redis://redis:6379/suite-a:', 'suite-a:'];
         yield 'negative' => ['redis://redis/-1', '-1'];
         yield 'mixed' => ['redis://redis/2b', '2b'];
+        yield 'digits at the end only' => ['redis://redis/b2', 'b2'];
     }
 
     public function anUnknownQueryParameterIsRefused(): void

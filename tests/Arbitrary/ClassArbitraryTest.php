@@ -7,12 +7,18 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ClassArbitrary;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\Internal\DocblockTypes;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
+use Rasuvaeff\PropertyTesting\Internal\TypeGenerators;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
+use Rasuvaeff\PropertyTesting\Tests\Support\Aliased\AliasedTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\AnnotatedTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Currency;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Cyclic;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\DocblockClassTypes;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\GenericCollection;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NarrowedFloat;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NativeTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Nested;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NoConstructor;
@@ -42,6 +48,8 @@ use Testo\Test;
 #[Test]
 #[Covers(ClassArbitrary::class)]
 #[Covers(ParameterGenerators::class)]
+#[Covers(DocblockTypes::class)]
+#[Covers(TypeGenerators::class)]
 final class ClassArbitraryTest
 {
     public function generatesFromNativeConstructorTypes(): void
@@ -167,6 +175,99 @@ final class ClassArbitraryTest
 
         Assert::true($counts !== []);
         Assert::true(min($counts) < $node->value->count);
+    }
+
+    public function classNamesInsideDocblockTypesAreFollowed(): void
+    {
+        // `list<NativeTypes>`, `Currency|null`, `'a'|null`, `\DateTimeImmutable`,
+        // `non-empty-list<Currency>`: every class the docblock names resolves
+        // the way the code beneath it would resolve it.
+        $random = new Random(5);
+        $arbitrary = new ClassArbitrary(DocblockClassTypes::class);
+        $sawCurrency = false;
+        $sawNullCurrency = false;
+        $sawStatus = false;
+        $sawNullStatus = false;
+
+        for ($i = 0; $i < 60; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::instanceOf($value, DocblockClassTypes::class);
+            Assert::true(count($value->items) <= 10);
+            Assert::true(count($value->currencies) >= 1);
+
+            foreach ($value->items as $item) {
+                Assert::instanceOf($item, NativeTypes::class);
+            }
+
+            foreach ($value->currencies as $currency) {
+                Assert::instanceOf($currency, Currency::class);
+            }
+
+            $sawCurrency = $sawCurrency || $value->currency instanceof Currency;
+            $sawNullCurrency = $sawNullCurrency || $value->currency === null;
+            $sawStatus = $sawStatus || in_array($value->status, ['draft', 'published'], true);
+            $sawNullStatus = $sawNullStatus || $value->status === null;
+        }
+
+        Assert::true($sawCurrency && $sawNullCurrency);
+        Assert::true($sawStatus && $sawNullStatus);
+    }
+
+    public function docblockNamesResolveThroughTheFileImports(): void
+    {
+        // `Money` is `use … as Money`, `Wrapped` comes from a group import,
+        // `NativeTypes` from the same group — and none of them lives in the
+        // declaring namespace.
+        $value = (new ClassArbitrary(AliasedTypes::class))->generate(new Random(3))->value;
+
+        Assert::instanceOf($value, AliasedTypes::class);
+        Assert::instanceOf($value->money, Currency::class);
+
+        foreach ($value->items as $item) {
+            Assert::instanceOf($item, NativeTypes::class);
+        }
+    }
+
+    public function aDocblockTypeItCannotReadOnAScalarIsRefusedNotWidened(): void
+    {
+        // `float<0.0, 1.0>` is outside the readable subset. Falling back to the
+        // native `float` would generate the whole line for a parameter that
+        // promises the unit interval — the widened guess the class rules out.
+        try {
+            new ClassArbitrary(NarrowedFloat::class);
+
+            Assert::fail('expected the narrowed float to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same(
+                $e->getMessage(),
+                'Cannot generate ' . NarrowedFloat::class . ': parameter $ratio is documented as float<0.0, 1.0>, which this cannot read; pass an override',
+            );
+        }
+    }
+
+    public function aDocblockTypeItCannotReadOnAClassFallsBackToTheClass(): void
+    {
+        // Generics on a class type (`NativeTypes<int>`) narrow nothing the
+        // constructor can observe, so the native class is generated.
+        $value = (new ClassArbitrary(GenericCollection::class))->generate(new Random(1))->value;
+
+        Assert::instanceOf($value, GenericCollection::class);
+        Assert::instanceOf($value->inner, NativeTypes::class);
+    }
+
+    public function anOverrideNamingNoParameterIsRefused(): void
+    {
+        try {
+            new ClassArbitrary(NativeTypes::class, ['cuont' => Gen::int(), 'label' => Gen::constant('x')]);
+
+            Assert::fail('expected the misspelt override to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same(
+                $e->getMessage(),
+                'Cannot generate ' . NativeTypes::class . ': override for $cuont names no parameter of it',
+            );
+        }
     }
 
     public function aCandidateTheConstructorRejectsIsSkippedWhileShrinking(): void

@@ -36,7 +36,10 @@ final readonly class OneOfArbitrary implements Swarmable
             throw new \InvalidArgumentException('OneOf requires at least one value');
         }
 
+        // Named arguments (`new OneOfArbitrary(...['ok' => 1])`) arrive as a
+        // string-keyed variadic; the enumeration indexes by position.
         /** @var non-empty-list<TValue> $values */
+        $values = array_values($values);
         $this->values = $values;
     }
 

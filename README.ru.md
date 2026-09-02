@@ -43,6 +43,7 @@ Framework-agnostic **движок** property-based тестирования дл
 - PHP 8.3+
 - `ext-mbstring`
 - `ext-random`
+- `ext-tokenizer`
 
 ## Установка
 
@@ -205,7 +206,7 @@ property.
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | строки, соответствующие подмножеству regex (компилируется в комбинаторы) | более короткие/простые совпадения (через скомпилированные деревья) |
 | `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, валидные последовательности команд для stateful-тестирования | сбрасывает блоки команд, затем упрощает каждую |
 | `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm-тестирование: каждый случай видит лишь непустое подмножество вариантов обёрнутого генератора выбора (`oneOf`, `elements`, `frequency`, `commands`) | внутри подмножества, из которого случай получился, — обратно до полного алфавита не расширяется |
-| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор: psalm-тип из `@param`, если он есть (`int<0, 100>`, `non-empty-string`, `list<T>`, `'a'\|'b'`), иначе нативный; всё, что прочитать нельзя, — исключение, а не догадка | через сгенерированные аргументы, пересобирая экземпляр |
+| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор: psalm-тип из `@param`, если он есть (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; имена классов резолвятся через namespace и `use`-импорты файла), иначе нативный; всё, что прочитать нельзя, — исключение, а не догадка, как и override с именем несуществующего параметра | через сгенерированные аргументы, пересобирая экземпляр |
 | `Gen::forParameters($function, $overrides)` | не arbitrary, а карта: `array<string, ArbitraryInterface>` для параметров `ReflectionFunctionAbstract` (метода или кложуры), по именам в порядке сигнатуры — правила `forClass`, применённые к любой сигнатуре; overrides могут быть частичными, остальное достраивается; всё нечитаемое — исключение с именем функции и параметра | каждая запись shrink'ается через свой генератор |
 
 Числовые генераторы (`int*`, `float*`) **boundary-biased**: примерно каждый

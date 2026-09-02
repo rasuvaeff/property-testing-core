@@ -15,7 +15,7 @@ with the frozen `rasuvaeff/property-testing` 2.x (same namespace).
 composer require --dev rasuvaeff/property-testing-core
 ```
 
-Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`.
+Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
 
 ## Rules
 
@@ -225,9 +225,14 @@ Gen::swarm(ArbitraryInterface $choice)  // SwarmArbitrary: swarm testing. Wraps 
 Gen::forClass(string $class, array $overrides = [], bool $skipInvalid = false, int $maxDepth = 3)
 // ClassArbitrary: instances from the constructor. Per parameter, in order: override, @param psalm
 // type, native type. Reads int<0,100> | positive-int | non-negative-int | non-empty-string |
-// list<T> | non-empty-list<T> | T[] | array<K,V> | 'a'|'b' | 1|2|3 | A|B | ?T | enum |
-// DateTimeImmutable | another class (recursive, maxDepth, cycles refused by name). ANYTHING ELSE
-// (bare array, mixed, callable, variadic) THROWS naming the parameter — never a widened guess.
+// list<T> | non-empty-list<T> | T[] | array<K,V> | 'a'|'b' | 1|2|3 | 'a'|null | A|B | ?T | enum |
+// DateTimeImmutable | another class (recursive, maxDepth, cycles refused by name). Class names
+// inside docblock types (list<LineItem>, Status|null, \DateTimeImmutable) resolve through the
+// declaring file's namespace and `use` imports, like the code beneath the docblock. ANYTHING ELSE
+// (bare array, mixed, callable, variadic, a docblock type outside this subset such as
+// float<0.0, 1.0> or array{a: int}) THROWS naming the parameter — never a widened guess; the one
+// fallback is a native CLASS type whose docblock only adds generics (Collection<Item>). An
+// override key naming no parameter THROWS.
 // A constructor that rejects a value throws by default (the generator does not match the domain);
 // skipInvalid: true discards and redraws through Gen::filter (100 attempts -> GenerationExhausted),
 // discarding Exceptions only, never Errors. Shrinks through the arguments, rebuilding the instance.

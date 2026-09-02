@@ -40,8 +40,11 @@ final class TypeGenerators
      * @param string $type The type expression, as written in the docblock.
      * @param Closure(string): ArbitraryInterface $forClass Resolver for a class type — recursion
      *        lives with the caller, which is what tracks depth and cycles.
+     * @param Closure(string): ?string $resolveClass The class a name written in the docblock
+     *        denotes, fully qualified, or null when it is not a class the caller knows —
+     *        the caller owns the declaring file's imports.
      */
-    public static function fromDocblock(string $type, Closure $forClass): ?ArbitraryInterface
+    public static function fromDocblock(string $type, Closure $forClass, Closure $resolveClass): ?ArbitraryInterface
     {
         $type = trim($type);
 
@@ -51,7 +54,7 @@ final class TypeGenerators
 
         // ?T is a union with null, spelled shorter.
         if (str_starts_with($type, '?')) {
-            $inner = self::fromDocblock(substr($type, 1), $forClass);
+            $inner = self::fromDocblock(substr($type, 1), $forClass, $resolveClass);
 
             return !$inner instanceof ArbitraryInterface ? null : Gen::nullable($inner);
         }
@@ -68,13 +71,39 @@ final class TypeGenerators
             return $ranged;
         }
 
-        $collection = self::collection($type, $forClass);
+        $collection = self::collection($type, $forClass, $resolveClass);
 
         if ($collection instanceof ArbitraryInterface) {
             return $collection;
         }
 
-        return self::union($type, $forClass);
+        $union = self::union($type, $forClass, $resolveClass);
+
+        if ($union instanceof ArbitraryInterface) {
+            return $union;
+        }
+
+        return self::classType($type, $forClass, $resolveClass);
+    }
+
+    /**
+     * A class, interface or enum named the way the docblock's file names it
+     * (`LineItem`, `Order\LineItem`, `\App\LineItem`). What is not a name at
+     * all (`array{a: int}`, `numeric-string`) or names nothing the resolver
+     * knows stays unread.
+     *
+     * @param Closure(string): ArbitraryInterface $forClass
+     * @param Closure(string): ?string $resolveClass
+     */
+    private static function classType(string $type, Closure $forClass, Closure $resolveClass): ?ArbitraryInterface
+    {
+        if (preg_match('/^\\\\?[A-Za-z_][A-Za-z0-9_]*(\\\\[A-Za-z_][A-Za-z0-9_]*)*\z/', $type) !== 1) {
+            return null;
+        }
+
+        $class = $resolveClass($type);
+
+        return $class === null ? null : $forClass($class);
     }
 
     /**
@@ -137,11 +166,12 @@ final class TypeGenerators
      * `list<T>`, `non-empty-list<T>`, `array<V>`, `array<K, V>`, `T[]`.
      *
      * @param Closure(string): ArbitraryInterface $forClass
+     * @param Closure(string): ?string $resolveClass
      */
-    private static function collection(string $type, Closure $forClass): ?ArbitraryInterface
+    private static function collection(string $type, Closure $forClass, Closure $resolveClass): ?ArbitraryInterface
     {
         if (str_ends_with($type, '[]')) {
-            $element = self::fromDocblock(substr($type, 0, -2), $forClass);
+            $element = self::fromDocblock(substr($type, 0, -2), $forClass, $resolveClass);
 
             return !$element instanceof ArbitraryInterface ? null : Gen::arrayOf($element, 0, 10);
         }
@@ -154,7 +184,7 @@ final class TypeGenerators
         $minimum = str_starts_with($matches[1], 'non-empty-') ? 1 : 0;
 
         if (count($arguments) === 1) {
-            $element = self::fromDocblock($arguments[0], $forClass);
+            $element = self::fromDocblock($arguments[0], $forClass, $resolveClass);
 
             return !$element instanceof ArbitraryInterface ? null : Gen::arrayOf($element, $minimum, 10);
         }
@@ -164,8 +194,8 @@ final class TypeGenerators
         }
 
         /** @var ?ArbitraryInterface<array-key> $key */
-        $key = self::fromDocblock($arguments[0], $forClass);
-        $value = self::fromDocblock($arguments[1], $forClass);
+        $key = self::fromDocblock($arguments[0], $forClass, $resolveClass);
+        $value = self::fromDocblock($arguments[1], $forClass, $resolveClass);
 
         return $key === null || !$value instanceof ArbitraryInterface ? null : Gen::dictOf($key, $value, $minimum, 10);
     }
@@ -176,8 +206,9 @@ final class TypeGenerators
      * domain spelled out in the type.
      *
      * @param Closure(string): ArbitraryInterface $forClass
+     * @param Closure(string): ?string $resolveClass
      */
-    private static function union(string $type, Closure $forClass): ?ArbitraryInterface
+    private static function union(string $type, Closure $forClass, Closure $resolveClass): ?ArbitraryInterface
     {
         $members = self::splitUnion($type);
 
@@ -194,7 +225,7 @@ final class TypeGenerators
         $pairs = [];
 
         foreach ($members as $member) {
-            $arbitrary = self::fromDocblock($member, $forClass);
+            $arbitrary = self::fromDocblock($member, $forClass, $resolveClass);
 
             if (!$arbitrary instanceof ArbitraryInterface) {
                 return null;
@@ -207,8 +238,9 @@ final class TypeGenerators
     }
 
     /**
-     * The values of a union written entirely as literals, or null when any
-     * member is not one.
+     * The values of a union written entirely as literals — quoted strings,
+     * integers, and the keywords `null`, `true`, `false` psalm allows beside
+     * them (`'a'|'b'|null`) — or null when any member is not one.
      *
      * @param list<string> $members
      *
@@ -227,6 +259,16 @@ final class TypeGenerators
 
             if (preg_match('/^-?\d+\z/', $member) === 1) {
                 $values[] = (int) $member;
+
+                continue;
+            }
+
+            if (in_array($member, ['null', 'true', 'false'], strict: true)) {
+                $values[] = match ($member) {
+                    'null' => null,
+                    'true' => true,
+                    default => false,
+                };
 
                 continue;
             }

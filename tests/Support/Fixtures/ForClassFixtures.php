@@ -74,6 +74,40 @@ final readonly class Validating
     }
 }
 
+final readonly class DocblockClassTypes
+{
+    /**
+     * @param list<NativeTypes> $items
+     * @param Currency|null $currency
+     * @param 'draft'|'published'|null $status
+     * @param \DateTimeImmutable $at
+     * @param non-empty-list<Currency> $currencies
+     */
+    public function __construct(
+        public array $items,
+        public ?Currency $currency,
+        public ?string $status,
+        public \DateTimeImmutable $at,
+        public array $currencies,
+    ) {}
+}
+
+final readonly class NarrowedFloat
+{
+    /** @param float<0.0, 1.0> $ratio */
+    public function __construct(
+        public float $ratio,
+    ) {}
+}
+
+final readonly class GenericCollection
+{
+    /** @param NativeTypes<int> $inner */
+    public function __construct(
+        public NativeTypes $inner,
+    ) {}
+}
+
 final readonly class Ordered
 {
     public function __construct(

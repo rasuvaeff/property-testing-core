@@ -33,6 +33,9 @@ final readonly class FloatArbitrary implements ArbitraryInterface
         private float $min = 0.0,
         private float $max = 1.0,
     ) {
+        if (!is_finite($min) || !is_finite($max)) {
+            throw new \InvalidArgumentException('Min and max must be finite');
+        }
         if ($min > $max) {
             throw new \InvalidArgumentException('Min must be less than or equal to max');
         }
@@ -57,7 +60,19 @@ final readonly class FloatArbitrary implements ArbitraryInterface
             return $this->tree($this->min * (1.0 - $fraction) + $this->max * $fraction);
         }
 
-        return $this->tree($this->min + $fraction * $span);
+        return $this->tree($this->withinRange($this->min + $fraction * $span));
+    }
+
+    /**
+     * Keeps an interpolated value below the exclusive upper bound. When the
+     * span is within a few ulps of `min` (e.g. `1e16 .. 1e16 + 2`), the
+     * addition rounds up to `max` itself for a large enough fraction; the
+     * generated domain is `[min, max)`, so such a draw lands on `min`
+     * instead. A degenerate range (`min === max`) has that one value only.
+     */
+    private function withinRange(float $value): float
+    {
+        return $value >= $this->max && $this->min < $this->max ? $this->min : $value;
     }
 
     /** @return Shrinkable<float> */

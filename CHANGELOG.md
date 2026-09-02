@@ -13,6 +13,35 @@
   `Shrinkable` tree) as exhausted at that point: the candidates yielded before
   it count, the descent continues with the next node, and a replayed path
   indexing past the break reports the candidate as missing.
+- `Gen::forClass()` / `Gen::forParameters()` no longer fall back to the native
+  type when a docblock type is outside the readable subset. `float<0.0, 1.0>`
+  generated from `float` — the whole line for a parameter documented as the
+  unit interval — is the widened guess the reader promises never to make; it
+  is now an error naming the parameter and the documented type. The one
+  fallback kept is a native class type, whose docblock can only narrow
+  generics (`Collection<Item>`), never the values.
+- Docblock types now resolve class names: `list<LineItem>`, `Status|null`,
+  `'draft'|'published'|null`, `\DateTimeImmutable` and a namespace-relative
+  `Order\LineItem` are read the way the code beneath the docblock reads
+  them — through the declaring file's namespace and `use` imports (aliases
+  and group imports included), which reflection does not expose, so the
+  file is tokenised once. `ext-tokenizer` is now required. Literal unions
+  accept `null`, `true` and `false` beside quoted strings and integers.
+- `Gen::forClass()` / `Gen::forParameters()` reject an override whose key
+  names no parameter (`['amout' => …]`) instead of silently generating the
+  parameter from its declared type.
+- `Gen::regex()` / `stringMatching()` bound the longest string a whole
+  pattern can generate (10,000 characters) at compile time, not only each
+  quantifier on its own: `(a{10000}){10000}` and a deeply nested `(a*)*`
+  chain passed the per-quantifier guard and exhausted memory on the first
+  draw. `maxRepeat` above the same bound is rejected for the same reason.
+- `FloatArbitrary` (`Gen::floatBetween()`) no longer emits the exclusive
+  upper bound when the span is within a few ulps of `min` (`1e16 .. 1e16 + 2`
+  rounded up to `max`), and rejects a `NAN`/`INF` bound instead of generating
+  `NAN` forever.
+- `Gen::oneOf()` / `OneOfArbitrary` accept a string-keyed variadic (named
+  arguments, a spread map) — the values are picked by position instead of
+  reading a missing index 0.
 
 ## 0.4.2 — 2026-08-20
 

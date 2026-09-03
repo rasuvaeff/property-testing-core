@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Runner\Redis;
 
 /**
- * `redis://host[:port][/db][?prefix=key-prefix]` (or `rediss://` for TLS),
+ * `redis://host[:port][/db][?prefix=key-prefix&timeout=seconds]` (or `rediss://` for TLS),
  * taken apart.
  *
  * The shape is the one the IANA registration, predis and Symfony agree on:
@@ -24,6 +24,8 @@ final readonly class RedisDsn
 {
     public const int DEFAULT_PORT = 6379;
 
+    public const float DEFAULT_TIMEOUT = 5.0;
+
     public const int DEFAULT_DATABASE = 0;
 
     /** The engine's own default, so a DSN without a prefix behaves like the plain constructor. */
@@ -38,6 +40,7 @@ final readonly class RedisDsn
      * @param non-empty-string $prefix The key prefix every corpus key starts with;
      *        {@see DEFAULT_PREFIX} when the DSN has no `prefix` query parameter.
      * @param bool $tls Whether the connection is TLS (`rediss://`).
+     * @param float $timeout The connection timeout in seconds.
      */
     public function __construct(
         public string $host,
@@ -45,6 +48,7 @@ final readonly class RedisDsn
         public int $database,
         public string $prefix,
         public bool $tls,
+        public float $timeout = self::DEFAULT_TIMEOUT,
     ) {}
 
     /**
@@ -54,11 +58,11 @@ final readonly class RedisDsn
      * assert: an array literal built where the client is constructed can only
      * be checked by connecting to a server.
      *
-     * @return array{scheme: 'tcp'|'tls', host: non-empty-string, port: int, database: int<0, max>}
+     * @return array{scheme: 'tcp'|'tls', host: non-empty-string, port: int, database: int<0, max>, timeout: float}
      */
     public function toPredisParameters(): array
     {
-        return ['scheme' => $this->tls ? 'tls' : 'tcp', 'host' => $this->host, 'port' => $this->port, 'database' => $this->database];
+        return ['scheme' => $this->tls ? 'tls' : 'tcp', 'host' => $this->host, 'port' => $this->port, 'database' => $this->database, 'timeout' => $this->timeout];
     }
 
     /**
@@ -76,7 +80,7 @@ final readonly class RedisDsn
      * @param string $dsn The DSN, already known to use the `redis` or `rediss` scheme.
      *
      * @throws \InvalidArgumentException When the DSN carries credentials, names no host, has a path
-     *         that is not a database index, or has a query parameter other than `prefix`.
+     *         that is not a database index, has an invalid port/timeout, or has an unknown query parameter.
      */
     public static function parse(string $dsn): self
     {
@@ -126,8 +130,21 @@ final readonly class RedisDsn
                 ));
             }
 
+            $parsedDatabase = (int) $path;
+
+            if ((string) $parsedDatabase !== $path) {
+                throw new \InvalidArgumentException(sprintf(
+                    'PROPERTY_DB="%s" has a database index outside the supported integer range',
+                    $dsn,
+                ));
+            }
+
             /** @var int<0, max> $database */
-            $database = (int) $path;
+            $database = $parsedDatabase;
+        }
+
+        if ($port !== null && ($port < 1 || $port > 65535)) {
+            throw new \InvalidArgumentException(sprintf('PROPERTY_DB="%s" has a port outside 1..65535', $dsn));
         }
 
         $query = [];
@@ -140,7 +157,7 @@ final readonly class RedisDsn
         $prefix = $query['prefix'] ?? null;
 
         foreach (array_keys($query) as $parameter) {
-            if ($parameter !== 'prefix') {
+            if (!in_array($parameter, ['prefix', 'timeout'], strict: true)) {
                 throw new \InvalidArgumentException(sprintf(
                     'PROPERTY_DB="%s" has an unknown query parameter "%s"; only prefix= is understood',
                     $dsn,
@@ -149,12 +166,32 @@ final readonly class RedisDsn
             }
         }
 
+        /** @var mixed $timeout */
+        $timeout = $query['timeout'] ?? null;
+        $timeout = $timeout === null || $timeout === '' ? self::DEFAULT_TIMEOUT : self::parseTimeout($timeout, $dsn);
+
         return new self(
             host: $host,
             port: is_int($port) ? $port : self::DEFAULT_PORT,
             database: $database,
             prefix: is_string($prefix) && $prefix !== '' ? $prefix : self::DEFAULT_PREFIX,
             tls: $scheme === 'rediss',
+            timeout: $timeout,
         );
+    }
+
+    private static function parseTimeout(mixed $value, string $dsn): float
+    {
+        if (!is_string($value) || preg_match('/^(?:\d+(?:\.\d*)?|\.\d+)\z/', $value) !== 1) {
+            throw new \InvalidArgumentException(sprintf('PROPERTY_DB="%s" has an invalid timeout; expected a positive number of seconds', $dsn));
+        }
+
+        $timeout = (float) $value;
+
+        if (!is_finite($timeout) || $timeout <= 0.0) {
+            throw new \InvalidArgumentException(sprintf('PROPERTY_DB="%s" has an invalid timeout; expected a positive number of seconds', $dsn));
+        }
+
+        return $timeout;
     }
 }

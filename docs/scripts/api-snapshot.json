@@ -767,7 +767,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 56
+                "startLine": 54
             }
         ],
         "constants": [],
@@ -5328,7 +5328,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 121
+                "startLine": 117
             },
             {
                 "name": "encodeEntry",
@@ -5365,7 +5365,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 210
+                "startLine": 206
             },
             {
                 "name": "valuesEntry",
@@ -5409,7 +5409,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 227
+                "startLine": 223
             },
             {
                 "name": "seedEntry",
@@ -5453,7 +5453,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 268
+                "startLine": 264
             },
             {
                 "name": "keyOf",
@@ -5476,7 +5476,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 293
+                "startLine": 289
             },
             {
                 "name": "cap",
@@ -5513,7 +5513,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 320
+                "startLine": 316
             }
         ],
         "constants": [],
@@ -10209,19 +10209,29 @@
         "attributes": [],
         "constructorParams": [],
         "publicProperties": [],
-        "publicMethods": [],
+        "publicMethods": [
+            {
+                "name": "sha",
+                "static": true,
+                "params": [],
+                "returnType": "string",
+                "summary": "`sha1(CAS)`, what `EVALSHA` addresses the script by once the server has\nseen it: the script text then travels once per server, not once per\nwrite. A server that does not know it answers `NOSCRIPT`, and the\nclients fall back to `EVAL` for that call. Computed from the constant\nrather than written down: a checkout that rewrites line endings would\nchange the script's bytes, and the digest must be of the bytes sent.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 55
+            }
+        ],
         "constants": [
             {
                 "name": "CAS",
                 "type": "string",
                 "summary": "Sets, deletes or refuses, atomically.",
                 "value": "local current = redis.call('GET', KEYS[1])\nlocal expected = ARGV[1]\nlocal document = ARGV[2]\n\nif current == false then\n    current = ''\nend\n\nif current ~= expected then\n    return 0\nend\n\nif document == '' then\n    redis.call('DEL', KEYS[1])\nelse\n    redis.call('SET', KEYS[1], document)\nend\n\nreturn 1"
-            },
-            {
-                "name": "SHA",
-                "type": "string",
-                "summary": "`sha1(CAS)`, what `EVALSHA` addresses the script by once the server has\nseen it: the script text then travels once per server, not once per\nwrite. A server that does not know it answers `NOSCRIPT`, and the\nclients fall back to `EVAL` for that call.",
-                "value": "9e09f173b33c3a42dbc633a126866de36b55e619"
             }
         ],
         "enumCases": [],
@@ -10558,7 +10568,7 @@
         "isApi": true,
         "isAbstract": false,
         "isThrowable": false,
-        "summary": "`redis://host[:port][/db][?prefix=key-prefix]` (or `rediss://` for TLS),\ntaken apart.",
+        "summary": "`redis://host[:port][/db][?prefix=key-prefix&timeout=seconds]` (or `rediss://` for TLS),\ntaken apart.",
         "description": "The shape is the one the IANA registration, predis and Symfony agree on:\nthe path is the database index, TLS is the `rediss` scheme, and anything\nelse — the key prefix — is a query parameter. A path that is not a\ndatabase index is refused rather than reinterpreted, so a DSN means the\nsame thing here as everywhere else it could be pasted into.\n\nParsing lives in its own type because it is the part with answers worth\nasserting — a default port and a default prefix are decisions, and a\nresolver that also builds clients hides them behind a connection.",
         "deprecated": null,
         "see": [],
@@ -10611,6 +10621,15 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "timeout",
+                "type": "float",
+                "description": "The connection timeout in seconds.",
+                "default": "5.0",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [],
@@ -10628,7 +10647,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 59
+                "startLine": 63
             },
             {
                 "name": "phpRedisHost",
@@ -10643,7 +10662,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 70
+                "startLine": 74
             },
             {
                 "name": "parse",
@@ -10663,7 +10682,7 @@
                 "throws": [
                     {
                         "type": "\\InvalidArgumentException",
-                        "description": "When the DSN carries credentials, names no host, has a path\nthat is not a database index, or has a query parameter other than `prefix`."
+                        "description": "When the DSN carries credentials, names no host, has a path\nthat is not a database index, has an invalid port/timeout, or has an unknown query parameter."
                     }
                 ],
                 "throwsInBody": true,
@@ -10671,7 +10690,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 81
+                "startLine": 85
             }
         ],
         "constants": [
@@ -10680,6 +10699,12 @@
                 "type": "int",
                 "summary": "",
                 "value": 6379
+            },
+            {
+                "name": "DEFAULT_TIMEOUT",
+                "type": "float",
+                "summary": "",
+                "value": 5
             },
             {
                 "name": "DEFAULT_DATABASE",

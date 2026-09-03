@@ -25,7 +25,7 @@ Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
   `PROPERTY_DB` are adapter conventions: the adapter READS the variable and hands
   the value to `EnvironmentOverrides::runs()/seed()/phases()/edgeCases()/flag()/string()`
   (unset/empty -> null, malformed -> InvalidArgumentException naming the variable) and
-  `CorpusFactory::fromDsn()` (path -> FilesystemCorpus; `redis://host[:port][/db][?prefix=]`
+  `CorpusFactory::fromDsn()` (path -> FilesystemCorpus; `redis://host[:port][/db][?prefix=&timeout=seconds]`
   or `rediss://` -> RedisCorpus via ext-redis or predis, memoized per value; other scheme ->
   error). `FilesystemCorpus::fromEnv()` reads `PROPERTY_DB` when YOU call it.
 - Sequential-only: `Classify` and the in-body draw tape are process-local
@@ -172,7 +172,7 @@ FilesystemCorpus::fromEnv();            // ?self from PROPERTY_DB
 CorpusFactory::fromDsn('/tmp/corpus');  // Corpus from a PROPERTY_DB value; memoized per value
 CorpusFactory::fromDsn('redis://redis:6379/2?prefix=suite-a:'); // RedisCorpus; rediss:// = TLS;
                                         // path = database index, prefix = query; other schemes throw
-RedisDsn::parse($dsn);                  // host, port, database, prefix, tls; credentials in userinfo refused
+RedisDsn::parse($dsn);                  // host, port, database, prefix, tls, timeout (default 5.0); credentials in userinfo refused
 new LazyPhpRedisCorpusClient(RedisDsn::parse($dsn)); // ext-redis client that connects on first use
 EnvironmentOverrides::runs(getenv('PROPERTY_RUNS'));   // ?positive-int; PHASES -> ?list<Phase>; EDGE_CASES -> ?EdgeCases;
                                         // seed -> ?int (range-checked); flag -> ?bool ('0' = off); string -> ?non-empty-string

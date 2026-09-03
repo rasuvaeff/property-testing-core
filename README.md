@@ -441,10 +441,13 @@ the *meaning* of the values, so both adapters agree on it:
 `flag()` / `string()` parse a raw `getenv()` value (unset or empty → `null`, a
 malformed one → `InvalidArgumentException` naming the variable), and
 `CorpusFactory::fromDsn()` turns a `PROPERTY_DB` value into a corpus — a
-directory path is a `FilesystemCorpus`, `redis://host[:port][/db][?prefix=key-prefix]`
+directory path is a `FilesystemCorpus`, `redis://host[:port][/db][?prefix=key-prefix&timeout=seconds]`
 (or `rediss://` for TLS) a `RedisCorpus` over `ext-redis` or predis, any other
 scheme an error, the same instance for the same value within a process.
 `FilesystemCorpus::fromEnv()` still reads `PROPERTY_DB` when *you* call it.
+
+The optional `timeout` query parameter sets the Redis connection timeout in
+seconds (default `5.0`) for both Predis and ext-redis clients.
 
 ### Regression corpus
 

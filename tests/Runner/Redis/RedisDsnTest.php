@@ -15,7 +15,7 @@ use Testo\Test;
 final class RedisDsnTest
 {
     #[DataProvider('dsnProvider')]
-    public function parsesTheIanaShape(string $dsn, string $host, int $port, int $database, string $prefix, bool $tls): void
+    public function parsesTheIanaShape(string $dsn, string $host, int $port, int $database, string $prefix, bool $tls, float $timeout): void
     {
         $parsed = RedisDsn::parse($dsn);
 
@@ -24,34 +24,36 @@ final class RedisDsnTest
         Assert::same($parsed->database, $database);
         Assert::same($parsed->prefix, $prefix);
         Assert::same($parsed->tls, $tls);
+        Assert::same($parsed->timeout, $timeout);
     }
 
     /**
-     * @return iterable<string, array{string, string, int, int, string, bool}>
+     * @return iterable<string, array{string, string, int, int, string, bool, float}>
      */
     public static function dsnProvider(): iterable
     {
-        yield 'host only' => ['redis://redis', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false];
-        yield 'host and port' => ['redis://127.0.0.1:6399', '127.0.0.1', 6399, 0, RedisDsn::DEFAULT_PREFIX, false];
-        yield 'database in the path' => ['redis://redis:6379/2', 'redis', 6379, 2, RedisDsn::DEFAULT_PREFIX, false];
-        yield 'prefix in the query' => ['redis://redis/?prefix=suite-a:', 'redis', RedisDsn::DEFAULT_PORT, 0, 'suite-a:', false];
-        yield 'database and prefix' => ['redis://redis:6379/3?prefix=suite-a:', 'redis', 6379, 3, 'suite-a:', false];
-        yield 'tls scheme' => ['rediss://redis:6380/1', 'redis', 6380, 1, RedisDsn::DEFAULT_PREFIX, true];
-        yield 'scheme case does not matter' => ['REDISS://redis', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, true];
-        yield 'ipv6 literal loses its brackets' => ['redis://[::1]:6379/0', '::1', 6379, 0, RedisDsn::DEFAULT_PREFIX, false];
-        yield 'trailing slash is no database' => ['redis://redis/', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false];
-        yield 'empty prefix means the default' => ['redis://redis?prefix=', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false];
+        yield 'host only' => ['redis://redis', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'host and port' => ['redis://127.0.0.1:6399', '127.0.0.1', 6399, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'database in the path' => ['redis://redis:6379/2', 'redis', 6379, 2, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'prefix in the query' => ['redis://redis/?prefix=suite-a:', 'redis', RedisDsn::DEFAULT_PORT, 0, 'suite-a:', false, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'database and prefix' => ['redis://redis:6379/3?prefix=suite-a:', 'redis', 6379, 3, 'suite-a:', false, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'timeout in the query' => ['redis://redis?timeout=0.25', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false, 0.25];
+        yield 'tls scheme' => ['rediss://redis:6380/1', 'redis', 6380, 1, RedisDsn::DEFAULT_PREFIX, true, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'scheme case does not matter' => ['REDISS://redis', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, true, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'ipv6 literal loses its brackets' => ['redis://[::1]:6379/0', '::1', 6379, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'trailing slash is no database' => ['redis://redis/', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'empty prefix means the default' => ['redis://redis?prefix=', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
     }
 
     public function theConnectionParametersAreTheOnesPredisTakes(): void
     {
         Assert::same(
             RedisDsn::parse('redis://redis:6399/4?prefix=x:')->toPredisParameters(),
-            ['scheme' => 'tcp', 'host' => 'redis', 'port' => 6399, 'database' => 4],
+            ['scheme' => 'tcp', 'host' => 'redis', 'port' => 6399, 'database' => 4, 'timeout' => RedisDsn::DEFAULT_TIMEOUT],
         );
         Assert::same(
             RedisDsn::parse('rediss://redis')->toPredisParameters(),
-            ['scheme' => 'tls', 'host' => 'redis', 'port' => RedisDsn::DEFAULT_PORT, 'database' => 0],
+            ['scheme' => 'tls', 'host' => 'redis', 'port' => RedisDsn::DEFAULT_PORT, 'database' => 0, 'timeout' => RedisDsn::DEFAULT_TIMEOUT],
         );
     }
 
@@ -59,6 +61,31 @@ final class RedisDsnTest
     {
         Assert::same(RedisDsn::parse('rediss://redis')->phpRedisHost(), 'tls://redis');
         Assert::same(RedisDsn::parse('redis://redis')->phpRedisHost(), 'redis');
+    }
+
+    #[DataProvider('invalidDsns')]
+    public function invalidPortDatabaseAndTimeoutAreRefused(string $dsn): void
+    {
+        try {
+            RedisDsn::parse($dsn);
+
+            Assert::fail('expected the DSN to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::true($e instanceof \InvalidArgumentException);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function invalidDsns(): iterable
+    {
+        yield 'zero port' => ['redis://redis:0'];
+        yield 'port above maximum' => ['redis://redis:65536'];
+        yield 'database overflow' => ['redis://redis/999999999999999999999999'];
+        yield 'zero timeout' => ['redis://redis?timeout=0'];
+        yield 'negative timeout' => ['redis://redis?timeout=-1'];
+        yield 'non numeric timeout' => ['redis://redis?timeout=fast'];
     }
 
     #[DataProvider('pathThatIsNotADatabase')]

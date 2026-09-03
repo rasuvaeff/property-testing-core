@@ -61,7 +61,7 @@ final class LazyPhpRedisCorpusClient implements CorpusClient
 
         // A refused connection is a configuration error, not a corpus that is
         // silently empty: the suite was told to share its memory.
-        if (!$redis->connect($this->dsn->phpRedisHost(), $this->dsn->port)) {
+        if (!$redis->connect($this->dsn->phpRedisHost(), $this->dsn->port, $this->dsn->timeout)) {
             throw new \RuntimeException(sprintf('Could not connect to the Redis corpus at %s:%d', $this->dsn->host, $this->dsn->port));
         }
 

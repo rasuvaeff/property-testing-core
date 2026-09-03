@@ -462,6 +462,15 @@ function defaultValueLiteral(ReflectionParameter $param): ?string
 
     $constName = $param->getDefaultValueConstantName();
     if ($constName !== null) {
+        if (str_starts_with($constName, 'self::')) {
+            $declaringClass = $param->getDeclaringClass();
+            $shortName = substr($constName, strlen('self::'));
+
+            if ($declaringClass !== null && $declaringClass->hasConstant($shortName)) {
+                return var_export($declaringClass->getConstant($shortName), return: true);
+            }
+        }
+
         // getDefaultValueConstantName() reports the namespace-qualified name
         // PHP tries FIRST at runtime — even for an unqualified global constant
         // like `PHP_INT_MIN` used inside a namespaced file, which actually

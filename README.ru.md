@@ -443,11 +443,14 @@ new PropertyConfig();                                          // все фаз�
 `getenv()` (не задано или пусто → `null`, испорчено →
 `InvalidArgumentException` с именем переменной), а `CorpusFactory::fromDsn()`
 превращает значение `PROPERTY_DB` в корпус: путь к каталогу —
-`FilesystemCorpus`, `redis://host[:port][/db][?prefix=key-prefix]` (или
+`FilesystemCorpus`, `redis://host[:port][/db][?prefix=key-prefix&timeout=seconds]` (или
 `rediss://` для TLS) — `RedisCorpus` поверх `ext-redis` или predis, любая
 другая схема — ошибка; один и тот же экземпляр на одно значение в процессе.
 `FilesystemCorpus::fromEnv()` по-прежнему читает `PROPERTY_DB`, когда его
 вызываете *вы*.
+
+Необязательный query-параметр `timeout` задаёт тайм-аут подключения Redis в
+секундах (по умолчанию `5.0`) для клиентов Predis и ext-redis.
 
 ### Регрессионный корпус
 

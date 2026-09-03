@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1 — 2026-09-03
+
+- Redis corpus DSNs accept a finite connection `timeout` (default `5.0`),
+  passed to both Predis and ext-redis clients.
+- Redis DSN ports and database indexes are validated strictly; invalid and
+  overflowing values are rejected instead of being silently changed.
+
 ## 0.6.0 — 2026-09-03
 
 - `Gen::string()` / `stringOf()` / `char()` draw characters with a distribution

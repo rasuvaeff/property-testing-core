@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 — 2026-09-04
 
 - `PropertyConfig` rejects a `timeoutMs` or `budgetMs` past the value where the
   millisecond-to-nanosecond conversion leaves the integer range, the way it

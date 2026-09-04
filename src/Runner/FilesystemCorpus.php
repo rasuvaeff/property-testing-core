@@ -147,6 +147,8 @@ final readonly class FilesystemCorpus implements Corpus
     /**
      * Drops $entry from $id's corpus — the replay no longer fails, so the
      * regression is fixed and the entry has served its purpose.
+     *
+     * @throws \RuntimeException When the entry cannot be re-encoded to the key that identifies it.
      */
     #[\Override]
     public function prune(string $id, CorpusEntry $entry): void
@@ -163,7 +165,18 @@ final readonly class FilesystemCorpus implements Corpus
                 $encoded = $entry->isValues()
                     ? CorpusDocument::valuesEntry($entry->arguments, array_keys($entry->arguments), $entry->seed, self::SEQUENCE_EPOCH)
                     : CorpusDocument::seedEntry($entry->seed, self::SEQUENCE_EPOCH, $entry->runsBeforeFailure, $entry->edgeCases);
-                $key = $encoded === null ? null : CorpusDocument::keyOf($encoded);
+
+                if ($encoded === null) {
+                    // keyOf() never returns null, so a null key would match
+                    // nothing and leave the entry to be replayed forever. Say so
+                    // instead: the runner turns this into a CorpusFailed event.
+                    throw new \RuntimeException(sprintf(
+                        'Could not re-encode the corpus entry of property "%s" to prune it',
+                        $id,
+                    ));
+                }
+
+                $key = CorpusDocument::keyOf($encoded);
 
                 $kept = array_values(array_filter(
                     $this->read($id),
@@ -189,7 +202,11 @@ final readonly class FilesystemCorpus implements Corpus
             return [];
         }
 
-        $content = file_get_contents($file);
+        // Suppressed like every other filesystem call here: the file can be
+        // removed or made unreadable between the is_file() above and this read,
+        // and a raw E_WARNING out of best-effort memory would land in the middle
+        // of the suite's output.
+        $content = @file_get_contents($file);
 
         if ($content === false) {
             return [];
@@ -315,7 +332,7 @@ final readonly class FilesystemCorpus implements Corpus
             return;
         }
 
-        $lock = fopen($path, 'c');
+        $lock = @fopen($path, 'c');
 
         if ($lock === false) {
             throw new \RuntimeException(sprintf('Could not open the corpus lock file for property "%s"', $id));

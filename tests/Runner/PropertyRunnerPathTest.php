@@ -324,6 +324,42 @@ final class PropertyRunnerPathTest
         ];
     }
 
+    public function aStepThatExhaustsAGeneratorIsAStalePathNotAFalsification(): void
+    {
+        // A draw past the end of the recorded tape regenerates through the live
+        // generator, and an exhaustible one can fail to produce a value at all.
+        // That throw travels the same road as an assertion failure — the
+        // executor folds everything into TrialOutcome::failed — so a replay that
+        // accepts any falsification would take it as the step's evidence and
+        // report the recorded bug as a generator exhaustion. The search rejects
+        // it through failsTheSameWay(); a replay names the mismatch instead.
+        $calls = 0;
+        $body = static function (int $value) use (&$calls): void {
+            ++$calls;
+            Gen::draw(Gen::intBetween(0, 10));
+
+            if ($calls > 1) {
+                Gen::draw(Gen::filter(Gen::intBetween(0, 10), static fn(int $drawn): bool => false));
+            }
+
+            throw new \RuntimeException(sprintf('%d always fails', $value));
+        };
+
+        $listener = new CollectingListener();
+        $result = $this->run($body, path: 'value:1', listener: $listener);
+
+        Assert::instanceOf($result, PathFailed::class);
+        Assert::same($result->exception->getStep(), 1);
+        Assert::same($result->exception->getSegment(), 'value:1');
+        Assert::string($result->exception->getMessage())->contains('exhausted a generator instead of falsifying the property');
+
+        // The step was tried and rejected, and it is reported as such: a
+        // listener that watched the descent must not see it as accepted.
+        $tried = $listener->ofType(ShrinkTried::class);
+        Assert::same(count($tried), 1);
+        Assert::false($tried[0]->accepted);
+    }
+
     public function aReplayedPathSurvivesTheMachineReadableRepresentation(): void
     {
         $example = $this->falsify($this->belowHundred(), path: self::INT_PATH);

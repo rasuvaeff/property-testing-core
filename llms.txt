@@ -152,7 +152,10 @@ Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
 
 Executor seam: implement `TrialExecutor` (`execute(array $arguments):
 TrialOutcome`) to adapt any framework; `TrialOutcome::passed() / failed($e) /
-discarded()`. `CallableTrialExecutor` is the standalone implementation.
+discarded() / skipped()`. `CallableTrialExecutor` is the standalone
+implementation. `discarded()` = the input left the domain (a recorded
+regression that discards on replay is pruned); `skipped()` = the environment
+refused to run the body (the entry is kept). Both count as discards elsewhere.
 
 ### Corpus (`Runner\` namespace)
 

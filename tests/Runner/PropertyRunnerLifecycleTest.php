@@ -451,6 +451,62 @@ final class PropertyRunnerLifecycleTest
         Assert::same($corpus->pruned, [$entry]);
     }
 
+    public function aValuesReplayDiscardedByAssumeIsPruned(): void
+    {
+        // The recorded input left the property's domain: it can never falsify
+        // again, so the entry has served its purpose. That is a statement about
+        // the input, and pruning it is the documented behaviour.
+        $entry = CorpusEntry::values(['value' => 5], seed: 3);
+        $corpus = new RecordingCorpus([$entry]);
+
+        $result = (new PropertyRunner())->run(
+            $this->definition(runs: 1),
+            new CallableTrialExecutor(static function (int $value): void {
+                Assume::that($value !== 5);
+            }),
+            [],
+            $corpus,
+        );
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($corpus->pruned, [$entry]);
+    }
+
+    public function aValuesReplaySkippedByTheEnvironmentKeepsTheEntry(): void
+    {
+        // A body guarded by "the dependency is missing, skip" says nothing about
+        // the input. Treating that like a discard would delete the recorded
+        // counterexample for every other environment because this one could not
+        // check it.
+        $skipped = CorpusEntry::values(['value' => 5], seed: 3);
+        $stale = CorpusEntry::values(['value' => 6], seed: 4);
+        $corpus = new RecordingCorpus([$skipped, $stale]);
+        $listener = new CollectingListener();
+
+        // Two entries, because keeping one must not stop the walk: the second
+        // is replayed, passes, and is pruned like any entry that healed.
+        $executor = new class implements TrialExecutor {
+            public int $calls = 0;
+
+            #[\Override]
+            public function execute(array $arguments): TrialOutcome
+            {
+                return ++$this->calls === 1 ? TrialOutcome::skipped() : TrialOutcome::passed();
+            }
+        };
+
+        $result = (new PropertyRunner())->run($this->definition(runs: 1), $executor, [$listener], $corpus);
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($corpus->pruned, [$stale]);
+
+        $pruned = $listener->ofType(CorpusPruned::class);
+        Assert::same(count($pruned), 1);
+        Assert::same($pruned[0]->seed, 4);
+        // Both entries replayed, and the random phase ran after them.
+        Assert::same($executor->calls, 3);
+    }
+
     public function anInconclusiveSeedReplayIsReportedAndKeepsTheEntry(): void
     {
         $entry = CorpusEntry::seed(11);

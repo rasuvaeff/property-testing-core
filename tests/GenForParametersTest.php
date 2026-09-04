@@ -9,10 +9,12 @@ use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\AnnotatedTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Currency;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\CustomDate;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NativeTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\PropertyMethods;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
 use Testo\Test;
 
 /**
@@ -194,6 +196,33 @@ final class GenForParametersTest
             Assert::string($e->getMessage())->contains('parameter $anything is typed array');
             Assert::string($e->getMessage())->contains('pass an override');
         }
+    }
+
+    #[DataProvider('dateTypesWithoutAGenerator')]
+    public function rejectsADateTypeThatIsNotDateTimeImmutableItself(string $method, string $type): void
+    {
+        // Only the exact class has a factory. A subclass — or \DateTime —
+        // inherits a constructor typed `string $datetime`, and a random string
+        // never parses as a date: without this refusal the failure is a parse
+        // error thrown deep inside the recursion, naming nothing.
+        try {
+            Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, $method));
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('Cannot generate ' . $type);
+            Assert::string($e->getMessage())->contains('only DateTimeImmutable itself is generated');
+            Assert::string($e->getMessage())->contains('pass an override');
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function dateTypesWithoutAGenerator(): iterable
+    {
+        yield 'subclass' => ['withDateSubclass', CustomDate::class];
+        yield 'mutable DateTime' => ['withMutableDate', \DateTime::class];
     }
 
     public function rejectsMixed(): void

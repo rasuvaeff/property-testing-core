@@ -133,9 +133,17 @@ final readonly class RedisDsn
             $parsedDatabase = (int) $path;
 
             if ((string) $parsedDatabase !== $path) {
+                // Two ways to get here, and they need different advice: "01"
+                // round-trips to "1" because of the leading zero, while a run of
+                // twenty digits round-trips to PHP_INT_MAX because it does not
+                // fit an int. Reporting the first as a range problem sends the
+                // reader looking for a limit that is not the reason.
                 throw new \InvalidArgumentException(sprintf(
-                    'PROPERTY_DB="%s" has a database index outside the supported integer range',
+                    str_starts_with($path, '0')
+                        ? 'PROPERTY_DB="%1$s" has a database index with a leading zero; write it as %2$s'
+                        : 'PROPERTY_DB="%1$s" has a database index outside the supported integer range',
                     $dsn,
+                    (string) $parsedDatabase,
                 ));
             }
 
@@ -155,6 +163,17 @@ final readonly class RedisDsn
 
         /** @var mixed $prefix */
         $prefix = $query['prefix'] ?? null;
+
+        if ($prefix !== null && !is_string($prefix)) {
+            // `?prefix[]=x` parses into an array. Falling back to the default
+            // prefix would silently point the corpus at another key space —
+            // this class refuses an unknown value rather than guessing, and an
+            // array-valued timeout already throws.
+            throw new \InvalidArgumentException(sprintf(
+                'PROPERTY_DB="%s" has a prefix that is not a single value; write it as ?prefix=key-prefix',
+                $dsn,
+            ));
+        }
 
         foreach (array_keys($query) as $parameter) {
             if (!in_array($parameter, ['prefix', 'timeout'], strict: true)) {

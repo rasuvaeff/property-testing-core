@@ -203,6 +203,19 @@ final class ParameterGenerators
                 return Gen::datetime();
             }
 
+            if (is_a($type, \DateTimeInterface::class, allow_string: true)) {
+                // Only the exact class has a generator. Anything else that
+                // implements the interface — a subclass, DateTime — inherits a
+                // constructor whose reflection asks for a `string` and a
+                // `?DateTimeZone`, and a random string never parses as a date:
+                // building it would explode with a parse error deep inside the
+                // recursion instead of naming the type that cannot be built.
+                throw new \InvalidArgumentException(sprintf(
+                    'Cannot generate %s: only DateTimeImmutable itself is generated from a signature; pass an override',
+                    $type,
+                ));
+            }
+
             /** @var class-string $type */
             return Gen::map(
                 self::forConstructor($type, [], $maxDepth - 1, [...$chain, $type]),

@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased
+
+- `TrialOutcome::skipped()` joins `discarded()` as a third "this run checked
+  nothing" outcome, and adapters should report an environmental skip
+  (`markTestSkipped()`, a framework skip from a lifecycle hook) as such. It
+  counts as a discard everywhere but one: a recorded regression whose replay
+  only skipped is kept instead of pruned. Before, one machine without the
+  dependency the body guards against deleted the counterexample for every
+  machine that has it.
+- A shrink-path replay no longer accepts `GenerationExhausted` as the step's
+  falsification. A draw past the end of the recorded tape regenerates through
+  the live generator, and an exhaustible one (`filter()`, `uniqueArrayOf()`
+  with a minimum, `commands()` with a minimum length) can fail to produce a
+  value: the recorded bug was reported as a generator exhaustion. The step is
+  now reported as a stale path.
+- `prune()` says so — as a `CorpusFailed` event — when the entry cannot be
+  re-encoded to the key that identifies it, on both the filesystem and the
+  Redis backend. It used to compute a null key, match nothing and silently
+  replay the entry forever.
+- `Gen::forParameters()` / `Gen::forClass()` refuse a `DateTimeInterface` type
+  that is not `DateTimeImmutable` itself — a subclass, or `DateTime` — by name.
+  Reflection over the inherited constructor asked for a `string` and blew up
+  with a date-parse error deep inside the recursion instead.
+- A Redis DSN with an array-valued `prefix` (`?prefix[]=x`) is refused rather
+  than silently falling back to the default prefix, and a database index with a
+  leading zero (`/01`) is reported as the spelling mistake it is instead of as
+  a number outside the integer range.
+- The corpus file is read through a suppressed `file_get_contents()`, like
+  every other filesystem call in that class: a file removed between the
+  `is_file()` check and the read no longer prints a raw warning into the
+  suite's output.
+
 ## 0.7.0 — 2026-09-04
 
 - `PropertyConfig` rejects a `timeoutMs` or `budgetMs` past the value where the

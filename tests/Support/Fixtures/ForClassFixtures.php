@@ -47,6 +47,23 @@ final readonly class AnnotatedTypes
     ) {}
 }
 
+final readonly class LiteralsHoldingSeparators
+{
+    /**
+     * A union member may contain the separator the splitter looks for, and an
+     * escaped quote of its own.
+     *
+     * @param 'a|b'|'c' $pipe
+     * @param 'x,y'|'z' $comma
+     * @param 'it\'s'|'plain' $quote
+     */
+    public function __construct(
+        public string $pipe,
+        public string $comma,
+        public string $quote,
+    ) {}
+}
+
 final readonly class WithEnumAndDate
 {
     public function __construct(

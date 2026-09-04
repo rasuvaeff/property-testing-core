@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+- `PropertyConfig` rejects a `timeoutMs` or `budgetMs` past the value where the
+  millisecond-to-nanosecond conversion leaves the integer range, the way it
+  already rejected such a `shrinkBudgetMs`. Above that bound the deadline
+  silently stopped being one.
+- A corpus document whose keys collide once PHP normalises them — `0` and `"0"`
+  in one encoded array, which no real PHP array can hold — is refused instead of
+  losing a pair to `array_combine()`.
+- `Gen::regex()` strips a trailing `$` anchor by the parity of the backslash run
+  before it, so `foo\\$` compiles (literal backslash, real anchor) instead of
+  failing on the anchor it mistook for an escaped `$`.
+- A quoted literal in a psalm docblock type may contain the separator of the
+  type it sits in: `'a|b'|'c'` and `array{k: 'x,y'}` are read as written, and
+  `\'` inside a literal is unescaped.
+- `Gen::oneOf()` enumerates shrink candidates for objects by identity. The
+  previous `var_export()` key threw on a cyclic object graph and treated two
+  distinct objects of equal state as one candidate.
+- `Gen::forClass()` builds its `ReflectionClass` once instead of once per
+  generated value.
+
 ## 0.6.1 — 2026-09-03
 
 - Redis corpus DSNs accept a finite connection `timeout` (default `5.0`),

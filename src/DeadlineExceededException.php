@@ -8,9 +8,10 @@ use RuntimeException;
 
 /**
  * Thrown (as the failure of a property) when a single run's body takes longer
- * than the {@see Property::$timeoutMs} deadline. The offending input is the
- * counterexample: it is pathological for the code under test (catastrophic
- * regex, deep recursion, unbounded backoff) — or the deadline is too tight.
+ * than the {@see Runner\PropertyConfig::$timeoutMs} deadline. The offending
+ * input is the counterexample: it is pathological for the code under test
+ * (catastrophic regex, deep recursion, unbounded backoff) — or the deadline is
+ * too tight.
  *
  * The input is reported as-is, NOT shrunk: shrink acceptance would have to
  * re-measure wall time, and timing noise makes that descent non-deterministic.

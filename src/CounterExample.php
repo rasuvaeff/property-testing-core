@@ -17,7 +17,7 @@ use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 final readonly class CounterExample
 {
     /**
-     * @param int $seed Seed of the run that first failed (pass it to {@see Property} to reproduce).
+     * @param int $seed Seed of the run that first failed (replay it as {@see Runner\PropertyConfig::$seed}).
      * @param int $runsBeforeFailure Number of successful (non-discarded) runs before the failure.
      * @param array<string, mixed> $originalArguments Randomly generated arguments that first failed.
      * @param array<string, mixed> $shrunkArguments Minimised arguments that still fail.

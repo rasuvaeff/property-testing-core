@@ -174,6 +174,19 @@ final class PropertyConfigTest
             'Shrink budget must be less than or equal to ' . intdiv(PHP_INT_MAX, 2_000_000) . ' milliseconds',
         ];
 
+        // The runner scales all three limits to nanoseconds, so all three carry
+        // the same ceiling: past it the product is a float and the deadline is
+        // no deadline at all.
+        yield 'timeout past its own deadline' => [
+            static fn(): PropertyConfig => new PropertyConfig(timeoutMs: intdiv(PHP_INT_MAX, 2_000_000) + 1),
+            'Timeout must be less than or equal to ' . intdiv(PHP_INT_MAX, 2_000_000) . ' milliseconds',
+        ];
+
+        yield 'budget past its own deadline' => [
+            static fn(): PropertyConfig => new PropertyConfig(budgetMs: intdiv(PHP_INT_MAX, 2_000_000) + 1),
+            'Budget must be less than or equal to ' . intdiv(PHP_INT_MAX, 2_000_000) . ' milliseconds',
+        ];
+
         // Nothing in the type system stops a configuration file or a command
         // line from reaching the constructor with these.
         yield 'a phase set holding a string' => [
@@ -264,6 +277,17 @@ final class PropertyConfigTest
 
         Assert::same($config->shrinkBudgetMs, intdiv(PHP_INT_MAX, 2_000_000));
         Assert::same($config->shrink, ShrinkMode::Bounded);
+    }
+
+    public function theLargestUsableTimeoutAndBudgetAreAccepted(): void
+    {
+        $config = new PropertyConfig(
+            timeoutMs: intdiv(PHP_INT_MAX, 2_000_000),
+            budgetMs: intdiv(PHP_INT_MAX, 2_000_000),
+        );
+
+        Assert::same($config->timeoutMs, intdiv(PHP_INT_MAX, 2_000_000));
+        Assert::same($config->budgetMs, intdiv(PHP_INT_MAX, 2_000_000));
     }
 
     public function edgeCasesDefaultToMixin(): void

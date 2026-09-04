@@ -18,6 +18,7 @@ use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Currency;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Cyclic;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\DocblockClassTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\GenericCollection;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\LiteralsHoldingSeparators;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NarrowedFloat;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NativeTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Nested;
@@ -106,6 +107,22 @@ final class ClassArbitraryTest
         }
 
         Assert::same(count($seen), 2);
+    }
+
+    public function aLiteralKeepsTheSeparatorsItContains(): void
+    {
+        // The union splitter walks the type string; a `|` or `,` inside a
+        // quoted literal belongs to the literal, not to the type.
+        $random = new Random(11);
+        $arbitrary = new ClassArbitrary(LiteralsHoldingSeparators::class);
+
+        for ($i = 0; $i < 30; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::true(in_array($value->pipe, ['a|b', 'c'], strict: true));
+            Assert::true(in_array($value->comma, ['x,y', 'z'], strict: true));
+            Assert::true(in_array($value->quote, ["it's", 'plain'], strict: true));
+        }
     }
 
     public function enumsAndDatesAreGeneratedByTheirOwnFactories(): void

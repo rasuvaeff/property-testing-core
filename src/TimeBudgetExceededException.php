@@ -8,8 +8,8 @@ use RuntimeException;
 
 /**
  * Thrown (as the failure of a property) when the random phase's wall-clock
- * time exceeds the {@see Property::$budgetMs} budget before the requested
- * number of successful checks completes. It exposes the completed and required
+ * time exceeds the {@see Runner\PropertyConfig::$budgetMs} budget before the
+ * requested number of successful checks completes. It exposes the completed and required
  * run counts so a slow property cannot silently check less than it claims.
  *
  * The fix is to raise the budget, lower the run count, or speed up the

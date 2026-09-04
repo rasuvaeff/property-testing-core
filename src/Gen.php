@@ -810,7 +810,10 @@ final class Gen
      * `\d\w\s\D\W\S\t\n\r` plus `\`-escaped punctuation (the literal
      * character), quantifiers `* + ? {n} {n,} {n,m}`, alternation `|`, and
      * groups `(...)` / `(?:...)`. A single leading `^` and trailing `$` are
-     * accepted as no-ops. Anchors elsewhere, backreferences, lookaround,
+     * accepted as no-ops. `.` and a negated class draw from printable ASCII
+     * (`0x20`..`0x7E`, so never a newline) — a subset of what the pattern
+     * matches, chosen so a generated string stays readable in a counterexample.
+     * Anchors elsewhere, backreferences, lookaround,
      * named/inline groups, flags, lazy/possessive quantifiers, and any other
      * alphanumeric escape (`\h`, `\Q…\E`, `\0`, ...) throw an
      * {@see \InvalidArgumentException} naming the construct — compiled as

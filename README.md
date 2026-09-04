@@ -206,7 +206,7 @@ through their source domain.
 | `Gen::url()` | `http(s)://host.tld[/path]` URLs | toward `http://a.com` |
 | `Gen::json($maxDepth)` | a JSON-encodable value (null/bool/int/float/string/list/object) | within the generated structure |
 | `Gen::jsonString($maxDepth)` | the `json_encode` text of `Gen::json()` | through the value's tree |
-| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators) | shorter/simpler matches (via the compiled trees) |
+| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators); `.` and a negated class draw from printable ASCII (`0x20`..`0x7E`, never a newline) | shorter/simpler matches (via the compiled trees) |
 | `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
 | `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |
 | `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — the `@param` psalm type when there is one (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; class names resolve through the file's namespace and `use` imports), the native type otherwise; anything unreadable throws instead of guessing, an override naming no parameter too | through the generated arguments, rebuilding the instance |
@@ -304,7 +304,8 @@ inputs (`flatMap`/`draw`) instead of discarding broadly.
 `Classify::label()` / `Classify::when()` tally labels per run;
 `Classify::cover($condition, $label, $minPercent)` turns the tally into a hard
 requirement — a passing property whose label coverage falls short fails with
-`CoverageFailed`. The counts come back on `RunStatistics::$classifications`;
+`CoverageFailed`. The threshold belongs to the label: covering the same label
+twice in one run with different percentages leaves the last one standing. The counts come back on `RunStatistics::$classifications`;
 printing a distribution report is the adapter's job.
 
 The same contents are available as data, without parsing the printed line:
@@ -334,6 +335,9 @@ no environment:
 | `budgetMs` | `null` | Wall-clock budget for the whole random phase → `TimeBudgetExceeded` |
 | `shrink` | `null` | `ShrinkMode::Off` reports the counterexample as generated; null resolves to `Full` |
 | `shrinkBudgetMs` | `null` | Wall-clock budget for the shrink descent; implies `ShrinkMode::Bounded` |
+
+All three millisecond limits share one ceiling — `intdiv(PHP_INT_MAX, 2_000_000)`, roughly 4.6e12 ms — because the runner scales them to nanoseconds; a larger value is rejected rather than quietly ceasing to be a deadline.
+
 | `phases` | `null` | Stages to perform (`Phase::Examples`/`Corpus`/`Random`/`Shrink`); null runs all of them |
 | `derandomize` | `false` | Derive an unset seed from the property id instead of drawing one |
 | `edgeCases` | `EdgeCases::Mixin` | `None` turns off the numeric boundary bias, for properties the edges only cost runs |

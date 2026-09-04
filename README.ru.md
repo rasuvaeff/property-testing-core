@@ -207,7 +207,7 @@ property.
 | `Gen::url()` | URL `http(s)://host.tld[/path]` | к `http://a.com` |
 | `Gen::json($maxDepth)` | JSON-кодируемое значение (null/bool/int/float/string/list/object) | внутри порождённой структуры |
 | `Gen::jsonString($maxDepth)` | `json_encode`-текст `Gen::json()` | через дерево значения |
-| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | строки, соответствующие подмножеству regex (компилируется в комбинаторы) | более короткие/простые совпадения (через скомпилированные деревья) |
+| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | строки, соответствующие подмножеству regex (компилируется в комбинаторы); `.` и отрицающий класс берут символы из printable ASCII (`0x20`..`0x7E`, без перевода строки) | более короткие/простые совпадения (через скомпилированные деревья) |
 | `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, валидные последовательности команд для stateful-тестирования | сбрасывает блоки команд, затем упрощает каждую |
 | `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm-тестирование: каждый случай видит лишь непустое подмножество вариантов обёрнутого генератора выбора (`oneOf`, `elements`, `frequency`, `commands`) | внутри подмножества, из которого случай получился, — обратно до полного алфавита не расширяется |
 | `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор: psalm-тип из `@param`, если он есть (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; имена классов резолвятся через namespace и `use`-импорты файла), иначе нативный; всё, что прочитать нельзя, — исключение, а не догадка, как и override с именем несуществующего параметра | через сгенерированные аргументы, пересобирая экземпляр |
@@ -308,6 +308,8 @@ replay-ленту, сжимаются как дополнительные пар
 `Classify::label()` / `Classify::when()` считают метки по прогонам;
 `Classify::cover($condition, $label, $minPercent)` превращает подсчёт в жёсткое
 требование — прошедшая property с недобором метки падает как `CoverageFailed`.
+Порог принадлежит метке: два `cover()` с одной меткой и разными процентами в
+одном прогоне оставляют в силе последний.
 Счётчики возвращаются в `RunStatistics::$classifications`; печать
 distribution-отчёта — работа адаптера.
 
@@ -337,6 +339,9 @@ distribution-отчёта — работа адаптера.
 | `budgetMs` | `null` | Wall-clock бюджет всей случайной фазы → `TimeBudgetExceeded` |
 | `shrink` | `null` | `ShrinkMode::Off` отдаёт контрпример как сгенерирован; null = `Full` |
 | `shrinkBudgetMs` | `null` | Wall-clock бюджет спуска; включает `ShrinkMode::Bounded` |
+
+У всех трёх лимитов в миллисекундах общий потолок — `intdiv(PHP_INT_MAX, 2_000_000)`, около 4.6e12 мс: раннер переводит их в наносекунды, и значение выше отвергается, а не перестаёт молча быть дедлайном.
+
 | `phases` | `null` | Выполняемые фазы (`Phase::Examples`/`Corpus`/`Random`/`Shrink`); null — все |
 | `derandomize` | `false` | Выводить незаданный seed из id property, а не тянуть случайный |
 | `edgeCases` | `EdgeCases::Mixin` | `None` выключает граничное смещение числовых генераторов — для property, которым края стоят только прогонов |

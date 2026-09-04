@@ -71,12 +71,14 @@ final class RegexCompiler
         }
 
         // A single leading ^ / trailing $ is redundant when the whole string is
-        // generated, so accept them as no-ops. An escaped \$ stays literal.
+        // generated, so accept them as no-ops. An escaped \$ stays literal —
+        // and what makes it escaped is an odd run of backslashes before it, so
+        // `foo\\$` ends in a literal backslash and a real anchor.
         $body = $pattern;
         if (str_starts_with($body, '^')) {
             $body = substr($body, 1);
         }
-        if (str_ends_with($body, '$') && !str_ends_with($body, '\\$')) {
+        if (str_ends_with($body, '$') && self::backslashRunBefore($body, strlen($body) - 1) % 2 === 0) {
             $body = substr($body, 0, -1);
         }
 
@@ -589,6 +591,22 @@ final class RegexCompiler
     private function word(): array
     {
         return [...$this->range('a', 'z'), ...$this->range('A', 'Z'), ...$this->digits(), '_'];
+    }
+
+    /**
+     * How many backslashes immediately precede the character at $position. An
+     * odd run escapes that character; an even one leaves it a metacharacter,
+     * the last backslash pair being a literal backslash of its own.
+     */
+    private static function backslashRunBefore(string $subject, int $position): int
+    {
+        $run = 0;
+
+        while ($position - $run - 1 >= 0 && $subject[$position - $run - 1] === '\\') {
+            ++$run;
+        }
+
+        return $run;
     }
 
     /**

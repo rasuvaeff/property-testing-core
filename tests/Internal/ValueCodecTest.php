@@ -162,6 +162,28 @@ final class ValueCodecTest
         Assert::same($decoded[0], [7 => 'v']);
     }
 
+    /**
+     * No real array holds both `0` and `"0"` — PHP normalises the second while
+     * the array is built — so such a document can only be hand-written or
+     * foreign. array_combine() would have kept one pair and dropped the other
+     * without a word; this class refuses instead of guessing which was meant.
+     */
+    public function keysThatCollideAfterNormalisationAreRefused(): void
+    {
+        Assert::null(ValueCodec::decode(['#' => 'a', 'p' => [
+            ['0', true, 'first'],
+            ['0', false, 'second'],
+        ]]));
+        Assert::null(ValueCodec::decode(['#' => 'a', 'p' => [
+            ['k', false, 'first'],
+            ['k', false, 'second'],
+        ]]));
+        Assert::null(ValueCodec::decode(['#' => 'a', 'p' => [
+            ['7', true, 'first'],
+            ['007', true, 'second'],
+        ]]));
+    }
+
     public function pairsThatAreNotThreeElementListsAreRefused(): void
     {
         Assert::null(ValueCodec::decode(['#' => 'a', 'p' => [['k', false, 'v', 'extra']]]));

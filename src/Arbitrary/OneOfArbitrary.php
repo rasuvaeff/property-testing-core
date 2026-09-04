@@ -87,7 +87,7 @@ final readonly class OneOfArbitrary implements Swarmable
             // Candidates are the values listed before the current one, most
             // aggressive (first-listed) first, deduplicated and skipping any
             // that equal the current value.
-            /** @var array<string, true> $seen */
+            /** @var list<TValue> $seen */
             $seen = [];
 
             for ($candidate = 0; $candidate < $index; ++$candidate) {
@@ -95,12 +95,15 @@ final readonly class OneOfArbitrary implements Swarmable
                     continue;
                 }
 
-                // Deduplicate identical candidates.
-                $key = var_export($this->values[$candidate], return: true);
-                if (isset($seen[$key])) {
+                // Deduplicated by the same identity the line above uses. A
+                // string key from var_export() would be cheaper, but it throws
+                // on a cyclic object graph and calls two distinct objects of
+                // equal state the same candidate; the list is bounded by the
+                // number of values, which is what OneOf is for.
+                if (in_array($this->values[$candidate], $seen, strict: true)) {
                     continue;
                 }
-                $seen[$key] = true;
+                $seen[] = $this->values[$candidate];
 
                 yield $this->tree($candidate);
             }

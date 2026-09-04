@@ -484,6 +484,25 @@ final class GenTest
         Assert::same(Trees::descendWhile($node, static fn(mixed $v): bool => true)->value, 1);
     }
 
+    public function recursiveShrinkCandidatesCarryDistinctGeneratorKeys(): void
+    {
+        // The leaf candidate is yielded, the node's own candidates are spread:
+        // both streams number from zero, so `yield from` would collide and
+        // iterator_to_array() — which preserves keys by default — would drop
+        // the leaf.
+        $arbitrary = Gen::recursive(
+            Gen::constant(1),
+            static fn(ArbitraryInterface $inner): ArbitraryInterface => Gen::arrayOf($inner, 1, 3),
+            maxDepth: 3,
+        );
+        $node = Trees::generateWhere($arbitrary, static fn(mixed $v): bool => is_array($v) && $v !== []);
+
+        $preserved = iterator_to_array($node->shrinks());
+        $all = iterator_to_array($node->shrinks(), preserve_keys: false);
+
+        Assert::same(count($preserved), count($all));
+    }
+
     public function jsonShrinksANestedDocumentToAScalar(): void
     {
         // A property that fails for every document minimises to a scalar leaf

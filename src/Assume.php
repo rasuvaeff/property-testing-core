@@ -13,9 +13,10 @@ namespace Rasuvaeff\PropertyTesting;
  * property's domain (e.g. "cap must be >= baseSeconds") instead of rejecting
  * them with a narrow {@see Gen::filter()}, which is slower.
  *
- * Discards do not consume {@see Property::$runs}. The runner warns when more
- * than 90% of attempts are discarded and fails with {@see GaveUpException} when
- * {@see Property::$maxDiscards} is exceeded.
+ * Discards do not consume {@see Runner\PropertyConfig::$runs}. The runner warns
+ * when more than 90% of attempts are discarded and fails with
+ * {@see GaveUpException} when {@see Runner\PropertyConfig::$maxDiscards} is
+ * exceeded.
  *
  * @api
  */

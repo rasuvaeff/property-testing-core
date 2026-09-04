@@ -25,6 +25,10 @@ final class PropertyMethods
 
     public function nullableNative(?int $maybe): void {}
 
+    public function withDateSubclass(CustomDate $at): void {}
+
+    public function withMutableDate(\DateTime $at): void {}
+
     public function withCycle(Cyclic $other): void {}
 
     public function unreadable(array $anything): void {}
@@ -37,3 +41,12 @@ final class PropertyMethods
 
     public function withoutParameters(): void {}
 }
+
+/**
+ * A DateTimeImmutable subclass with no constructor of its own: reflection over
+ * it reads the inherited `string $datetime` and refuses rather than feeding a
+ * random string to a date parser.
+ *
+ * @internal
+ */
+final class CustomDate extends \DateTimeImmutable {}

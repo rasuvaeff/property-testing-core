@@ -220,6 +220,26 @@ final class FilesystemCorpusTest
         Assert::true(array_is_list($document['entries']));
     }
 
+    public function pruneSaysSoWhenTheEntryCannotBeReEncoded(): void
+    {
+        // The key that identifies the stored bytes is built by re-encoding the
+        // entry. A value the codec refuses yields no key, and keyOf() never
+        // returns null — the filter would keep every entry and the record would
+        // be replayed forever. The runner turns this into a CorpusFailed event.
+        $storage = $this->storage();
+        $storage->remember(self::ID, $this->counterExample(['x' => 51], 1), ['x']);
+
+        try {
+            $storage->prune(self::ID, CorpusEntry::values(['x' => new \stdClass()], 1));
+
+            Assert::fail('expected the unencodable entry to be reported');
+        } catch (\RuntimeException $e) {
+            Assert::string($e->getMessage())->contains('Could not re-encode the corpus entry');
+        }
+
+        Assert::same(count($storage->recall(self::ID, ['x'])), 1);
+    }
+
     public function pruneRemovesOnlyTheGivenValuesEntry(): void
     {
         $storage = $this->storage();

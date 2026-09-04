@@ -119,13 +119,23 @@ full runnable script.
 
 `TrialExecutor` is the boundary between the engine and whatever executes the
 property body. Each `execute($arguments)` call returns a `TrialOutcome` —
-`passed()`, `failed($throwable)`, or `discarded()`:
+`passed()`, `failed($throwable)`, `discarded()`, or `skipped()`:
 
 - `CallableTrialExecutor` — the standalone executor: a normal return passes,
   `Assume::that()` discards, any other throwable fails the trial.
 - Framework adapters implement their own (Testo maps a `TestResult`, PHPUnit
   maps assertion exceptions) — the run/shrink loop never learns about
   framework types.
+
+`discarded()` and `skipped()` both mean "this run checked nothing", and they
+count the same everywhere but one place. A discard is a statement about the
+**input**: it left the property's domain, so a recorded regression that
+discards on replay can never fail again and is pruned. A skip is a statement
+about the **environment** — `markTestSkipped()` guarding a missing dependency,
+a framework skip raised from a lifecycle hook — and says nothing about the
+input, so a recorded regression that only skipped is kept. Report an
+environmental skip as `skipped()`, or one machine without the dependency
+deletes the counterexample for every machine that has it.
 
 ### Structured results
 

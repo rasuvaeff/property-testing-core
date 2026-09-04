@@ -28,6 +28,7 @@ use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
 use Rasuvaeff\PropertyTesting\GenerationExhausted;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
+use Rasuvaeff\PropertyTesting\Internal\ReplayVerdict;
 use Rasuvaeff\PropertyTesting\Internal\ShrinkPath;
 use Rasuvaeff\PropertyTesting\PathViolationException;
 use Rasuvaeff\PropertyTesting\PropertyListener;
@@ -130,6 +131,15 @@ final readonly class PropertyRunner
 
                     if ($replay instanceof PropertyResult) {
                         return $this->finish($listeners, $property->id, $replay, coverageAssessed: false);
+                    }
+
+                    if ($replay === ReplayVerdict::Inconclusive) {
+                        // The environment skipped the run instead of judging
+                        // the input — a dependency this machine lacks, not a
+                        // regression that healed. Keep the entry: it is the
+                        // memory of a failure every other environment must
+                        // still see.
+                        continue;
                     }
                 } else {
                     $this->emit($listeners, new CorpusReplayed($property->id, isValues: false, arguments: [], seed: $entry->seed));
@@ -619,9 +629,12 @@ final readonly class PropertyRunner
     /**
      * Replays one recorded regression: the minimised input of an earlier failure,
      * run once with the very values that failed. Returns the failing result, or
-     * null when the input no longer falsifies the property (the caller then prunes
-     * the entry) — including when the run is discarded, which means the recorded
-     * input has fallen out of the property's domain.
+     * the verdict on an entry that did not fail: {@see ReplayVerdict::Stale}
+     * when the input no longer falsifies the property (the caller then prunes
+     * it) — including when the run is discarded, which means the recorded input
+     * has fallen out of the property's domain — and
+     * {@see ReplayVerdict::Inconclusive} when the environment skipped the run
+     * instead of judging the input, where pruning would erase a live regression.
      *
      * Mirrors {@see runExamples()}'s lifecycle discipline: the input is not
      * shrunk (it is already minimal) and the per-run deadline applies.
@@ -634,7 +647,7 @@ final readonly class PropertyRunner
         TrialExecutor $executor,
         array $arguments,
         int $seed,
-    ): ?PropertyResult {
+    ): PropertyResult|ReplayVerdict {
         $timeoutMs = $property->config->timeoutMs;
 
         // Recall validated the key set against the live signature; order the
@@ -667,7 +680,7 @@ final readonly class PropertyRunner
             ));
         }
 
-        return null;
+        return $outcome->isSkipped() ? ReplayVerdict::Inconclusive : ReplayVerdict::Stale;
     }
 
     /**
@@ -890,7 +903,14 @@ final readonly class PropertyRunner
      * through {@see \Rasuvaeff\PropertyTesting\Gen::draw()} and discards depend
      * on the body. The saving is the descent.
      *
-     * A replayed step is accepted on any falsification, where {@see shrink()}
+     * One failure it does not accept is {@see GenerationExhausted}: see the step
+     * guard below. The cost is that a property whose recorded failure *was* a
+     * generator exhaustion has an unreplayable path — accepted deliberately,
+     * because such a property never judged an input in the first place, and a
+     * loud "path is stale" beats a counterexample attributed to the wrong
+     * cause.
+     *
+     * A replayed step is accepted on any other falsification, where {@see shrink()}
      * demands the same failure identity ({@see failsTheSameWay()}). The search
      * needs that identity to keep from drifting onto a second, unrelated bug
      * while it descends; a replay follows a path someone already recorded, and
@@ -951,6 +971,20 @@ final readonly class PropertyRunner
             $trial = $position === null ? array_replace($current, [$name => $candidate]) : $current;
             $trialTape = $position === null ? $currentTape : array_replace($currentTape, [$position => $candidate]);
             [$outcome, $recorded] = $this->trial($executor, $trial, $trialTape, $random);
+
+            if ($outcome->isFailed() && $outcome->failure instanceof GenerationExhausted) {
+                // A draw past the end of the tape regenerates through the live
+                // generator, and an exhaustible one (filter, uniqueArrayOf,
+                // commands with a minimum) can fail to produce a value at all.
+                // That is the engine giving up, not the body falsifying: accepted
+                // as a step it would report the recorded bug as a generator
+                // exhaustion. The search rejects it through failsTheSameWay();
+                // a replay has no original class to compare against, so it names
+                // the mismatch instead.
+                $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, false));
+
+                return $this->pathBroken($path, $steps, $step, 'exhausted a generator instead of falsifying the property');
+            }
 
             $accepted = $outcome->isFailed();
             $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, $accepted));

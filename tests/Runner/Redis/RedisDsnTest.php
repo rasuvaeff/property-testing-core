@@ -116,6 +116,47 @@ final class RedisDsnTest
         yield 'digits at the end only' => ['redis://redis/b2', 'b2'];
     }
 
+    public function anArrayValuedPrefixIsRefusedRatherThanSilentlyDefaulted(): void
+    {
+        // `?prefix[]=x` parses into an array. Falling back to the default
+        // prefix would point the corpus at another key space without a word,
+        // while an array-valued timeout has always thrown.
+        try {
+            RedisDsn::parse('redis://redis?prefix[]=suite-a:');
+
+            Assert::fail('expected the prefix to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('prefix that is not a single value');
+            Assert::string($e->getMessage())->contains('?prefix=key-prefix');
+        }
+    }
+
+    public function aLeadingZeroDatabaseIndexIsReportedAsAFormatProblem(): void
+    {
+        // "01" is a spelling mistake, not a number too large to hold: reporting
+        // it as a range problem sends the reader looking for a limit that is
+        // not the reason.
+        try {
+            RedisDsn::parse('redis://redis/01');
+
+            Assert::fail('expected the database index to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('leading zero');
+            Assert::string($e->getMessage())->contains('write it as 1');
+        }
+    }
+
+    public function aDatabaseIndexTooLargeForAnIntStillReportsTheRange(): void
+    {
+        try {
+            RedisDsn::parse('redis://redis/999999999999999999999999');
+
+            Assert::fail('expected the database index to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('outside the supported integer range');
+        }
+    }
+
     public function anUnknownQueryParameterIsRefused(): void
     {
         try {

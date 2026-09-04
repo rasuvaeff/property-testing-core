@@ -122,6 +122,8 @@ final readonly class RedisCorpus implements Corpus
     /**
      * @param string $id The property id, as the runner knows it.
      * @param CorpusEntry $entry The entry whose replay no longer fails.
+     *
+     * @throws \RuntimeException When the entry cannot be re-encoded to the key that identifies it.
      */
     #[\Override]
     public function prune(string $id, CorpusEntry $entry): void
@@ -131,7 +133,18 @@ final readonly class RedisCorpus implements Corpus
         $encoded = $entry->isValues()
             ? CorpusDocument::valuesEntry($entry->arguments, array_keys($entry->arguments), $entry->seed, FilesystemCorpus::SEQUENCE_EPOCH)
             : CorpusDocument::seedEntry($entry->seed, FilesystemCorpus::SEQUENCE_EPOCH, $entry->runsBeforeFailure, $entry->edgeCases);
-        $key = $encoded === null ? null : CorpusDocument::keyOf($encoded);
+
+        if ($encoded === null) {
+            // keyOf() never returns null, so a null key would match nothing and
+            // leave the entry to be replayed forever. Say so instead: the runner
+            // turns this into a CorpusFailed event.
+            throw new \RuntimeException(sprintf(
+                'Could not re-encode the corpus entry of property "%s" to prune it',
+                $id,
+            ));
+        }
+
+        $key = CorpusDocument::keyOf($encoded);
 
         $this->rewrite(
             $id,

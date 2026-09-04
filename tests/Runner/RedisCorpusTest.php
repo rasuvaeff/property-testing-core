@@ -185,6 +185,25 @@ final class RedisCorpusTest
         Assert::same(count($corpus->recall(self::ID, ['x'])), 1);
     }
 
+    public function pruneSaysSoWhenTheEntryCannotBeReEncoded(): void
+    {
+        // Same contract as the filesystem backend: no key means no way to name
+        // the stored bytes, and keyOf() never returns null, so a null key would
+        // keep every entry and replay the record forever.
+        $corpus = $this->corpus(new InMemoryCorpusClient());
+        $corpus->remember(self::ID, $this->counterExample(['x' => 51], 1), ['x']);
+
+        try {
+            $corpus->prune(self::ID, CorpusEntry::values(['x' => new \stdClass()], 1));
+
+            Assert::fail('expected the unencodable entry to be reported');
+        } catch (\RuntimeException $e) {
+            Assert::string($e->getMessage())->contains('Could not re-encode the corpus entry');
+        }
+
+        Assert::same(count($corpus->recall(self::ID, ['x'])), 1);
+    }
+
     public function seedEntriesFallBackAndPruneBySeed(): void
     {
         $corpus = $this->corpus(new InMemoryCorpusClient());

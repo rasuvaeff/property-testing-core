@@ -120,13 +120,23 @@ seed из отчёта в `PropertyConfig`.
 
 `TrialExecutor` — граница между движком и тем, что исполняет тело property.
 Каждый вызов `execute($arguments)` возвращает `TrialOutcome` — `passed()`,
-`failed($throwable)` или `discarded()`:
+`failed($throwable)`, `discarded()` или `skipped()`:
 
 - `CallableTrialExecutor` — standalone-executor: нормальный возврат — pass,
   `Assume::that()` — discard, любой другой throwable — failure.
 - Адаптеры фреймворков реализуют свои (Testo мапит `TestResult`, PHPUnit —
   assertion-исключения) — цикл run/shrink никогда не узнаёт о типах
   фреймворка.
+
+`discarded()` и `skipped()` оба значат «этот прогон ничего не проверил» и
+считаются одинаково везде, кроме одного места. Discard — утверждение о
+**входе**: он вышел из домена property, поэтому записанная регрессия, которая
+на реплее даёт discard, уже никогда не упадёт и вычищается из корпуса. Skip —
+утверждение об **окружении** (`markTestSkipped()` вокруг отсутствующей
+зависимости, framework-skip из lifecycle-хука) и о входе не говорит ничего,
+поэтому такая запись сохраняется. Экологический skip возвращайте как
+`skipped()` — иначе одна машина без зависимости удалит контрпример для всех
+машин, где он воспроизводится.
 
 ### Структурные результаты
 

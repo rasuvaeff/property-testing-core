@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 — 2026-09-04
 
 - `TrialOutcome::skipped()` joins `discarded()` as a third "this run checked
   nothing" outcome, and adapters should report an environmental skip

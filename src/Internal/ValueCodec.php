@@ -181,8 +181,24 @@ final readonly class ValueCodec
             $pairs[] = $decoded;
         }
 
+        $keys = array_map(static fn(array $pair): int|string => $pair[0], $pairs);
+        $normalised = [];
+
+        foreach ($keys as $key) {
+            $normalised[$key] = true;
+        }
+
+        // Building an array normalises a canonical numeric string key to an
+        // integer, so `0` and `"0"` — distinct in the document, impossible in
+        // one real array — collapse into one entry and array_combine() drops a
+        // pair without a word. Refuse the document rather than guess which pair
+        // was meant; the same check catches any other duplicate key.
+        if (count($normalised) !== count($keys)) {
+            return null;
+        }
+
         return [array_combine(
-            array_map(static fn(array $pair): int|string => $pair[0], $pairs),
+            $keys,
             array_map(static fn(array $pair): mixed => $pair[1], $pairs),
         )];
     }

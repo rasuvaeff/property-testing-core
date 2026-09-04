@@ -82,6 +82,10 @@ final class Classify
      * ```php
      * Classify::cover($n % 2 === 0, 'even', 30.0);
      * ```
+     *
+     * The threshold belongs to the label, not to the call: covering the same
+     * label twice in one run with different percentages leaves the last one
+     * standing.
      */
     public static function cover(bool $condition, string $label, float $minPercent): void
     {

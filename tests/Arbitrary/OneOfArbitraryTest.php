@@ -137,6 +137,37 @@ final class OneOfArbitraryTest
         Assert::same(Trees::childValues($node), [1]);
     }
 
+    public function shrinkEnumeratesObjectCandidatesByIdentity(): void
+    {
+        // Deduplication uses the same identity the skip does, so two distinct
+        // objects are two candidates however alike their state — and a cyclic
+        // graph, which var_export() cannot print at all, is enumerated like any
+        // other value.
+        $first = new \stdClass();
+        $first->self = $first;
+        $second = new \stdClass();
+        $second->self = $second;
+        $third = new \stdClass();
+
+        $node = Trees::generateWhere(
+            new OneOfArbitrary($first, $second, $third),
+            static fn(mixed $v): bool => $v === $third,
+        );
+
+        Assert::same(Trees::childValues($node), [$first, $second]);
+    }
+
+    public function shrinkDeduplicatesTheSameObjectListedTwice(): void
+    {
+        $object = new \stdClass();
+        $node = Trees::generateWhere(
+            new OneOfArbitrary($object, $object, 'last'),
+            static fn(mixed $v): bool => $v === 'last',
+        );
+
+        Assert::same(Trees::childValues($node), [$object]);
+    }
+
     public function shrinkSkipsEarlierValuesEqualToTheCurrentOne(): void
     {
         // The value 5 at index 1 must not offer the identical 5 at index 0.

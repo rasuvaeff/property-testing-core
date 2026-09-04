@@ -371,6 +371,38 @@ final class RegexCompilerTest
         }
     }
 
+    public function anAnchorAfterAnEscapedBackslashIsStripped(): void
+    {
+        // `a\\$` is a literal backslash followed by a real anchor: what escapes
+        // the `$` is an odd run of backslashes, not the presence of one.
+        $values = Gen::sample(RegexCompiler::compile('a\\\\$'), 5, 1);
+
+        foreach ($values as $value) {
+            Assert::same($value, 'a\\');
+        }
+    }
+
+    public function aPatternOfNothingButBackslashesAndAnAnchorIsStripped(): void
+    {
+        // The backslash run reaches the start of the pattern: the walk must stop
+        // at position 0 rather than one past it, or the run comes out one short
+        // and the anchor is read as an escaped dollar.
+        $values = Gen::sample(RegexCompiler::compile('\\\\$'), 5, 1);
+
+        foreach ($values as $value) {
+            Assert::same($value, '\\');
+        }
+    }
+
+    public function anAnchorAfterAnEscapedBackslashAndAnEscapedDollarStaysLiteral(): void
+    {
+        $values = Gen::sample(RegexCompiler::compile('a\\\\\\$'), 5, 1);
+
+        foreach ($values as $value) {
+            Assert::same($value, 'a\\$');
+        }
+    }
+
     public function quantifierBoundsAreRespected(): void
     {
         $values = Gen::sample(RegexCompiler::compile('a{2,4}'), 60, 7);

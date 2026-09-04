@@ -45,12 +45,16 @@ final readonly class LeafFallbackArbitrary implements Swarmable
         $leafSeed = $random->int(PHP_INT_MIN, PHP_INT_MAX);
         $node = $this->choice->generate($random);
 
-        return Shrinkable::of($node->value, function () use ($node, $leafSeed): \Generator {
+        return Shrinkable::of($node->value, /** @return \Generator<int, Shrinkable<TValue>> */ function () use ($node, $leafSeed): \Generator {
             // The runner skips a candidate equal to the current value, so when
             // the choice already was the leaf this costs one comparison.
             yield $this->leaf->generate(new Random($leafSeed));
 
-            yield from $node->shrinks();
+            // Spread with an explicit foreach: `yield from` restarts its keys at
+            // 0, colliding with the leaf candidate yielded above.
+            foreach ($node->shrinks() as $shrink) {
+                yield $shrink;
+            }
         });
     }
 

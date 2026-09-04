@@ -73,9 +73,7 @@ final readonly class UniqueArrayArbitrary implements ArbitraryInterface
             }
 
             $elements[] = $shrinkable;
-            // Rebuilt via array_map (not appended) to keep the element type
-            // knowledge; the list is capped at maxSize, so this stays cheap.
-            $values = array_map(static fn(Shrinkable $element): mixed => $element->value, $elements);
+            $values[] = $shrinkable->value;
         }
 
         if (count($elements) < $this->minSize) {

@@ -56,6 +56,11 @@ final readonly class DateTimeArbitrary implements ArbitraryInterface
         return $this->microseconds->generate($random)->map($this->fromMicroseconds(...));
     }
 
+    /**
+     * Requires a 64-bit platform: a second-resolution timestamp scaled to
+     * microseconds overflows a 32-bit integer within hours of the epoch. So
+     * does the rest of the package, which sizes budgets in nanoseconds.
+     */
     private function toMicroseconds(DateTimeImmutable $moment): int
     {
         return $moment->getTimestamp() * self::MICROSECONDS + (int) $moment->format('u');

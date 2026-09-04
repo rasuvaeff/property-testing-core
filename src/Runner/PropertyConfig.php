@@ -98,15 +98,25 @@ final readonly class PropertyConfig
         if ($timeoutMs !== null && $timeoutMs < 1) {
             throw new \InvalidArgumentException('Timeout must be greater than or equal to 1 millisecond');
         }
+        if ($timeoutMs !== null && $timeoutMs > $this->maxMilliseconds()) {
+            throw new \InvalidArgumentException(
+                'Timeout must be less than or equal to ' . $this->maxMilliseconds() . ' milliseconds',
+            );
+        }
         if ($budgetMs !== null && $budgetMs < 1) {
             throw new \InvalidArgumentException('Budget must be greater than or equal to 1 millisecond');
+        }
+        if ($budgetMs !== null && $budgetMs > $this->maxMilliseconds()) {
+            throw new \InvalidArgumentException(
+                'Budget must be less than or equal to ' . $this->maxMilliseconds() . ' milliseconds',
+            );
         }
         if ($shrinkBudgetMs !== null && $shrinkBudgetMs < 1) {
             throw new \InvalidArgumentException('Shrink budget must be greater than or equal to 1 millisecond');
         }
-        if ($shrinkBudgetMs !== null && $shrinkBudgetMs > $this->maxShrinkBudgetMs()) {
+        if ($shrinkBudgetMs !== null && $shrinkBudgetMs > $this->maxMilliseconds()) {
             throw new \InvalidArgumentException(
-                'Shrink budget must be less than or equal to ' . $this->maxShrinkBudgetMs() . ' milliseconds',
+                'Shrink budget must be less than or equal to ' . $this->maxMilliseconds() . ' milliseconds',
             );
         }
         if ($shrink === ShrinkMode::Bounded && $shrinkBudgetMs === null) {
@@ -139,14 +149,15 @@ final readonly class PropertyConfig
     }
 
     /**
-     * The largest shrink budget that still behaves like one. The runner turns
-     * it into a nanosecond deadline by adding it to a clock reading, and past
-     * this point that arithmetic leaves the integer range: the product becomes
-     * a float and the deadline stops being a deadline. Half the range is
-     * reserved for the budget, which leaves the other half for the clock —
-     * more than any monotonic source can ever report.
+     * The largest time limit that still behaves like one. The runner turns each
+     * of them into nanoseconds by multiplying by a million, and a budget also
+     * adds that product to a clock reading; past this point the arithmetic
+     * leaves the integer range: the product becomes a float and the deadline
+     * stops being a deadline. Half the range is reserved for the limit, which
+     * leaves the other half for the clock — more than any monotonic source can
+     * ever report.
      */
-    private function maxShrinkBudgetMs(): int
+    private function maxMilliseconds(): int
     {
         return intdiv(PHP_INT_MAX, 2_000_000);
     }

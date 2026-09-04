@@ -890,6 +890,14 @@ final readonly class PropertyRunner
      * through {@see \Rasuvaeff\PropertyTesting\Gen::draw()} and discards depend
      * on the body. The saving is the descent.
      *
+     * A replayed step is accepted on any falsification, where {@see shrink()}
+     * demands the same failure identity ({@see failsTheSameWay()}). The search
+     * needs that identity to keep from drifting onto a second, unrelated bug
+     * while it descends; a replay follows a path someone already recorded, and
+     * the step it names either still falsifies or the path is reported broken.
+     * Requiring the identity here would instead turn a body whose exception
+     * type legitimately varies into an unreplayable path.
+     *
      * {@see self::MAX_DRAW_SHRINK_STEPS} deliberately does not apply here. That
      * cap exists because an accepted candidate can regrow the tape with fresh
      * trees, so a search has no finite bound of its own; a path is finite by

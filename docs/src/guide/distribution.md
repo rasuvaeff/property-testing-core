@@ -40,6 +40,9 @@ public function holds(int $n): void
 }
 ```
 
+The threshold belongs to the label, not to the call: covering the same label
+twice in one run with different percentages leaves the last one standing.
+
 Discarded attempts (`Assume::that()`) are excluded from the denominator and
 replaced until all requested successful runs complete. Exceeding `maxDiscards`
 fails with `GaveUpException` (see [Assume::that() vs Gen::filter()](/guide/controlling-runs/assume-vs-filter)).

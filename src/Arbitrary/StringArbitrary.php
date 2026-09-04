@@ -137,7 +137,13 @@ final readonly class StringArbitrary implements ArbitraryInterface
 
     /**
      * Draw a single Unicode codepoint, skipping surrogates (U+D800..U+DFFF) which
-     * mb_chr() cannot encode. Returns an empty string if encoding fails.
+     * mb_chr() cannot encode.
+     *
+     * Every branch draws inside `[1, 0x10FFFF]` with the surrogates excluded, so
+     * mb_chr() cannot fail here; the fallback exists because its signature says
+     * it can, and it is a character rather than the empty string so that a
+     * string keeps the length {@see StringArbitrary::$minLength} promises even
+     * if that ever stops being true.
      */
     private function unicodeChar(Random $random): string
     {
@@ -151,7 +157,7 @@ final readonly class StringArbitrary implements ArbitraryInterface
 
         $char = mb_chr($codepoint, 'UTF-8');
 
-        return $char === false ? '' : $char;
+        return $char === false ? '?' : $char;
     }
 
     /**

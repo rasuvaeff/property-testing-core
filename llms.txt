@@ -86,6 +86,8 @@ $definition = new PropertyDefinition(
         budgetMs: null,     // whole-random-phase wall-clock budget
         shrink: null,           // ShrinkMode::Off|Bounded|Full; null -> Full
         shrinkBudgetMs: null,   // wall-clock budget of the descent; implies ShrinkMode::Bounded
+                                // all three ms limits: 1 .. intdiv(PHP_INT_MAX, 2_000_000); above that
+                                // the ns conversion overflows, so the value is REJECTED
         phases: null,           // list<Phase>; null -> Phase::all(); [] throws
         derandomize: false,     // true -> an unset seed is derived from the property id
         edgeCases: EdgeCases::Mixin, // None -> no numeric boundary bias; the roll is still consumed,
@@ -260,7 +262,8 @@ Gen::forParameters(\ReflectionFunctionAbstract $function, array $overrides = [],
 // pure function of reflection, Random not involved. Engine half of the adapters' auto mode.
 Gen::ipv4()  Gen::ipv6()  Gen::email()  Gen::url()  // ipv6: canonical RFC 5952 text, shrinks to "::"
 Gen::json(int $maxDepth = 3)  Gen::jsonString(int $maxDepth = 3)
-Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compiled to combinators
+Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compiled to combinators;
+                                                        // `.` / negated class = printable ASCII 0x20..0x7E
 Gen::stringMatching(string $pattern, int $maxRepeat = 8) // alias of regex()
 Gen::draw(ArbitraryInterface $arb)      // in-body dependent draw; ONLY inside a running property body
 Gen::sample(ArbitraryInterface $arb, int $count = 10, int $seed = 0)        // eager debug helper

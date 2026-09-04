@@ -51,6 +51,9 @@ final readonly class ClassArbitrary implements ArbitraryInterface
     /** @var ArbitraryInterface<array<string, mixed>> */
     private ArbitraryInterface $arguments;
 
+    /** @var \ReflectionClass<TValue> */
+    private \ReflectionClass $reflection;
+
     /**
      * @param class-string<TValue> $class The class to instantiate. Must be concrete and constructible.
      * @param array<string, ArbitraryInterface> $overrides Generators by constructor parameter name,
@@ -68,6 +71,9 @@ final readonly class ClassArbitrary implements ArbitraryInterface
         int $maxDepth = 3,
     ) {
         $this->arguments = ParameterGenerators::forConstructor($this->class, $overrides, $maxDepth, [$this->class]);
+        // Built once: instantiation sits on the generation hot path, and with
+        // skipInvalid every drawn argument set goes through it at least twice.
+        $this->reflection = new \ReflectionClass($this->class);
     }
 
     /**
@@ -101,11 +107,17 @@ final readonly class ClassArbitrary implements ArbitraryInterface
      */
     private function instantiate(array $arguments): object
     {
-        return (new \ReflectionClass($this->class))->newInstance(...$arguments);
+        return $this->reflection->newInstance(...$arguments);
     }
 
     /**
      * Whether the constructor accepts these arguments.
+     *
+     * The probe instance is thrown away and the accepted arguments are
+     * constructed again by {@see instantiate()}: keeping it would mean caching
+     * mutable state on a readonly arbitrary, and a constructor whose second
+     * call is observable is not a value-object constructor this can generate
+     * for anyway.
      *
      * Only exceptions count as a rejection. An `Error` — a `TypeError` above
      * all — says the generator produced the wrong type, and swallowing that

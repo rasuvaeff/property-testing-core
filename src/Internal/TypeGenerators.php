@@ -251,8 +251,10 @@ final class TypeGenerators
         $values = [];
 
         foreach ($members as $member) {
-            if (preg_match("/^'([^']*)'\\z/", $member, $matches) === 1) {
-                $values[] = $matches[1];
+            if (preg_match("/^'((?:[^'\\\\]|\\\\.)*)'\\z/", $member, $matches) === 1) {
+                // Single pass, so an escaped backslash cannot un-escape the
+                // quote that follows it. Psalm writes only `\'` and `\\` here.
+                $values[] = (string) preg_replace('/\\\\(.)/', '$1', $matches[1]);
 
                 continue;
             }
@@ -280,7 +282,7 @@ final class TypeGenerators
     }
 
     /**
-     * Splits `K, V` without cutting inside a nested `<…>`.
+     * Splits `K, V` without cutting inside a nested `<…>` or a quoted literal.
      *
      * @return list<string>
      */
@@ -304,9 +306,34 @@ final class TypeGenerators
     {
         $parts = [];
         $depth = 0;
+        $quoted = false;
+        $escaped = false;
         $current = '';
 
         foreach (str_split($subject) as $character) {
+            // A psalm string literal is single-quoted, and a separator inside
+            // one belongs to the literal: `'a|b'|'c'` is two members, not three.
+            if ($quoted) {
+                $current .= $character;
+
+                if ($escaped) {
+                    $escaped = false;
+                } elseif ($character === '\\') {
+                    $escaped = true;
+                } elseif ($character === "'") {
+                    $quoted = false;
+                }
+
+                continue;
+            }
+
+            if ($character === "'") {
+                $quoted = true;
+                $current .= $character;
+
+                continue;
+            }
+
             if ($character === '<') {
                 ++$depth;
             } elseif ($character === '>') {

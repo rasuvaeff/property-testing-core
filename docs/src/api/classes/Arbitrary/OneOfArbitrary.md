@@ -9,7 +9,7 @@ description: "Picks a value uniformly at random from a fixed set."
 
 `Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/OneOfArbitrary.php#L24) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/OneOfArbitrary.php#L26) — **Version:** working tree
 
 **Implements:** [`Swarmable`](/api/classes/Swarmable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
@@ -19,7 +19,8 @@ description: "Picks a value uniformly at random from a fixed set."
 
 Picks a value uniformly at random from a fixed set.
 
-Values are used verbatim (they are not arbitraries). Earlier values are
+Values are used verbatim: an [`ArbitraryInterface`](/api/classes/ArbitraryInterface) among them is
+rejected rather than handed to the body as data. Earlier values are
 considered "smaller": a failing value shrinks through the distinct values
 listed before it, so put simpler values first. Because the index strictly
 decreases on every step, shrinking terminates even when several values keep

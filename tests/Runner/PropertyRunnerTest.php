@@ -20,6 +20,8 @@ use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
 use Rasuvaeff\PropertyTesting\Runner\RunStatistics;
+use Rasuvaeff\PropertyTesting\Runner\TrialExecutor;
+use Rasuvaeff\PropertyTesting\Runner\TrialOutcome;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
@@ -56,6 +58,7 @@ final class PropertyRunnerTest
         Assert::same($result->statistics->checks, 25);
         Assert::same($result->statistics->attempts, 25);
         Assert::same($result->statistics->discards, 0);
+        Assert::same($result->statistics->skips, 0);
         Assert::same($result->statistics->classifications, ['non-negative' => 25]);
     }
 
@@ -93,6 +96,94 @@ final class PropertyRunnerTest
         Assert::same($result->exception->maxDiscards, 3);
         Assert::same($result->statistics->checks, 0);
         Assert::same($result->statistics->discards, 4);
+    }
+
+    /**
+     * A skip says nothing about the input, so it must not spend the discard
+     * budget: a machine missing a dependency used to exhaust it and be told to
+     * narrow generators that were never at fault.
+     */
+    public function environmentalSkipsAreCountedApartFromDiscards(): void
+    {
+        $executor = new class implements TrialExecutor {
+            public int $calls = 0;
+
+            #[\Override]
+            public function execute(array $arguments): TrialOutcome
+            {
+                // Two skips and one discard per successful run: 10 skips and
+                // 5 discards by the fifth check. Each budget holds on its own;
+                // the 15 of them charged to one, as they used to be, would have
+                // exhausted it.
+                return match (++$this->calls % 4) {
+                    0 => TrialOutcome::passed(),
+                    3 => TrialOutcome::discarded(),
+                    default => TrialOutcome::skipped(),
+                };
+            }
+        };
+
+        $result = (new PropertyRunner())->run($this->definition(runs: 5, maxDiscards: 11), $executor);
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($result->statistics->checks, 5);
+        Assert::same($result->statistics->discards, 5);
+        Assert::same($result->statistics->skips, 10);
+        Assert::same($result->statistics->attempts, 20);
+    }
+
+    public function exhaustedSkipBudgetGivesUpAndBlamesTheEnvironment(): void
+    {
+        $result = (new PropertyRunner())->run(
+            $this->definition(runs: 5, maxDiscards: 3),
+            new class implements TrialExecutor {
+                #[\Override]
+                public function execute(array $arguments): TrialOutcome
+                {
+                    return TrialOutcome::skipped();
+                }
+            },
+        );
+
+        Assert::instanceOf($result, GaveUp::class);
+        Assert::same($result->exception->skippedRuns, 4);
+        Assert::same($result->exception->discardedRuns, 0);
+        Assert::true($result->exception->exhaustedBySkips);
+        Assert::same($result->statistics->skips, 4);
+        Assert::same($result->statistics->discards, 0);
+        Assert::same(
+            $result->exception->getMessage(),
+            'Property "property" gave up after 4 attempt(s): 0/5 successful run(s), 4 skipped (maximum 3). '
+            . 'The environment refused those runs, so the generators are not the cause: '
+            . 'a missing dependency or a lifecycle hook skipped this property more often than it checked it.',
+        );
+    }
+
+    /**
+     * The discard budget filled to the brim, and the skip budget the one that
+     * overflowed: the message must still name the environment. Anything that
+     * compared the two counters more strictly would blame the generators here.
+     */
+    public function skipExhaustionIsReportedEvenWithTheDiscardBudgetFull(): void
+    {
+        $executor = new class implements TrialExecutor {
+            public int $calls = 0;
+
+            #[\Override]
+            public function execute(array $arguments): TrialOutcome
+            {
+                // Exactly maxDiscards discards, then nothing but skips.
+                return ++$this->calls <= 2 ? TrialOutcome::discarded() : TrialOutcome::skipped();
+            }
+        };
+
+        $result = (new PropertyRunner())->run($this->definition(runs: 5, maxDiscards: 2), $executor);
+
+        Assert::instanceOf($result, GaveUp::class);
+        Assert::same($result->exception->discardedRuns, 2);
+        Assert::same($result->exception->skippedRuns, 3);
+        Assert::true($result->exception->exhaustedBySkips);
+        Assert::string($result->exception->getMessage())->contains('3 skipped (maximum 2)');
     }
 
     public function unmetCoverageFailsThePassingProperty(): void

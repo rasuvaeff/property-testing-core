@@ -474,7 +474,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 79
+                "startLine": 85
             }
         ],
         "constants": [],
@@ -1459,7 +1459,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Picks a value uniformly at random from a fixed set.",
-        "description": "Values are used verbatim (they are not arbitraries). Earlier values are\nconsidered \"smaller\": a failing value shrinks through the distinct values\nlisted before it, so put simpler values first. Because the index strictly\ndecreases on every step, shrinking terminates even when several values keep\nfailing. Use this for enumerations and small tagged unions.",
+        "description": "Values are used verbatim: an \\Rasuvaeff\\PropertyTesting\\ArbitraryInterface among them is\nrejected rather than handed to the body as data. Earlier values are\nconsidered \"smaller\": a failing value shrinks through the distinct values\nlisted before it, so put simpler values first. Because the index strictly\ndecreases on every step, shrinking terminates even when several values keep\nfailing. Use this for enumerations and small tagged unions.",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -1512,7 +1512,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 50
+                "startLine": 69
             },
             {
                 "name": "variantCount",
@@ -1529,7 +1529,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 56
+                "startLine": 75
             },
             {
                 "name": "withVariants",
@@ -1559,12 +1559,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 69
+                "startLine": 88
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/OneOfArbitrary.php#L24",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/OneOfArbitrary.php#L26",
         "implementedBy": []
     },
     {
@@ -2099,7 +2099,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Discard a property run when a precondition does not hold.",
-        "description": "An attempt discarded via \\Rasuvaeff\\PropertyTesting\\Assume::that() is neither a failure nor a\nsuccessful check: the property runner retries with another random input. Use\nit to skip combinations of generated values that are out of the\nproperty's domain (e.g. \"cap must be >= baseSeconds\") instead of rejecting\nthem with a narrow \\Rasuvaeff\\PropertyTesting\\Gen::filter(), which is slower.\n\nDiscards do not consume \\Rasuvaeff\\PropertyTesting\\Property::$runs. The runner warns when more\nthan 90% of attempts are discarded and fails with \\Rasuvaeff\\PropertyTesting\\GaveUpException when\n\\Rasuvaeff\\PropertyTesting\\Property::$maxDiscards is exceeded.",
+        "description": "An attempt discarded via \\Rasuvaeff\\PropertyTesting\\Assume::that() is neither a failure nor a\nsuccessful check: the property runner retries with another random input. Use\nit to skip combinations of generated values that are out of the\nproperty's domain (e.g. \"cap must be >= baseSeconds\") instead of rejecting\nthem with a narrow \\Rasuvaeff\\PropertyTesting\\Gen::filter(), which is slower.\n\nDiscards do not consume \\Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig::$runs. The runner warns\nwhen more than 90% of attempts are discarded and fails with\n\\Rasuvaeff\\PropertyTesting\\GaveUpException when \\Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig::$maxDiscards is\nexceeded.",
         "deprecated": null,
         "see": [],
         "extensionTags": [],
@@ -2130,12 +2130,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 27
+                "startLine": 28
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Assume.php#L22",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Assume.php#L23",
         "implementedBy": []
     },
     {
@@ -2271,14 +2271,14 @@
                 ],
                 "returnType": "void",
                 "summary": "Like when(), but additionally REQUIRES the label to occur in at\nleast $minPercent of the property's passing runs. When the requirement is\nnot met the property fails with a CoverageViolationException even\nthough every run passed — turning \"the distribution looks wrong\" from a\nprinted hint into a CI failure.",
-                "description": "```php\nClassify::cover($n % 2 === 0, 'even', 30.0);\n```",
+                "description": "```php\nClassify::cover($n % 2 === 0, 'even', 30.0);\n```\n\nThe threshold belongs to the label, not to the call: covering the same\nlabel twice in one run with different percentages leaves the last one\nstanding.",
                 "throws": [],
                 "throwsInBody": true,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 86
+                "startLine": 90
             },
             {
                 "name": "beginRun",
@@ -2293,7 +2293,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 104
+                "startLine": 108
             },
             {
                 "name": "flushRun",
@@ -2308,7 +2308,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 116
+                "startLine": 120
             },
             {
                 "name": "flushRequirements",
@@ -2323,7 +2323,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 140
+                "startLine": 144
             }
         ],
         "constants": [],
@@ -2352,7 +2352,7 @@
             {
                 "name": "seed",
                 "type": "int",
-                "description": "Seed of the run that first failed (pass it to \\Rasuvaeff\\PropertyTesting\\Property to reproduce).",
+                "description": "Seed of the run that first failed (replay it as \\Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig::$seed).",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -2546,7 +2546,7 @@
         "isApi": true,
         "isAbstract": false,
         "isThrowable": true,
-        "summary": "Thrown (as the failure of a property) when a single run's body takes longer\nthan the Property::$timeoutMs deadline. The offending input is the\ncounterexample: it is pathological for the code under test (catastrophic\nregex, deep recursion, unbounded backoff) — or the deadline is too tight.",
+        "summary": "Thrown (as the failure of a property) when a single run's body takes longer\nthan the Runner\\PropertyConfig::$timeoutMs deadline. The offending\ninput is the counterexample: it is pathological for the code under test\n(catastrophic regex, deep recursion, unbounded backoff) — or the deadline is\ntoo tight.",
         "description": "The input is reported as-is, NOT shrunk: shrink acceptance would have to\nre-measure wall time, and timing noise makes that descent non-deterministic.",
         "deprecated": null,
         "see": [],
@@ -2599,7 +2599,7 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/DeadlineExceededException.php#L20",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/DeadlineExceededException.php#L21",
         "implementedBy": []
     },
     {
@@ -3607,8 +3607,8 @@
         "isApi": true,
         "isAbstract": false,
         "isThrowable": true,
-        "summary": "Thrown (as the failure of a property) when discarded inputs exceed the\nconfigured budget before the requested number of successful checks completes.",
-        "description": "It exposes successful, discarded and total attempt counts so the result cannot\nhide a weak input distribution.\n\nThe fix is almost always to construct valid inputs directly (e.g.\n\\Rasuvaeff\\PropertyTesting\\Gen::flatMap() / \\Rasuvaeff\\PropertyTesting\\Gen::draw()) rather than generating broadly and\ndiscarding, so runs are valid by construction.",
+        "summary": "Thrown (as the failure of a property) when discarded inputs — or runs the\nenvironment refused — exceed their budget before the requested number of\nsuccessful checks completes. It exposes successful, discarded, skipped and\ntotal attempt counts so the result cannot hide a weak input distribution.",
+        "description": "The two budgets are separate, and so are the two messages. A discard is a\nstatement about the input, and the fix is almost always to construct valid\ninputs directly (e.g. \\Rasuvaeff\\PropertyTesting\\Gen::flatMap() / \\Rasuvaeff\\PropertyTesting\\Gen::draw()) rather than\ngenerating broadly and discarding. A skip is a statement about the machine,\nwhere narrowing the generators would achieve nothing at all.",
         "deprecated": null,
         "see": [],
         "extensionTags": [],
@@ -3622,7 +3622,7 @@
             {
                 "name": "propertyName",
                 "type": "string",
-                "description": "",
+                "description": "Property that gave up, as the adapter named it.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -3631,7 +3631,7 @@
             {
                 "name": "requiredRuns",
                 "type": "int",
-                "description": "",
+                "description": "Successful checks the configuration asked for.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -3640,7 +3640,7 @@
             {
                 "name": "successfulRuns",
                 "type": "int",
-                "description": "",
+                "description": "Successful checks completed before the budget ran out.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -3649,7 +3649,7 @@
             {
                 "name": "discardedRuns",
                 "type": "int",
-                "description": "",
+                "description": "Runs discarded via `Assume::that()` — the input left the domain.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -3658,7 +3658,7 @@
             {
                 "name": "attempts",
                 "type": "int",
-                "description": "",
+                "description": "Bodies executed in total, discarded and skipped ones included.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -3667,8 +3667,26 @@
             {
                 "name": "maxDiscards",
                 "type": "int",
-                "description": "",
+                "description": "Cap each of the two budgets was measured against.",
                 "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "skippedRuns",
+                "type": "int",
+                "description": "Runs the environment refused (a missing dependency, a skipped\nlifecycle hook).",
+                "default": "0",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "exhaustedBySkips",
+                "type": "bool",
+                "description": "Which budget ran out: the skips' one, or the discards'. It\nselects the message, because the two have no advice in common.",
+                "default": "false",
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
@@ -3678,7 +3696,7 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/GaveUpException.php#L21",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/GaveUpException.php#L23",
         "implementedBy": []
     },
     {
@@ -4185,14 +4203,19 @@
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\Arbitrary\\OneOfArbitrary",
                 "summary": "Picks one of the given values at random.",
-                "description": "",
-                "throws": [],
+                "description": "Values, not generators: `Gen::oneOf(Gen::int(), Gen::string())` is\nrejected, because it would make the generator objects themselves the\ndata. Use \\Rasuvaeff\\PropertyTesting\\frequency() to pick between generators.",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When no value is given, or when one of\nthem is an \\Rasuvaeff\\PropertyTesting\\ArbitraryInterface."
+                    }
+                ],
                 "throwsInBody": false,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 263
+                "startLine": 270
             },
             {
                 "name": "forClass",
@@ -4236,7 +4259,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 297
+                "startLine": 304
             },
             {
                 "name": "forParameters",
@@ -4273,7 +4296,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 336
+                "startLine": 343
             },
             {
                 "name": "swarm",
@@ -4296,7 +4319,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 376
+                "startLine": 383
             },
             {
                 "name": "elements",
@@ -4312,14 +4335,19 @@
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\Arbitrary\\OneOfArbitrary",
                 "summary": "Picks one value at random from an array (the array form of oneOf()).",
-                "description": "",
-                "throws": [],
+                "description": "Values, not generators — see \\Rasuvaeff\\PropertyTesting\\oneOf().",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When the array is empty, or when one of\nits entries is an \\Rasuvaeff\\PropertyTesting\\ArbitraryInterface."
+                    }
+                ],
                 "throwsInBody": false,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 390
+                "startLine": 402
             },
             {
                 "name": "constant",
@@ -4342,7 +4370,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 404
+                "startLine": 416
             },
             {
                 "name": "enum",
@@ -4365,7 +4393,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 419
+                "startLine": 431
             },
             {
                 "name": "floatSpecial",
@@ -4380,7 +4408,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 441
+                "startLine": 453
             },
             {
                 "name": "intRange",
@@ -4410,7 +4438,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 463
+                "startLine": 475
             },
             {
                 "name": "recursive",
@@ -4447,7 +4475,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 486
+                "startLine": 498
             },
             {
                 "name": "nullable",
@@ -4470,7 +4498,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 514
+                "startLine": 526
             },
             {
                 "name": "map",
@@ -4500,7 +4528,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 532
+                "startLine": 544
             },
             {
                 "name": "flatMap",
@@ -4530,7 +4558,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 552
+                "startLine": 564
             },
             {
                 "name": "filter",
@@ -4560,7 +4588,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 567
+                "startLine": 579
             },
             {
                 "name": "draw",
@@ -4583,7 +4611,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 604
+                "startLine": 616
             },
             {
                 "name": "tuple",
@@ -4606,7 +4634,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 617
+                "startLine": 629
             },
             {
                 "name": "frequency",
@@ -4629,7 +4657,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 633
+                "startLine": 645
             },
             {
                 "name": "uuid",
@@ -4644,7 +4672,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 644
+                "startLine": 656
             },
             {
                 "name": "datetime",
@@ -4674,7 +4702,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 654
+                "startLine": 666
             },
             {
                 "name": "ipv4",
@@ -4689,7 +4717,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 665
+                "startLine": 677
             },
             {
                 "name": "ipv6",
@@ -4704,7 +4732,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 694
+                "startLine": 706
             },
             {
                 "name": "email",
@@ -4719,7 +4747,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 718
+                "startLine": 730
             },
             {
                 "name": "url",
@@ -4734,7 +4762,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 742
+                "startLine": 754
             },
             {
                 "name": "json",
@@ -4757,7 +4785,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 770
+                "startLine": 782
             },
             {
                 "name": "jsonString",
@@ -4780,7 +4808,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 796
+                "startLine": 808
             },
             {
                 "name": "regex",
@@ -4803,14 +4831,14 @@
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
                 "summary": "Strings matching a regular-expression subset. The pattern is compiled to\nordinary combinators, so matches shrink toward shorter/simpler strings.",
-                "description": "Supported: literals, `.`, character classes `[...]` (ranges, negation,\n`\\d\\w\\s` and their negations, `[\\b]` as a backspace), the escapes\n`\\d\\w\\s\\D\\W\\S\\t\\n\\r` plus `\\`-escaped punctuation (the literal\ncharacter), quantifiers `* + ? {n} {n,} {n,m}`, alternation `|`, and\ngroups `(...)` / `(?:...)`. A single leading `^` and trailing `$` are\naccepted as no-ops. Anchors elsewhere, backreferences, lookaround,\nnamed/inline groups, flags, lazy/possessive quantifiers, and any other\nalphanumeric escape (`\\h`, `\\Q…\\E`, `\\0`, ...) throw an\n\\InvalidArgumentException naming the construct — compiled as\nliterals they would generate non-matching strings.",
+                "description": "Supported: literals, `.`, character classes `[...]` (ranges, negation,\n`\\d\\w\\s` and their negations, `[\\b]` as a backspace), the escapes\n`\\d\\w\\s\\D\\W\\S\\t\\n\\r` plus `\\`-escaped punctuation (the literal\ncharacter), quantifiers `* + ? {n} {n,} {n,m}`, alternation `|`, and\ngroups `(...)` / `(?:...)`. A single leading `^` and trailing `$` are\naccepted as no-ops. `.` and a negated class draw from printable ASCII\n(`0x20`..`0x7E`, so never a newline) — a subset of what the pattern\nmatches, chosen so a generated string stays readable in a counterexample.\nAnchors elsewhere, backreferences, lookaround,\nnamed/inline groups, flags, lazy/possessive quantifiers, and any other\nalphanumeric escape (`\\h`, `\\Q…\\E`, `\\0`, ...) throw an\n\\InvalidArgumentException naming the construct — compiled as\nliterals they would generate non-matching strings.",
                 "throws": [],
                 "throwsInBody": false,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 823
+                "startLine": 838
             },
             {
                 "name": "stringMatching",
@@ -4840,7 +4868,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 836
+                "startLine": 851
             },
             {
                 "name": "commands",
@@ -4884,7 +4912,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 856
+                "startLine": 871
             },
             {
                 "name": "sample",
@@ -4921,7 +4949,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 876
+                "startLine": 891
             },
             {
                 "name": "sampleShrinks",
@@ -4958,7 +4986,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 905
+                "startLine": 920
             }
         ],
         "constants": [],
@@ -5847,7 +5875,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 58
+                "startLine": 62
             },
             {
                 "name": "withVariants",
@@ -5872,7 +5900,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 64
+                "startLine": 68
             }
         ],
         "constants": [],
@@ -6076,12 +6104,65 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 60
+                "startLine": 70
             }
         ],
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/RegexCompiler.php#L31",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\ReplayVerdict",
+        "kind": "enum",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "What replaying one recorded regression settled, when it did not produce a\nPropertyResult to report.",
+        "description": "",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [
+            "UnitEnum"
+        ],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [],
+        "constants": [
+            {
+                "name": "Stale",
+                "type": "Rasuvaeff\\PropertyTesting\\Internal\\ReplayVerdict",
+                "summary": "The recorded input ran and no longer falsifies the property: the entry\nhas served its purpose and is pruned.",
+                "value": null
+            },
+            {
+                "name": "Inconclusive",
+                "type": "Rasuvaeff\\PropertyTesting\\Internal\\ReplayVerdict",
+                "summary": "The body never judged the input — the environment skipped the run. The\nentry says nothing about this environment and is kept: pruning it here\nwould delete the counterexample for every other one.",
+                "value": null
+            }
+        ],
+        "enumCases": [
+            {
+                "name": "Stale",
+                "backingValue": null
+            },
+            {
+                "name": "Inconclusive",
+                "backingValue": null
+            }
+        ],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/ReplayVerdict.php#L15",
         "implementedBy": []
     },
     {
@@ -9061,15 +9142,20 @@
                 "returnType": "void",
                 "summary": "Drops $entry from $id's corpus — the replay no longer fails, so the\nregression is fixed and the entry has served its purpose.",
                 "description": "",
-                "throws": [],
-                "throwsInBody": false,
+                "throws": [
+                    {
+                        "type": "\\RuntimeException",
+                        "description": "When the entry cannot be re-encoded to the key that identifies it."
+                    }
+                ],
+                "throwsInBody": true,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 152
+                "startLine": 154
             }
         ],
         "constants": [
@@ -9690,7 +9776,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 136
+                "startLine": 146
             }
         ],
         "constants": [],
@@ -9911,12 +9997,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 78
+                "startLine": 79
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L56",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L57",
         "implementedBy": []
     },
     {
@@ -10071,15 +10157,20 @@
                 "returnType": "void",
                 "summary": "Drops an entry whose replay no longer fails — the regression is fixed\nand the entry has served its purpose.",
                 "description": "",
-                "throws": [],
-                "throwsInBody": false,
+                "throws": [
+                    {
+                        "type": "\\RuntimeException",
+                        "description": "When the entry cannot be re-encoded to the key that identifies it."
+                    }
+                ],
+                "throwsInBody": true,
                 "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\Corpus",
                 "see": [],
                 "deprecated": null,
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 127
+                "startLine": 129
             }
         ],
         "constants": [
@@ -10808,7 +10899,7 @@
             {
                 "name": "discards",
                 "type": "int",
-                "description": "Runs discarded via `Assume::that()`.",
+                "description": "Runs discarded via `Assume::that()` — the input left the domain.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -10837,6 +10928,15 @@
                 "type": "array<array-key,float>",
                 "description": "Minimum percentages `Classify::cover()` registered,\nby label — carried alongside the counts they are compared against, including at the\nexits that never reached the assessment, so a report can say what was demanded as well\nas what happened.",
                 "default": "[]",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "skips",
+                "type": "int",
+                "description": "Runs the environment refused (a missing dependency, a skipped lifecycle\nhook). Counted apart from the discards because they say nothing about the generators,\nand a report that folded them in would advise narrowing generators that are not at\nfault.",
+                "default": "0",
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
@@ -11045,7 +11145,7 @@
             {
                 "name": "passed",
                 "type": "bool",
-                "description": "",
+                "description": "The body returned normally: this run checked the input.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "private",
@@ -11054,7 +11154,16 @@
             {
                 "name": "discarded",
                 "type": "bool",
-                "description": "",
+                "description": "The run checked nothing — the input left the domain, or the environment refused to run it.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "skipped",
+                "type": "bool",
+                "description": "The discard came from the environment rather than from the input; kept out of the corpus prune.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "private",
@@ -11062,8 +11171,8 @@
             },
             {
                 "name": "failure",
-                "type": "?Throwable",
-                "description": "",
+                "type": "?\\Throwable",
+                "description": "What the body raised, when it raised anything.",
                 "default": null,
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -11085,7 +11194,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 25
+                "startLine": 32
             },
             {
                 "name": "failed",
@@ -11108,14 +11217,14 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 34
+                "startLine": 41
             },
             {
                 "name": "discarded",
                 "static": true,
                 "params": [],
                 "returnType": "Rasuvaeff\\PropertyTesting\\Runner\\TrialOutcome",
-                "summary": "The run was discarded via `Assume::that()` — neither a failure nor a\nsuccessful check.",
+                "summary": "The run was discarded via `Assume::that()` — neither a failure nor a\nsuccessful check. The input left the property's domain, which is a\nstatement about the input: a recorded regression that discards on replay\ncan never falsify again and is pruned.",
                 "description": "",
                 "throws": [],
                 "throwsInBody": false,
@@ -11123,7 +11232,22 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 43
+                "startLine": 52
+            },
+            {
+                "name": "skipped",
+                "static": true,
+                "params": [],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Runner\\TrialOutcome",
+                "summary": "The environment refused to run the body — a `markTestSkipped()` guarding\na missing dependency, a framework skip raised from a lifecycle hook. It\ncounts as a discard everywhere a discard counts, with one exception: it\nsays nothing about the input, so a recorded regression that only skipped\nis kept rather than pruned. Deleting it would erase the counterexample\nfor every environment because one environment could not check it.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 65
             },
             {
                 "name": "isPassed",
@@ -11138,7 +11262,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 48
+                "startLine": 70
             },
             {
                 "name": "isFailed",
@@ -11153,7 +11277,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 53
+                "startLine": 75
             },
             {
                 "name": "isDiscarded",
@@ -11168,7 +11292,22 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 58
+                "startLine": 80
+            },
+            {
+                "name": "isSkipped",
+                "static": false,
+                "params": [],
+                "returnType": "bool",
+                "summary": "Whether the discard came from the environment rather than from the\ninput leaving the domain.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 89
             }
         ],
         "constants": [],
@@ -12245,7 +12384,7 @@
         "isApi": true,
         "isAbstract": false,
         "isThrowable": true,
-        "summary": "Thrown (as the failure of a property) when the random phase's wall-clock\ntime exceeds the Property::$budgetMs budget before the requested\nnumber of successful checks completes. It exposes the completed and required\nrun counts so a slow property cannot silently check less than it claims.",
+        "summary": "Thrown (as the failure of a property) when the random phase's wall-clock\ntime exceeds the Runner\\PropertyConfig::$budgetMs budget before the\nrequested number of successful checks completes. It exposes the completed and required\nrun counts so a slow property cannot silently check less than it claims.",
         "description": "The fix is to raise the budget, lower the run count, or speed up the\nproperty body (often by narrowing the generators).",
         "deprecated": null,
         "see": [],

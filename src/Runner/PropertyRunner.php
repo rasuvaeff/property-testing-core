@@ -330,6 +330,7 @@ final readonly class PropertyRunner
         $timeoutMs = $property->config->timeoutMs;
         $budgetMs = $property->config->budgetMs;
 
+        $discards = 0;
         $skips = 0;
         $checks = 0;
         $attempts = 0;
@@ -358,7 +359,7 @@ final readonly class PropertyRunner
                             successfulRuns: $checks,
                             requiredRuns: $runs,
                         ),
-                        statistics: new RunStatistics($attempts, $skips, $checks, $classifications, $requirements),
+                        statistics: new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips),
                     );
                 }
             }
@@ -389,12 +390,23 @@ final readonly class PropertyRunner
             $draws = DrawContext::disarm();
             $labels = Classify::flushRun();
 
-            // A discarded run is neither a failure nor a check.
+            // A discarded run is neither a failure nor a check. An
+            // environmental skip is a discard in every way but one: it says
+            // nothing about the generators, so it is counted apart and spends
+            // a budget of its own. Charged to the same one, a machine missing
+            // a dependency exhausted the discard budget and was told to narrow
+            // generators that were never at fault.
             if ($outcome->isDiscarded()) {
                 $this->emit($listeners, new RunDiscarded($property->id, $attempts, $arguments, $this->drawArguments($draws)));
-                ++$skips;
 
-                if ($skips > $maxDiscards) {
+                if ($outcome->isSkipped()) {
+                    ++$skips;
+                } else {
+                    ++$discards;
+                }
+
+
+                if ($discards > $maxDiscards || $skips > $maxDiscards) {
                     $requirements = Classify::flushRequirements();
 
                     return new GaveUp(
@@ -402,11 +414,13 @@ final readonly class PropertyRunner
                             propertyName: $property->name,
                             requiredRuns: $runs,
                             successfulRuns: $checks,
-                            discardedRuns: $skips,
+                            discardedRuns: $discards,
                             attempts: $attempts,
                             maxDiscards: $maxDiscards,
+                            skippedRuns: $skips,
+                            exhaustedBySkips: $discards <= $maxDiscards,
                         ),
-                        statistics: new RunStatistics($attempts, $skips, $checks, $classifications, $requirements),
+                        statistics: new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips),
                     );
                 }
 
@@ -442,7 +456,7 @@ final readonly class PropertyRunner
                     // (e.g. a different failing step), and the developer acts on
                     // the minimal one. Falls back to the original when nothing shrank.
                     failure: $shrunkFailure ?? $outcome->failure,
-                    skips: $skips,
+                    skips: $discards,
                     shrinkTrials: $shrinkTrials,
                     path: $shrinkPath,
                     edgeCases: $random->edgeCases,
@@ -478,7 +492,7 @@ final readonly class PropertyRunner
 
         $requirements = Classify::flushRequirements();
 
-        $statistics = new RunStatistics($attempts, $skips, $checks, $classifications, $requirements);
+        $statistics = new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips);
         $violation = $this->coverageViolation($property->name, $requirements, $classifications, $checks);
 
         if ($violation instanceof CoverageViolationException) {

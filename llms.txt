@@ -43,6 +43,8 @@ Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
   `Gen::draw()` instead of filtering broadly.
 - `runs` means successful checks; `Assume::that(false)` discards the attempt.
   Discards are capped by `maxDiscards` (default `runs * 10`) -> `GaveUp`.
+  Environmental skips have their OWN budget against the same cap, so a machine
+  missing a dependency is never told to narrow its generators.
 - Shrinking is integrated: `generate(Random)` returns a `Shrinkable` (value +
   lazy tree of smaller candidates). There is NO `shrink(mixed)` method. A shrink
   candidate is accepted only when it fails with the SAME exception class as the
@@ -81,7 +83,7 @@ $definition = new PropertyDefinition(
         runs: 100,          // successful checks (>= 1)
         seed: null,         // null -> random, reported on failure
         maxShrinks: null,   // cap on ACCEPTED shrink steps; 0 = no shrinking
-        maxDiscards: null,  // null -> runs * 10
+        maxDiscards: null,  // null -> runs * 10; caps discards and, separately, environmental skips
         timeoutMs: null,    // per-run wall-clock deadline, measured when the run RETURNS (does not interrupt a hung body; shrink trials untimed)
         budgetMs: null,     // whole-random-phase wall-clock budget
         shrink: null,           // ShrinkMode::Off|Bounded|Full; null -> Full
@@ -128,7 +130,7 @@ deterministic deadline/budget tests; `MonotonicClock` is the default.
 
 Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
 
-- `Passed` — carries `RunStatistics` ($attempts, $discards, $checks,
+- `Passed` — carries `RunStatistics` ($attempts, $discards, $skips, $checks,
   $classifications per label).
 - `Falsified` — carries `PropertyViolationException`;
   `counterExample(): CounterExample` (`seed`, `runsBeforeFailure`,
@@ -137,7 +139,9 @@ Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
   The falsification message ends with a `Path:` line carrying that same value
   (omitted when nothing shrank), so a replay is a copy of the line plus the seed
   printed above it.
-- `GaveUp` — `GaveUpException` + `RunStatistics` (discard budget exhausted).
+- `GaveUp` — `GaveUpException` + `RunStatistics` (the discard budget, or the
+  skip budget, ran out). `$exhaustedBySkips` says which; the message advises
+  narrower generators only for discards.
 - `CoverageFailed` — `CoverageViolationException` + `RunStatistics`
   (a `Classify::cover()` requirement missed although every run passed).
 - `DeadlineExceeded` — `DeadlineExceededException` (one run overran timeoutMs).
@@ -155,7 +159,8 @@ TrialOutcome`) to adapt any framework; `TrialOutcome::passed() / failed($e) /
 discarded() / skipped()`. `CallableTrialExecutor` is the standalone
 implementation. `discarded()` = the input left the domain (a recorded
 regression that discards on replay is pruned); `skipped()` = the environment
-refused to run the body (the entry is kept). Both count as discards elsewhere.
+refused to run the body (the entry is kept). Both mean "checked nothing", but
+they are counted apart on `RunStatistics` and spend separate budgets.
 
 ### Corpus (`Runner\` namespace)
 
@@ -224,8 +229,11 @@ Gen::uniqueArrayOf(ArbitraryInterface $el, int $min = 0, int $max = 100) // Uniq
 Gen::subset(array $values, int $minSize = 0, ?int $maxSize = null)  // SubsetArbitrary: subsets of a fixed ordered set; source duplicates rejected (InvalidArgumentException); size uniform over [min, max] (null max = full size); keeps source order; shrinks size first, then elements toward earlier source positions; no discards
 Gen::dictOf(ArbitraryInterface $key, ArbitraryInterface $value, int $min = 0, int $max = 100) // DictionaryArbitrary
 Gen::record(array $shape)               // RecordArbitrary, fixed-shape map
-Gen::oneOf(mixed ...$values)            // OneOfArbitrary
-Gen::elements(array $values)            // OneOfArbitrary (array form)
+Gen::oneOf(mixed ...$values)            // OneOfArbitrary: VALUES, not generators. An ArbitraryInterface among
+                                        // them throws InvalidArgumentException -- accepted, it would become the
+                                        // data and the body would pass having seen no generated value.
+                                        // Pick between generators with Gen::frequency().
+Gen::elements(array $values)            // OneOfArbitrary (array form); rejects arbitraries the same way
 Gen::enum(SomeEnum::class)              // OneOfArbitrary over enum cases
 Gen::constant(mixed $value)             // ConstantArbitrary
 Gen::char()                             // StringArbitrary, one ASCII char
@@ -267,6 +275,9 @@ Gen::ipv4()  Gen::ipv6()  Gen::email()  Gen::url()  // ipv6: canonical RFC 5952 
 Gen::json(int $maxDepth = 3)  Gen::jsonString(int $maxDepth = 3)
 Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compiled to combinators;
                                                         // `.` / negated class = printable ASCII 0x20..0x7E
+                                                        // NO DELIMITERS: Gen::regex('[a-z]{3,6}'), not '/[a-z]{3,6}/'.
+                                                        // A delimited pattern throws (the delimiters would otherwise
+                                                        // become literals in every generated string).
 Gen::stringMatching(string $pattern, int $maxRepeat = 8) // alias of regex()
 Gen::draw(ArbitraryInterface $arb)      // in-body dependent draw; ONLY inside a running property body
 Gen::sample(ArbitraryInterface $arb, int $count = 10, int $seed = 0)        // eager debug helper

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 
+use Rasuvaeff\PropertyTesting\Arbitrary\ConstantArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
@@ -183,6 +184,39 @@ final class OneOfArbitraryTest
                 Assert::same(Trees::childValues($node), [5]);
             }
         }
+    }
+
+    /**
+     * `oneOf(generator, generator)` is how fast-check, jqwik and Hypothesis
+     * spell "pick one of these generators"; here it would make the generator
+     * objects the data, and the property would pass without the body ever
+     * seeing a generated value. A green test that checked nothing is worse
+     * than a rejected call.
+     */
+    public function rejectsAGeneratorAmongTheValues(): void
+    {
+        try {
+            new OneOfArbitrary(new ConstantArbitrary('a'), 'b');
+        } catch (\InvalidArgumentException $exception) {
+            Assert::same(
+                $exception->getMessage(),
+                'OneOf takes values, not generators, and was given '
+                . ConstantArbitrary::class
+                . '. Use Gen::frequency() to pick between generators, or pass the values themselves',
+            );
+
+            return;
+        }
+
+        Assert::fail('Expected a generator among the values to be rejected');
+    }
+
+    #[ExpectException(\InvalidArgumentException::class)]
+    public function rejectsAGeneratorInAnyPosition(): void
+    {
+        // The check walks every value, not just the first: a generator hidden
+        // behind two plain values is the same silent pass.
+        new OneOfArbitrary('a', 'b', new ConstantArbitrary('c'));
     }
 
     #[ExpectException(\InvalidArgumentException::class)]

@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.9.0 — 2026-09-05
+
+- **Breaking:** `Gen::oneOf()` and `Gen::elements()` reject an
+  `ArbitraryInterface` among their values. `oneOf(generator, generator)` is how
+  fast-check, jqwik and Hypothesis spell "pick one of these generators", and
+  here it made the generator objects themselves the data: the body received
+  `IntArbitrary` and `StringArbitrary` instances, never a generated value, and
+  the property reported green having checked nothing. Pick between generators
+  with `Gen::frequency()`; `oneOf`/`elements` take values.
+- **Breaking:** `Gen::regex()` / `Gen::stringMatching()` reject a delimited
+  pattern. The compiler always wanted `[a-z]{3,6}`, not `/[a-z]{3,6}/`, and the
+  word "delimiter" appeared nowhere in the code or the documentation. A PHP
+  developer arrives with a pattern from `preg_match()`, which is always
+  delimited, and got one of two things: an anchored pattern was blamed on its
+  anchor (the `^` is not leading only because a `/` precedes it), and an
+  unanchored one compiled with the delimiters as literals — values that still
+  passed an unanchored `preg_match()`, so the property stayed green while every
+  generated string carried two junk characters. The rejection names the
+  undelimited pattern to paste back, and escaping the character still matches
+  it literally.
+- Environmental skips no longer spend the discard budget, and
+  `RunStatistics::$skips` counts them apart from `$discards`. A skip says
+  nothing about the input, so charging it to the discard budget made a machine
+  missing a dependency give up — and be advised to narrow generators that were
+  never at fault. `GaveUpException` gained `$skippedRuns` and
+  `$exhaustedBySkips`, and reports the environment rather than the generators
+  when it is the skip budget that ran out. Both budgets share the
+  `maxDiscards` cap.
+
 ## 0.8.0 — 2026-09-04
 
 - `TrialOutcome::skipped()` joins `discarded()` as a third "this run checked

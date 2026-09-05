@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
+use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Swarmable;
@@ -11,7 +12,8 @@ use Rasuvaeff\PropertyTesting\Swarmable;
 /**
  * Picks a value uniformly at random from a fixed set.
  *
- * Values are used verbatim (they are not arbitraries). Earlier values are
+ * Values are used verbatim: an {@see ArbitraryInterface} among them is
+ * rejected rather than handed to the body as data. Earlier values are
  * considered "smaller": a failing value shrinks through the distinct values
  * listed before it, so put simpler values first. Because the index strictly
  * decreases on every step, shrinking terminates even when several values keep
@@ -28,12 +30,29 @@ final readonly class OneOfArbitrary implements Swarmable
 
     /**
      * @param TValue ...$values
+     *
+     * @throws \InvalidArgumentException When no value is given, or when one of
+     *         them is an {@see ArbitraryInterface} rather than a value.
      */
     public function __construct(
         mixed ...$values,
     ) {
         if ($values === []) {
             throw new \InvalidArgumentException('OneOf requires at least one value');
+        }
+
+        // A generator among the values is the spelling every other library
+        // uses for "pick one of these generators", and here it would become
+        // the data: the body would receive arbitrary objects and pass without
+        // exercising a single branch it was written for.
+        foreach ($values as $value) {
+            if ($value instanceof ArbitraryInterface) {
+                throw new \InvalidArgumentException(sprintf(
+                    'OneOf takes values, not generators, and was given %s. '
+                    . 'Use Gen::frequency() to pick between generators, or pass the values themselves',
+                    $value::class,
+                ));
+            }
         }
 
         // Named arguments (`new OneOfArbitrary(...['ok' => 1])`) arrive as a

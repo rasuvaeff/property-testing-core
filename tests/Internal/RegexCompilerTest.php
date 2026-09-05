@@ -302,6 +302,100 @@ final class RegexCompilerTest
         }
     }
 
+    /**
+     * A PHP developer arrives with a pattern from `preg_match()`, which is
+     * always delimited. Anchored, it used to be blamed on the anchor — the `^`
+     * is not leading only because a `/` precedes it. Unanchored, it compiled
+     * and turned the delimiters into literals, and the generated values still
+     * passed an unanchored `preg_match()`, so the property stayed green while
+     * every value carried two junk characters.
+     *
+     * @param string $pattern Delimited pattern the compiler must refuse.
+     */
+    #[DataProvider('delimitedPatterns')]
+    public function rejectsADelimitedPattern(string $pattern): void
+    {
+        try {
+            RegexCompiler::compile($pattern);
+        } catch (\InvalidArgumentException $exception) {
+            Assert::string($exception->getMessage())->contains('without delimiters');
+
+            return;
+        }
+
+        Assert::fail(sprintf('Expected %s to be rejected as delimited', $pattern));
+    }
+
+    public static function delimitedPatterns(): iterable
+    {
+        yield 'slash' => ['/[a-z]{3}/'];
+        yield 'slash anchored' => ['/^[a-z]{3,6}$/'];
+        yield 'slash with flags' => ['/[a-z]{3}/i'];
+        yield 'hash' => ['#\\d{2}#'];
+        yield 'tilde' => ['~[abc]+~'];
+        yield 'percent' => ['%[a-z]%'];
+        yield 'bang' => ['![a-z]!'];
+        yield 'at' => ['@[a-z]@'];
+        // Two characters, both of them the delimiter: the shortest pattern
+        // that is nothing but delimiters.
+        yield 'empty body' => ['//'];
+        // The closer carries an even backslash run, so the backslash before it
+        // is itself escaped and the delimiter is not.
+        yield 'escaped backslash before the closer' => ['/[a-z]+\\\\/'];
+    }
+
+    /**
+     * The message must name the fix, not merely the fault: it quotes the
+     * pattern without delimiters, which is the string to paste back.
+     */
+    public function delimiterRejectionQuotesTheUndelimitedPattern(): void
+    {
+        try {
+            RegexCompiler::compile('/^[a-z]{3}$/i');
+        } catch (\InvalidArgumentException $exception) {
+            Assert::same(
+                $exception->getMessage(),
+                "Regex pattern must be written without delimiters: pass '^[a-z]{3}$', not '/^[a-z]{3}\$/i'. "
+                . "Escape the character (\\/) to match it literally",
+            );
+
+            return;
+        }
+
+        Assert::fail('Expected the delimited pattern to be rejected');
+    }
+
+    /**
+     * @param string $pattern Pattern that only looks delimited and must compile.
+     */
+    #[DataProvider('undelimitedPatterns')]
+    public function acceptsAPatternThatOnlyLooksDelimited(string $pattern): void
+    {
+        $value = RegexCompiler::compile($pattern)->generate(new Random(7))->value;
+
+        Assert::true(is_string($value));
+    }
+
+    public static function undelimitedPatterns(): iterable
+    {
+        // Opens with a delimiter but does not close with it.
+        yield 'path segments' => ['/[a-z]+/[a-z]+'];
+        yield 'leading slash only' => ['/[a-z]+'];
+        yield 'a lone delimiter character' => ['/'];
+        // The closer is escaped, so it is a literal the user asked for.
+        yield 'escaped closer' => ['/[a-z]+\\/'];
+        // Three backslashes: a literal backslash, then an escaped closer.
+        yield 'escaped closer after an escaped backslash' => ['/[a-z]+\\\\\\/'];
+        // Closes with one it never opened with.
+        yield 'trailing hash only' => ['[a-z]+#'];
+        // Both ends escaped: the user asked for the literal character.
+        yield 'escaped slashes' => ['\\/[a-z]+\\/'];
+        // Bracket pairs are never treated as delimiters: they open real
+        // constructs, and `[a-z]` would otherwise be refused as delimited.
+        yield 'character class' => ['[a-z]'];
+        yield 'group' => ['([a-z])'];
+    }
+
     #[DataProvider('errorMessagePatterns')]
     public function errorMessageNamesTheConstruct(string $pattern, string $needle): void
     {

@@ -9,7 +9,7 @@ description: "Discard a property run when a precondition does not hold."
 
 `Rasuvaeff\PropertyTesting\Assume`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Assume.php#L22) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Assume.php#L23) — **Version:** working tree
 
 Discard a property run when a precondition does not hold.
 
@@ -19,9 +19,10 @@ it to skip combinations of generated values that are out of the
 property's domain (e.g. "cap must be >= baseSeconds") instead of rejecting
 them with a narrow [`Gen`](/api/classes/Gen)::filter(), which is slower.
 
-Discards do not consume [`Property`](/api/classes/Property)::$runs. The runner warns when more
-than 90% of attempts are discarded and fails with [`GaveUpException`](/api/classes/GaveUpException) when
-[`Property`](/api/classes/Property)::$maxDiscards is exceeded.
+Discards do not consume [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$runs. The runner warns
+when more than 90% of attempts are discarded and fails with
+[`GaveUpException`](/api/classes/GaveUpException) when [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$maxDiscards is
+exceeded.
 
 ## Methods
 

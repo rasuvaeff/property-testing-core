@@ -35,7 +35,7 @@ __construct(
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `$seed` | `int` | *required* | Seed of the run that first failed (pass it to [`Property`](/api/classes/Property) to reproduce). |
+| `$seed` | `int` | *required* | Seed of the run that first failed (replay it as [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$seed). |
 | `$runsBeforeFailure` | `int` | *required* | Number of successful (non-discarded) runs before the failure. |
 | `$originalArguments` | `array<string,mixed>` | *required* | Randomly generated arguments that first failed. |
 | `$shrunkArguments` | `array<string,mixed>` | *required* | Minimised arguments that still fail. |

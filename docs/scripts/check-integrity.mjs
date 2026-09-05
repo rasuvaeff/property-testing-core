@@ -27,7 +27,7 @@ const COMPLETENESS_BUDGET = {
     'type without a summary': 1,
     'method without a summary': 29,
     'parameter without a description': 125,
-    'constructor parameter without a description': 112,
+    'constructor parameter without a description': 103,
     'throwing method without @throws': 13,
 }
 

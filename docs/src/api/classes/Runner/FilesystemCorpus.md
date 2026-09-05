@@ -98,3 +98,7 @@ prune(string $id, Runner\CorpusEntry $entry): void
 Drops $entry from $id's corpus — the replay no longer fails, so the
 regression is fixed and the entry has served its purpose.
 
+**Throws:**
+
+- `RuntimeException` — When the entry cannot be re-encoded to the key that identifies it.
+

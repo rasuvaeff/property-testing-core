@@ -16,7 +16,7 @@ final readonly class RunStatistics
 {
     /**
      * @param int $attempts Bodies executed in the random phase, discarded ones included.
-     * @param int $discards Runs discarded via `Assume::that()`.
+     * @param int $discards Runs discarded via `Assume::that()` — the input left the domain.
      * @param int $checks Successful (non-discarded, non-failing) runs completed.
      * @param array<array-key, int> $classifications Per-label counts from `Classify` over the passing
      *        runs. Keyed by label — as `array-key` rather than `string` because PHP stores a numeric
@@ -26,6 +26,10 @@ final readonly class RunStatistics
      *        by label — carried alongside the counts they are compared against, including at the
      *        exits that never reached the assessment, so a report can say what was demanded as well
      *        as what happened.
+     * @param int $skips Runs the environment refused (a missing dependency, a skipped lifecycle
+     *        hook). Counted apart from the discards because they say nothing about the generators,
+     *        and a report that folded them in would advise narrowing generators that are not at
+     *        fault.
      */
     public function __construct(
         public int $attempts,
@@ -33,5 +37,6 @@ final readonly class RunStatistics
         public int $checks,
         public array $classifications,
         public array $requirements = [],
+        public int $skips = 0,
     ) {}
 }

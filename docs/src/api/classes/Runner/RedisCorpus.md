@@ -117,3 +117,7 @@ and the entry has served its purpose.
 - `$id` — The property id, as the runner knows it.
 - `$entry` — The entry whose replay no longer fails.
 
+**Throws:**
+
+- `RuntimeException` — When the entry cannot be re-encoded to the key that identifies it.
+

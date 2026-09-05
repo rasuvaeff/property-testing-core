@@ -25,14 +25,16 @@ __construct(
     int $checks,
     array<array-key,int> $classifications,
     array<array-key,float> $requirements = [],
+    int $skips = 0,
 )
 ```
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `$attempts` | `int` | *required* | Bodies executed in the random phase, discarded ones included. |
-| `$discards` | `int` | *required* | Runs discarded via `Assume::that()`. |
+| `$discards` | `int` | *required* | Runs discarded via `Assume::that()` — the input left the domain. |
 | `$checks` | `int` | *required* | Successful (non-discarded, non-failing) runs completed. |
 | `$classifications` | `array<array-key,int>` | *required* | Per-label counts from `Classify` over the passing runs. Keyed by label — as `array-key` rather than `string` because PHP stores a numeric label such as `'42'` under an integer key, and a type that denied it would be a lie the readers of this array pay for. |
 | `$requirements` | `array<array-key,float>` | `[]` | Minimum percentages `Classify::cover()` registered, by label — carried alongside the counts they are compared against, including at the exits that never reached the assessment, so a report can say what was demanded as well as what happened. |
+| `$skips` | `int` | `0` | Runs the environment refused (a missing dependency, a skipped lifecycle hook). Counted apart from the discards because they say nothing about the generators, and a report that folded them in would advise narrowing generators that are not at fault. |
 

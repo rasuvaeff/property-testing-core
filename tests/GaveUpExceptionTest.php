@@ -23,10 +23,30 @@ final class GaveUpExceptionTest
         Assert::same($exception->discardedRuns, 21);
         Assert::same($exception->attempts, 33);
         Assert::same($exception->maxDiscards, 20);
+        Assert::same($exception->skippedRuns, 0);
+        Assert::false($exception->exhaustedBySkips);
         Assert::same(
             $exception->getMessage(),
             'Property "holds" gave up after 33 attempt(s): 12/100 successful run(s), 21 discarded (maximum 20). '
             . 'Narrow or construct the generators so inputs are valid by construction.',
+        );
+    }
+
+    /**
+     * The skip budget has its own message: advising narrower generators to a
+     * machine that was missing a dependency is advice that cannot be acted on.
+     */
+    public function skipExhaustionBlamesTheEnvironmentInsteadOfTheGenerators(): void
+    {
+        $exception = new GaveUpException('holds', 100, 12, 0, 33, 20, skippedRuns: 21, exhaustedBySkips: true);
+
+        Assert::same($exception->skippedRuns, 21);
+        Assert::true($exception->exhaustedBySkips);
+        Assert::same(
+            $exception->getMessage(),
+            'Property "holds" gave up after 33 attempt(s): 12/100 successful run(s), 21 skipped (maximum 20). '
+            . 'The environment refused those runs, so the generators are not the cause: '
+            . 'a missing dependency or a lifecycle hook skipped this property more often than it checked it.',
         );
     }
 }

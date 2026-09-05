@@ -155,9 +155,11 @@ make release-check
   The job asserts the path install took effect (`composer show` prints a
   `path :` line) precisely so it cannot silently pass against the released
   core from Packagist. Its path-repository `versions` override is pinned at
-  `0.4.0` because both adapters constrain core with `^0.4`: when core moves to
-  a version they do not accept, this job is *supposed* to fail until the
-  adapters are updated — do not paper over it by widening the override.
+  `0.9.0` because both adapters accept `^0.9`: when core moves to a version
+  they do not accept, this job is *supposed* to fail until the adapters are
+  updated — do not paper over it by widening the override. Keeping it in step
+  is part of a core release, not an afterthought: the pin sat at `0.7.0` while
+  both adapters had moved to `^0.8`.
   Same recipe locally, from the monorepo root. **Both** adapters, not just
   `-testo` — they exercise different halves of the contract, and an engine
   change can break one while the other stays green:
@@ -169,7 +171,7 @@ make release-check
         set -e
         cleanup() { composer config --unset repositories.core; rm -f composer.lock; }
         trap cleanup EXIT
-        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"0.4.0\"}}}"
+        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"0.9.0\"}}}"
         composer update
         composer test
     ' || failed="$failed $adapter"

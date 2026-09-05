@@ -24,15 +24,17 @@ the run/shrink loop never learns about framework types.
 __construct(
     bool $passed,
     bool $discarded,
-    ?Throwable $failure,
+    bool $skipped,
+    ?\Throwable $failure,
 )
 ```
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `$passed` | `bool` | *required* |  |
-| `$discarded` | `bool` | *required* |  |
-| `$failure` | `?Throwable` | *required* |  |
+| `$passed` | `bool` | *required* | The body returned normally: this run checked the input. |
+| `$discarded` | `bool` | *required* | The run checked nothing — the input left the domain, or the environment refused to run it. |
+| `$skipped` | `bool` | *required* | The discard came from the environment rather than from the input; kept out of the corpus prune. |
+| `$failure` | `?\Throwable` | *required* | What the body raised, when it raised anything. |
 
 ## Methods
 
@@ -57,7 +59,22 @@ static discarded(): Runner\TrialOutcome
 ```
 
 The run was discarded via `Assume::that()` — neither a failure nor a
-successful check.
+successful check. The input left the property's domain, which is a
+statement about the input: a recorded regression that discards on replay
+can never falsify again and is pruned.
+
+### skipped()
+
+```php
+static skipped(): Runner\TrialOutcome
+```
+
+The environment refused to run the body — a `markTestSkipped()` guarding
+a missing dependency, a framework skip raised from a lifecycle hook. It
+counts as a discard everywhere a discard counts, with one exception: it
+says nothing about the input, so a recorded regression that only skipped
+is kept rather than pruned. Deleting it would erase the counterexample
+for every environment because one environment could not check it.
 
 ### isPassed()
 
@@ -76,4 +93,13 @@ isFailed(): bool
 ```php
 isDiscarded(): bool
 ```
+
+### isSkipped()
+
+```php
+isSkipped(): bool
+```
+
+Whether the discard came from the environment rather than from the
+input leaving the domain.
 

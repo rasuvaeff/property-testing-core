@@ -254,9 +254,16 @@ final class Gen
     /**
      * Picks one of the given values at random.
      *
+     * Values, not generators: `Gen::oneOf(Gen::int(), Gen::string())` is
+     * rejected, because it would make the generator objects themselves the
+     * data. Use {@see frequency()} to pick between generators.
+     *
      * @template TValue
      *
      * @param TValue ...$values
+     *
+     * @throws \InvalidArgumentException When no value is given, or when one of
+     *         them is an {@see ArbitraryInterface}.
      *
      * @return OneOfArbitrary<TValue>
      */
@@ -381,9 +388,14 @@ final class Gen
     /**
      * Picks one value at random from an array (the array form of {@see oneOf()}).
      *
+     * Values, not generators — see {@see oneOf()}.
+     *
      * @template TValue
      *
      * @param array<array-key, TValue> $values Must be non-empty.
+     *
+     * @throws \InvalidArgumentException When the array is empty, or when one of
+     *         its entries is an {@see ArbitraryInterface}.
      *
      * @return OneOfArbitrary<TValue>
      */

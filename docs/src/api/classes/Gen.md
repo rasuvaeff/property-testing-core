@@ -215,6 +215,15 @@ static oneOf(\TValue $values): Arbitrary\OneOfArbitrary
 
 Picks one of the given values at random.
 
+**Throws:**
+
+- `InvalidArgumentException` — When no value is given, or when one of
+them is an \Rasuvaeff\PropertyTesting\ArbitraryInterface.
+
+Values, not generators: `Gen::oneOf(Gen::int(), Gen::string())` is
+rejected, because it would make the generator objects themselves the
+data. Use `frequency`() to pick between generators.
+
 ### forClass()
 
 ```php
@@ -316,6 +325,13 @@ static elements(array<array-key,\TValue> $values): Arbitrary\OneOfArbitrary
 Picks one value at random from an array (the array form of oneOf()).
 
 - `$values` — Must be non-empty.
+
+**Throws:**
+
+- `InvalidArgumentException` — When the array is empty, or when one of
+its entries is an \Rasuvaeff\PropertyTesting\ArbitraryInterface.
+
+Values, not generators — see `oneOf`().
 
 ### constant()
 
@@ -579,7 +595,10 @@ Supported: literals, `.`, character classes `[...]` (ranges, negation,
 ``d\w\s\D\W\S\t\n\r`` plus `\`-escaped punctuation (the literal
 character), quantifiers `* + ? {n} {n,} {n,m}`, alternation `|`, and
 groups `(...)` / `(?:...)`. A single leading `^` and trailing `$` are
-accepted as no-ops. Anchors elsewhere, backreferences, lookaround,
+accepted as no-ops. `.` and a negated class draw from printable ASCII
+(`0x20`..`0x7E`, so never a newline) — a subset of what the pattern
+matches, chosen so a generated string stays readable in a counterexample.
+Anchors elsewhere, backreferences, lookaround,
 named/inline groups, flags, lazy/possessive quantifiers, and any other
 alphanumeric escape (`\h`, `\Q…\E`, `\0`, ...) throw an
 \InvalidArgumentException naming the construct — compiled as

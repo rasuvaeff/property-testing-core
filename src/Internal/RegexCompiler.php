@@ -45,6 +45,16 @@ final class RegexCompiler
      */
     private const int MAX_GENERATED_LENGTH = 10_000;
 
+    /**
+     * Common PCRE delimiters, minus the bracket pairs: `[`, `(` and `{` open
+     * real constructs, so a pattern starting with one says nothing about
+     * delimiting.
+     */
+    private const string DELIMITERS = '/#~%!@';
+
+    /** Pattern modifiers PCRE allows after the closing delimiter. */
+    private const string MODIFIERS = 'imsxuADSUXJn';
+
     /** @var list<string> */
     private array $chars;
 
@@ -70,6 +80,8 @@ final class RegexCompiler
             ));
         }
 
+        self::rejectDelimiters($pattern);
+
         // A single leading ^ / trailing $ is redundant when the whole string is
         // generated, so accept them as no-ops. An escaped \$ stays literal —
         // and what makes it escaped is an odd run of backslashes before it, so
@@ -94,6 +106,47 @@ final class RegexCompiler
         }
 
         return $arbitrary;
+    }
+
+    /**
+     * Rejects a delimited pattern — the shape `preg_match()` takes, and the one
+     * a PHP developer arrives with.
+     *
+     * Nothing here parses delimiters: `Gen::regex()` compiles the pattern
+     * itself, so a leading `/` is a literal slash and the trailing one another,
+     * and every generated string would carry both. Worse, such values still
+     * pass an unanchored `preg_match($pattern, $value)`, so the property that
+     * checks the generator against the same regex stays green while every value
+     * is wrong. Anchored patterns do not even reach that point: the `^` after
+     * the delimiter is not leading any more, and the parser blames the anchor.
+     *
+     * @throws \InvalidArgumentException When the pattern opens and closes with
+     *         the same common delimiter.
+     */
+    private static function rejectDelimiters(string $pattern): void
+    {
+        if ($pattern === '' || !str_contains(self::DELIMITERS, $pattern[0])) {
+            return;
+        }
+
+        $body = rtrim($pattern, self::MODIFIERS);
+
+        // An escaped closer is a literal the user meant, not a delimiter.
+        if (
+            strlen($body) < 2
+            || $body[-1] !== $pattern[0]
+            || self::backslashRunBefore($body, strlen($body) - 1) % 2 === 1
+        ) {
+            return;
+        }
+
+        throw new \InvalidArgumentException(sprintf(
+            'Regex pattern must be written without delimiters: pass %s, not %s. '
+            . 'Escape the character (\\%s) to match it literally',
+            var_export(substr($body, 1, -1), true),
+            var_export($pattern, true),
+            $pattern[0],
+        ));
     }
 
     /**

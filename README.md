@@ -133,9 +133,12 @@ count the same everywhere but one place. A discard is a statement about the
 discards on replay can never fail again and is pruned. A skip is a statement
 about the **environment** — `markTestSkipped()` guarding a missing dependency,
 a framework skip raised from a lifecycle hook — and says nothing about the
-input, so a recorded regression that only skipped is kept. Report an
-environmental skip as `skipped()`, or one machine without the dependency
-deletes the counterexample for every machine that has it.
+input, so a recorded regression that only skipped is kept. The two also spend
+separate budgets and are counted apart on `RunStatistics`: skips charged to the
+discard budget made a machine missing a dependency give up with advice to
+narrow generators that were never at fault. Report an environmental skip as
+`skipped()`, or one machine without the dependency deletes the counterexample
+for every machine that has it.
 
 ### Structured results
 
@@ -147,7 +150,7 @@ carries the engine's own exception type with the established message format:
 |---|---|---|
 | `Passed` | Every check completed, every coverage requirement held | `RunStatistics` |
 | `Falsified` | A random run failed; the counterexample is shrunk | `PropertyViolationException` → `CounterExample` |
-| `GaveUp` | Discard budget exhausted before `runs` checks | `GaveUpException`, `RunStatistics` |
+| `GaveUp` | The discard budget — or the skip budget — was exhausted before `runs` checks; `GaveUpException::$exhaustedBySkips` says which, and the message advises accordingly | `GaveUpException`, `RunStatistics` |
 | `CoverageFailed` | Every run passed but a `Classify::cover()` requirement was missed | `CoverageViolationException`, `RunStatistics` |
 | `DeadlineExceeded` | A single run overran `timeoutMs` | `DeadlineExceededException` |
 | `TimeBudgetExceeded` | The random phase overran `budgetMs` | `TimeBudgetExceededException`, `RunStatistics` |
@@ -160,9 +163,9 @@ Configuration errors (`runs < 1`, a missing generator, mismatched parameter
 names) remain exceptions — they are programmer errors, not verdicts about the
 property.
 
-`RunStatistics` exposes the raw phase counters (attempts, discards, checks,
-per-label classification counts) so a reporter can print a distribution table
-or a discard warning — the engine itself never formats framework output.
+`RunStatistics` exposes the raw phase counters (attempts, discards, skips,
+checks, per-label classification counts) so a reporter can print a distribution
+table or a discard warning — the engine itself never formats framework output.
 
 Serialization: every result survives native `serialize()` when captured stack
 traces carry no argument values (`zend.exception_ignore_args=1`); the portable
@@ -194,7 +197,7 @@ through their source domain.
 | `Gen::subset($values, $min, $max)` | `SubsetArbitrary`, subsets of a fixed ordered set — distinct members of `$values` in source order; duplicates in the source are rejected | size first (toward the empty set), then each kept element toward earlier source positions — the minimal subset is a short prefix |
 | `Gen::dictOf($key, $value, $min, $max)` | `DictionaryArbitrary`, maps with distinct keys from `$key` (int/string) and values from `$value`, size 0..100 by default | toward `[]`, then by size, then each value (keys fixed) |
 | `Gen::record($shape)` | `RecordArbitrary`, fixed-shape map `['field' => $arb, ...]` | each field via its arbitrary, key set fixed |
-| `Gen::elements($array)` | `OneOfArbitrary`, one value from an array (array form of `oneOf`) | toward earlier-listed distinct values |
+| `Gen::elements($array)` | `OneOfArbitrary`, one value from an array (array form of `oneOf`, and it rejects arbitraries the same way) | toward earlier-listed distinct values |
 | `Gen::enum(SomeEnum::class)` | `OneOfArbitrary` over the enum's cases | toward earlier-declared cases (declare simpler cases first) |
 | `Gen::constant($value)` | `ConstantArbitrary`, always `$value` | does not shrink |
 | `Gen::char()` | `StringArbitrary`, a single printable ASCII character | toward `a` |
@@ -203,7 +206,7 @@ through their source domain.
 | `Gen::floatSpecial()` | `OneOfArbitrary` over `NAN`, `±INF`, `-0.0` and the float representation edges | toward earlier-listed specials |
 | `Gen::intRange($min, $max)` | `FlatMappedArbitrary`, ordered pairs `[lo, hi]` with `lo <= hi` | both bounds shrink, order always holds |
 | `Gen::recursive($leaf, $wrap, $maxDepth)` | bounded recursive structures: `$wrap` lifts the previous level's arbitrary | within the branch that generated the value |
-| `Gen::oneOf(...$values)` | `OneOfArbitrary`, one of the given values | toward earlier-listed distinct values (put simpler values first) |
+| `Gen::oneOf(...$values)` | `OneOfArbitrary`, one of the given values — values, not generators: an arbitrary among them is rejected (use `frequency()` to pick between generators) | toward earlier-listed distinct values (put simpler values first) |
 | `Gen::nullable($inner)` | `NullableArbitrary`, `null` or an `$inner` value | prefers `null`, then the inner tree |
 | `Gen::map($inner, $fn)` | `MappedArbitrary`, `$inner` transformed by `$fn` | through the inner tree, re-applying `$fn` |
 | `Gen::flatMap($inner, $fn)` | `FlatMappedArbitrary`, dependent generator returned by `$fn($innerValue)` | source value first (dependent value regenerated), then the dependent tree |
@@ -216,7 +219,7 @@ through their source domain.
 | `Gen::url()` | `http(s)://host.tld[/path]` URLs | toward `http://a.com` |
 | `Gen::json($maxDepth)` | a JSON-encodable value (null/bool/int/float/string/list/object) | within the generated structure |
 | `Gen::jsonString($maxDepth)` | the `json_encode` text of `Gen::json()` | through the value's tree |
-| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators); `.` and a negated class draw from printable ASCII (`0x20`..`0x7E`, never a newline) | shorter/simpler matches (via the compiled trees) |
+| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators), written **without delimiters** — `Gen::regex('[a-z]{3,6}')`, not `'/[a-z]{3,6}/'`; `.` and a negated class draw from printable ASCII (`0x20`..`0x7E`, never a newline) | shorter/simpler matches (via the compiled trees) |
 | `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
 | `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |
 | `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — the `@param` psalm type when there is one (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; class names resolve through the file's namespace and `use` imports), the native type otherwise; anything unreadable throws instead of guessing, an override naming no parameter too | through the generated arguments, rebuilding the instance |
@@ -309,6 +312,10 @@ does not hold — the attempt is neither a failure nor a successful check, and
 `runs * 10`), failing with a structured `GaveUpException`. Construct valid
 inputs (`flatMap`/`draw`) instead of discarding broadly.
 
+Environmental skips are counted and budgeted separately, against the same cap:
+they say nothing about the input, so exhausting their budget reports the
+environment rather than the generators.
+
 ### Distribution (`Classify`)
 
 `Classify::label()` / `Classify::when()` tally labels per run;
@@ -340,7 +347,7 @@ no environment:
 | `runs` | 100 | Successful checks to complete (discards do not count) |
 | `seed` | `null` | Random-phase seed; null draws one (reported in failures) |
 | `maxShrinks` | `null` | Cap on accepted shrink steps; 0 disables shrinking |
-| `maxDiscards` | `null` | Discard budget; null resolves to `runs * 10` |
+| `maxDiscards` | `null` | Discard budget, and separately the skip budget; null resolves to `runs * 10` |
 | `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded`. Measured when the run returns: it reports a run that overran, it does not interrupt a body that hangs. Shrink trials are not timed |
 | `budgetMs` | `null` | Wall-clock budget for the whole random phase → `TimeBudgetExceeded` |
 | `shrink` | `null` | `ShrinkMode::Off` reports the counterexample as generated; null resolves to `Full` |

@@ -14,7 +14,7 @@ Every `@api` type across all three packages that implements `Throwable`.
 | [`CoverageViolationException`](/api/classes/CoverageViolationException) | core | `RuntimeException` | Thrown (as the failure of an otherwise passing property) when a coverage requirement registered… |
 | [`DeadlineExceededException`](/api/classes/DeadlineExceededException) | core | `RuntimeException` | Thrown (as the failure of a property) when a single run's body takes longer than the… |
 | [`ExampleViolationException`](/api/classes/ExampleViolationException) | core | `RuntimeException` | Reported when an explicit example (a fixed input declared via the property's `Examples` method)… |
-| [`GaveUpException`](/api/classes/GaveUpException) | core | `RuntimeException` | Thrown (as the failure of a property) when discarded inputs exceed the configured budget before… |
+| [`GaveUpException`](/api/classes/GaveUpException) | core | `RuntimeException` | Thrown (as the failure of a property) when discarded inputs — or runs the environment refused —… |
 | [`GenerationExhausted`](/api/classes/GenerationExhausted) | core | `RuntimeException` | Thrown when a bounded-attempt generator cannot produce a value that satisfies its constraint… |
 | [`PathViolationException`](/api/classes/PathViolationException) | core | `RuntimeException` | Reported when a run pinned to a shrink path cannot follow it: the candidate a step names is gone,… |
 | [`PropertyViolationException`](/api/classes/PropertyViolationException) | core | `RuntimeException` | Reported when a property is falsified. |

@@ -108,12 +108,12 @@ PROPERTY_DB_PASSWORD=… PROPERTY_DB=rediss://redis.internal:6380 vendor/bin/tes
 are query parameters — the shape predis, Symfony and the IANA registration all
 agree on. A path that is not a database index, or any scheme that is neither
 `redis` nor `rediss`, is refused rather than reinterpreted as a directory.
-Credentials in the DSN's userinfo are refused too: `PROPERTY_DB` is echoed in
+Credentials in the userinfo of a DSN are refused too: `PROPERTY_DB` is echoed in
 diagnostics and lands in CI logs, so the password goes in
 `PROPERTY_DB_PASSWORD` (see
 [Environment overrides](/guide/controlling-runs/env-overrides)).
 
-The engine writes the byte-identical document to either backend, so moving a
+The engine writes the byte-identical document to either store, so moving a
 corpus between the two is a copy. Writes are optimistic rather than locked: a
 write that loses a race re-reads and retries a handful of times, then gives up
 quietly. A corpus is memory, not a ledger — losing one entry to a storm of

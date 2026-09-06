@@ -40,6 +40,7 @@ __construct(
     int $checks,
     list<\Runner\LabelShare> $labels,
     bool $coverageAssessed,
+    int $skips = 0,
 )
 ```
 
@@ -50,6 +51,7 @@ __construct(
 | `$checks` | `int` | *required* | Successful (non-discarded, non-failing) runs — the label denominator. |
 | `$labels` | `list<\Runner\LabelShare>` | *required* | Every label recorded or required, most frequent first and alphabetical within a count, so two runs of the same property compare line by line. |
 | `$coverageAssessed` | `bool` | *required* | Whether the engine judged the `cover()` requirements. False when the run ended before the check loop completed (it gave up on discards, or ran out of its time budget): the shares below are still what happened, but nothing enforced them. |
+| `$skips` | `int` | `0` | Runs the environment refused. Counted inside `$attempts` like discards are, and apart from `$discards` for the same reason the engine separates the two budgets: a distribution that is mostly skips says nothing about the generators. |
 
 ## Methods
 

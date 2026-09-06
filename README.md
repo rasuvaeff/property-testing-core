@@ -154,7 +154,7 @@ carries the engine's own exception type with the established message format:
 | `CoverageFailed` | Every run passed but a `Classify::cover()` requirement was missed | `CoverageViolationException`, `RunStatistics` |
 | `DeadlineExceeded` | A single run overran `timeoutMs` | `DeadlineExceededException` |
 | `TimeBudgetExceeded` | The random phase overran `budgetMs` | `TimeBudgetExceededException`, `RunStatistics` |
-| `GenerationFailed` | A generator could not produce a valid value | `GenerationExhausted` |
+| `GenerationFailed` | A generator could not produce a valid value | `GenerationExhaustedException` |
 | `ExampleFailed` | An explicit example failed (examples run first, unshrunk) | `ExampleViolationException` |
 | `RegressionFailed` | A recorded corpus entry still fails | `RegressionViolationException` |
 | `PathFailed` | The run falsified the property but could not follow the pinned shrink `path` | `PathViolationException` |
@@ -184,7 +184,7 @@ through their source domain.
 | `Gen::intBetween($min, $max)` | `IntArbitrary`, `[$min, $max]` | toward `0`, clamped to range |
 | `Gen::intPositive()` | `IntArbitrary`, `1..PHP_INT_MAX` | toward `1` |
 | `Gen::float()` | `FloatArbitrary`, `[0.0, 1.0)` | toward `0.0` |
-| `Gen::floatBetween($min, $max)` | `FloatArbitrary`, `[$min, $max]` | toward `0.0`, clamped to range |
+| `Gen::floatBetween($min, $max)` | `FloatArbitrary`, `[$min, $max)` — `$max` itself is never drawn | toward `0.0`, clamped to range |
 | `Gen::bool()` | `BoolArbitrary`, `true` / `false` | `true` -> `false` |
 | `Gen::string()` | `StringArbitrary`, Unicode, length 0..100 — half the characters ASCII printable, a tenth troublemakers (quotes, backslash, combining marks, zero-width joiner, right-to-left override, byte order mark, astral emoji, …), a tenth Latin-1/Latin Extended, a tenth the rest of the BMP, a fifth uniform over U+0001..U+10FFFF | toward `''`, then by removing blocks of characters from any position (down to single ones), then each character toward `a` |
 | `Gen::stringAscii()` | `StringArbitrary`, printable ASCII, length 0..100 | toward `''`, then by length, then each character toward `a` |
@@ -210,7 +210,7 @@ through their source domain.
 | `Gen::nullable($inner)` | `NullableArbitrary`, `null` or an `$inner` value | prefers `null`, then the inner tree |
 | `Gen::map($inner, $fn)` | `MappedArbitrary`, `$inner` transformed by `$fn` | through the inner tree, re-applying `$fn` |
 | `Gen::flatMap($inner, $fn)` | `FlatMappedArbitrary`, dependent generator returned by `$fn($innerValue)` | source value first (dependent value regenerated), then the dependent tree |
-| `Gen::filter($inner, $predicate)` | `FilteredArbitrary`, `$inner` values satisfying `$predicate` (throws `GenerationExhausted` after 100 rejected draws — never yields an out-of-domain value) | inner tree, pruning candidates that fail the predicate |
+| `Gen::filter($inner, $predicate)` | `FilteredArbitrary`, `$inner` values satisfying `$predicate` (throws `GenerationExhaustedException` after 100 rejected draws — never yields an out-of-domain value) | inner tree, pruning candidates that fail the predicate |
 | `Gen::tuple(...$elements)` | `TupleArbitrary`, fixed-arity tuple, one value per element | each position via its element, arity fixed |
 | `Gen::frequency($pairs)` | `FrequencyArbitrary`, weighted choice over `[weight, arbitrary]` pairs | within the branch that generated the value |
 | `Gen::ipv4()` | IPv4 dotted-quad strings | each octet toward `0` |
@@ -236,7 +236,7 @@ value the property throws away.
 Sized generators guarantee their **minimum**: `uniqueArrayOf`/`dictOf` (distinct
 elements/keys) and `commands` (applicable steps) may fall short of the *drawn*
 size when the value space runs out, but never fall below `$min` — an unreachable
-minimum throws `GenerationExhausted` rather than hand the property a too-small
+minimum throws `GenerationExhaustedException` rather than hand the property a too-small
 value.
 
 `Random` wraps an object-scoped MT19937 engine: two instances with the same
@@ -275,7 +275,7 @@ finding reproducible at all. Two consequences worth knowing:
   replay reproduces both.
 
 A swarm over `Gen::commands()` with a non-zero `$minLength` can leave a case
-with no applicable command; that throws `GenerationExhausted`, exactly as an
+with no applicable command; that throws `GenerationExhaustedException`, exactly as an
 unrestricted generator starved by its model does.
 
 ### Dependent generators (`flatMap`)
@@ -312,9 +312,10 @@ does not hold — the attempt is neither a failure nor a successful check, and
 `runs * 10`), failing with a structured `GaveUpException`. Construct valid
 inputs (`flatMap`/`draw`) instead of discarding broadly.
 
-Environmental skips are counted and budgeted separately, against the same cap:
-they say nothing about the input, so exhausting their budget reports the
-environment rather than the generators.
+Environmental skips — a skipped body or lifecycle hook — are counted and
+budgeted separately: they say nothing about the input, so exhausting their
+budget reports the environment rather than the generators. Their implicit
+budget is `runs`, not `runs * 10`; an explicit `maxDiscards` governs both.
 
 ### Distribution (`Classify`)
 
@@ -347,18 +348,19 @@ no environment:
 | `runs` | 100 | Successful checks to complete (discards do not count) |
 | `seed` | `null` | Random-phase seed; null draws one (reported in failures) |
 | `maxShrinks` | `null` | Cap on accepted shrink steps; 0 disables shrinking |
-| `maxDiscards` | `null` | Discard budget, and separately the skip budget; null resolves to `runs * 10` |
+| `maxDiscards` | `null` | Cap for the discard budget **and** the skip budget when set. Left null the two differ: `runs * 10` for discards, `runs` for skips — a machine that cannot run the property does not need ten chances per check to say so |
 | `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded`. Measured when the run returns: it reports a run that overran, it does not interrupt a body that hangs. Shrink trials are not timed |
 | `budgetMs` | `null` | Wall-clock budget for the whole random phase → `TimeBudgetExceeded` |
 | `shrink` | `null` | `ShrinkMode::Off` reports the counterexample as generated; null resolves to `Full` |
 | `shrinkBudgetMs` | `null` | Wall-clock budget for the shrink descent; implies `ShrinkMode::Bounded` |
-
-All three millisecond limits share one ceiling — `intdiv(PHP_INT_MAX, 2_000_000)`, roughly 4.6e12 ms — because the runner scales them to nanoseconds; a larger value is rejected rather than quietly ceasing to be a deadline.
-
 | `phases` | `null` | Stages to perform (`Phase::Examples`/`Corpus`/`Random`/`Shrink`); null runs all of them |
 | `derandomize` | `false` | Derive an unset seed from the property id instead of drawing one |
 | `edgeCases` | `EdgeCases::Mixin` | `None` turns off the numeric boundary bias, for properties the edges only cost runs |
 | `path` | `null` | Replay a recorded shrink descent instead of searching for it; needs an explicit `seed` |
+
+All three millisecond limits share one ceiling — `intdiv(PHP_INT_MAX, 2_000_000)`,
+roughly 4.6e12 ms — because the runner scales them to nanoseconds; a larger value
+is rejected rather than quietly ceasing to be a deadline.
 
 ### Derandomized runs
 
@@ -465,7 +467,8 @@ malformed one → `InvalidArgumentException` naming the variable), and
 directory path is a `FilesystemCorpus`, `redis://host[:port][/db][?prefix=key-prefix&timeout=seconds]`
 (or `rediss://` for TLS) a `RedisCorpus` over `ext-redis` or predis, any other
 scheme an error, the same instance for the same value within a process.
-`FilesystemCorpus::fromEnv()` still reads `PROPERTY_DB` when *you* call it.
+There is no helper that reads the variable for you — `fromDsn()` is the only
+way in, so a harness cannot end up with a backend the DSN did not name.
 
 The optional `timeout` query parameter sets the Redis connection timeout in
 seconds (default `5.0`) for both Predis and ext-redis clients.
@@ -544,8 +547,8 @@ replaying the failure it exists to replay.
 or `null` when there is nothing to say. It is a diagnosis, not a fix: the engine
 returns the text and the adapter prints it, because the engine never writes
 anywhere itself. Adapters that let you name a property explicitly (the PHPUnit
-adapter's `forAll($generators, $id)`) take the id you pass verbatim, which is
-the fix.
+adapter's `forAll($generators)->id($id)`) take the id you pass verbatim, which
+is the fix.
 
 ### Events and listeners
 
@@ -593,7 +596,7 @@ Some bugs only surface across a *sequence* of operations. Implement `Command`
 (`preCondition` / `nextState` / `run` / `postCondition` plus a `__toString`
 label), generate valid sequences with `Gen::commands()`, and drive them with
 `StateMachine::check()` inside the property body — a failed postcondition
-throws `PostconditionViolation` naming the step, and the failing
+throws `PostconditionViolationException` naming the step, and the failing
 `CommandSequence` shrinks to the shortest sequence that still breaks:
 
 ```php
@@ -618,8 +621,8 @@ $result = (new PropertyRunner())->run($definition, new CallableTrialExecutor(
 ### Exporting a counterexample
 
 `CounterExample` exposes `seed`, `runsBeforeFailure`, `originalArguments`,
-`shrunkArguments`, `shrinkSteps`, `shrinkTrials`, `skips` and the underlying
-`failure`; `toArray()`/`toJson()` return a normalized machine-readable form,
+`shrunkArguments`, `shrinkSteps`, `shrinkTrials`, `discards`, `skips` and the
+underlying `failure`; `toArray()`/`toJson()` return a normalized machine-readable form,
 and `toExamplesCode()` emits runnable PHP pinning the shrunk case as a
 permanent example. A counterexample that cannot replay as an example — one
 holding an unexportable object or in-body `Gen::draw()` values — throws a
@@ -636,6 +639,30 @@ output reads exactly like the failure message.
 `Gen::sample($arb, $count, $seed)` eagerly generates values;
 `Gen::sampleShrinks($arb, $seed)` shows one value plus its first shrink
 candidates — the fastest way to check a custom arbitrary shrinks as intended.
+
+## Compatibility policy
+
+What a version number promises, so a minor upgrade is a decision you can make
+without reading a diff.
+
+| # | Subject | Promise |
+|---|---|---|
+| 1 | **Scope** | The public API is every type marked `@api`. `@internal` types are implementation and may change in any release, including a patch. |
+| 2 | **Seed → values** | *Not* under SemVer. A minor may shift what a given seed generates; when it does, `FilesystemCorpus::SEQUENCE_EPOCH` is bumped in the same release and the change is named in the changelog, so seed entries recorded by an older epoch are dropped rather than replayed as a different input. Values entries survive every release. `CounterExample::$path` is a debugging aid, not a durable identifier: it indexes into shrink candidates, so editing a generator orphans it. |
+| 3 | **Corpus format** | `FilesystemCorpus::FORMAT_VERSION` does not change within 1.x. The document grows only by optional fields, and a document written by any 0.x release (or by `rasuvaeff/property-testing` 2.8) stays readable. The Redis backend writes the byte-identical document. |
+| 4 | **Message texts** | Human-readable exception and warning texts may be reworded in a minor, with the change named in the changelog. They are prose for a developer reading a red run, not a parsing surface. What *is* frozen is the machine-readable form: the keys of `CounterExample::toArray()`/`toJson()` and `DistributionReport::toArray()`, and the fields of every `@api` result and event. |
+| 5 | **Events** | A new event type, or a new field at the end of an existing one, is a minor. Removing an event or a field, or reordering the sequence emitted for an existing outcome, is a major. New `PropertyResult` implementations are a minor — consumers must carry a default branch. |
+| 6 | **Constructors** | Constructors of `@api` `final readonly` classes are append-only: new parameters carry defaults and go at the end, so positional construction keeps working. |
+| 7 | **The family** | The adapters (`-testo`, `-phpunit`) and `-names` require the engine with a caret range on the current major. A major here is a major there, and the engine is released first. |
+| 8 | **PHP** | `8.3 - 8.5`. Support for a newer PHP minor is a patch that widens the constraint; dropping a PHP version is a major. |
+
+Point 2 is the one that has already bitten: 0.6.0 changed the distribution of
+`Gen::string()` and bumped `SEQUENCE_EPOCH` to 2, and 0.5.0 changed the order
+of list shrink candidates. Both were minors, and both were correct — a
+property-based engine that could never improve a generator's distribution
+would be frozen at its first mistake. The corpus is what carries a regression
+across such a change, which is why values entries are exempt and seed entries
+are fenced.
 
 ## Security
 
@@ -659,7 +686,14 @@ See [examples/](examples/) for runnable scripts.
 | `basic.php` | a property that holds, one that is falsified, and tree-based shrinking | No |
 | `generators.php` | `sample`, boundary bias, `uuid`, `datetime`, `dictOf`, `record`, `flatMap` | No |
 | `standalone_runner.php` | driving the engine directly: `PropertyDefinition`, `CallableTrialExecutor`, structured `PropertyResult` | No |
+| `for_class.php` | `Gen::forClass()` with and without psalm annotations, an override narrowing one parameter, and a validating constructor both ways | No |
+| `swarm.php` | swarm testing over a choice generator and over `Gen::commands()`, and a shrink descent that stays inside its subset | No |
 | `custom_listeners.php` | a console reporter and a telemetry collector as pure `PropertyListener`s | No |
+| `case-studies/regex-anchor.php` | a `$`-anchored validator accepting a trailing newline | No |
+| `case-studies/saturating-minus.php` | subtraction producing a negative duration instead of saturating | No |
+| `case-studies/backoff-cap.php` | jitter added after the cap, pushing the delay past it | No |
+| `case-studies/hash-bucketing.php` | a rollout hash salted with the percentage, breaking monotonicity | No |
+| `case-studies/faker-vs-property.php` | the same bug found with realistic and with shrinkable data — both falsify, only one minimises | No |
 
 ## Development
 

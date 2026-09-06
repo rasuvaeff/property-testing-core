@@ -92,7 +92,39 @@ questions.
 |---|---|---|
 | Cache (above) | the next CI run | a falsification found in CI keeps being replayed there |
 | Committed fixture | everyone, forever | a specific counterexample worth keeping under review, copied into `tests/fixtures/` |
-| Shared store | CI and developers | one corpus for a team, so a failure found anywhere is replayed everywhere |
+| Shared store (Redis) | CI and developers | one corpus for a team, so a failure found anywhere is replayed everywhere |
+
+### The shared store is Redis
+
+Point `PROPERTY_DB` at a DSN instead of a directory and the same corpus lives
+on a Redis instance both CI and a laptop can reach:
+
+```bash
+PROPERTY_DB=redis://redis.internal:6379/2?prefix=checkout-suite: vendor/bin/testo
+PROPERTY_DB_PASSWORD=… PROPERTY_DB=rediss://redis.internal:6380 vendor/bin/testo
+```
+
+`rediss://` is TLS, the path is the database index, and `prefix` and `timeout`
+are query parameters — the shape predis, Symfony and the IANA registration all
+agree on. A path that is not a database index, or any scheme that is neither
+`redis` nor `rediss`, is refused rather than reinterpreted as a directory.
+Credentials in the DSN's userinfo are refused too: `PROPERTY_DB` is echoed in
+diagnostics and lands in CI logs, so the password goes in
+`PROPERTY_DB_PASSWORD` (see
+[Environment overrides](/guide/controlling-runs/env-overrides)).
+
+The engine writes the byte-identical document to either backend, so moving a
+corpus between the two is a copy. Writes are optimistic rather than locked: a
+write that loses a race re-reads and retries a handful of times, then gives up
+quietly. A corpus is memory, not a ledger — losing one entry to a storm of
+concurrent writers costs a replay, while throwing would fail a run that had
+already passed.
+
+[`RedisCorpus`](/api/classes/Runner/RedisCorpus) is also usable directly, with
+your own client behind its `CorpusClient` seam;
+[`CorpusFactory::fromDsn()`](/api/classes/Runner/CorpusFactory) is what turns a
+`PROPERTY_DB` value into one, and it picks `ext-redis` over predis when the
+extension is loaded.
 
 The committed fixture is the honest way to keep one important counterexample:
 copy the JSON document out of the corpus directory into the repository, and it

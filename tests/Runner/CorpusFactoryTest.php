@@ -10,6 +10,7 @@ use Rasuvaeff\PropertyTesting\Runner\Redis\LazyPhpRedisCorpusClient;
 use Rasuvaeff\PropertyTesting\Runner\RedisCorpus;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Core\Exception\SkipTest;
 use Testo\Data\DataProvider;
 use Testo\Test;
 
@@ -96,7 +97,10 @@ final class CorpusFactoryTest
     public function theLazyClientConnectsOnFirstUseOnly(): void
     {
         if (!extension_loaded('redis')) {
-            return;
+            // A bare return would make this the suite's one risky test: no
+            // assertion ran, and Testo cannot tell that from a test that forgot
+            // to assert. Without the extension there is no verdict to give.
+            throw new SkipTest('ext-redis is not loaded');
         }
 
         $client = new LazyPhpRedisCorpusClient(\Rasuvaeff\PropertyTesting\Runner\Redis\RedisDsn::parse('redis://127.0.0.1:6399'));
@@ -108,5 +112,22 @@ final class CorpusFactoryTest
         } catch (\RuntimeException|\RedisException $e) {
             Assert::true($e instanceof \Throwable);
         }
+    }
+
+    /**
+     * Two suites pointed at the same server as different users are two
+     * corpora. Keyed by the DSN alone, the second would be handed the first
+     * one's connection — and authenticate as the wrong user.
+     */
+    public function thePasswordIsPartOfTheCacheIdentity(): void
+    {
+        $directory = sys_get_temp_dir() . '/corpus-identity-' . bin2hex(random_bytes(6));
+
+        Assert::same(CorpusFactory::fromDsn($directory), CorpusFactory::fromDsn($directory));
+        Assert::same(CorpusFactory::fromDsn($directory, 'one'), CorpusFactory::fromDsn($directory, 'one'));
+
+        $unauthenticated = CorpusFactory::fromDsn($directory);
+        Assert::false($unauthenticated === CorpusFactory::fromDsn($directory, 'one'));
+        Assert::false(CorpusFactory::fromDsn($directory, 'one') === CorpusFactory::fromDsn($directory, 'two'));
     }
 }

@@ -514,7 +514,10 @@ $report = [];
 foreach (roots($coreDir, $workspaceDir, $coreVersion, $testoVersion, $phpunitVersion) as $root) {
     foreach (findPhpFiles($root['srcDir']) as $path) {
         $className = classNameFromPath($root['srcDir'], $root['nsPrefix'], $path);
-        if (!class_exists($className) && !interface_exists($className) && !enum_exists($className)) {
+        // Traits are reflected too: the PHPUnit adapter's single entry point
+        // is one, and a reference that omits it documents the package without
+        // documenting the way into it.
+        if (!class_exists($className) && !interface_exists($className) && !enum_exists($className) && !trait_exists($className)) {
             continue;
         }
 
@@ -677,10 +680,11 @@ foreach (roots($coreDir, $workspaceDir, $coreVersion, $testoVersion, $phpunitVer
             'kind' => match (true) {
                 $reflection->isInterface() => 'interface',
                 $reflection->isEnum() => 'enum',
+                $reflection->isTrait() => 'trait',
                 default => 'class',
             },
             'isApi' => $classDoc['isApi'],
-            'isAbstract' => $reflection->isAbstract() && !$reflection->isInterface(),
+            'isAbstract' => $reflection->isAbstract() && !$reflection->isInterface() && !$reflection->isTrait(),
             'isThrowable' => $reflection->implementsInterface(\Throwable::class),
             'summary' => $classDoc['summary'],
             'description' => $classDoc['description'],

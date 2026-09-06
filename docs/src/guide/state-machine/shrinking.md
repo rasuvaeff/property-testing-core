@@ -7,8 +7,8 @@ description: "How a failing Command sequence shrinks to the shortest reproductio
 
 A failing `CommandSequence` can be dozens of commands long. Shrinking finds
 the shortest, simplest sequence that still reproduces the failure, using the
-same two-phase approach `Command::shrinks()` composes into: drop commands
-first, then simplify what's left.
+same two phases every collection shrinks in: drop commands first, then
+simplify what's left through each command's own shrink tree.
 
 ## Phase 1: block removal
 
@@ -28,7 +28,7 @@ quarters, down to single-command removal. This is what lets the shrinker
 halving (drop the first half, then the first half of what's left) can never
 land on "keep everything except command #7" — sliding a single-command window
 across every offset can. A block removal that would push the sequence below
-`minLength` is skipped, so `Gen::commands(..., minLen: 3, ...)` never shrinks
+`minLength` is skipped, so `Gen::commands(..., minLength: 3, ...)` never shrinks
 past three steps.
 
 ## Phase 2: per-command simplification

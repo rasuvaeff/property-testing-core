@@ -28,11 +28,15 @@ final class GaveUpException extends RuntimeException
      * @param int $successfulRuns Successful checks completed before the budget ran out.
      * @param int $discardedRuns Runs discarded via `Assume::that()` — the input left the domain.
      * @param int $attempts Bodies executed in total, discarded and skipped ones included.
-     * @param int $maxDiscards Cap each of the two budgets was measured against.
+     * @param int $maxDiscards Cap the discard budget was measured against.
      * @param int $skippedRuns Runs the environment refused (a missing dependency, a skipped
      *        lifecycle hook).
      * @param bool $exhaustedBySkips Which budget ran out: the skips' one, or the discards'. It
      *        selects the message, because the two have no advice in common.
+     * @param ?int $maxSkips Cap the skip budget was measured against — equal to `$maxDiscards`
+     *        whenever the caller configured a `maxDiscards`, and smaller when the two were left
+     *        implicit. Null means the two budgets were not told apart; the message then falls
+     *        back to `$maxDiscards` rather than printing a cap nobody measured against.
      */
     public function __construct(
         public readonly string $propertyName,
@@ -43,6 +47,7 @@ final class GaveUpException extends RuntimeException
         public readonly int $maxDiscards,
         public readonly int $skippedRuns = 0,
         public readonly bool $exhaustedBySkips = false,
+        public readonly ?int $maxSkips = null,
     ) {
         parent::__construct($exhaustedBySkips
             ? sprintf(
@@ -54,7 +59,7 @@ final class GaveUpException extends RuntimeException
                 $successfulRuns,
                 $requiredRuns,
                 $skippedRuns,
-                $maxDiscards,
+                $maxSkips ?? $maxDiscards,
             )
             : sprintf(
                 'Property "%s" gave up after %d attempt(s): %d/%d successful run(s), %d discarded (maximum %d). '

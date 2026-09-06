@@ -143,8 +143,8 @@ final class RegexCompiler
         throw new \InvalidArgumentException(sprintf(
             'Regex pattern must be written without delimiters: pass %s, not %s. '
             . 'Escape the character (\\%s) to match it literally',
-            var_export(substr($body, 1, -1), true),
-            var_export($pattern, true),
+            var_export(substr($body, 1, -1), return: true),
+            var_export($pattern, return: true),
             $pattern[0],
         ));
     }

@@ -1,6 +1,6 @@
 ---
 title: "Distribution"
-description: "classify() and collect() report which kind of generated input each run actually produced, so you can see whether your generator's coverage is honest."
+description: "Classify::label(), when() and cover() report which kind of generated input each run actually produced, so you can see whether your generator's coverage is honest — and fail the property when a branch is never reached."
 ---
 
 # Distribution

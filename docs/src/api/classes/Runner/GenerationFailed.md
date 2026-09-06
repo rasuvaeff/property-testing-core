@@ -20,13 +20,13 @@ rejected every draw) — a clean failure instead of an uncaught crash.
 
 ```php
 __construct(
-    GenerationExhausted $exception,
+    GenerationExhaustedException $exception,
 )
 ```
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `$exception` | [`GenerationExhausted`](/api/classes/GenerationExhausted) | *required* |  |
+| `$exception` | [`GenerationExhaustedException`](/api/classes/GenerationExhaustedException) | *required* |  |
 
 ## Methods
 

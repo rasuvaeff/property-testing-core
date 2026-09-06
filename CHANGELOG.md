@@ -1,5 +1,83 @@
 # Changelog
 
+## 0.10.0 — 2026-09-06
+
+The contract freeze ahead of 1.0. Everything here is something that could not
+be changed after `1.0.0` without a major, so it is changed now. The new
+[Compatibility policy](README.md#compatibility-policy) says what the numbers
+will promise from then on.
+
+- **Breaking:** `CounterExample::$skips` is now `$discards`, and `$skips` is a
+  real, separate counter — the runs the environment refused. The two were one
+  word for two quantities: the field held `Assume::that()` discards, while
+  `RunStatistics::$skips` (0.9.0) held environmental skips, in the same `@api`.
+  `toArray()`/`toJson()` gain a `discards` key beside `skips`. The corpus is
+  untouched — `CorpusDocument` never wrote the full `toArray()`.
+- **Breaking:** `FilesystemCorpus::fromEnv()` is removed. It read `PROPERTY_DB`
+  and built `new self($directory)` unconditionally, so `PROPERTY_DB=redis://…`
+  created a directory literally named `redis:/host:port/…` and emitted four
+  `E_WARNING`s per call from the stream-wrapper lookup — a silent fall back to
+  the filesystem, which is exactly what the family forbids. Use
+  `CorpusFactory::fromDsn(EnvironmentOverrides::string(getenv('PROPERTY_DB')) ?? …)`,
+  which cannot return a backend the value did not name. Nothing in `src/` calls
+  `getenv()` any more.
+- **Breaking:** `GenerationExhausted` is `GenerationExhaustedException` and
+  `StateMachine\PostconditionViolation` is
+  `StateMachine\PostconditionViolationException`, matching the seven public
+  exceptions that already carried the suffix. No aliases: 0.x is where a rename
+  costs a line in an upgrade note rather than a major.
+- **Breaking:** every `Gen::*` factory returns `ArbitraryInterface<T>` instead
+  of a concrete arbitrary. The concrete classes stay `@api` and unchanged —
+  they are simply no longer part of the facade's signature, so an
+  implementation can be replaced without a major. `Gen::enum()` bounds its
+  template at `\UnitEnum` and `Gen::intRange()` declares the honest
+  `array{int, int}` it produces.
+- **Breaking:** a flag environment variable is off for `0`, `false`, `off` and
+  `no` (case-insensitive, trimmed), not only `0` and `''`.
+  `PROPERTY_VERBOSE=false` turning verbose output *on* was 2.8-compatible and
+  indefensible.
+- **Breaking:** left implicit, the skip budget is `runs` rather than the
+  discard budget's `runs * 10`. A property skipped on every run gives up after
+  `runs + 1` attempts instead of `10 * runs + 1` — under Testo that is a
+  `#[BeforeTest]` hook executed 101 times rather than 1001 for a `runs: 100`
+  property. An explicit `maxDiscards` still governs both budgets; transient
+  skips still do not end a property early.
+- `RunDiscarded` carries `bool $skipped`, so a listener can tell an
+  environmental skip from an `Assume::that()` discard. Both adapters'
+  `VerboseListener` counted them as one.
+- `DistributionReport` carries `int $skips` and reports it in `toArray()`.
+  `discardPercent()` keeps dividing by `attempts` — that denominator is the
+  point of the name.
+- `GaveUpException` carries `?int $maxSkips`, the cap the skip budget was
+  measured against; the skip message names it. Null means the caller did not
+  tell the two budgets apart, and the message falls back to `$maxDiscards`.
+- Redis `AUTH` is reachable: `RedisDsn` and `CorpusFactory::fromDsn()` take an
+  optional password, `LazyPhpRedisCorpusClient` authenticates before `SELECT`,
+  and `toPredisParameters()` carries it. Adapters read `PROPERTY_DB_PASSWORD`.
+  The DSN's userinfo is still refused — `PROPERTY_DB` is echoed in diagnostics
+  and lands in CI logs.
+- `RedisCorpus` refuses an empty prefix and a negative `maxValues`/`maxSeeds`.
+  A negative cap made `CorpusDocument::cap()` drop every entry in silence.
+- `composer rector` is green: `PropertyRunner` and `RegexCompiler` name two
+  literal arguments. It had been red since 0.9.0, which is `composer
+  release-check` red — `composer build` does not run rector.
+- Documentation is part of the contract, and this release closes 37 places
+  where it disagreed with the code: the split Configuration table in both
+  READMEs, `forAll($generators, $id)` (the id comes from `->id()`),
+  `floatBetween`'s interval (half-open, and it had no description at all), the
+  four-of-eleven examples tables, the four-of-nine environment variables page,
+  the eight-of-fifteen attribute table, `Command::shrinks()` and `minLen`,
+  PSR-20 as the adapters' clock, `path` "when it ships in 0.2", `CorpusFromEnv`,
+  `ext-tokenizer` missing from the requirements, and Redis absent from the
+  regression-corpus page entirely. The site gained a **Compatibility policy**
+  page, `roadmap.md` no longer promises a seed sequence that 0.6.0 changed, and
+  the API reference reflects traits — so the PHPUnit adapter's single entry
+  point, the `PropertyTesting` trait, has a page for the first time.
+- `docs/.api-workspace` follows the adapters again (`^0.9`/`^0.7`; it sat at
+  `^0.6`/`^0.5`, and a caret on `0.x` pins a minor, so the weekly docs rebuild
+  had been re-reflecting the same stale release). Keeping it in step is now in
+  the release checklist beside `build.yml`'s pin.
+
 ## 0.9.0 — 2026-09-05
 
 - **Breaking:** `Gen::oneOf()` and `Gen::elements()` reject an

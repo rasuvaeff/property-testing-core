@@ -44,8 +44,10 @@ them: a pinned example or a corpus entry that fails still reports
 
 ## Where to set it
 
-These are engine-level knobs on `PropertyConfig`, so they are available to any
-caller that builds a `PropertyDefinition` itself — see
-[the standalone runner](/guide/sampling-and-export). Exposure through the Testo
-attribute and the PHPUnit fluent API arrives with the adapter releases that
-follow this one.
+These are engine-level knobs on `PropertyConfig`, available to any caller that
+builds a `PropertyDefinition` itself — see
+[the standalone runner](/guide/sampling-and-export) — and exposed by both
+adapters: `#[Property(phases: [Phase::Examples, Phase::Corpus])]` under Testo,
+`->phases(Phase::Examples, Phase::Corpus)` under PHPUnit, and `PROPERTY_PHASES`
+from the command line for either (see
+[Environment overrides](/guide/controlling-runs/env-overrides)).

@@ -115,7 +115,7 @@ an override or a narrower annotation is the fix.
 `skipInvalid: true` is the deliberate opposite — the value is discarded and
 redrawn by the same [`Gen::filter()`](/guide/controlling-runs/assume-vs-filter)
 every other filtered generator uses, with the same hundred attempts and the
-same `GenerationExhausted` at the end. Only exceptions are discarded, never
+same `GenerationExhaustedException` at the end. Only exceptions are discarded, never
 `Error`s: a `TypeError` means the generator produced the wrong type, which is a
 bug rather than a rejected value.
 

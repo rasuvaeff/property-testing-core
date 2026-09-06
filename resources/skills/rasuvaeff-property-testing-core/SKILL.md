@@ -28,12 +28,13 @@ reach for, and the safety rules that break tests silently when ignored.
 
 1. **The engine is env-free.** `PropertyRunner` reads no env; adapters resolve
    `PROPERTY_RUNS` / `PROPERTY_SEED` / `PROPERTY_VERBOSE` / `PROPERTY_DB` into
-   a `PropertyConfig` + `Corpus`. The ONE env helper in core is
-   `FilesystemCorpus::fromEnv()` — call it only when YOU want the corpus on.
+   a `PropertyConfig` + `Corpus`. Core parses, never reads:
+   `EnvironmentOverrides::*` for the scalars and `CorpusFactory::fromDsn()`
+   for the corpus. No helper in core calls `getenv()`.
 2. **Construct, don't filter.** Build dependent values with `Gen::flatMap()` /
    `Gen::draw()` or by composing ($max = $n + $slack), not by
    `Gen::filter($arb, fn => rare condition)`. `filter()` retries 100 times
-   then throws `GenerationExhausted`; >90% discard also warns.
+   then throws `GenerationExhaustedException`; >90% discard also warns.
 3. **`Assume::that(false)` discards, does not pass.** Discards are capped by
    `maxDiscards` (default `runs * 10`); exhausting it ends with `GaveUp`, not
    `Passed`. Use `Assume` only when construction is impossible — which is rare
@@ -102,11 +103,14 @@ final class MyClassTest
 }
 ```
 
-The Testo attribute takes: `runs` (≥1, default 100), `seed` (reproducible),
-`maxShrinks` (0 = off), `maxDiscards`, `timeoutMs` (per-run deadline),
-`budgetMs` (whole random phase), `generators` / `examples` (override the
-default method names), `auto` (derive from the signature, below),
-`edgeCases` (boundary bias, below).
+The Testo attribute takes all fifteen: `runs` (≥1, default 100), `seed`
+(reproducible), `maxShrinks` (0 = off), `maxDiscards`, `timeoutMs` (per-run
+deadline), `budgetMs` (whole random phase), `shrink` (`ShrinkMode::Off` reports
+the counterexample as generated), `shrinkBudgetMs` (wall-clock budget of the
+descent, implies `ShrinkMode::Bounded`), `phases`, `derandomize`, `path`,
+`generators` / `examples` (override the default method names), `auto` (derive
+from the signature, below), `edgeCases` (boundary bias, below). The PHPUnit
+adapter's fluent chain has one method per knob.
 
 **`auto: true` (-testo ≥0.6): the generators method can be omitted** when the
 parameters are fully described by `@param` psalm types and native types — a
@@ -119,17 +123,16 @@ native domain. PHPUnit adapter parity (≥0.5):
 `$this->forAll()->auto()->check(/** @param int<0, 9> $n */ function (int $n): void {…})`.
 
 `PropertyConfig` (engine level, for callers that build a `PropertyDefinition`
-themselves) adds: `shrink` (`ShrinkMode::Off` reports the counterexample as
-generated), `shrinkBudgetMs` (wall-clock budget of the descent, implies
-`ShrinkMode::Bounded`, and trades determinism for a bounded descent), and
-`phases` (`Phase::Examples`/`Corpus`/`Random`/`Shrink`; `[]` throws, a set
+themselves) is where those knobs are defined; the adapters pass them straight
+through. Their sharp edges: `shrinkBudgetMs` trades determinism for a bounded
+descent, and `phases` takes `Phase::Examples`/`Corpus`/`Random`/`Shrink` (`[]` throws, a set
 without `Shrink` IS `ShrinkMode::Off`, a set without `Random` reports zero
 statistics and passes unless an enabled example or corpus replay failed first,
 and `Phase::Corpus` gates replay only). Every element must be a `Phase`: a
-stray value is rejected, not silently skipped. It also adds `derandomize`: an
-unset seed becomes a pure function of the property id, so a locally found bug
-reproduces in CI before any corpus entry exists, and a passing property keeps a
-stable input distribution. An explicit seed still wins.
+stray value is rejected, not silently skipped. `derandomize` makes an unset
+seed a pure function of the property id, so a locally found bug reproduces in
+CI before any corpus entry exists and a passing property keeps a stable input
+distribution. An explicit seed still wins.
 
 The distribution is also available as data, not only as the line an adapter
 prints: `PropertyFinished::$distribution` carries a `DistributionReport` with a
@@ -167,15 +170,15 @@ rejected at construction.
 | Unique array (ids, keys) | `Gen::uniqueArrayOf($element, $min, $max)` | |
 | Map / dictionary | `Gen::dictOf($keyArb, $valueArb, $min, $max)` | |
 | Fixed-shape object/VO | `Gen::record(['id' => Gen::uuid(), 'age' => Gen::intBetween(0, 120)])` | |
-| One of N | `Gen::oneOf($a, $b, $c)` or `Gen::elements([$a, $b, $c])` | |
+| One of N | `Gen::oneOf($a, $b, $c)` or `Gen::elements([$a, $b, $c])` | **VALUES, not generators.** Passing an `ArbitraryInterface` is rejected since core 0.9 — it used to make the generator object itself the generated value. To pick between generators use `Gen::frequency()` |
 | Enum cases | `Gen::enum(MyEnum::class)` | |
-| Weighted choice | `Gen::frequency([[7, $common], [3, $rare]])` | |
+| Weighted choice | `Gen::frequency([[7, $common], [3, $rare]])` | Takes generators, unlike `oneOf`/`elements` |
 | Case that must LACK an operation | `Gen::swarm(Gen::oneOf(...))` / `Gen::swarm(Gen::commands(...))` | Swarm testing: each case uses a random non-empty subset of the variants; shrinking stays inside that subset |
 | UUID v4 | `Gen::uuid()` | |
 | Date/time | `Gen::datetime($min, $max)` | UTC `DateTimeImmutable` |
 | URL / email / IP | `Gen::url()`, `Gen::email()`, `Gen::ipv4()`, `Gen::ipv6()` | Domain-shaped, shrink meaningfully; `ipv6()` is canonical RFC 5952 text and shrinks to `::` |
 | JSON value | `Gen::json($maxDepth)` / `Gen::jsonString($maxDepth)` | |
-| String matching a regex | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | PCRE subset: `a-z . * + ? \| ()` |
+| String matching a regex | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | **NO DELIMITERS**: `[a-z]+`, not `/[a-z]+/` — a delimited pattern is refused since core 0.9. PCRE subset: literals, `.`, classes `[...]` (ranges, negation, `\d\w\s` and negations), escapes `\d\w\s\D\W\S\t\n\r` and `\`-escaped punctuation, quantifiers `* + ? {n} {n,} {n,m}`, alternation `\|`, groups `(...)`/`(?:...)`, a leading `^` and trailing `$` as no-ops. Anchors elsewhere, backreferences, lookaround, flags, lazy/possessive quantifiers throw |
 | Recursive structure (tree) | `Gen::recursive($leaf, $wrap, $maxDepth)` | |
 | Nullable | `Gen::nullable($inner)` | |
 | Dependent on previous value | `Gen::flatMap($inner, fn($x) => $dependent)` | Integrated shrinking preserved |
@@ -199,7 +202,7 @@ after the first draw.
 | Symptom | Mechanism |
 |---|---|
 | Known regression must fail deterministically, before random phase | `<testMethod>Examples(): iterable` — yields positional arg tuples; auto-discovered by name |
-| Failing input found in CI must persist across runs | `PROPERTY_DB` env on the runner + `FilesystemCorpus::fromEnv()` — adapter wires this from env |
+| Failing input found in CI must persist across runs | `PROPERTY_DB` on the runner — a directory path or `redis://host[:port][/db][?prefix=]` (`PROPERTY_DB_PASSWORD` for AUTH); the adapter reads it and calls `CorpusFactory::fromDsn()` |
 | Body inputs are sometimes invalid | `Gen::flatMap` / `Gen::draw` to **construct** valid ones; `Assume::that($valid)` only when construction is impossible |
 | Need "every branch hit at least N%" | `Classify::cover($condition, $label, $minPercent)` — fails with `CoverageFailed` even if every run passed |
 | Just want distribution in the report | `Classify::when($condition, $label)` / `Classify::label($label)` — tags only, no gate |
@@ -236,9 +239,9 @@ public static function andIsCommutativeExamples(): iterable
 }
 ```
 
-Coverage gained per example = one assertion. Do NOT put `path` (when it ships
-in 0.2) in `tests/fixtures/` — that's debug-only; the corpus is the stable
-regression mechanism.
+Coverage gained per example = one assertion. Do NOT put `path` in
+`tests/fixtures/` — it is debug-only and a generator edit orphans it; the
+corpus is the stable regression mechanism.
 
 ## Stateful / model-based testing
 
@@ -288,7 +291,7 @@ For state machines, retries, lifecycles. Four files in `tests/Support/`:
    }
    ```
 
-`StateMachine::check()` throws `PostconditionViolation` naming the failing
+`StateMachine::check()` throws `PostconditionViolationException` naming the failing
 step. Shrinking drops command blocks then simplifies each command's params;
 replay skips commands whose precondition a dropped step invalidated.
 
@@ -300,8 +303,11 @@ tracks the model" — not "symfony/workflow obeys Petri-net rules".
 
 `PropertyRunner::__construct(?Clock $clock = null)`. The default is
 `MonotonicClock`; inject a fake `Clock` for deterministic deadline/budget
-tests. **Adapters** resolve the clock from `ClockInterface` (PSR-20) when
-needed — the engine itself never reads `time()`.
+tests. **Adapters** take this same `Runner\Clock`
+(`PropertyInterceptor::__construct(?Clock)`, `PropertyCheck::clock()`), never
+PSR-20: `ClockInterface` answers "what time is it" as a `DateTimeImmutable`,
+which is the wall clock a deadline must not be measured against. The engine
+itself never reads `time()`.
 
 `#[Property(timeoutMs: 1000)]` and `budgetMs` use this clock. A fake clock in
 tests makes a wall-clock deadline deterministic; the production clock makes it

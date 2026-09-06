@@ -215,4 +215,52 @@ final class RedisDsnTest
         yield 'empty ipv6' => ['redis://[]:6379'];
         yield 'database without a host' => ['redis:///2'];
     }
+
+    /**
+     * The password is supplied out of band and reaches both clients. An empty
+     * one means the same as none: an exported-but-empty `PROPERTY_DB_PASSWORD`
+     * is not a password, and sending `AUTH ""` would fail the connection for a
+     * server that wants no authentication at all.
+     */
+    public function aPasswordSuppliedOutOfBandReachesBothClients(): void
+    {
+        $authenticated = RedisDsn::parse('redis://127.0.0.1:6379/2', 'hunter2');
+
+        Assert::same($authenticated->password, 'hunter2');
+        Assert::same($authenticated->toPredisParameters(), [
+            'scheme' => 'tcp',
+            'host' => '127.0.0.1',
+            'port' => 6379,
+            'database' => 2,
+            'timeout' => RedisDsn::DEFAULT_TIMEOUT,
+            'password' => 'hunter2',
+        ]);
+
+        foreach (['' => 'empty', null => 'absent'] as $value => $_) {
+            $plain = RedisDsn::parse('redis://127.0.0.1:6379/2', $value === '' ? '' : null);
+
+            Assert::null($plain->password);
+            // Absent, not null-valued: predis treats a null password as a
+            // password and sends AUTH.
+            Assert::false(array_key_exists('password', $plain->toPredisParameters()));
+        }
+    }
+
+    /**
+     * Credentials in the userinfo stay refused, and the advice names the
+     * variable that does work.
+     */
+    public function credentialsInTheDsnPointAtThePasswordVariable(): void
+    {
+        try {
+            RedisDsn::parse('redis://user:secret@127.0.0.1:6379');
+
+            Assert::fail('expected userinfo to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same(
+                $e->getMessage(),
+                'PROPERTY_DB carries credentials in its userinfo, which is not supported; pass the password in PROPERTY_DB_PASSWORD instead',
+            );
+        }
+    }
 }

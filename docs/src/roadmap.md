@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-description: "What the 0.2, 0.3 and 0.4 releases delivered, and the direction of the property-testing package family: targeted property testing and coverage-guided search."
+description: "What the 0.x releases delivered, what 1.0 freezes, and the direction of the property-testing package family: targeted property testing and coverage-guided search."
 ---
 
 # Roadmap
@@ -10,10 +10,9 @@ change as each item goes through design review and implementation, and an
 item is dropped rather than shipped if its prototype does not show a
 measurable gain.
 
-Everything this page previously planned for 0.2 has shipped. Core 0.2.0 and
-0.2.1 were released on 2026-08-14, 0.3.0 and 0.3.1 on 2026-08-15, and 0.4.0
-on 2026-08-16, with matching adapter releases; the details are in the
-changelog of each package.
+Everything this page previously planned for 0.2 has shipped, and so has
+everything through 0.10. The details are in the changelog of each package;
+what follows is the shape of it.
 
 ## Shipped in 0.2 and 0.3
 
@@ -76,18 +75,55 @@ changelog of each package.
   closure or first-class callable. The `<method>Generators()` convention
   stays; the new forms are an addition.
 
+## Shipped in 0.5 through 0.10
+
+- **A corpus from a DSN** (0.5) — `CorpusFactory::fromDsn()` turns a
+  `PROPERTY_DB` value into the backend it names: a directory path into a
+  `FilesystemCorpus`, `redis://` / `rediss://` into a `RedisCorpus`, any other
+  scheme into an error rather than a directory called after the scheme.
+- **Regex generators** (0.5) — `Gen::regex()` / `Gen::stringMatching()` compile
+  a documented subset of PCRE into ordinary combinators, so a matching string
+  shrinks like any other value. Delimiters are refused (0.9) instead of being
+  compiled as literals.
+- **A single directory lock** (0.6) — `FilesystemCorpus` serialises
+  read-modify-write behind one `.corpus.lock` per directory rather than a lock
+  file per property.
+- **A better `Gen::string()` distribution** (0.6) — and, with it,
+  `SEQUENCE_EPOCH` at 2. See [Compatibility policy](/guide/compatibility) §2
+  for why that is a minor.
+- **Skips counted apart from discards** (0.9) — a run the environment refused
+  is no longer charged to the discard budget, and `GaveUpException` names the
+  environment rather than advising narrower generators.
+- **The contract freeze for 1.0** (0.10) — `CounterExample::$skips` became
+  `$discards` beside a real `$skips`; `RunDiscarded` and `DistributionReport`
+  learned the same distinction; `GenerationExhausted` and
+  `PostconditionViolation` gained the `Exception` suffix the other seven
+  public exceptions carried; `Gen::*` returns `ArbitraryInterface<T>` rather
+  than concrete classes; `FilesystemCorpus::fromEnv()` — the one helper in the
+  engine that read the environment, and the one that turned a Redis DSN into a
+  directory — is gone; the implicit skip budget is `runs` rather than
+  `10 * runs`; `PROPERTY_DB_PASSWORD` reaches an authenticated Redis; and
+  `false`/`off`/`no` turn a `PROPERTY_*` flag off.
+
 ## Compatibility commitments
 
-Every minor release preserves the observable contracts of the previous one:
+Written out in full on [Compatibility policy](/guide/compatibility): what
+`@api` covers, why seed→values is deliberately outside SemVer, what the corpus
+format and the machine-readable result shapes promise, and how the family's
+releases are ordered.
 
-- the same generated sequence for an existing generator and seed;
-- compatibility with regression corpora written by 2.8 and by every 0.x
-  release so far;
-- the existing order and content of events for current outcomes;
-- the package conflict with the frozen `rasuvaeff/property-testing` 2.x line.
+Two things that page replaces, and that this page used to say wrongly: a minor
+does **not** promise the same generated sequence for a given seed (0.6.0 shifted
+it, correctly, and bumped the epoch), and message texts are prose that may be
+reworded in a minor — the machine-readable form is what is frozen.
 
-New configuration, result fields, generators, and events may be added.
-Existing behaviour will not be silently reinterpreted.
+## 1.0
+
+1.0 is the version at which the above stops being a description and becomes a
+commitment. It carries no new capability of its own: the work is the freeze —
+names, signatures, field semantics, and the documentation that is part of the
+contract. The engine ships first, then the two adapters, then `-names`, each
+requiring `^1.0`.
 
 ## Next: targeted property testing and an adaptive example database
 

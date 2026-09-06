@@ -60,7 +60,7 @@ step in the middle is isolated) and then simplifies each command's parameters
 through its own tree. Because the runner re-checks each precondition and skips
 any a dropped step invalidated, every shrunk sequence stays sound. The
 counterexample renders as a readable trace, and a failed postcondition throws a
-[`PostconditionViolation`](/api/classes/StateMachine/PostconditionViolation)
+[`PostconditionViolationException`](/api/classes/StateMachine/PostconditionViolationException)
 naming the step:
 
 ```

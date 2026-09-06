@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\StateMachine\Command;
@@ -110,7 +110,7 @@ final readonly class CommandSequenceArbitrary implements Swarmable
         }
 
         if (count($commands) < $this->minLength) {
-            throw new GenerationExhausted(
+            throw new GenerationExhaustedException(
                 'Gen::commands()',
                 self::MAX_PICK_ATTEMPTS,
                 sprintf(
@@ -135,7 +135,7 @@ final readonly class CommandSequenceArbitrary implements Swarmable
      * swarm narrows the command alphabet and nothing else. That is also where
      * its sharpest edge is: with a $minLength above zero, a subset from which
      * no applicable command reaches that length throws
-     * {@see GenerationExhausted} exactly as the unrestricted generator does
+     * {@see GenerationExhaustedException} exactly as the unrestricted generator does
      * when the model starves it. That is the contract, not an accident — a
      * sequence shorter than its minimum has never been a valid result here,
      * and silently returning one would be the worse answer.

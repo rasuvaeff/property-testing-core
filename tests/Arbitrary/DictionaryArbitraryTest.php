@@ -11,7 +11,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\StringArbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
@@ -227,8 +227,8 @@ final class DictionaryArbitraryTest
         try {
             $arbitrary->generate(new Random(1));
 
-            Assert::fail('expected GenerationExhausted');
-        } catch (GenerationExhausted) {
+            Assert::fail('expected GenerationExhaustedException');
+        } catch (GenerationExhaustedException) {
         }
 
         Assert::same($key->draws, 20);
@@ -255,7 +255,7 @@ final class DictionaryArbitraryTest
         Assert::same($arbitrary->generate(new Random(1))->value, ['a' => 1, 'b' => 1]);
     }
 
-    #[ExpectException(GenerationExhausted::class)]
+    #[ExpectException(GenerationExhaustedException::class)]
     public function throwsWhenTheKeySpaceCannotReachTheMinimumSize(): void
     {
         // Two possible keys can never fill a minimum of 5 distinct keys —

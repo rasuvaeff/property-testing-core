@@ -23,7 +23,7 @@ use RuntimeException;
  *
  * @api
  */
-final class GenerationExhausted extends RuntimeException
+final class GenerationExhaustedException extends RuntimeException
 {
     /**
      * @param string $arbitrary Human-readable label of the generator that gave up (e.g. `Gen::filter()`).

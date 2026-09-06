@@ -28,7 +28,7 @@ anything else is a configuration error and throws. Generation draws a size,
 then draws distinct keys (each paired with a value) up to an attempt budget,
 so seeded runs are reproducible. When the key space runs out of fresh keys the
 map may be smaller than the drawn size, but it is NEVER smaller than
-$minSize: an unreachable minimum throws [`GenerationExhausted`](/api/classes/GenerationExhausted)
+$minSize: an unreachable minimum throws [`GenerationExhaustedException`](/api/classes/GenerationExhaustedException)
 rather than hand the property a too-small map.
 
 ## Constructor

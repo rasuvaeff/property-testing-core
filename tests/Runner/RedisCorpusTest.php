@@ -317,4 +317,52 @@ final class RedisCorpusTest
             shrunkArguments: $arguments,
         );
     }
+
+    /**
+     * The caps are counts, and a negative one is not a smaller cap: it makes
+     * `CorpusDocument::cap()` drop every entry, so the corpus records nothing
+     * and says nothing about it. Zero is a real answer — "keep no entries of
+     * this kind" — and stays accepted.
+     */
+    public function aNegativeCapIsRefusedWhileZeroIsAValidCap(): void
+    {
+        $client = new InMemoryCorpusClient();
+
+        try {
+            new RedisCorpus($client, maxValues: -1);
+
+            Assert::fail('expected a negative maxValues to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Redis corpus maxValues must not be negative, got -1');
+        }
+
+        try {
+            new RedisCorpus($client, maxSeeds: -1);
+
+            Assert::fail('expected a negative maxSeeds to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Redis corpus maxSeeds must not be negative, got -1');
+        }
+
+        $zero = new RedisCorpus($client, maxValues: 0, maxSeeds: 0);
+        $zero->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
+
+        Assert::same($zero->recall(self::ID, ['x']), []);
+    }
+
+    /**
+     * An empty prefix writes bare sha1 keys into whatever else lives on the
+     * instance. `RedisDsn` promises a non-empty prefix; the direct constructor
+     * is the other way in.
+     */
+    public function anEmptyPrefixIsRefused(): void
+    {
+        try {
+            new RedisCorpus(new InMemoryCorpusClient(), prefix: '');
+
+            Assert::fail('expected an empty prefix to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Redis corpus prefix must not be empty');
+        }
+    }
 }

@@ -7,11 +7,11 @@ namespace Rasuvaeff\PropertyTesting\Tests\StateMachine;
 use Rasuvaeff\PropertyTesting\Arbitrary\CommandSequenceArbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Gen;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\StateMachine\CommandSequence;
-use Rasuvaeff\PropertyTesting\StateMachine\PostconditionViolation;
+use Rasuvaeff\PropertyTesting\StateMachine\PostconditionViolationException;
 use Rasuvaeff\PropertyTesting\StateMachine\StateMachine;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\BuggyStack;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\PopCommand;
@@ -129,7 +129,7 @@ final class CommandSequenceArbitraryTest
         Assert::same(count($sequence->commands), 1);
     }
 
-    #[ExpectException(GenerationExhausted::class)]
+    #[ExpectException(GenerationExhaustedException::class)]
     public function throwsGenerationExhaustedWhenMinLengthUnreachable(): void
     {
         // Pop never applies to the empty model, so no command can be appended —
@@ -235,8 +235,8 @@ final class CommandSequenceArbitraryTest
         try {
             $arbitrary->generate(new Random(1));
 
-            Assert::fail('expected GenerationExhausted');
-        } catch (GenerationExhausted) {
+            Assert::fail('expected GenerationExhaustedException');
+        } catch (GenerationExhaustedException) {
         }
 
         Assert::same($counting->draws, 20);
@@ -305,7 +305,7 @@ final class CommandSequenceArbitraryTest
         }
     }
 
-    #[ExpectException(GenerationExhausted::class)]
+    #[ExpectException(GenerationExhaustedException::class)]
     public function restrictingAwayTheOnlyApplicableCommandStarvesTheMinimumLength(): void
     {
         // Pop alone cannot start from an empty stack, so the minimum is
@@ -351,7 +351,7 @@ final class CommandSequenceArbitraryTest
                 StateMachine::check($sequence, static fn(): BuggyStack => new BuggyStack());
 
                 return false;
-            } catch (PostconditionViolation) {
+            } catch (PostconditionViolationException) {
                 return true;
             }
         };

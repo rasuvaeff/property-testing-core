@@ -89,7 +89,7 @@ The restricted copy keeps the initial model and both length bounds — a
 swarm narrows the command alphabet and nothing else. That is also where
 its sharpest edge is: with a $minLength above zero, a subset from which
 no applicable command reaches that length throws
-GenerationExhausted exactly as the unrestricted generator does
+GenerationExhaustedException exactly as the unrestricted generator does
 when the model starves it. That is the contract, not an accident — a
 sequence shorter than its minimum has never been a valid result here,
 and silently returning one would be the worse answer.

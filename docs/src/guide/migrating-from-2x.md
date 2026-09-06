@@ -33,7 +33,7 @@ exact mapping.
 
 ```bash
 composer remove --dev rasuvaeff/property-testing
-composer require --dev "rasuvaeff/property-testing-testo:^0.1" -W
+composer require --dev "rasuvaeff/property-testing-testo:^0.10" -W
 ```
 
 That is the whole migration. Every import, attribute, generator method and
@@ -114,7 +114,7 @@ harness actually needs became public in the move:
 
 | 2.x (`@internal`) | Core |
 |---|---|
-| `Internal\CorpusStorage` | [`Runner\FilesystemCorpus`](/api/classes/Runner/FilesystemCorpus) (`@api`); `fromEnv()` remains as an opt-in helper — the runner itself never reads the environment |
+| `Internal\CorpusStorage` | [`Runner\FilesystemCorpus`](/api/classes/Runner/FilesystemCorpus) (`@api`), constructed with the directory to write under; the runner itself never reads the environment |
 | `Internal\CorpusEntry` | [`Runner\CorpusEntry`](/api/classes/Runner/CorpusEntry) (`@api`) |
 | `Internal\Clock`, `Internal\MonotonicClock` | [`Runner\Clock`](/api/classes/Runner/Clock), [`Runner\MonotonicClock`](/api/classes/Runner/MonotonicClock) (`@api`) — the clock is a constructor argument of `PropertyRunner`, so deadline and budget behaviour is testable deterministically |
 | `Internal\ValueRenderer` | [`ValueRenderer`](/api/classes/ValueRenderer) at the package root (`@api`) — adapters need it for verbose output and messages |
@@ -127,8 +127,21 @@ Reading environment variables is the adapter's job, not the engine's: core
 never touches `getenv()`. If your harness wants the `PROPERTY_*` contract, read
 the variables yourself and pass the resulting
 [`PropertyConfig`](/api/classes/Runner/PropertyConfig) and
-[`Corpus`](/api/classes/Runner/Corpus) in — `FilesystemCorpus::fromEnv()`
-covers the `PROPERTY_DB` half. The variables themselves are documented on
+[`Corpus`](/api/classes/Runner/Corpus) in:
+
+```php
+$corpus = CorpusFactory::fromDsn(
+    EnvironmentOverrides::string(getenv('PROPERTY_DB')) ?? sys_get_temp_dir() . '/property-db',
+);
+```
+
+[`CorpusFactory::fromDsn()`](/api/classes/Runner/CorpusFactory) is the one entry
+point for the `PROPERTY_DB` half: it returns a `FilesystemCorpus` for a
+directory path and a `RedisCorpus` for a `redis://` DSN, and refuses any other
+scheme. There is deliberately no helper that reads the variable for you — one
+existed until 0.10 and built a directory named after whatever it was handed, so
+a Redis DSN quietly became a directory called `redis:/host:port`. The variables
+themselves are documented on
 [Environment overrides](/guide/controlling-runs/env-overrides).
 
 ## PHPUnit
@@ -183,10 +196,15 @@ their framework-specific classes in separate sub-namespaces
 
 ## Versioning
 
-The family starts at `0.1`. Adapters pin the engine with `^0.1`; the three
-version numbers are not kept in sync with each other. `1.0` follows once the
-public boundary has been exercised by consumers outside the monorepo — until
-then a minor may adjust it.
+Adapters pin the engine with a caret range on its current major, and the three
+version numbers are not kept in sync with each other. What each number promises
+— the `@api` surface, seed stability, the corpus format, message texts, events,
+constructors — is written out in
+[Compatibility policy](/guide/compatibility); read that before treating a minor
+upgrade as risky.
+
+`1.0` follows once the public boundary has been exercised by consumers outside
+the monorepo.
 
 ## Staying on 2.x
 

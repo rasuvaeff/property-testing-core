@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Tests;
 
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
 
 #[Test]
-#[Covers(GenerationExhausted::class)]
-final class GenerationExhaustedTest
+#[Covers(GenerationExhaustedException::class)]
+final class GenerationExhaustedExceptionTest
 {
     public function exposesTheArbitraryAndAttemptCount(): void
     {
-        $exception = new GenerationExhausted('Gen::filter()', 100, 'the predicate rejected every value');
+        $exception = new GenerationExhaustedException('Gen::filter()', 100, 'the predicate rejected every value');
 
         Assert::same($exception->arbitrary, 'Gen::filter()');
         Assert::same($exception->attempts, 100);
@@ -23,7 +23,7 @@ final class GenerationExhaustedTest
 
     public function messageCombinesLabelAttemptsAndReason(): void
     {
-        $exception = new GenerationExhausted('Gen::dictOf()', 50, 'the key space is too small');
+        $exception = new GenerationExhaustedException('Gen::dictOf()', 50, 'the key space is too small');
         $message = $exception->getMessage();
 
         Assert::string($message)->contains('Gen::dictOf()');

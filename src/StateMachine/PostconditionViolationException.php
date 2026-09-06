@@ -16,7 +16,7 @@ use RuntimeException;
  *
  * @api
  */
-final class PostconditionViolation extends RuntimeException
+final class PostconditionViolationException extends RuntimeException
 {
     /**
      * @param list<string> $trace Labels of the commands executed up to and including the failing one.

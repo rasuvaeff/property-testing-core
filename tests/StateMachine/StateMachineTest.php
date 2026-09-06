@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Tests\StateMachine;
 
 use Rasuvaeff\PropertyTesting\StateMachine\CommandSequence;
-use Rasuvaeff\PropertyTesting\StateMachine\PostconditionViolation;
+use Rasuvaeff\PropertyTesting\StateMachine\PostconditionViolationException;
 use Rasuvaeff\PropertyTesting\StateMachine\StateMachine;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\BuggyStack;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\PopCommand;
@@ -55,11 +55,11 @@ final class StateMachineTest
 
         try {
             StateMachine::check($sequence, static fn(): BuggyStack => new BuggyStack());
-        } catch (PostconditionViolation $exception) {
+        } catch (PostconditionViolationException $exception) {
             $thrown = $exception;
         }
 
-        Assert::instanceOf($thrown, PostconditionViolation::class);
+        Assert::instanceOf($thrown, PostconditionViolationException::class);
         Assert::same($thrown->step, 3);
         Assert::instanceOf($thrown->command, PopCommand::class);
         Assert::same($thrown->trace, ['Push(1)', 'Push(2)', 'Pop()']);

@@ -38,15 +38,28 @@ final class GaveUpExceptionTest
      */
     public function skipExhaustionBlamesTheEnvironmentInsteadOfTheGenerators(): void
     {
-        $exception = new GaveUpException('holds', 100, 12, 0, 33, 20, skippedRuns: 21, exhaustedBySkips: true);
+        $exception = new GaveUpException('holds', 100, 12, 0, 33, 20, skippedRuns: 21, exhaustedBySkips: true, maxSkips: 10);
 
         Assert::same($exception->skippedRuns, 21);
         Assert::true($exception->exhaustedBySkips);
         Assert::same(
             $exception->getMessage(),
-            'Property "holds" gave up after 33 attempt(s): 12/100 successful run(s), 21 skipped (maximum 20). '
+            'Property "holds" gave up after 33 attempt(s): 12/100 successful run(s), 21 skipped (maximum 10). '
             . 'The environment refused those runs, so the generators are not the cause: '
             . 'a missing dependency or a lifecycle hook skipped this property more often than it checked it.',
         );
+    }
+
+    /**
+     * A caller that never told the two budgets apart has no separate cap to
+     * report, and a message reading "maximum 0" would name a limit nothing was
+     * measured against.
+     */
+    public function anUnspecifiedSkipCapFallsBackToTheDiscardCap(): void
+    {
+        $exception = new GaveUpException('holds', 100, 12, 0, 33, 20, skippedRuns: 21, exhaustedBySkips: true);
+
+        Assert::null($exception->maxSkips);
+        Assert::string($exception->getMessage())->contains('21 skipped (maximum 20)');
     }
 }

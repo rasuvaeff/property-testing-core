@@ -73,12 +73,22 @@ and `check()` runs the property.
 | `runs(int)` | Successful checks to complete (default 100). Discarded runs do not count |
 | `seed(int)` | Pins the random phase for reproduction. Also disables corpus replay — the pinned run wins |
 | `maxShrinks(int)` | Cap on accepted shrink steps; `0` disables shrinking |
-| `maxDiscards(int)` | Discard budget before the property fails with `GaveUpException`; default `runs * 10` |
+| `maxDiscards(int)` | Cap for the discard budget **and** the skip budget. Left unset the two differ: `runs * 10` for discards, `runs` for environmental skips |
+| `auto()` | Derive a generator for every parameter `forAll()` does not cover, from the closure's `@param` psalm type and native type. Strictly opt-in; a `forAll()` key that is not a parameter is an error |
 | `timeoutMs(int)` | Wall-clock deadline for a single run — exceeding it fails with `DeadlineExceededException` |
 | `budgetMs(int)` | Wall-clock budget for the whole random phase — running out fails with `TimeBudgetExceededException` |
 | `examples(array)` | Fixed positional argument tuples run **before** the random phase; a failing example short-circuits, unshrunk |
+| `shrink(ShrinkMode)` | `Off` reports the counterexample as generated; `Bounded` is implied by `shrinkBudgetMs()` |
+| `shrinkBudgetMs(int)` | Wall-clock budget for the shrink descent, returning the best counterexample found so far |
+| `phases(Phase ...)` | The stages to perform; see [Run phases](/guide/controlling-runs/phases) |
+| `derandomize(bool)` | Derive an unset seed from the property id instead of drawing one |
+| `path(string)` | Replay a recorded shrink descent instead of searching for it; requires `seed()` |
+| `edgeCases(EdgeCases)` | `None` turns off the numeric boundary bias |
 | `listeners(...)` | `PropertyListener` observers of the engine's lifecycle events |
-| `output($stdout, $stderr)` | Redirects the distribution report, discard warning and verbose trace (used by this package's own tests) |
+
+`output($stdout, $stderr)`, which redirects the distribution report, discard
+warning and verbose trace, is `@internal` — it exists for this package's own
+tests.
 
 ## How results map onto PHPUnit
 

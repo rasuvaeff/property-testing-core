@@ -60,13 +60,32 @@ final readonly class RedisCorpus implements Corpus
      * @param int $maxValues How many values entries a property keeps, oldest evicted first. The
      *        default matches the filesystem backend; a shared corpus may reasonably keep more.
      * @param int $maxSeeds How many seed entries a property keeps, oldest evicted first.
+     *
+     * @throws \InvalidArgumentException When the prefix is empty or a cap is negative.
      */
     public function __construct(
         private CorpusClient $client,
         private string $prefix = 'property-testing:corpus:',
         private int $maxValues = 8,
         private int $maxSeeds = 2,
-    ) {}
+    ) {
+        // An empty prefix writes bare sha1 keys into whatever else lives on the
+        // instance, and a negative cap makes CorpusDocument::cap() drop every
+        // entry — a corpus that records nothing and says nothing about it.
+        // RedisDsn already promises a non-empty prefix; the direct constructor
+        // is the other way in.
+        if ($prefix === '') {
+            throw new \InvalidArgumentException('Redis corpus prefix must not be empty');
+        }
+
+        if ($maxValues < 0) {
+            throw new \InvalidArgumentException(sprintf('Redis corpus maxValues must not be negative, got %d', $maxValues));
+        }
+
+        if ($maxSeeds < 0) {
+            throw new \InvalidArgumentException(sprintf('Redis corpus maxSeeds must not be negative, got %d', $maxSeeds));
+        }
+    }
 
     /**
      * @param string $id The property id, as the runner knows it.

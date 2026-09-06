@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
@@ -21,7 +21,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * then draws distinct keys (each paired with a value) up to an attempt budget,
  * so seeded runs are reproducible. When the key space runs out of fresh keys the
  * map may be smaller than the drawn size, but it is NEVER smaller than
- * {@see $minSize}: an unreachable minimum throws {@see GenerationExhausted}
+ * {@see $minSize}: an unreachable minimum throws {@see GenerationExhaustedException}
  * rather than hand the property a too-small map.
  *
  * @template TKey of array-key
@@ -101,7 +101,7 @@ final readonly class DictionaryArbitrary implements ArbitraryInterface
         }
 
         if (count($entries) < $this->minSize) {
-            throw new GenerationExhausted(
+            throw new GenerationExhaustedException(
                 'Gen::dictOf()',
                 $size * self::MAX_ATTEMPTS_PER_KEY,
                 sprintf(

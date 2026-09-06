@@ -41,16 +41,23 @@ Rector's dead-code set would delete private ones.
 |---|---|
 | `runs` | Successful checks to complete (default 100). Discarded runs do not count |
 | `seed` | Pins the random phase for reproduction. Also disables corpus replay for this property — the pinned run wins |
-| `generators` | Name of the generators method; default `<testMethod>Generators` |
-| `examples` | Name of the examples method; default `<testMethod>Examples` |
+| `generators` | The generators method, by name (default `<testMethod>Generators`) or as a callable: a `[Provider::class, 'method']` reference, a `'Provider::method'` string, or an invokable object — for a set shared between test classes |
+| `examples` | The examples method, in the same forms; default `<testMethod>Examples` |
+| `auto` | Derive a generator for every parameter the provider does not cover, from the parameter's `@param` psalm type and native type. Strictly opt-in; a provider key that is not a parameter is an error |
 | `maxShrinks` | Cap on accepted shrink steps; `0` disables shrinking |
-| `maxDiscards` | Discard budget before the property fails with `GaveUpException`; default `runs * 10` |
+| `maxDiscards` | Cap for the discard budget **and** the skip budget. Left unset the two differ: `runs * 10` for discards, `runs` for environmental skips |
 | `timeoutMs` | Wall-clock deadline for a single run — exceeding it fails the property with `DeadlineExceededException` |
 | `budgetMs` | Wall-clock budget for the whole random phase — running out fails with `TimeBudgetExceededException` |
+| `shrink` | `ShrinkMode::Off` reports the counterexample as generated; `Bounded` is implied by `shrinkBudgetMs` |
+| `shrinkBudgetMs` | Wall-clock budget for the shrink descent, returning the best counterexample found so far |
+| `phases` | The stages to perform (`Phase::Examples`/`Corpus`/`Random`/`Shrink`); see [Run phases](/guide/controlling-runs/phases) |
+| `derandomize` | Derive an unset seed from the property id instead of drawing one |
+| `path` | Replay a recorded shrink descent instead of searching for it; requires an explicit `seed` |
+| `edgeCases` | `EdgeCases::None` turns off the numeric boundary bias |
 
 ## Environment overrides
 
-Same four variables as every adapter — see [Environment overrides](/guide/controlling-runs/env-overrides).
+The same variables as every adapter — see [Environment overrides](/guide/controlling-runs/env-overrides).
 `PROPERTY_DB`'s [regression corpus](/guide/regression-corpus) is
 byte-compatible with what `rasuvaeff/property-testing` 2.8 wrote: an existing
 CI corpus keeps working after migrating.
@@ -81,8 +88,10 @@ adapter — see [Generators](/guide/generators/index).
 |---|---|
 | `Rasuvaeff\PropertyTesting\Property` | The attribute — the same FQCN 2.x shipped |
 | `Rasuvaeff\PropertyTesting\Testo\PropertyInterceptor` | Testo interceptor: resolves reflection conventions and environment into a core `PropertyDefinition`, maps the structured result to one `TestResult` |
-| `Rasuvaeff\PropertyTesting\Testo\TestoTrialExecutor` | Executes the property body through Testo's pipeline, aggregating per-run `TestResult` attributes |
-| `Rasuvaeff\PropertyTesting\Testo\VerboseListener` | `PROPERTY_VERBOSE` output as an exception-hardened engine listener |
+
+`TestoTrialExecutor` (which executes the body through Testo's pipeline) and
+`VerboseListener` (which renders `PROPERTY_VERBOSE` output) are `@internal`:
+the interceptor wires both, and neither is something a suite constructs.
 
 ## Drive the engine directly
 

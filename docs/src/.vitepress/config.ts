@@ -52,6 +52,7 @@ const sidebar = [
     { text: 'Recipes', link: '/guide/recipes' },
     { text: 'Security', link: '/guide/security' },
     { text: 'Examples', link: '/guide/examples' },
+    { text: 'Compatibility policy', link: '/guide/compatibility' },
     { text: 'Migrating from 2.x', link: '/guide/migrating-from-2x' },
     { text: 'Roadmap', link: '/roadmap' },
     {

@@ -20,7 +20,7 @@ description: "Generates values from a delegate arbitrary, retrying until a predi
 Generates values from a delegate arbitrary, retrying until a predicate holds.
 
 Filtering is bounded: after [`Arbitrary\FilteredArbitrary`](/api/classes/Arbitrary/FilteredArbitrary)::MAX_ATTEMPTS consecutive rejections
-the generator throws [`GenerationExhausted`](/api/classes/GenerationExhausted) rather than yield a value that
+the generator throws [`GenerationExhaustedException`](/api/classes/GenerationExhaustedException) rather than yield a value that
 fails the predicate — a property never receives an out-of-domain input. Use
 [`Assume`](/api/classes/Assume)::that() inside the property when the
 rejection rate is high, which skips discarded runs cleanly, or

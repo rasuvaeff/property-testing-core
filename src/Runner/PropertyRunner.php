@@ -26,7 +26,7 @@ use Rasuvaeff\PropertyTesting\Event\ShrinkAccepted;
 use Rasuvaeff\PropertyTesting\Event\ShrinkTried;
 use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
 use Rasuvaeff\PropertyTesting\Internal\ReplayVerdict;
 use Rasuvaeff\PropertyTesting\Internal\ShrinkPath;
@@ -87,6 +87,7 @@ final readonly class PropertyRunner
         $config = $property->config;
         $runs = $config->runs;
         $maxDiscards = $this->maxDiscards($config->maxDiscards, $runs);
+        $maxSkips = $this->maxSkips($config->maxDiscards, $runs);
         $seed = $config->seed ?? ($config->derandomize
             ? $this->derivedSeed($property->id)
             : random_int(0, PHP_INT_MAX));
@@ -163,7 +164,7 @@ final readonly class PropertyRunner
                     // entry's mode, not the current configuration's: a suite
                     // that switched modes since must still see its regression.
                     $replayRuns = max($runs, ($entry->runsBeforeFailure ?? -1) + 1);
-                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $entry->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $listeners, null);
+                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $entry->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $this->maxSkips($config->maxDiscards, $replayRuns), $listeners, null);
 
                     if ($replay->failure() instanceof \Throwable) {
                         return $this->finish($listeners, $property->id, $replay, $this->assessedCoverage($replay));
@@ -198,7 +199,7 @@ final readonly class PropertyRunner
             )), coverageAssessed: false);
         }
 
-        $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $listeners, $config->path);
+        $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $maxSkips, $listeners, $config->path);
 
         if ($corpus instanceof Corpus && $result instanceof Falsified) {
             $counterExample = $result->counterExample();
@@ -221,6 +222,22 @@ final readonly class PropertyRunner
     private function maxDiscards(?int $configured, int $runs): int
     {
         return $configured ?? ($runs > intdiv(PHP_INT_MAX, 10) ? PHP_INT_MAX : $runs * 10);
+    }
+
+    /**
+     * The skip cap for the same phase. An explicit `maxDiscards` still governs
+     * both budgets — it is the one dial callers have, and silently exempting
+     * skips from it would make the configured number mean less than it says.
+     * Left implicit the two part ways: ten discards per run is a distribution
+     * allowance, and a machine that cannot run the property does not need ten
+     * chances per check to say so. One per requested run is enough to tell a
+     * flaky dependency from an absent one, and it costs a property skipped by
+     * a `#[BeforeTest]` hook `runs + 1` executions of that hook instead of
+     * `10 * runs + 1`.
+     */
+    private function maxSkips(?int $configured, int $runs): int
+    {
+        return $configured ?? $runs;
     }
 
     /**
@@ -321,6 +338,7 @@ final readonly class PropertyRunner
         int $seed,
         int $runs,
         int $maxDiscards,
+        int $maxSkips,
         array $listeners,
         ?string $path,
     ): PropertyResult {
@@ -369,7 +387,7 @@ final readonly class PropertyRunner
 
             try {
                 $trees = $this->generate($property->generators, $property->parameterNames, $random);
-            } catch (GenerationExhausted $exhausted) {
+            } catch (GenerationExhaustedException $exhausted) {
                 // A generator could not produce a valid value (e.g. Gen::filter()
                 // whose predicate rejected every draw). Report it as a clean
                 // failure rather than let it crash the run as an uncaught error.
@@ -397,7 +415,7 @@ final readonly class PropertyRunner
             // a dependency exhausted the discard budget and was told to narrow
             // generators that were never at fault.
             if ($outcome->isDiscarded()) {
-                $this->emit($listeners, new RunDiscarded($property->id, $attempts, $arguments, $this->drawArguments($draws)));
+                $this->emit($listeners, new RunDiscarded($property->id, $attempts, $arguments, $this->drawArguments($draws), $outcome->isSkipped()));
 
                 if ($outcome->isSkipped()) {
                     ++$skips;
@@ -405,8 +423,7 @@ final readonly class PropertyRunner
                     ++$discards;
                 }
 
-
-                if ($discards > $maxDiscards || $skips > $maxDiscards) {
+                if ($discards > $maxDiscards || $skips > $maxSkips) {
                     $requirements = Classify::flushRequirements();
 
                     return new GaveUp(
@@ -419,6 +436,7 @@ final readonly class PropertyRunner
                             maxDiscards: $maxDiscards,
                             skippedRuns: $skips,
                             exhaustedBySkips: $discards <= $maxDiscards,
+                            maxSkips: $maxSkips,
                         ),
                         statistics: new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips),
                     );
@@ -456,10 +474,11 @@ final readonly class PropertyRunner
                     // (e.g. a different failing step), and the developer acts on
                     // the minimal one. Falls back to the original when nothing shrank.
                     failure: $shrunkFailure ?? $outcome->failure,
-                    skips: $discards,
+                    discards: $discards,
                     shrinkTrials: $shrinkTrials,
                     path: $shrinkPath,
                     edgeCases: $random->edgeCases,
+                    skips: $skips,
                 )));
             }
 
@@ -917,7 +936,7 @@ final readonly class PropertyRunner
      * through {@see \Rasuvaeff\PropertyTesting\Gen::draw()} and discards depend
      * on the body. The saving is the descent.
      *
-     * One failure it does not accept is {@see GenerationExhausted}: see the step
+     * One failure it does not accept is {@see GenerationExhaustedException}: see the step
      * guard below. The cost is that a property whose recorded failure *was* a
      * generator exhaustion has an unreplayable path — accepted deliberately,
      * because such a property never judged an input in the first place, and a
@@ -986,7 +1005,7 @@ final readonly class PropertyRunner
             $trialTape = $position === null ? $currentTape : array_replace($currentTape, [$position => $candidate]);
             [$outcome, $recorded] = $this->trial($executor, $trial, $trialTape, $random);
 
-            if ($outcome->isFailed() && $outcome->failure instanceof GenerationExhausted) {
+            if ($outcome->isFailed() && $outcome->failure instanceof GenerationExhaustedException) {
                 // A draw past the end of the tape regenerates through the live
                 // generator, and an exhaustible one (filter, uniqueArrayOf,
                 // commands with a minimum) can fail to produce a value at all.
@@ -995,7 +1014,7 @@ final readonly class PropertyRunner
                 // exhaustion. The search rejects it through failsTheSameWay();
                 // a replay has no original class to compare against, so it names
                 // the mismatch instead.
-                $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, false));
+                $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, accepted: false));
 
                 return $this->pathBroken($path, $steps, $step, 'exhausted a generator instead of falsifying the property');
             }

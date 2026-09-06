@@ -30,7 +30,7 @@ running model and skips the command if it no longer holds — shrinking may have
 dropped an earlier step that a later precondition depended on, so a replayed
 sequence stays sound without the arbitrary re-validating every candidate. A
 passing precondition runs the command, asserts [`StateMachine\Command`](/api/classes/StateMachine/Command)::postCondition()
-(throwing [`StateMachine\PostconditionViolation`](/api/classes/StateMachine/PostconditionViolation) on failure), then advances the model.
+(throwing [`StateMachine\PostconditionViolationException`](/api/classes/StateMachine/PostconditionViolationException) on failure), then advances the model.
 
 ## Methods
 
@@ -44,5 +44,5 @@ static check(StateMachine\CommandSequence $sequence, callable $system): void
 
 **Throws:**
 
-- [`StateMachine\PostconditionViolation`](/api/classes/StateMachine/PostconditionViolation)
+- [`StateMachine\PostconditionViolationException`](/api/classes/StateMachine/PostconditionViolationException)
 

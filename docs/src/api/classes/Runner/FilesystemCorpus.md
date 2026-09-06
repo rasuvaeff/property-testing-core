@@ -9,7 +9,7 @@ description: "Opt-in on-disk corpus of a property's past failures, replayed befo
 
 `Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/FilesystemCorpus.php#L28) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/FilesystemCorpus.php#L30) — **Version:** working tree
 
 **Implements:** [`Runner\Corpus`](/api/classes/Runner/Corpus)
 
@@ -23,9 +23,11 @@ survives changes to the generation sequence. Inputs that cannot be represented
 the run's seed, which reproduces the failure only while the generation sequence
 is unchanged; `Runner\SEQUENCE_EPOCH` fences those entries off when it is not.
 
-Enabled solely when the `PROPERTY_DB` environment variable points at a
-directory; otherwise storage is off and nothing is written. One file per
-property (`<sha1(id)>.json`) keeps it gitignore-friendly.
+Takes the directory to write under; it reads no environment of its own, like
+the rest of the engine. Adapters resolve `PROPERTY_DB` into a corpus through
+[`Runner\CorpusFactory`](/api/classes/Runner/CorpusFactory)::fromDsn(), which picks this class or [`Runner\RedisCorpus`](/api/classes/Runner/RedisCorpus)
+by the value's scheme. One file per property (`<sha1(id)>.json`) keeps the
+directory gitignore-friendly.
 
 ## Constants
 
@@ -47,15 +49,6 @@ __construct(
 | `$directory` | `string` | *required* |  |
 
 ## Methods
-
-### fromEnv()
-
-```php
-static fromEnv(): ?Runner\FilesystemCorpus
-```
-
-The storage configured by `PROPERTY_DB` (a directory path), or null when
-the variable is unset/empty (storage disabled — no files are written).
 
 ### recall()
 

@@ -24,7 +24,7 @@ values from a given arbitrary.
 ### int()
 
 ```php
-static int(): Arbitrary\IntArbitrary
+static int(): ArbitraryInterface
 ```
 
 Integers spanning PHP_INT_MIN..PHP_INT_MAX.
@@ -32,13 +32,13 @@ Integers spanning PHP_INT_MIN..PHP_INT_MAX.
 ### intBetween()
 
 ```php
-static intBetween(int<min, max> $min, int<min, max> $max): Arbitrary\IntArbitrary
+static intBetween(int<min, max> $min, int<min, max> $max): ArbitraryInterface
 ```
 
 ### intPositive()
 
 ```php
-static intPositive(): Arbitrary\IntArbitrary
+static intPositive(): ArbitraryInterface
 ```
 
 Positive integers (1..PHP_INT_MAX).
@@ -46,7 +46,7 @@ Positive integers (1..PHP_INT_MAX).
 ### float()
 
 ```php
-static float(): Arbitrary\FloatArbitrary
+static float(): ArbitraryInterface
 ```
 
 Floats in the half-open range [0.0, 1.0).
@@ -54,19 +54,22 @@ Floats in the half-open range [0.0, 1.0).
 ### floatBetween()
 
 ```php
-static floatBetween(float $min, float $max): Arbitrary\FloatArbitrary
+static floatBetween(float $min, float $max): ArbitraryInterface
 ```
+
+Floats in the half-open range [$min, $max) — $max itself is never drawn,
+exactly as float() never draws 1.0.
 
 ### bool()
 
 ```php
-static bool(): Arbitrary\BoolArbitrary
+static bool(): ArbitraryInterface
 ```
 
 ### string()
 
 ```php
-static string(): Arbitrary\StringArbitrary
+static string(): ArbitraryInterface
 ```
 
 Unicode strings of length 0..100.
@@ -74,7 +77,7 @@ Unicode strings of length 0..100.
 ### stringAscii()
 
 ```php
-static stringAscii(): Arbitrary\StringArbitrary
+static stringAscii(): ArbitraryInterface
 ```
 
 Printable ASCII strings of length 0..100.
@@ -82,16 +85,13 @@ Printable ASCII strings of length 0..100.
 ### stringOf()
 
 ```php
-static stringOf(
-    int<0, max> $minLength,
-    int<1, max> $maxLength,
-): Arbitrary\StringArbitrary
+static stringOf(int<0, max> $minLength, int<1, max> $maxLength): ArbitraryInterface
 ```
 
 ### char()
 
 ```php
-static char(): Arbitrary\StringArbitrary
+static char(): ArbitraryInterface
 ```
 
 A single printable ASCII character.
@@ -103,7 +103,7 @@ static stringFrom(
     string $alphabet,
     int $minLength = 0,
     int $maxLength = 100,
-): Arbitrary\CharsetStringArbitrary
+): ArbitraryInterface
 ```
 
 Strings whose characters come from a fixed alphabet (split per Unicode
@@ -113,7 +113,7 @@ first alphabet character — list simpler characters first.
 ### bytes()
 
 ```php
-static bytes(int $minLength = 0, int $maxLength = 100): Arbitrary\BytesArbitrary
+static bytes(int $minLength = 0, int $maxLength = 100): ArbitraryInterface
 ```
 
 Raw byte strings (every byte 0..255). Shrinks by length toward '', then
@@ -126,7 +126,7 @@ static arrayOf(
     \ArbitraryInterface<\TElement> $element,
     int $minSize = 0,
     int $maxSize = 100,
-): Arbitrary\ArrayArbitrary
+): ArbitraryInterface
 ```
 
 Lists whose elements are drawn from $element.
@@ -137,7 +137,7 @@ Lists whose elements are drawn from $element.
 static nonEmptyArrayOf(
     \ArbitraryInterface<\TElement> $element,
     int $maxSize = 100,
-): Arbitrary\ArrayArbitrary
+): ArbitraryInterface
 ```
 
 Non-empty lists whose elements are drawn from $element.
@@ -149,14 +149,14 @@ static uniqueArrayOf(
     \ArbitraryInterface<\TElement> $element,
     int $minSize = 0,
     int $maxSize = 100,
-): Arbitrary\UniqueArrayArbitrary
+): ArbitraryInterface
 ```
 
 Lists of pairwise-distinct elements (strict comparison) drawn from
 $element. Element shrinking keeps the list distinct; the result may be
 smaller than the drawn size when the element space runs out of fresh
 values, but never below $minSize — an unreachable minimum throws
-GenerationExhausted.
+GenerationExhaustedException.
 
 ### subset()
 
@@ -165,7 +165,7 @@ static subset(
     list<\TValue> $values,
     int $minSize = 0,
     ?int $maxSize = NULL,
-): Arbitrary\SubsetArbitrary
+): ArbitraryInterface
 ```
 
 Subsets of a fixed ordered set: every result is a list of distinct
@@ -185,19 +185,19 @@ static dictOf(
     \ArbitraryInterface<\TValue> $value,
     int $minSize = 0,
     int $maxSize = 100,
-): Arbitrary\DictionaryArbitrary
+): ArbitraryInterface
 ```
 
 Associative arrays (maps) with keys from $key and values from $value.
 
 Keys must be int or string; only distinct keys are kept, so the result
 may be smaller than the drawn size when the key space runs out, but never
-below $minSize — an unreachable minimum throws [`GenerationExhausted`](/api/classes/GenerationExhausted).
+below $minSize — an unreachable minimum throws [`GenerationExhaustedException`](/api/classes/GenerationExhaustedException).
 
 ### record()
 
 ```php
-static record(array<string,\ArbitraryInterface> $shape): Arbitrary\RecordArbitrary
+static record(array<string,\ArbitraryInterface> $shape): ArbitraryInterface
 ```
 
 Fixed-shape associative array: each field is generated from its own
@@ -210,7 +210,7 @@ key set fixed.
 ### oneOf()
 
 ```php
-static oneOf(\TValue $values): Arbitrary\OneOfArbitrary
+static oneOf(\TValue $values): ArbitraryInterface
 ```
 
 Picks one of the given values at random.
@@ -232,7 +232,7 @@ static forClass(
     array<string,\ArbitraryInterface> $overrides = [],
     bool $skipInvalid = false,
     int $maxDepth = 3,
-): Arbitrary\ClassArbitrary
+): ArbitraryInterface
 ```
 
 Instances of $class, generated from what its constructor already
@@ -297,7 +297,7 @@ filters untrusted input through [`Assume`](/api/classes/Assume), as always.
 ### swarm()
 
 ```php
-static swarm(\ArbitraryInterface<\TValue> $arbitrary): Arbitrary\SwarmArbitrary
+static swarm(\ArbitraryInterface<\TValue> $arbitrary): ArbitraryInterface
 ```
 
 Swarm testing over a choice generator: each generated case may only use
@@ -319,7 +319,7 @@ consequences (scope of the draw, and what the counterexample reports).
 ### elements()
 
 ```php
-static elements(array<array-key,\TValue> $values): Arbitrary\OneOfArbitrary
+static elements(array<array-key,\TValue> $values): ArbitraryInterface
 ```
 
 Picks one value at random from an array (the array form of oneOf()).
@@ -336,7 +336,7 @@ Values, not generators — see `oneOf`().
 ### constant()
 
 ```php
-static constant(\TValue $value): Arbitrary\ConstantArbitrary
+static constant(\TValue $value): ArbitraryInterface
 ```
 
 Always produces $value; does not shrink.
@@ -344,7 +344,7 @@ Always produces $value; does not shrink.
 ### enum()
 
 ```php
-static enum(class-string<\TEnum> $enum): Arbitrary\OneOfArbitrary
+static enum(class-string<\TEnum> $enum): ArbitraryInterface
 ```
 
 One case of a PHP enum, in declaration order. Shrinks toward
@@ -353,7 +353,7 @@ earlier-declared cases, so declare simpler cases first.
 ### floatSpecial()
 
 ```php
-static floatSpecial(): Arbitrary\OneOfArbitrary
+static floatSpecial(): ArbitraryInterface
 ```
 
 Special float values (NaN, ±INF, -0.0 and the representation edges) where
@@ -363,7 +363,7 @@ inside its finite range. Shrinks toward earlier-listed specials.
 ### intRange()
 
 ```php
-static intRange(int $min, int $max): Arbitrary\FlatMappedArbitrary
+static intRange(int $min, int $max): ArbitraryInterface
 ```
 
 Ordered integer pairs `[lo, hi]` with $min <= lo <= hi <= $max — the
@@ -392,7 +392,7 @@ the plain value it wraps, not merely to an empty container.
 ### nullable()
 
 ```php
-static nullable(ArbitraryInterface $inner): Arbitrary\NullableArbitrary
+static nullable(ArbitraryInterface $inner): ArbitraryInterface
 ```
 
 Yields null or a value from $inner with roughly even odds.
@@ -400,10 +400,7 @@ Yields null or a value from $inner with roughly even odds.
 ### map()
 
 ```php
-static map(
-    \ArbitraryInterface<\TInner> $inner,
-    callable $map,
-): Arbitrary\MappedArbitrary
+static map(\ArbitraryInterface<\TInner> $inner, callable $map): ArbitraryInterface
 ```
 
 Transforms each value produced by $inner through a pure function.
@@ -417,7 +414,7 @@ so mapped values shrink through the inner arbitrary's tree.
 static flatMap(
     \ArbitraryInterface<\TInner> $inner,
     callable $flatMap,
-): Arbitrary\FlatMappedArbitrary
+): ArbitraryInterface
 ```
 
 Dependent generators (aka `bind`): feeds each value produced by $inner
@@ -433,7 +430,7 @@ valid index into it) instead of discarding invalid combinations with
 static filter(
     \ArbitraryInterface<\TInner> $inner,
     callable $predicate,
-): Arbitrary\FilteredArbitrary
+): ArbitraryInterface
 ```
 
 Generates values from $inner, retrying until $predicate holds.
@@ -472,7 +469,7 @@ it throws.
 ### tuple()
 
 ```php
-static tuple(ArbitraryInterface $elements): Arbitrary\TupleArbitrary
+static tuple(ArbitraryInterface $elements): ArbitraryInterface
 ```
 
 Fixed-arity tuple: one value per element arbitrary, in order. The property
@@ -484,7 +481,7 @@ position through its own arbitrary while keeping the arity fixed.
 ```php
 static frequency(
     iterable<array{int, \ArbitraryInterface<\TValue>}> $pairs,
-): Arbitrary\FrequencyArbitrary
+): ArbitraryInterface
 ```
 
 Weighted choice among `[weight, arbitrary]` pairs: a branch is picked with
@@ -496,7 +493,7 @@ stays within the branch that generated the value.
 ### uuid()
 
 ```php
-static uuid(): Arbitrary\UuidArbitrary
+static uuid(): ArbitraryInterface
 ```
 
 Canonical RFC 4122 version 4 UUID strings. Does not shrink.
@@ -507,7 +504,7 @@ Canonical RFC 4122 version 4 UUID strings. Does not shrink.
 static datetime(
     ?DateTimeImmutable $min = NULL,
     ?DateTimeImmutable $max = NULL,
-): Arbitrary\DateTimeArbitrary
+): ArbitraryInterface
 ```
 
 UTC DateTimeImmutable values with a timestamp in the inclusive range
@@ -517,7 +514,7 @@ Unix epoch, clamped to the range.
 ### ipv4()
 
 ```php
-static ipv4(): Arbitrary\MappedArbitrary
+static ipv4(): ArbitraryInterface
 ```
 
 IPv4 dotted-quad address strings (`"0.0.0.0"`..`"255.255.255.255"`). Each
@@ -526,7 +523,7 @@ octet shrinks toward 0 through its own integer tree.
 ### ipv6()
 
 ```php
-static ipv6(): Arbitrary\MappedArbitrary
+static ipv6(): ArbitraryInterface
 ```
 
 IPv6 address strings in the canonical text form of RFC 5952: lowercase
@@ -544,7 +541,7 @@ no IPv6 host either.
 ### email()
 
 ```php
-static email(): Arbitrary\MappedArbitrary
+static email(): ArbitraryInterface
 ```
 
 Syntactically valid `local@label.tld` email addresses over a lowercase
@@ -554,7 +551,7 @@ local part / label and the first TLD.
 ### url()
 
 ```php
-static url(): Arbitrary\MappedArbitrary
+static url(): ArbitraryInterface
 ```
 
 HTTP/HTTPS URLs `scheme://host.tld[/segment...]` over a lowercase
@@ -573,7 +570,7 @@ the decoded PHP value; use jsonString() for the encoded text.
 ### jsonString()
 
 ```php
-static jsonString(int $maxDepth = 3): Arbitrary\MappedArbitrary
+static jsonString(int $maxDepth = 3): ArbitraryInterface
 ```
 
 The JSON text of json() (`json_encode` of each generated value),
@@ -589,6 +586,12 @@ Strings matching a regular-expression subset. The pattern is compiled to
 ordinary combinators, so matches shrink toward shorter/simpler strings.
 
 - `$maxRepeat` — Upper bound generation uses for unbounded quantifiers (`*`, `+`, `{n,}`).
+
+**Write the pattern without delimiters**: `[a-z]+`, not `/[a-z]+/`. A
+delimited pattern is refused rather than compiled — the delimiters are
+ordinary characters to this compiler, so it would have generated strings
+beginning and ending with `/` and matching nothing the caller meant.
+Escape the character (`\/`) to match it literally.
 
 Supported: literals, `.`, character classes `[...]` (ranges, negation,
 ``d\w\s`` and their negations, `[\b]` as a backspace), the escapes
@@ -620,7 +623,7 @@ static commands(
     list<\ArbitraryInterface> $commandGenerators,
     int $minLength = 0,
     int $maxLength = 100,
-): Arbitrary\CommandSequenceArbitrary
+): ArbitraryInterface
 ```
 
 A valid [`StateMachine\Command`](/api/classes/StateMachine/Command) sequence for
@@ -629,7 +632,7 @@ a command generator and appends its command when the command's precondition
 holds in the running model, advancing the model — so the sequence is valid
 by construction. Shrinking drops individual steps and simplifies each command
 through its own tree. A sequence shorter than $minLength (no applicable
-command reached it) throws GenerationExhausted.
+command reached it) throws GenerationExhaustedException.
 
 - `$commandGenerators` — Each must produce a [`StateMachine\Command`](/api/classes/StateMachine/Command).
 

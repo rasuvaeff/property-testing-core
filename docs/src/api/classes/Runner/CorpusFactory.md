@@ -9,7 +9,7 @@ description: "The corpus a `PROPERTY_DB` value names."
 
 `Rasuvaeff\PropertyTesting\Runner\CorpusFactory`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/CorpusFactory.php#L28) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/CorpusFactory.php#L29) — **Version:** working tree
 
 The corpus a `PROPERTY_DB` value names.
 
@@ -22,6 +22,7 @@ mean the same thing by the same DSN.
 ```php
 $corpus = CorpusFactory::fromDsn('/tmp/corpus');
 $corpus = CorpusFactory::fromDsn('redis://redis:6379/2?prefix=suite-a:');
+$corpus = CorpusFactory::fromDsn('redis://redis:6379', $password);
 ```
 
 ## Methods
@@ -29,13 +30,14 @@ $corpus = CorpusFactory::fromDsn('redis://redis:6379/2?prefix=suite-a:');
 ### fromDsn()
 
 ```php
-static fromDsn(string $dsn): Runner\Corpus
+static fromDsn(string $dsn, ?string $password = NULL): Runner\Corpus
 ```
 
 The corpus for a `PROPERTY_DB` value, the same instance for the same
 value within a process.
 
 - `$dsn` — A directory path, or a `redis://` / `rediss://` DSN.
+- `$password` — The `AUTH` password for a Redis DSN, read from the environment by the adapter (`PROPERTY_DB_PASSWORD`). Ignored for a directory; empty means none.
 
 **Throws:**
 

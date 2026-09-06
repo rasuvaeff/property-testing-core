@@ -7,7 +7,9 @@ namespace Rasuvaeff\PropertyTesting\Runner;
 use Rasuvaeff\PropertyTesting\GaveUpException;
 
 /**
- * Discards exceeded the budget before the requested checks completed.
+ * Discarded inputs — or runs the environment refused — exceeded their budget
+ * before the requested checks completed. {@see GaveUpException::$exhaustedBySkips}
+ * says which of the two ran out.
  *
  * @api
  */

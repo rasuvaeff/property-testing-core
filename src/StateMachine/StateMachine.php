@@ -26,7 +26,7 @@ use Closure;
  * dropped an earlier step that a later precondition depended on, so a replayed
  * sequence stays sound without the arbitrary re-validating every candidate. A
  * passing precondition runs the command, asserts {@see Command::postCondition()}
- * (throwing {@see PostconditionViolation} on failure), then advances the model.
+ * (throwing {@see PostconditionViolationException} on failure), then advances the model.
  *
  * @api
  */
@@ -40,7 +40,7 @@ final class StateMachine
     /**
      * @param Closure(): mixed $system Factory returning a fresh system under test.
      *
-     * @throws PostconditionViolation
+     * @throws PostconditionViolationException
      */
     public static function check(CommandSequence $sequence, Closure $system): void
     {
@@ -64,7 +64,7 @@ final class StateMachine
             $result = $command->run($model, $system_);
 
             if (!$command->postCondition($model, $result)) {
-                throw new PostconditionViolation($trace, $step, $command, $model, $result);
+                throw new PostconditionViolationException($trace, $step, $command, $model, $result);
             }
 
             /** @var mixed $model */

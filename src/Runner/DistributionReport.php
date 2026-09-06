@@ -38,6 +38,9 @@ final readonly class DistributionReport
      * @param bool $coverageAssessed Whether the engine judged the `cover()` requirements. False when
      *        the run ended before the check loop completed (it gave up on discards, or ran out of
      *        its time budget): the shares below are still what happened, but nothing enforced them.
+     * @param int $skips Runs the environment refused. Counted inside `$attempts` like discards are,
+     *        and apart from `$discards` for the same reason the engine separates the two budgets:
+     *        a distribution that is mostly skips says nothing about the generators.
      */
     public function __construct(
         public int $attempts,
@@ -45,6 +48,7 @@ final readonly class DistributionReport
         public int $checks,
         public array $labels,
         public bool $coverageAssessed,
+        public int $skips = 0,
     ) {}
 
     /**
@@ -79,6 +83,7 @@ final readonly class DistributionReport
             checks: $statistics->checks,
             labels: $labels,
             coverageAssessed: $coverageAssessed,
+            skips: $statistics->skips,
         );
     }
 
@@ -136,6 +141,7 @@ final readonly class DistributionReport
             'attempts' => $this->attempts,
             'discards' => $this->discards,
             'discardPercent' => $this->discardPercent(),
+            'skips' => $this->skips,
             'checks' => $this->checks,
             'coverageAssessed' => $this->coverageAssessed,
             'labels' => array_map(

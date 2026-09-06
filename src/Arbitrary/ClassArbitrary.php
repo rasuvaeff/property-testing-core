@@ -86,7 +86,7 @@ final readonly class ClassArbitrary implements ArbitraryInterface
     {
         // With skipInvalid the filter does both halves of the job: it redraws
         // a rejected argument set (up to its own hundred attempts, then
-        // GenerationExhausted) and prunes shrink candidates the constructor
+        // GenerationExhaustedException) and prunes shrink candidates the constructor
         // would reject — a smaller set of arguments it refuses is not a
         // smaller value, it is no value at all.
         $arguments = $this->skipInvalid

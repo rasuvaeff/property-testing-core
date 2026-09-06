@@ -43,6 +43,7 @@ __construct(
     non-empty-string $prefix,
     bool $tls,
     float $timeout = 5.0,
+    ?non-empty-string $password = NULL,
 )
 ```
 
@@ -54,6 +55,7 @@ __construct(
 | `$prefix` | `non-empty-string` | *required* | The key prefix every corpus key starts with; `Runner\Redis\DEFAULT_PREFIX` when the DSN has no `prefix` query parameter. |
 | `$tls` | `bool` | *required* | Whether the connection is TLS (`rediss://`). |
 | `$timeout` | `float` | `5.0` | The connection timeout in seconds. |
+| `$password` | `?non-empty-string` | `NULL` | The `AUTH` password, or null for an unauthenticated server. Never parsed out of the DSN — see `Runner\Redis\parse`(). |
 
 ## Methods
 
@@ -69,6 +71,9 @@ Here rather than at the call site so the shape is something a test can
 assert: an array literal built where the client is constructed can only
 be checked by connecting to a server.
 
+The `password` key is present only when there is one: predis treats a
+null password as a password and sends `AUTH`.
+
 ### phpRedisHost()
 
 ```php
@@ -81,10 +86,11 @@ which is how phpredis selects the transport.
 ### parse()
 
 ```php
-static parse(string $dsn): Runner\Redis\RedisDsn
+static parse(string $dsn, ?string $password = NULL): Runner\Redis\RedisDsn
 ```
 
 - `$dsn` — The DSN, already known to use the `redis` or `rediss` scheme.
+- `$password` — The `AUTH` password, supplied out of band (the adapters read `PROPERTY_DB_PASSWORD`). Kept out of the DSN on purpose: `PROPERTY_DB` is echoed in the diagnostics below and lands in CI logs, and userinfo is rejected outright. An empty value means the same as none — an exported-but-empty variable is not a password.
 
 **Throws:**
 

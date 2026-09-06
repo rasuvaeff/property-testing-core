@@ -38,6 +38,7 @@ __construct(
     int $maxDiscards,
     int $skippedRuns = 0,
     bool $exhaustedBySkips = false,
+    ?int $maxSkips = NULL,
 )
 ```
 
@@ -48,7 +49,8 @@ __construct(
 | `$successfulRuns` | `int` | *required* | Successful checks completed before the budget ran out. |
 | `$discardedRuns` | `int` | *required* | Runs discarded via `Assume::that()` — the input left the domain. |
 | `$attempts` | `int` | *required* | Bodies executed in total, discarded and skipped ones included. |
-| `$maxDiscards` | `int` | *required* | Cap each of the two budgets was measured against. |
+| `$maxDiscards` | `int` | *required* | Cap the discard budget was measured against. |
 | `$skippedRuns` | `int` | `0` | Runs the environment refused (a missing dependency, a skipped lifecycle hook). |
 | `$exhaustedBySkips` | `bool` | `false` | Which budget ran out: the skips' one, or the discards'. It selects the message, because the two have no advice in common. |
+| `$maxSkips` | `?int` | `NULL` | Cap the skip budget was measured against — equal to `$maxDiscards` whenever the caller configured a `maxDiscards`, and smaller when the two were left implicit. Null means the two budgets were not told apart; the message then falls back to `$maxDiscards` rather than printing a cap nobody measured against. |
 

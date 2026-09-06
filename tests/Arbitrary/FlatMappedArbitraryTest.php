@@ -10,7 +10,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\TupleArbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Gen;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
@@ -129,7 +129,7 @@ final class FlatMappedArbitraryTest
         for ($seed = 0; $seed < 1_000 && !$node instanceof Shrinkable; ++$seed) {
             try {
                 $generated = $arbitrary->generate(new Random($seed));
-            } catch (GenerationExhausted) {
+            } catch (GenerationExhaustedException) {
                 continue;
             }
 

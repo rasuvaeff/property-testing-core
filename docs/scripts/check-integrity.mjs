@@ -24,8 +24,8 @@ const pkgDir = join(docsDir, '..')
 // shrinks, so the budget only ever moves down. See §I.2 — "без гейта «полнее»
 // тихо деградирует обратно".
 const COMPLETENESS_BUDGET = {
-    'type without a summary': 1,
-    'method without a summary': 29,
+    'type without a summary': 0,
+    'method without a summary': 28,
     'parameter without a description': 125,
     'constructor parameter without a description': 103,
     'throwing method without @throws': 13,

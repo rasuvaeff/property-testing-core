@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Tests\StateMachine;
 
-use Rasuvaeff\PropertyTesting\StateMachine\PostconditionViolation;
+use Rasuvaeff\PropertyTesting\StateMachine\PostconditionViolationException;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\PopCommand;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
 
 #[Test]
-#[Covers(PostconditionViolation::class)]
-final class PostconditionViolationTest
+#[Covers(PostconditionViolationException::class)]
+final class PostconditionViolationExceptionTest
 {
     public function carriesTheFailingStepAndTrace(): void
     {
         $command = new PopCommand();
-        $exception = new PostconditionViolation(['Push(1)', 'Push(2)', 'Pop()'], 3, $command, [1, 2], 1);
+        $exception = new PostconditionViolationException(['Push(1)', 'Push(2)', 'Pop()'], 3, $command, [1, 2], 1);
 
         Assert::same($exception->step, 3);
         Assert::same($exception->command, $command);
@@ -28,7 +28,7 @@ final class PostconditionViolationTest
 
     public function rendersAMessageNamingTheStepAndSequence(): void
     {
-        $exception = new PostconditionViolation(['Push(1)', 'Pop()'], 2, new PopCommand(), [1], 99);
+        $exception = new PostconditionViolationException(['Push(1)', 'Pop()'], 2, new PopCommand(), [1], 99);
 
         Assert::string($exception->getMessage())->contains('step 2');
         Assert::string($exception->getMessage())->contains('Pop()');

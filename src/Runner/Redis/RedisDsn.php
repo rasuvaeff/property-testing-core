@@ -41,6 +41,8 @@ final readonly class RedisDsn
      *        {@see DEFAULT_PREFIX} when the DSN has no `prefix` query parameter.
      * @param bool $tls Whether the connection is TLS (`rediss://`).
      * @param float $timeout The connection timeout in seconds.
+     * @param ?non-empty-string $password The `AUTH` password, or null for an unauthenticated
+     *        server. Never parsed out of the DSN — see {@see parse()}.
      */
     public function __construct(
         public string $host,
@@ -49,6 +51,7 @@ final readonly class RedisDsn
         public string $prefix,
         public bool $tls,
         public float $timeout = self::DEFAULT_TIMEOUT,
+        public ?string $password = null,
     ) {}
 
     /**
@@ -58,11 +61,16 @@ final readonly class RedisDsn
      * assert: an array literal built where the client is constructed can only
      * be checked by connecting to a server.
      *
-     * @return array{scheme: 'tcp'|'tls', host: non-empty-string, port: int, database: int<0, max>, timeout: float}
+     * The `password` key is present only when there is one: predis treats a
+     * null password as a password and sends `AUTH`.
+     *
+     * @return array{scheme: 'tcp'|'tls', host: non-empty-string, port: int, database: int<0, max>, timeout: float, password?: non-empty-string}
      */
     public function toPredisParameters(): array
     {
-        return ['scheme' => $this->tls ? 'tls' : 'tcp', 'host' => $this->host, 'port' => $this->port, 'database' => $this->database, 'timeout' => $this->timeout];
+        $parameters = ['scheme' => $this->tls ? 'tls' : 'tcp', 'host' => $this->host, 'port' => $this->port, 'database' => $this->database, 'timeout' => $this->timeout];
+
+        return $this->password === null ? $parameters : $parameters + ['password' => $this->password];
     }
 
     /**
@@ -78,11 +86,15 @@ final readonly class RedisDsn
 
     /**
      * @param string $dsn The DSN, already known to use the `redis` or `rediss` scheme.
+     * @param ?string $password The `AUTH` password, supplied out of band (the adapters read
+     *        `PROPERTY_DB_PASSWORD`). Kept out of the DSN on purpose: `PROPERTY_DB` is echoed in
+     *        the diagnostics below and lands in CI logs, and userinfo is rejected outright. An
+     *        empty value means the same as none — an exported-but-empty variable is not a password.
      *
      * @throws \InvalidArgumentException When the DSN carries credentials, names no host, has a path
      *         that is not a database index, has an invalid port/timeout, or has an unknown query parameter.
      */
-    public static function parse(string $dsn): self
+    public static function parse(string $dsn, ?string $password = null): self
     {
         $parts = parse_url($dsn);
 
@@ -92,7 +104,7 @@ final readonly class RedisDsn
             // while the operator believes it authenticated. The message never
             // echoes the DSN — it would carry the password into the CI log.
             throw new \InvalidArgumentException(
-                'PROPERTY_DB carries credentials in its userinfo, which is not supported; configure Redis AUTH out of band',
+                'PROPERTY_DB carries credentials in its userinfo, which is not supported; pass the password in PROPERTY_DB_PASSWORD instead',
             );
         }
 
@@ -178,7 +190,7 @@ final readonly class RedisDsn
         foreach (array_keys($query) as $parameter) {
             if (!in_array($parameter, ['prefix', 'timeout'], strict: true)) {
                 throw new \InvalidArgumentException(sprintf(
-                    'PROPERTY_DB="%s" has an unknown query parameter "%s"; only prefix= is understood',
+                    'PROPERTY_DB="%s" has an unknown query parameter "%s"; only prefix= and timeout= are understood',
                     $dsn,
                     (string) $parameter,
                 ));
@@ -196,6 +208,7 @@ final readonly class RedisDsn
             prefix: is_string($prefix) && $prefix !== '' ? $prefix : self::DEFAULT_PREFIX,
             tls: $scheme === 'rediss',
             timeout: $timeout,
+            password: $password === '' ? null : $password,
         );
     }
 

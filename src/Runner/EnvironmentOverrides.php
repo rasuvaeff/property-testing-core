@@ -30,6 +30,13 @@ final class EnvironmentOverrides
         'shrink' => Phase::Shrink,
     ];
 
+    /**
+     * Values {@see flag()} reads as "off", lower-cased and trimmed before the
+     * comparison. `''` never reaches this list: an empty variable means the
+     * override was not given at all.
+     */
+    private const array FALSE_WORDS = ['0', 'false', 'off', 'no'];
+
     private function __construct()
     {
         // Static helpers; not instantiable.
@@ -162,8 +169,14 @@ final class EnvironmentOverrides
     }
 
     /**
-     * A switch such as `PROPERTY_DERANDOMIZE` or `PROPERTY_VERBOSE`: unset
-     * and empty mean "not given" (null), `0` means off, anything else on.
+     * A switch such as `PROPERTY_DERANDOMIZE` or `PROPERTY_VERBOSE`: unset and
+     * empty mean "not given" (null); `0`, `false`, `off` and `no` mean off
+     * (case-insensitively, surrounding whitespace ignored); anything else on.
+     *
+     * The written-out spellings are here because a shell exports words as
+     * readily as digits, and `PROPERTY_VERBOSE=false` turning verbose output
+     * *on* is a bug report waiting to happen — the value says off in every
+     * language the reader knows.
      *
      * @param string|false $value The variable's value as `getenv()` reports it; `false` when unset.
      */
@@ -173,7 +186,7 @@ final class EnvironmentOverrides
             return null;
         }
 
-        return $value !== '0';
+        return !in_array(strtolower(trim($value)), self::FALSE_WORDS, strict: true);
     }
 
     /**

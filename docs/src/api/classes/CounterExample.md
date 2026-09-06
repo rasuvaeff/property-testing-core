@@ -26,10 +26,11 @@ __construct(
     array<string,mixed> $shrunkArguments,
     int $shrinkSteps = 0,
     ?\Throwable $failure = NULL,
-    int $skips = 0,
+    int $discards = 0,
     int $shrinkTrials = 0,
     string $path = '',
     \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
+    int $skips = 0,
 )
 ```
 
@@ -41,10 +42,11 @@ __construct(
 | `$shrunkArguments` | `array<string,mixed>` | *required* | Minimised arguments that still fail. |
 | `$shrinkSteps` | `int` | `0` | Number of accepted shrink steps between the original and the minimised arguments. |
 | `$failure` | `?\Throwable` | `NULL` | The assertion or exception reported by the failing run. |
-| `$skips` | `int` | `0` | Number of runs discarded via [`Assume`](/api/classes/Assume)::that() before the failure. |
+| `$discards` | `int` | `0` | Number of runs discarded via [`Assume`](/api/classes/Assume)::that() before the failure. |
 | `$shrinkTrials` | `int` | `0` | Total number of shrink candidates tried (accepted and rejected). |
 | `$path` | `string` | `''` | The accepted shrink steps that lead from the original arguments to the minimised ones, as `name:index` segments joined by `/`. Passed back through [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$path (together with the seed) it replays this descent instead of searching for it again. Empty when nothing shrank. A debugging aid, not a durable identifier: it indexes into each node's shrink candidates, so editing a generator orphans it — the regression corpus is what survives a refactor. |
 | `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | The boundary-value mode the failing run was generated under. The seed reproduces the failure only under the same mode (the modes share the roll but not the values it selects), so a seed replay — the corpus above all — carries it along. |
+| `$skips` | `int` | `0` | Number of runs the environment refused (a skipped hook or body) before the failure. Counted apart from `$discards`: a discard says the generated input left the property's domain, a skip says nothing about the input at all. |
 
 ## Methods
 

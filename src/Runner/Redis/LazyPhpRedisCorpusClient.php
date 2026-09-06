@@ -65,6 +65,13 @@ final class LazyPhpRedisCorpusClient implements CorpusClient
             throw new \RuntimeException(sprintf('Could not connect to the Redis corpus at %s:%d', $this->dsn->host, $this->dsn->port));
         }
 
+        // Before SELECT: an authenticated server refuses every command until
+        // AUTH succeeds, so a database selected first fails for a reason that
+        // does not name the cause.
+        if ($this->dsn->password !== null && !$redis->auth($this->dsn->password)) {
+            throw new \RuntimeException(sprintf('Could not authenticate against the Redis corpus at %s:%d', $this->dsn->host, $this->dsn->port));
+        }
+
         if ($this->dsn->database !== RedisDsn::DEFAULT_DATABASE && !$redis->select($this->dsn->database)) {
             throw new \RuntimeException(sprintf('Could not select Redis database %d for the corpus', $this->dsn->database));
         }

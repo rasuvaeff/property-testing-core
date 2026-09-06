@@ -134,11 +134,31 @@ final class EnvironmentOverridesTest
         }
     }
 
-    public function aFlagIsOffForZeroAndOnForAnythingElse(): void
+    public function aFlagIsOffForTheNegativeWordsAndOnForAnythingElse(): void
     {
         Assert::false(EnvironmentOverrides::flag('0'));
         Assert::true(EnvironmentOverrides::flag('1'));
-        Assert::true(EnvironmentOverrides::flag('false'));
+        Assert::true(EnvironmentOverrides::flag('yes'));
+        Assert::true(EnvironmentOverrides::flag('anything'));
+    }
+
+    /**
+     * A shell exports words as readily as digits, and `PROPERTY_VERBOSE=false`
+     * used to turn verbose output on.
+     */
+    #[DataProvider('negativeFlagProvider')]
+    public function aFlagIsOffForEveryWrittenOutNegative(string $value): void
+    {
+        Assert::false(EnvironmentOverrides::flag($value));
+    }
+
+    public static function negativeFlagProvider(): iterable
+    {
+        foreach (['0', 'false', 'off', 'no'] as $word) {
+            yield $word => [$word];
+            yield strtoupper($word) => [strtoupper($word)];
+            yield 'padded ' . $word => ['  ' . ucfirst($word) . ' '];
+        }
     }
 
     public function aStringIsPassedThrough(): void

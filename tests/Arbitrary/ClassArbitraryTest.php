@@ -6,7 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\Arbitrary\ClassArbitrary;
 use Rasuvaeff\PropertyTesting\Gen;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Internal\DocblockTypes;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Internal\TypeGenerators;
@@ -370,7 +370,7 @@ final class ClassArbitraryTest
         }
     }
 
-    #[ExpectException(GenerationExhausted::class)]
+    #[ExpectException(GenerationExhaustedException::class)]
     public function skipInvalidGivesUpWhenNothingIsEverValid(): void
     {
         // Nothing the generator can produce satisfies the constructor, so the

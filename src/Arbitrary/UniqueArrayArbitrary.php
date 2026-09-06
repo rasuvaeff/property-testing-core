@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
@@ -21,7 +21,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * element the generator settles for the distinct elements found so far — the
  * result may be smaller than the drawn size, mirroring dictOf's key-collision
  * behaviour. An element space too small to reach the minimum size throws
- * {@see GenerationExhausted} rather than hand the property a too-small list.
+ * {@see GenerationExhaustedException} rather than hand the property a too-small list.
  *
  * @template TElement
  * @implements ArbitraryInterface<list<TElement>>
@@ -77,7 +77,7 @@ final readonly class UniqueArrayArbitrary implements ArbitraryInterface
         }
 
         if (count($elements) < $this->minSize) {
-            throw new GenerationExhausted(
+            throw new GenerationExhaustedException(
                 'Gen::uniqueArrayOf()',
                 $size * self::MAX_ATTEMPTS_PER_ELEMENT,
                 sprintf(

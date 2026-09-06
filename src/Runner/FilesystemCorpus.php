@@ -19,9 +19,11 @@ use Rasuvaeff\PropertyTesting\Internal\ValueCodec;
  * the run's seed, which reproduces the failure only while the generation sequence
  * is unchanged; {@see SEQUENCE_EPOCH} fences those entries off when it is not.
  *
- * Enabled solely when the `PROPERTY_DB` environment variable points at a
- * directory; otherwise storage is off and nothing is written. One file per
- * property (`<sha1(id)>.json`) keeps it gitignore-friendly.
+ * Takes the directory to write under; it reads no environment of its own, like
+ * the rest of the engine. Adapters resolve `PROPERTY_DB` into a corpus through
+ * {@see CorpusFactory::fromDsn()}, which picks this class or {@see RedisCorpus}
+ * by the value's scheme. One file per property (`<sha1(id)>.json`) keeps the
+ * directory gitignore-friendly.
  *
  * @api
  */
@@ -62,21 +64,6 @@ final readonly class FilesystemCorpus implements Corpus
     public function __construct(
         private string $directory,
     ) {}
-
-    /**
-     * The storage configured by `PROPERTY_DB` (a directory path), or null when
-     * the variable is unset/empty (storage disabled — no files are written).
-     */
-    public static function fromEnv(): ?self
-    {
-        $directory = getenv('PROPERTY_DB');
-
-        if ($directory === false || $directory === '') {
-            return null;
-        }
-
-        return new self($directory);
-    }
 
     /**
      * The usable entries recorded for $id, cheapest first (values before seeds,

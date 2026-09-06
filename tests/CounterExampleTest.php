@@ -24,8 +24,9 @@ final class CounterExampleTest
             originalArguments: ['x' => 100],
             shrunkArguments: ['x' => 3],
             failure: $failure,
-            skips: 2,
+            discards: 4,
             shrinkTrials: 9,
+            skips: 2,
         );
 
         Assert::same($counterExample->seed, 42);
@@ -33,11 +34,14 @@ final class CounterExampleTest
         Assert::same($counterExample->originalArguments, ['x' => 100]);
         Assert::same($counterExample->shrunkArguments, ['x' => 3]);
         Assert::same($counterExample->failure, $failure);
+        // Two counters, deliberately different values: one word used to carry
+        // both, which is what 0.10 split apart.
+        Assert::same($counterExample->discards, 4);
         Assert::same($counterExample->skips, 2);
         Assert::same($counterExample->shrinkTrials, 9);
     }
 
-    public function defaultsFailureAndSkipsToNullAndZero(): void
+    public function defaultsFailureAndBothCountersToNullAndZero(): void
     {
         $counterExample = new CounterExample(
             seed: 1,
@@ -47,6 +51,7 @@ final class CounterExampleTest
         );
 
         Assert::null($counterExample->failure);
+        Assert::same($counterExample->discards, 0);
         Assert::same($counterExample->skips, 0);
         Assert::same($counterExample->shrinkTrials, 0);
     }
@@ -59,8 +64,8 @@ final class CounterExampleTest
             originalArguments: ['dto' => new CounterExampleDto(7)],
             shrunkArguments: ['value' => NAN],
             failure: new \RuntimeException('boom'),
-            skips: 2,
             shrinkTrials: 9,
+            skips: 2,
         );
 
         $data = $counterExample->toArray();
@@ -107,7 +112,7 @@ final class CounterExampleTest
             $counterExample->toJson(),
             '{"seed":1,"runsBeforeFailure":0,"originalArguments":[],'
             . '"shrunkArguments":{"s":"<\ufffd"},"shrinkSteps":0,"shrinkTrials":0,'
-            . '"path":"","failure":null,"skips":0,"edgeCases":"Mixin"}',
+            . '"path":"","failure":null,"discards":0,"skips":0,"edgeCases":"Mixin"}',
         );
     }
 
@@ -179,9 +184,10 @@ final class CounterExampleTest
             shrunkArguments: ['x' => 51, 's' => ''],
             shrinkSteps: 2,
             failure: new \RuntimeException('x>50'),
-            skips: 1,
+            discards: 1,
             shrinkTrials: 5,
             path: 'x:1/s:0',
+            skips: 2,
         );
 
         Assert::same(

@@ -101,7 +101,7 @@ final readonly class FlatMappedArbitrary implements ArbitraryInterface
         // 1. Shrink the source value: rebuild the dependent arbitrary from the
         //    smaller source value and regenerate with the captured seed. A
         //    smaller source the dependent side refuses — a filter no longer
-        //    satisfiable ({@see GenerationExhausted}), a range the smaller
+        //    satisfiable ({@see GenerationExhaustedException}), a range the smaller
         //    bound turns empty — is not a smaller value; skip it and its
         //    subtree, the way {@see Shrinkable::map()} skips a refused
         //    candidate. Only exceptions count; an Error propagates.

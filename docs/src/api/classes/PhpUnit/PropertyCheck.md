@@ -9,7 +9,7 @@ description: "Fluent builder mapping the engine's structured PropertyResult onto
 
 `Rasuvaeff\PropertyTesting\PhpUnit\PropertyCheck`
 
-**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/06adc49a46c32a81485d6a6960467ced96ec57fb/src/PhpUnit/PropertyCheck.php#L42) — **Version:** v0.5.0
+**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/263a85ad409c73c180ee267235538870d1deef3f/src/PhpUnit/PropertyCheck.php#L45) — **Version:** v0.7.1
 
 Fluent builder mapping the engine's structured PropertyResult onto PHPUnit:
 a pass counts one assertion, every failing outcome surfaces as one
@@ -32,6 +32,7 @@ __construct(
     string $id,
     string $name,
     array<string,\ArbitraryInterface> $generators,
+    bool $idDerivedIndirectly,
 )
 ```
 
@@ -41,8 +42,17 @@ __construct(
 | `$id` | `string` | *required* |  |
 | `$name` | `string` | *required* |  |
 | `$generators` | `array<string,\ArbitraryInterface>` | *required* |  |
+| `$idDerivedIndirectly` | `bool` | *required* |  |
 
 ## Methods
+
+### currentId()
+
+```php
+currentId(): string
+```
+
+The id the corpus is keyed by, as currently resolved.
 
 ### id()
 
@@ -225,6 +235,17 @@ output(resource $stdout, resource $stderr): PhpUnit\PropertyCheck
 
 Redirects the distribution report, discard warning and verbose trace —
 for tests of this adapter itself.
+
+### clock()
+
+```php
+clock(Runner\Clock $clock): PhpUnit\PropertyCheck
+```
+
+Replaces the runner's source of elapsed time — for tests of this adapter
+itself. The Testo adapter takes the same seam on its interceptor; without
+it the `timeoutMs` and `budgetMs` branches can only be reached by really
+waiting, which is not a test.
 
 ### check()
 

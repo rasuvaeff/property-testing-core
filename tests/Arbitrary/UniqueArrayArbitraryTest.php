@@ -7,7 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UniqueArrayArbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
@@ -74,7 +74,7 @@ final class UniqueArrayArbitraryTest
         }
     }
 
-    #[ExpectException(GenerationExhausted::class)]
+    #[ExpectException(GenerationExhaustedException::class)]
     public function throwsWhenTheElementSpaceCannotReachTheMinimumSize(): void
     {
         // Two distinct values can never fill a minimum of 3 — generation is
@@ -158,8 +158,8 @@ final class UniqueArrayArbitraryTest
         try {
             (new UniqueArrayArbitrary($inner, 5, 5))->generate(new Random(1));
 
-            Assert::fail('expected a GenerationExhausted');
-        } catch (GenerationExhausted $e) {
+            Assert::fail('expected a GenerationExhaustedException');
+        } catch (GenerationExhaustedException $e) {
             Assert::string($e->getMessage())->contains('distinct value');
         }
 

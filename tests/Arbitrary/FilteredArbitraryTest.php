@@ -7,7 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\FilteredArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
@@ -88,8 +88,8 @@ final class FilteredArbitraryTest
 
         try {
             $arbitrary->generate(new Random(1));
-            Assert::fail('expected a GenerationExhausted');
-        } catch (GenerationExhausted $e) {
+            Assert::fail('expected a GenerationExhaustedException');
+        } catch (GenerationExhaustedException $e) {
             Assert::same($e->attempts, 100);
             Assert::same($e->arbitrary, 'Gen::filter()');
         }
@@ -113,7 +113,7 @@ final class FilteredArbitraryTest
 
         try {
             (new FilteredArbitrary($inner, static fn(mixed $x): bool => false))->generate(new Random(1));
-        } catch (GenerationExhausted) {
+        } catch (GenerationExhaustedException) {
             // Expected — we only care about the sampling count here.
         }
 

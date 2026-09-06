@@ -47,3 +47,12 @@ PCRE
 PHPUnit
 PROPERTY_DB
 Testo
+# The two PHP Redis clients the corpus can talk through, and the framework
+# whose DSN shape the `redis://` parsing follows. Lowercase `predis` is the
+# package's own spelling (predis/predis), so it is not a sentence-initial
+# variant the way the common nouns above are.
+predis
+Symfony
+# The URI component a `redis://user:pass@host` DSN puts the credentials in —
+# RFC 3986's own name for it, and the one the refusal message uses.
+userinfo

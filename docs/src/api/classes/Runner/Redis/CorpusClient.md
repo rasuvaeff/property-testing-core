@@ -11,7 +11,7 @@ description: "The two operations \\Rasuvaeff\\PropertyTesting\\Runner\\RedisCorp
 
 **Interface** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Redis/CorpusClient.php#L21) — **Version:** working tree
 
-**Implemented by:** [`Runner\Redis\LazyPhpRedisCorpusClient`](/api/classes/Runner/Redis/LazyPhpRedisCorpusClient), [`Runner\Redis\PhpRedisCorpusClient`](/api/classes/Runner/Redis/PhpRedisCorpusClient), [`Runner\Redis\PredisCorpusClient`](/api/classes/Runner/Redis/PredisCorpusClient), `Testo\LazyPhpRedisCorpusClient`, `PhpUnit\LazyPhpRedisCorpusClient`
+**Implemented by:** [`Runner\Redis\LazyPhpRedisCorpusClient`](/api/classes/Runner/Redis/LazyPhpRedisCorpusClient), [`Runner\Redis\PhpRedisCorpusClient`](/api/classes/Runner/Redis/PhpRedisCorpusClient), [`Runner\Redis\PredisCorpusClient`](/api/classes/Runner/Redis/PredisCorpusClient)
 
 The two operations [`Runner\RedisCorpus`](/api/classes/Runner/RedisCorpus) needs
 from a Redis client, and nothing else.

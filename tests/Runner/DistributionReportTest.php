@@ -151,6 +151,7 @@ final class DistributionReportTest
                 checks: 2,
                 classifications: ['hit' => 1],
                 requirements: ['hit' => 75.0],
+                skips: 1,
             ),
             coverageAssessed: false,
         );
@@ -159,6 +160,7 @@ final class DistributionReportTest
             'attempts' => 4,
             'discards' => 2,
             'discardPercent' => 50.0,
+            'skips' => 1,
             'checks' => 2,
             'coverageAssessed' => false,
             'labels' => [

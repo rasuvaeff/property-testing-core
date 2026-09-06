@@ -14,11 +14,17 @@ runs **before** the random inputs and is reported verbatim (not shrunk — it is
 already the minimal case you pinned) via `ExampleViolationException`.
 
 ```php
-#[Test]
-#[Property(generators: 'ints')]
+// #[Test] goes on the class; every public void method is then a test.
+#[Property]
 public function additionCommutes(int $a, int $b): void
 {
     Assert::same($a + $b, $b + $a);
+}
+
+/** @return array<string, ArbitraryInterface> */
+public static function additionCommutesGenerators(): array
+{
+    return ['a' => Gen::int(), 'b' => Gen::int()];
 }
 
 /** @return list<array{int, int}> */

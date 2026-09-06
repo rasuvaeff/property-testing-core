@@ -21,6 +21,7 @@ use Rasuvaeff\PropertyTesting\Runner\Redis\RedisDsn;
  * ```php
  * $corpus = CorpusFactory::fromDsn('/tmp/corpus');
  * $corpus = CorpusFactory::fromDsn('redis://redis:6379/2?prefix=suite-a:');
+ * $corpus = CorpusFactory::fromDsn('redis://redis:6379', $password);
  * ```
  *
  * @api
@@ -50,20 +51,25 @@ final class CorpusFactory
     }
 
     /**
-     * The corpus for a `PROPERTY_DB` value, the same instance for the same
-     * value within a process.
+     * The corpus for a `PROPERTY_DB` value — the same instance for the same
+     * value *and password* within a process.
      *
      * @param string $dsn A directory path, or a `redis://` / `rediss://` DSN.
+     * @param ?string $password The `AUTH` password for a Redis DSN, read from the environment by
+     *        the adapter (`PROPERTY_DB_PASSWORD`). Ignored for a directory; empty means none.
      *
      * @throws \InvalidArgumentException For a scheme that is not redis/rediss, an unusable Redis
      *         DSN, or a Redis DSN without any Redis client available.
      */
-    public static function fromDsn(string $dsn): Corpus
+    public static function fromDsn(string $dsn, ?string $password = null): Corpus
     {
-        return self::$cache[$dsn] ??= self::build($dsn);
+        // The password is part of the identity: two suites pointed at the same
+        // server as different users are two corpora, and a cache keyed by the
+        // DSN alone would hand the second one the first one's connection.
+        return self::$cache[$dsn . "\0" . ($password ?? '')] ??= self::build($dsn, $password);
     }
 
-    private static function build(string $dsn): Corpus
+    private static function build(string $dsn, ?string $password): Corpus
     {
         if (preg_match(self::SCHEME_PATTERN, $dsn, $matches) !== 1) {
             return new FilesystemCorpus($dsn);
@@ -79,7 +85,7 @@ final class CorpusFactory
             ));
         }
 
-        $parsed = RedisDsn::parse($dsn);
+        $parsed = RedisDsn::parse($dsn, $password);
 
         return new RedisCorpus(self::client($parsed, $dsn), $parsed->prefix);
     }

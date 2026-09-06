@@ -186,6 +186,121 @@ final class PropertyRunnerTest
         Assert::string($result->exception->getMessage())->contains('3 skipped (maximum 2)');
     }
 
+    /**
+     * Left implicit, the two budgets part ways: ten discards per run is a
+     * distribution allowance, while a machine that cannot run the property does
+     * not need ten chances per check to say so. A property skipped by a
+     * `#[BeforeTest]` hook used to execute that hook `10 * runs + 1` times
+     * before anything reported it as skipped.
+     */
+    public function anAllSkippedPropertyGivesUpAfterOneAttemptPerRequestedRun(): void
+    {
+        $executor = new class implements TrialExecutor {
+            public int $calls = 0;
+
+            #[\Override]
+            public function execute(array $arguments): TrialOutcome
+            {
+                ++$this->calls;
+
+                return TrialOutcome::skipped();
+            }
+        };
+
+        $result = (new PropertyRunner())->run($this->definition(runs: 20), $executor);
+
+        Assert::instanceOf($result, GaveUp::class);
+        Assert::same($executor->calls, 21);
+        Assert::same($result->exception->skippedRuns, 21);
+        Assert::same($result->exception->maxSkips, 20);
+        Assert::same($result->exception->maxDiscards, 200);
+        Assert::true($result->exception->exhaustedBySkips);
+    }
+
+    /**
+     * The narrower skip budget must not cut short a property whose skips are
+     * transient. After the second attempt the runner cannot yet know the skip
+     * was permanent, so a run count of successful checks is the only thing it
+     * may stop on.
+     */
+    public function skipsThatStopComingDoNotEndTheProperty(): void
+    {
+        $executor = new class implements TrialExecutor {
+            public int $calls = 0;
+
+            #[\Override]
+            public function execute(array $arguments): TrialOutcome
+            {
+                // Skipped as often as the budget allows, then never again: the
+                // last skip lands on the boundary the phase gives up past.
+                return ++$this->calls <= 2 ? TrialOutcome::skipped() : TrialOutcome::passed();
+            }
+        };
+
+        $result = (new PropertyRunner())->run($this->definition(runs: 2), $executor);
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($result->statistics->checks, 2);
+        Assert::same($result->statistics->skips, 2);
+        Assert::same($result->statistics->attempts, 4);
+    }
+
+    /**
+     * Implicit budgets are independent: skips at the skip budget's brim and
+     * discards well past it still complete, because neither counter is charged
+     * to the other's cap.
+     */
+    public function implicitBudgetsAreSpentIndependently(): void
+    {
+        $executor = new class implements TrialExecutor {
+            public int $calls = 0;
+
+            #[\Override]
+            public function execute(array $arguments): TrialOutcome
+            {
+                // Per successful run: three discards and one skip. Over five
+                // checks that is 15 discards (cap 50) and 5 skips (cap 5) —
+                // the second would have overflowed a shared cap of 5.
+                return match (++$this->calls % 5) {
+                    0 => TrialOutcome::passed(),
+                    4 => TrialOutcome::skipped(),
+                    default => TrialOutcome::discarded(),
+                };
+            }
+        };
+
+        $result = (new PropertyRunner())->run($this->definition(runs: 5), $executor);
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($result->statistics->checks, 5);
+        Assert::same($result->statistics->discards, 15);
+        Assert::same($result->statistics->skips, 5);
+    }
+
+    /**
+     * An explicit `maxDiscards` keeps governing both budgets. It is the one
+     * dial callers have, and exempting skips from it would make the configured
+     * number mean less than it says.
+     */
+    public function anExplicitCapGovernsBothBudgets(): void
+    {
+        $result = (new PropertyRunner())->run(
+            $this->definition(runs: 100, maxDiscards: 3),
+            new class implements TrialExecutor {
+                #[\Override]
+                public function execute(array $arguments): TrialOutcome
+                {
+                    return TrialOutcome::skipped();
+                }
+            },
+        );
+
+        Assert::instanceOf($result, GaveUp::class);
+        Assert::same($result->exception->skippedRuns, 4);
+        Assert::same($result->exception->maxSkips, 3);
+        Assert::same($result->exception->maxDiscards, 3);
+    }
+
     public function unmetCoverageFailsThePassingProperty(): void
     {
         $result = (new PropertyRunner())->run(

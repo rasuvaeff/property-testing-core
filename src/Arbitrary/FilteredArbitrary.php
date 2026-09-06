@@ -6,7 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Closure;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -14,7 +14,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * Generates values from a delegate arbitrary, retrying until a predicate holds.
  *
  * Filtering is bounded: after {@see self::MAX_ATTEMPTS} consecutive rejections
- * the generator throws {@see GenerationExhausted} rather than yield a value that
+ * the generator throws {@see GenerationExhaustedException} rather than yield a value that
  * fails the predicate — a property never receives an out-of-domain input. Use
  * {@see \Rasuvaeff\PropertyTesting\Assume::that()} inside the property when the
  * rejection rate is high, which skips discarded runs cleanly, or
@@ -55,7 +55,7 @@ final readonly class FilteredArbitrary implements ArbitraryInterface
             }
         }
 
-        throw new GenerationExhausted(
+        throw new GenerationExhaustedException(
             'Gen::filter()',
             self::MAX_ATTEMPTS,
             'the predicate rejected every generated value; widen the source arbitrary, raise the attempt budget, or build dependent values with Gen::flatMap() instead of filtering',

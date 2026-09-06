@@ -27,7 +27,7 @@ bounded: after [`Arbitrary\UniqueArrayArbitrary`](/api/classes/Arbitrary/UniqueA
 element the generator settles for the distinct elements found so far — the
 result may be smaller than the drawn size, mirroring dictOf's key-collision
 behaviour. An element space too small to reach the minimum size throws
-[`GenerationExhausted`](/api/classes/GenerationExhausted) rather than hand the property a too-small list.
+[`GenerationExhaustedException`](/api/classes/GenerationExhaustedException) rather than hand the property a too-small list.
 
 ## Constructor
 

@@ -541,40 +541,6 @@ final class FilesystemCorpusTest
         Assert::same($storage->recall('B::b', ['x'])[0]->arguments, ['x' => 2]);
     }
 
-    public function fromEnvIsNullWhenUnset(): void
-    {
-        putenv('PROPERTY_DB');
-
-        Assert::null(FilesystemCorpus::fromEnv());
-    }
-
-    public function fromEnvIsNullWhenEmpty(): void
-    {
-        putenv('PROPERTY_DB=');
-
-        try {
-            Assert::null(FilesystemCorpus::fromEnv());
-        } finally {
-            putenv('PROPERTY_DB');
-        }
-    }
-
-    public function fromEnvBuildsStorageWhenSet(): void
-    {
-        putenv('PROPERTY_DB=' . $this->dir);
-
-        try {
-            $storage = FilesystemCorpus::fromEnv();
-
-            Assert::instanceOf($storage, FilesystemCorpus::class);
-            $storage->remember(self::ID, $this->counterExample(['x' => 3], 3), ['x']);
-
-            Assert::same($storage->recall(self::ID, ['x'])[0]->arguments, ['x' => 3]);
-        } finally {
-            putenv('PROPERTY_DB');
-        }
-    }
-
     /**
      * Atomic write via temp + rename must not leave `.tmp` orphan files behind
      * once `remember()` returns.

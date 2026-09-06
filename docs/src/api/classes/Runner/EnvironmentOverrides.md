@@ -96,10 +96,16 @@ trying to save.
 static flag(string|false $value): ?bool
 ```
 
-A switch such as `PROPERTY_DERANDOMIZE` or `PROPERTY_VERBOSE`: unset
-and empty mean "not given" (null), `0` means off, anything else on.
+A switch such as `PROPERTY_DERANDOMIZE` or `PROPERTY_VERBOSE`: unset and
+empty mean "not given" (null); `0`, `false`, `off` and `no` mean off
+(case-insensitively, surrounding whitespace ignored); anything else on.
 
 - `$value` — The variable's value as `getenv()` reports it; `false` when unset.
+
+The written-out spellings are here because a shell exports words as
+readily as digits, and `PROPERTY_VERBOSE=false` turning verbose output
+*on* is a bug report waiting to happen — the value says off in every
+language the reader knows.
 
 ### string()
 

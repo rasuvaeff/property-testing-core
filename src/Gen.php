@@ -59,8 +59,10 @@ final class Gen
 
     /**
      * Integers spanning PHP_INT_MIN..PHP_INT_MAX.
+     *
+     * @return ArbitraryInterface<int>
      */
-    public static function int(): IntArbitrary
+    public static function int(): ArbitraryInterface
     {
         return new IntArbitrary();
     }
@@ -68,50 +70,69 @@ final class Gen
     /**
      * @param int<min, max> $min
      * @param int<min, max> $max
+     *
+     * @return ArbitraryInterface<int>
      */
-    public static function intBetween(int $min, int $max): IntArbitrary
+    public static function intBetween(int $min, int $max): ArbitraryInterface
     {
         return new IntArbitrary($min, $max);
     }
 
     /**
      * Positive integers (1..PHP_INT_MAX).
+     *
+     * @return ArbitraryInterface<int>
      */
-    public static function intPositive(): IntArbitrary
+    public static function intPositive(): ArbitraryInterface
     {
         return new IntArbitrary(1, PHP_INT_MAX);
     }
 
     /**
      * Floats in the half-open range [0.0, 1.0).
+     *
+     * @return ArbitraryInterface<float>
      */
-    public static function float(): FloatArbitrary
+    public static function float(): ArbitraryInterface
     {
         return new FloatArbitrary(0.0, 1.0);
     }
 
-    public static function floatBetween(float $min, float $max): FloatArbitrary
+    /**
+     * Floats in the half-open range [$min, $max) — $max itself is never drawn,
+     * exactly as {@see float()} never draws 1.0.
+     *
+     * @return ArbitraryInterface<float>
+     */
+    public static function floatBetween(float $min, float $max): ArbitraryInterface
     {
         return new FloatArbitrary($min, $max);
     }
 
-    public static function bool(): BoolArbitrary
+    /**
+     * @return ArbitraryInterface<bool>
+     */
+    public static function bool(): ArbitraryInterface
     {
         return new BoolArbitrary();
     }
 
     /**
      * Unicode strings of length 0..100.
+     *
+     * @return ArbitraryInterface<string>
      */
-    public static function string(): StringArbitrary
+    public static function string(): ArbitraryInterface
     {
         return new StringArbitrary(0, 100, unicode: true);
     }
 
     /**
      * Printable ASCII strings of length 0..100.
+     *
+     * @return ArbitraryInterface<string>
      */
-    public static function stringAscii(): StringArbitrary
+    public static function stringAscii(): ArbitraryInterface
     {
         return new StringArbitrary(0, 100, unicode: false);
     }
@@ -119,16 +140,20 @@ final class Gen
     /**
      * @param int<0, max> $minLength
      * @param int<1, max> $maxLength
+     *
+     * @return ArbitraryInterface<string>
      */
-    public static function stringOf(int $minLength, int $maxLength): StringArbitrary
+    public static function stringOf(int $minLength, int $maxLength): ArbitraryInterface
     {
         return new StringArbitrary($minLength, $maxLength, unicode: true);
     }
 
     /**
      * A single printable ASCII character.
+     *
+     * @return ArbitraryInterface<string>
      */
-    public static function char(): StringArbitrary
+    public static function char(): ArbitraryInterface
     {
         return new StringArbitrary(1, 1, unicode: false);
     }
@@ -137,8 +162,10 @@ final class Gen
      * Strings whose characters come from a fixed alphabet (split per Unicode
      * codepoint). Shrinks by length toward '', then each character toward the
      * first alphabet character — list simpler characters first.
+     *
+     * @return ArbitraryInterface<string>
      */
-    public static function stringFrom(string $alphabet, int $minLength = 0, int $maxLength = 100): CharsetStringArbitrary
+    public static function stringFrom(string $alphabet, int $minLength = 0, int $maxLength = 100): ArbitraryInterface
     {
         return new CharsetStringArbitrary($alphabet, $minLength, $maxLength);
     }
@@ -146,8 +173,10 @@ final class Gen
     /**
      * Raw byte strings (every byte 0..255). Shrinks by length toward '', then
      * each byte toward "\x00".
+     *
+     * @return ArbitraryInterface<string>
      */
-    public static function bytes(int $minLength = 0, int $maxLength = 100): BytesArbitrary
+    public static function bytes(int $minLength = 0, int $maxLength = 100): ArbitraryInterface
     {
         return new BytesArbitrary($minLength, $maxLength);
     }
@@ -159,9 +188,9 @@ final class Gen
      *
      * @param ArbitraryInterface<TElement> $element
      *
-     * @return ArrayArbitrary<TElement>
+     * @return ArbitraryInterface<list<TElement>>
      */
-    public static function arrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100): ArrayArbitrary
+    public static function arrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100): ArbitraryInterface
     {
         return new ArrayArbitrary($element, $minSize, $maxSize);
     }
@@ -173,9 +202,9 @@ final class Gen
      *
      * @param ArbitraryInterface<TElement> $element
      *
-     * @return ArrayArbitrary<TElement>
+     * @return ArbitraryInterface<list<TElement>>
      */
-    public static function nonEmptyArrayOf(ArbitraryInterface $element, int $maxSize = 100): ArrayArbitrary
+    public static function nonEmptyArrayOf(ArbitraryInterface $element, int $maxSize = 100): ArbitraryInterface
     {
         return new ArrayArbitrary($element, 1, $maxSize);
     }
@@ -185,15 +214,15 @@ final class Gen
      * $element. Element shrinking keeps the list distinct; the result may be
      * smaller than the drawn size when the element space runs out of fresh
      * values, but never below $minSize — an unreachable minimum throws
-     * {@see GenerationExhausted}.
+     * {@see GenerationExhaustedException}.
      *
      * @template TElement
      *
      * @param ArbitraryInterface<TElement> $element
      *
-     * @return UniqueArrayArbitrary<TElement>
+     * @return ArbitraryInterface<list<TElement>>
      */
-    public static function uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100): UniqueArrayArbitrary
+    public static function uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100): ArbitraryInterface
     {
         return new UniqueArrayArbitrary($element, $minSize, $maxSize);
     }
@@ -212,9 +241,9 @@ final class Gen
      *
      * @param list<TValue> $values
      *
-     * @return SubsetArbitrary<TValue>
+     * @return ArbitraryInterface<list<TValue>>
      */
-    public static function subset(array $values, int $minSize = 0, ?int $maxSize = null): SubsetArbitrary
+    public static function subset(array $values, int $minSize = 0, ?int $maxSize = null): ArbitraryInterface
     {
         return new SubsetArbitrary($values, $minSize, $maxSize);
     }
@@ -223,7 +252,7 @@ final class Gen
      * Associative arrays (maps) with keys from $key and values from $value.
      * Keys must be int or string; only distinct keys are kept, so the result
      * may be smaller than the drawn size when the key space runs out, but never
-     * below $minSize — an unreachable minimum throws {@see GenerationExhausted}.
+     * below $minSize — an unreachable minimum throws {@see GenerationExhaustedException}.
      *
      * @template TKey of array-key
      * @template TValue
@@ -231,9 +260,9 @@ final class Gen
      * @param ArbitraryInterface<TKey>   $key
      * @param ArbitraryInterface<TValue> $value
      *
-     * @return DictionaryArbitrary<TKey, TValue>
+     * @return ArbitraryInterface<array<TKey, TValue>>
      */
-    public static function dictOf(ArbitraryInterface $key, ArbitraryInterface $value, int $minSize = 0, int $maxSize = 100): DictionaryArbitrary
+    public static function dictOf(ArbitraryInterface $key, ArbitraryInterface $value, int $minSize = 0, int $maxSize = 100): ArbitraryInterface
     {
         return new DictionaryArbitrary($key, $value, $minSize, $maxSize);
     }
@@ -245,8 +274,10 @@ final class Gen
      * key set fixed.
      *
      * @param array<string, ArbitraryInterface> $shape Field name => arbitrary.
+     *
+     * @return ArbitraryInterface<array<string, mixed>>
      */
-    public static function record(array $shape): RecordArbitrary
+    public static function record(array $shape): ArbitraryInterface
     {
         return new RecordArbitrary($shape);
     }
@@ -265,9 +296,9 @@ final class Gen
      * @throws \InvalidArgumentException When no value is given, or when one of
      *         them is an {@see ArbitraryInterface}.
      *
-     * @return OneOfArbitrary<TValue>
+     * @return ArbitraryInterface<TValue>
      */
-    public static function oneOf(mixed ...$values): OneOfArbitrary
+    public static function oneOf(mixed ...$values): ArbitraryInterface
     {
         return new OneOfArbitrary(...$values);
     }
@@ -299,14 +330,14 @@ final class Gen
      *        redraws (as {@see filter()} does) instead of failing the run.
      * @param int $maxDepth How deep to follow class-typed parameters before refusing.
      *
-     * @return ClassArbitrary<TValue>
+     * @return ArbitraryInterface<TValue>
      */
     public static function forClass(
         string $class,
         array $overrides = [],
         bool $skipInvalid = false,
         int $maxDepth = 3,
-    ): ClassArbitrary {
+    ): ArbitraryInterface {
         return new ClassArbitrary($class, $overrides, $skipInvalid, $maxDepth);
     }
 
@@ -378,9 +409,9 @@ final class Gen
      * @param ArbitraryInterface<TValue> $arbitrary A choice generator: {@see oneOf()}, {@see elements()},
      *        {@see frequency()}, {@see commands()}, or any {@see \Rasuvaeff\PropertyTesting\Swarmable}.
      *
-     * @return SwarmArbitrary<TValue>
+     * @return ArbitraryInterface<TValue>
      */
-    public static function swarm(ArbitraryInterface $arbitrary): SwarmArbitrary
+    public static function swarm(ArbitraryInterface $arbitrary): ArbitraryInterface
     {
         return new SwarmArbitrary($arbitrary);
     }
@@ -397,9 +428,9 @@ final class Gen
      * @throws \InvalidArgumentException When the array is empty, or when one of
      *         its entries is an {@see ArbitraryInterface}.
      *
-     * @return OneOfArbitrary<TValue>
+     * @return ArbitraryInterface<TValue>
      */
-    public static function elements(array $values): OneOfArbitrary
+    public static function elements(array $values): ArbitraryInterface
     {
         return new OneOfArbitrary(...array_values($values));
     }
@@ -411,9 +442,9 @@ final class Gen
      *
      * @param TValue $value
      *
-     * @return ConstantArbitrary<TValue>
+     * @return ArbitraryInterface<TValue>
      */
-    public static function constant(mixed $value): ConstantArbitrary
+    public static function constant(mixed $value): ArbitraryInterface
     {
         return new ConstantArbitrary($value);
     }
@@ -422,13 +453,13 @@ final class Gen
      * One case of a PHP enum, in declaration order. Shrinks toward
      * earlier-declared cases, so declare simpler cases first.
      *
-     * @template TEnum
+     * @template TEnum of \UnitEnum
      *
      * @param class-string<TEnum> $enum
      *
-     * @return OneOfArbitrary<TEnum>
+     * @return ArbitraryInterface<TEnum>
      */
-    public static function enum(string $enum): OneOfArbitrary
+    public static function enum(string $enum): ArbitraryInterface
     {
         if (!enum_exists($enum)) {
             throw new \InvalidArgumentException(sprintf('"%s" is not an enum', $enum));
@@ -448,9 +479,9 @@ final class Gen
      * float bugs cluster — an opt-in complement to {@see float()}, which stays
      * inside its finite range. Shrinks toward earlier-listed specials.
      *
-     * @return OneOfArbitrary<float>
+     * @return ArbitraryInterface<float>
      */
-    public static function floatSpecial(): OneOfArbitrary
+    public static function floatSpecial(): ArbitraryInterface
     {
         // NAN/INF are produced via fdiv(): Psalm crashes on the NAN constant
         // (Psalm\Type::getFloat(NAN)), and the values are identical.
@@ -470,16 +501,30 @@ final class Gen
      * "range/interval" input without an {@see Assume::that()} discard. Built on
      * {@see flatMap()}, so both bounds shrink while `lo <= hi` always holds.
      *
-     * @return FlatMappedArbitrary<int, list<mixed>>
+     * @return ArbitraryInterface<array{int, int}>
      */
-    public static function intRange(int $min, int $max): FlatMappedArbitrary
+    public static function intRange(int $min, int $max): ArbitraryInterface
     {
-        return new FlatMappedArbitrary(
-            new IntArbitrary($min, $max),
-            static function (mixed $lo) use ($max): TupleArbitrary {
-                \assert(is_int($lo));
+        // The tuple carries the pair; the map only narrows `list<mixed>` to the
+        // shape callers destructure. It draws nothing, so the generated
+        // sequence is the same one the bare tuple produced.
+        return new MappedArbitrary(
+            new FlatMappedArbitrary(
+                new IntArbitrary($min, $max),
+                static function (mixed $lo) use ($max): TupleArbitrary {
+                    \assert(is_int($lo));
 
-                return new TupleArbitrary(new ConstantArbitrary($lo), new IntArbitrary($lo, $max));
+                    return new TupleArbitrary(new ConstantArbitrary($lo), new IntArbitrary($lo, $max));
+                },
+            ),
+            /** @return array{int, int} */
+            static function (mixed $pair): array {
+                \assert(is_array($pair));
+                $lo = $pair[0] ?? null;
+                $hi = $pair[1] ?? null;
+                \assert(is_int($lo) && is_int($hi));
+
+                return [$lo, $hi];
             },
         );
     }
@@ -522,8 +567,10 @@ final class Gen
 
     /**
      * Yields null or a value from $inner with roughly even odds.
+     *
+     * @return ArbitraryInterface<mixed>
      */
-    public static function nullable(ArbitraryInterface $inner): NullableArbitrary
+    public static function nullable(ArbitraryInterface $inner): ArbitraryInterface
     {
         return new NullableArbitrary($inner);
     }
@@ -539,9 +586,9 @@ final class Gen
      * @param ArbitraryInterface<TInner> $inner
      * @param Closure(TInner): TOutput $map
      *
-     * @return MappedArbitrary<TInner, TOutput>
+     * @return ArbitraryInterface<TOutput>
      */
-    public static function map(ArbitraryInterface $inner, Closure $map): MappedArbitrary
+    public static function map(ArbitraryInterface $inner, Closure $map): ArbitraryInterface
     {
         return new MappedArbitrary($inner, $map);
     }
@@ -559,9 +606,9 @@ final class Gen
      * @param ArbitraryInterface<TInner> $inner
      * @param Closure(TInner): ArbitraryInterface<TOutput> $flatMap
      *
-     * @return FlatMappedArbitrary<TInner, TOutput>
+     * @return ArbitraryInterface<TOutput>
      */
-    public static function flatMap(ArbitraryInterface $inner, Closure $flatMap): FlatMappedArbitrary
+    public static function flatMap(ArbitraryInterface $inner, Closure $flatMap): ArbitraryInterface
     {
         return new FlatMappedArbitrary($inner, $flatMap);
     }
@@ -574,9 +621,9 @@ final class Gen
      * @param ArbitraryInterface<TInner> $inner
      * @param Closure(TInner): bool $predicate
      *
-     * @return FilteredArbitrary<TInner>
+     * @return ArbitraryInterface<TInner>
      */
-    public static function filter(ArbitraryInterface $inner, Closure $predicate): FilteredArbitrary
+    public static function filter(ArbitraryInterface $inner, Closure $predicate): ArbitraryInterface
     {
         return new FilteredArbitrary($inner, $predicate);
     }
@@ -625,8 +672,10 @@ final class Gen
      * Fixed-arity tuple: one value per element arbitrary, in order. The property
      * receives the tuple as a single array argument; shrinking reduces each
      * position through its own arbitrary while keeping the arity fixed.
+     *
+     * @return ArbitraryInterface<list<mixed>>
      */
-    public static function tuple(ArbitraryInterface ...$elements): TupleArbitrary
+    public static function tuple(ArbitraryInterface ...$elements): ArbitraryInterface
     {
         return new TupleArbitrary(...$elements);
     }
@@ -640,9 +689,9 @@ final class Gen
      *
      * @param iterable<array{int, ArbitraryInterface<TValue>}> $pairs Weights must be >= 1.
      *
-     * @return FrequencyArbitrary<TValue>
+     * @return ArbitraryInterface<TValue>
      */
-    public static function frequency(iterable $pairs): FrequencyArbitrary
+    public static function frequency(iterable $pairs): ArbitraryInterface
     {
         /** @var FrequencyArbitrary<TValue> $arbitrary */
         $arbitrary = new FrequencyArbitrary($pairs);
@@ -652,8 +701,10 @@ final class Gen
 
     /**
      * Canonical RFC 4122 version 4 UUID strings. Does not shrink.
+     *
+     * @return ArbitraryInterface<non-empty-string>
      */
-    public static function uuid(): UuidArbitrary
+    public static function uuid(): ArbitraryInterface
     {
         return new UuidArbitrary();
     }
@@ -662,8 +713,10 @@ final class Gen
      * UTC {@see DateTimeImmutable} values with a timestamp in the inclusive range
      * `[$min, $max]` (defaults: 1970-01-01 .. 2100-01-01). Shrinks toward the
      * Unix epoch, clamped to the range.
+     *
+     * @return ArbitraryInterface<DateTimeImmutable>
      */
-    public static function datetime(?DateTimeImmutable $min = null, ?DateTimeImmutable $max = null): DateTimeArbitrary
+    public static function datetime(?DateTimeImmutable $min = null, ?DateTimeImmutable $max = null): ArbitraryInterface
     {
         return new DateTimeArbitrary($min, $max);
     }
@@ -672,9 +725,9 @@ final class Gen
      * IPv4 dotted-quad address strings (`"0.0.0.0"`..`"255.255.255.255"`). Each
      * octet shrinks toward 0 through its own integer tree.
      *
-     * @return MappedArbitrary<list<mixed>, string>
+     * @return ArbitraryInterface<string>
      */
-    public static function ipv4(): MappedArbitrary
+    public static function ipv4(): ArbitraryInterface
     {
         $octet = new IntArbitrary(0, 255);
 
@@ -701,9 +754,9 @@ final class Gen
      * bracketed URL form (`[::1]:8080`) are out of scope; `Gen::url()` emits
      * no IPv6 host either.
      *
-     * @return MappedArbitrary<list<mixed>, non-empty-string>
+     * @return ArbitraryInterface<non-empty-string>
      */
-    public static function ipv6(): MappedArbitrary
+    public static function ipv6(): ArbitraryInterface
     {
         $group = new IntArbitrary(0, 65535);
 
@@ -725,9 +778,9 @@ final class Gen
      * alphanumeric alphabet and a small TLD set. Shrinks toward the shortest
      * local part / label and the first TLD.
      *
-     * @return MappedArbitrary<list<mixed>, non-empty-string>
+     * @return ArbitraryInterface<non-empty-string>
      */
-    public static function email(): MappedArbitrary
+    public static function email(): ArbitraryInterface
     {
         return new MappedArbitrary(
             new TupleArbitrary(
@@ -749,9 +802,9 @@ final class Gen
      * HTTP/HTTPS URLs `scheme://host.tld[/segment...]` over a lowercase
      * alphanumeric alphabet. Shrinks toward `http://a.com` (no path).
      *
-     * @return MappedArbitrary<list<mixed>, non-empty-string>
+     * @return ArbitraryInterface<non-empty-string>
      */
-    public static function url(): MappedArbitrary
+    public static function url(): ArbitraryInterface
     {
         return new MappedArbitrary(
             new TupleArbitrary(
@@ -803,9 +856,9 @@ final class Gen
      * The JSON text of {@see json()} (`json_encode` of each generated value),
      * for exercising JSON parsers and decoders.
      *
-     * @return MappedArbitrary<mixed, string>
+     * @return ArbitraryInterface<string>
      */
-    public static function jsonString(int $maxDepth = 3): MappedArbitrary
+    public static function jsonString(int $maxDepth = 3): ArbitraryInterface
     {
         return new MappedArbitrary(
             self::json($maxDepth),
@@ -816,6 +869,12 @@ final class Gen
     /**
      * Strings matching a regular-expression subset. The pattern is compiled to
      * ordinary combinators, so matches shrink toward shorter/simpler strings.
+     *
+     * **Write the pattern without delimiters**: `[a-z]+`, not `/[a-z]+/`. A
+     * delimited pattern is refused rather than compiled — the delimiters are
+     * ordinary characters to this compiler, so it would have generated strings
+     * beginning and ending with `/` and matching nothing the caller meant.
+     * Escape the character (`\/`) to match it literally.
      *
      * Supported: literals, `.`, character classes `[...]` (ranges, negation,
      * `\d\w\s` and their negations, `[\b]` as a backspace), the escapes
@@ -860,20 +919,22 @@ final class Gen
      * holds in the running model, advancing the model — so the sequence is valid
      * by construction. Shrinking drops individual steps and simplifies each command
      * through its own tree. A sequence shorter than $minLength (no applicable
-     * command reached it) throws {@see GenerationExhausted}.
+     * command reached it) throws {@see GenerationExhaustedException}.
      *
      * Feed the generated {@see \Rasuvaeff\PropertyTesting\StateMachine\CommandSequence}
      * to {@see \Rasuvaeff\PropertyTesting\StateMachine\StateMachine::check()} in the
      * property body, passing a factory that builds a fresh system under test.
      *
      * @param list<ArbitraryInterface> $commandGenerators Each must produce a {@see \Rasuvaeff\PropertyTesting\StateMachine\Command}.
+     *
+     * @return ArbitraryInterface<\Rasuvaeff\PropertyTesting\StateMachine\CommandSequence>
      */
     public static function commands(
         mixed $initialModel,
         array $commandGenerators,
         int $minLength = 0,
         int $maxLength = 100,
-    ): CommandSequenceArbitrary {
+    ): ArbitraryInterface {
         return new CommandSequenceArbitrary($initialModel, $commandGenerators, $minLength, $maxLength);
     }
 

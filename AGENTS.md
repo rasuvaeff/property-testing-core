@@ -71,8 +71,12 @@ make release-check
 
 - **The engine is env-free.** `PropertyRunner` reads no environment; adapters
   resolve `PROPERTY_RUNS`/`PROPERTY_SEED`/`PROPERTY_VERBOSE`/`PROPERTY_DB`
-  into a `PropertyConfig` and a `Corpus`. The one opt-in helper here is
-  `FilesystemCorpus::fromEnv()` — it reads `PROPERTY_DB` only when called.
+  into a `PropertyConfig` and a `Corpus`. Core parses, never reads:
+  `EnvironmentOverrides::*` takes a raw `getenv()` value, `CorpusFactory::fromDsn()`
+  takes a `PROPERTY_DB` value. Nothing in `src/` calls `getenv()`, and no helper
+  should be added that does — `FilesystemCorpus::fromEnv()` was exactly that and
+  built a directory named after whatever it was handed, so a Redis DSN became a
+  directory called `redis:/host:port` (removed in 0.10).
 - **This package's own property-style tests cannot use `#[Property]`** — the
   attribute lives in the `-testo` adapter, which depends on this package
   (a circular dev dependency). They drive the engine directly through
@@ -107,9 +111,11 @@ make release-check
   off — bump it in any release that shifts the seed→values mapping (see
   golden rule 3). Values entries are exempt by design.
 - **`FilesystemCorpus` writes are atomic and serialised by a cross-process
-  flock.** `remember()`/`prune()` do read-modify-write behind a `.json.lock`
-  file; `write()` goes through a temp file + `rename()`. Do not remove the
-  lock or switch back to a bare `file_put_contents()`. The on-disk format is
+  flock.** `remember()`/`prune()` do read-modify-write behind the directory's
+  one `.corpus.lock` file (`FilesystemCorpus::LOCK_FILE`; the per-property
+  `<sha1>.json.lock` files of 0.5 and earlier are left alone); `write()` goes
+  through a temp file + `rename()`. Do not remove the lock or switch back to a
+  bare `file_put_contents()`. The on-disk format is
   byte-compatible with `rasuvaeff/property-testing` 2.8 — `FORMAT_VERSION`
   does not change just because classes moved.
 - `ValueCodec` sends EVERY float through a tagged envelope, as text —
@@ -119,7 +125,7 @@ make release-check
 - Psalm 6.16 crashes on the `NAN` constant in `src/` —
   `ValueCodec::decodeFloat()` computes it with `fdiv(0.0, 0.0)` for that
   reason.
-- `Gen::filter()` retries up to 100 times then throws `GenerationExhausted`;
+- `Gen::filter()` retries up to 100 times then throws `GenerationExhaustedException`;
   the runner catches it at the generation step and reports `GenerationFailed`.
   Sized collections (`uniqueArrayOf`, `dictOf`, `commands`) guarantee their
   minimum or throw — never return a too-small value.
@@ -160,6 +166,16 @@ make release-check
   updated — do not paper over it by widening the override. Keeping it in step
   is part of a core release, not an afterthought: the pin sat at `0.7.0` while
   both adapters had moved to `^0.8`.
+
+  **`docs/.api-workspace/composer.json` is the same class of pin and is part of
+  the same checklist.** It carries a caret constraint per adapter and a path
+  version for core. A caret on a `0.x` version pins a *minor*, so a stale
+  constraint does not drift forward: the weekly `docs.yml` rebuild keeps
+  re-reflecting the same old adapter release, and the "never more than a week
+  behind" comment in that workflow describes a mechanism the constraint has
+  switched off. It sat at `^0.6`/`^0.5` while the adapters were at 0.9/0.7.
+  Bump all three numbers in the release PR, then `make docs-api` and commit the
+  snapshot.
   Same recipe locally, from the monorepo root. **Both** adapters, not just
   `-testo` — they exercise different halves of the contract, and an engine
   change can break one while the other stays green:

@@ -23,7 +23,7 @@ final readonly class CounterExample
      * @param array<string, mixed> $shrunkArguments Minimised arguments that still fail.
      * @param int $shrinkSteps Number of accepted shrink steps between the original and the minimised arguments.
      * @param ?\Throwable $failure The assertion or exception reported by the failing run.
-     * @param int $skips Number of runs discarded via {@see Assume::that()} before the failure.
+     * @param int $discards Number of runs discarded via {@see Assume::that()} before the failure.
      * @param int $shrinkTrials Total number of shrink candidates tried (accepted and rejected).
      * @param string $path The accepted shrink steps that lead from the original arguments to the
      *        minimised ones, as `name:index` segments joined by `/`. Passed back through
@@ -35,6 +35,9 @@ final readonly class CounterExample
      * @param EdgeCases $edgeCases The boundary-value mode the failing run was generated under. The
      *        seed reproduces the failure only under the same mode (the modes share the roll but not
      *        the values it selects), so a seed replay — the corpus above all — carries it along.
+     * @param int $skips Number of runs the environment refused (a skipped hook or body) before the
+     *        failure. Counted apart from `$discards`: a discard says the generated input left the
+     *        property's domain, a skip says nothing about the input at all.
      */
     public function __construct(
         public int $seed,
@@ -43,10 +46,11 @@ final readonly class CounterExample
         public array $shrunkArguments,
         public int $shrinkSteps = 0,
         public ?\Throwable $failure = null,
-        public int $skips = 0,
+        public int $discards = 0,
         public int $shrinkTrials = 0,
         public string $path = '',
         public EdgeCases $edgeCases = EdgeCases::Mixin,
+        public int $skips = 0,
     ) {}
 
     /**
@@ -67,6 +71,7 @@ final readonly class CounterExample
             'failure' => $this->failure instanceof \Throwable
                 ? ['type' => $this->failure::class, 'message' => $this->failure->getMessage()]
                 : null,
+            'discards' => $this->discards,
             'skips' => $this->skips,
             'edgeCases' => $this->edgeCases->name,
         ];

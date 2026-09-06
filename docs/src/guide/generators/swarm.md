@@ -83,7 +83,7 @@ input, and the subset is a property of how that input was drawn.
 ## Swarming a command sequence
 
 `Gen::commands()` guarantees its `minLength` or throws
-[`GenerationExhausted`](/api/classes/GenerationExhausted). Restricting the
+[`GenerationExhaustedException`](/api/classes/GenerationExhaustedException). Restricting the
 commands makes it likelier that no applicable command reaches that minimum —
 `Gen::swarm(Gen::commands($model, $commands, minLength: 5))` can therefore
 fail generation where the unrestricted generator would not. That is the

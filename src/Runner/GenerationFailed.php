@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Runner;
 
-use Rasuvaeff\PropertyTesting\GenerationExhausted;
+use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 
 /**
  * A generator could not produce a valid value (e.g. a filter whose predicate
@@ -15,7 +15,7 @@ use Rasuvaeff\PropertyTesting\GenerationExhausted;
 final readonly class GenerationFailed implements PropertyResult
 {
     public function __construct(
-        public GenerationExhausted $exception,
+        public GenerationExhaustedException $exception,
     ) {}
 
     #[\Override]

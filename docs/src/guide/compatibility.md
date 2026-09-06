@@ -1,6 +1,6 @@
 ---
 title: Compatibility policy
-description: "What a version number promises in the property-testing family: the public API surface, seed stability, the corpus format, message texts, events, constructors, and the family's release order."
+description: "What a version number promises in the property-testing family: the public API surface, seed stability, the corpus format, message texts, events, constructors, accessors, and the family's release order."
 ---
 
 # Compatibility policy
@@ -79,7 +79,21 @@ defaults, at the end. Positional construction of
 [`RunStatistics`](/api/classes/Runner/RunStatistics) and the events keeps
 working across a minor.
 
-## 7. The family moves together
+## 7. How data is reached is frozen as it stands
+
+The accessor style is not uniform, and it stays that way. Results, events and
+most exceptions expose public `readonly` properties;
+[`PropertyViolationException`](/api/classes/PropertyViolationException),
+[`ExampleViolationException`](/api/classes/ExampleViolationException),
+[`PathViolationException`](/api/classes/PathViolationException) and
+[`RegressionViolationException`](/api/classes/RegressionViolationException)
+expose getters.
+
+Unifying them would break every consumer for a cosmetic gain. The split is at
+least stable: a type either has the field or the getter, and one never becomes
+the other.
+
+## 8. The family moves together
 
 The adapters (`rasuvaeff/property-testing-testo`,
 `rasuvaeff/property-testing-phpunit`) and `rasuvaeff/property-testing-names`
@@ -87,7 +101,7 @@ require the engine with a caret range on its current major. A major here is a
 major there, and the release order is fixed: engine first, then the adapters,
 then `-names`.
 
-## 8. PHP
+## 9. PHP
 
 `8.3 - 8.5`. Support for a newer PHP minor ships as a patch that widens the
 constraint. Dropping a PHP version is a major.

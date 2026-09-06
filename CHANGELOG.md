@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- The Compatibility policy gains the point the 1.0 review asked for and 0.10.0
+  left out: **how data is reached is frozen as it stands**. The accessor style
+  is not uniform — results, events and most exceptions expose public `readonly`
+  properties, while `PropertyViolationException`, `ExampleViolationException`,
+  `PathViolationException` and `RegressionViolationException` expose getters —
+  and it stays that way. Unifying it would break every consumer for a cosmetic
+  gain, and the split is at least stable: a type either has the field or the
+  getter, and one never becomes the other. Written down rather than left to be
+  rediscovered.
+
 ## 0.10.0 — 2026-09-06
 
 The contract freeze ahead of 1.0. Everything here is something that could not

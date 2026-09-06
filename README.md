@@ -653,8 +653,9 @@ without reading a diff.
 | 4 | **Message texts** | Human-readable exception and warning texts may be reworded in a minor, with the change named in the changelog. They are prose for a developer reading a red run, not a parsing surface. What *is* frozen is the machine-readable form: the keys of `CounterExample::toArray()`/`toJson()` and `DistributionReport::toArray()`, and the fields of every `@api` result and event. |
 | 5 | **Events** | A new event type, or a new field at the end of an existing one, is a minor. Removing an event or a field, or reordering the sequence emitted for an existing outcome, is a major. New `PropertyResult` implementations are a minor — consumers must carry a default branch. |
 | 6 | **Constructors** | Constructors of `@api` `final readonly` classes are append-only: new parameters carry defaults and go at the end, so positional construction keeps working. |
-| 7 | **The family** | The adapters (`-testo`, `-phpunit`) and `-names` require the engine with a caret range on the current major. A major here is a major there, and the engine is released first. |
-| 8 | **PHP** | `8.3 - 8.5`. Support for a newer PHP minor is a patch that widens the constraint; dropping a PHP version is a major. |
+| 7 | **How data is reached** | Frozen as it stands, and it is not uniform: results, events and most exceptions expose public `readonly` properties, while `PropertyViolationException`, `ExampleViolationException`, `PathViolationException` and `RegressionViolationException` expose getters. Both styles stay. Unifying them would break every consumer for a cosmetic gain, and the split is at least stable — a type either has the field or the getter, never one that later becomes the other. |
+| 8 | **The family** | The adapters (`-testo`, `-phpunit`) and `-names` require the engine with a caret range on the current major. A major here is a major there, and the engine is released first. |
+| 9 | **PHP** | `8.3 - 8.5`. Support for a newer PHP minor is a patch that widens the constraint; dropping a PHP version is a major. |
 
 Point 2 is the one that has already bitten: 0.6.0 changed the distribution of
 `Gen::string()` and bumped `SEQUENCE_EPOCH` to 2, and 0.5.0 changed the order

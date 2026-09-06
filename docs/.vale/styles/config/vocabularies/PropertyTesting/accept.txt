@@ -11,6 +11,7 @@
 # Deliberately NOT listed: shrink, shrinking, shrunk, arbitrary. The
 # dictionary already accepts them, and listing them would put them under
 # Vale.Terms for no gain.
+[Aa]ccessor(?:s)?
 [Aa]rbitraries
 [Aa]rity
 [Aa]utoloader
@@ -20,6 +21,7 @@
 [Dd]erandomiz(?:e|ed|es|ing)
 [Dd]ocblock(?:s)?
 [Ee]num
+[Gg]etter(?:s)?
 [Ii]njective
 [Ii]nts
 [Ii]nvokable

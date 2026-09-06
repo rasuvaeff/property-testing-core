@@ -24,7 +24,7 @@ the same thing by the same value.
 | `PROPERTY_EDGE_CASES` | `mixin` (default) or `none`; `none` turns off the numeric boundary bias without shifting the sequence a seed produces. See [Boundary bias](/guide/generators/boundary-bias). |
 | `PROPERTY_PATH` | Replays a recorded shrink descent instead of searching for it. Requires `PROPERTY_SEED` (or an attribute `seed`) — a path without the seed it was recorded on is refused rather than applied to a different run. See [Replaying a shrink path](/guide/controlling-runs/replaying-a-path). |
 | `PROPERTY_DB` | Enables the regression corpus: a directory path, or `redis://host[:port][/db][?prefix=key-prefix&timeout=seconds]` (`rediss://` for TLS) for a store shared between CI and developers. Any other scheme is an error. Unset means the feature is off and nothing is written. See [Regression corpus](/guide/regression-corpus). |
-| `PROPERTY_DB_PASSWORD` | The `AUTH` password for a Redis `PROPERTY_DB`. Kept out of the DSN on purpose: `PROPERTY_DB` is echoed in the diagnostics and lands in CI logs, and credentials in a DSN's userinfo are refused outright. |
+| `PROPERTY_DB_PASSWORD` | The `AUTH` password for a Redis `PROPERTY_DB`. Kept out of the DSN on purpose: `PROPERTY_DB` is echoed in the diagnostics and lands in CI logs, and credentials in the userinfo of a DSN are refused outright. |
 
 ## Unset, empty, and "off"
 

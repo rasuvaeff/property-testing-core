@@ -1,36 +1,6 @@
 # Changelog
 
-## Unreleased
-
-- The Compatibility policy gains the point the 1.0 review asked for and 0.10.0
-  left out: **how data is reached is frozen as it stands**. The accessor style
-  is not uniform — results, events and most exceptions expose public `readonly`
-  properties, while `PropertyViolationException`, `ExampleViolationException`,
-  `PathViolationException` and `RegressionViolationException` expose getters —
-  and it stays that way. Unifying it would break every consumer for a cosmetic
-  gain, and the split is at least stable: a type either has the field or the
-  getter, and one never becomes the other. Written down rather than left to be
-  rediscovered.
-- `ValueCodec` refuses an int-flagged array key whose text is not a decimal
-  integer the platform holds: a bare `(int)` cast saturated `9223372036854775808`
-  to `PHP_INT_MAX` and collapsed `abc` to `0`, replaying a key the property was
-  never called with. The lenient `007` → `7` reading stays (#119).
-- `ValueCodec` reads a finite float back only in the shape `var_export()` writes
-  it: `1e999` (cast to `INF`), `1.0E-400` (cast to `0.0`), `01.0`, `.5` and
-  whitespace-padded texts were accepted by `is_numeric()` and decoded to a
-  value the encoder could never have stored (#120).
-- `FrequencyArbitrary` reports weights whose sum passes `PHP_INT_MAX` as an
-  `InvalidArgumentException`; the float sum used to reach the typed property
-  and fail with a `TypeError` (#121).
-- `PropertyDefinition` rejects a repeated parameter name — the runner combined
-  names and draws by name, so one draw was dropped without a word and the
-  body received fewer arguments than declared (#122).
-- `DateTimeArbitrary` refuses a bound outside the microsecond range of a
-  64-bit integer (about 292 000 years either side of the epoch) with an
-  `InvalidArgumentException`; the overflowed product used to fail the `int`
-  return type with a `TypeError` (#123).
-
-## 0.10.0 — 2026-09-06
+## 0.10.0 — 2026-09-12
 
 The contract freeze ahead of 1.0. Everything here is something that could not
 be changed after `1.0.0` without a major, so it is changed now. The new
@@ -106,7 +76,38 @@ will promise from then on.
 - `docs/.api-workspace` follows the adapters again (`^0.9`/`^0.7`; it sat at
   `^0.6`/`^0.5`, and a caret on `0.x` pins a minor, so the weekly docs rebuild
   had been re-reflecting the same stale release). Keeping it in step is now in
-  the release checklist beside `build.yml`'s pin.
+  the release checklist beside `build.yml`'s pin. At release time `build.yml`
+  moves to `0.10.0` and the workspace to `^0.9`/`^0.8`, but the workspace's
+  path version stays `0.9.0` for now: the published Testo adapter still
+  constrains core to `^0.9` (its `^0.9 || ^0.10` bridge is merged, not
+  tagged), and a `0.10.0` path version would make the workspace uninstallable.
+- The Compatibility policy gains the point the 1.0 review asked for and the
+  freeze first left out: **how data is reached is frozen as it stands**. The
+  accessor style is not uniform — results, events and most exceptions expose
+  public `readonly` properties, while `PropertyViolationException`,
+  `ExampleViolationException`, `PathViolationException` and
+  `RegressionViolationException` expose getters — and it stays that way. Unifying it would break every consumer for a cosmetic
+  gain, and the split is at least stable: a type either has the field or the
+  getter, and one never becomes the other. Written down rather than left to be
+  rediscovered.
+- `ValueCodec` refuses an int-flagged array key whose text is not a decimal
+  integer the platform holds: a bare `(int)` cast saturated `9223372036854775808`
+  to `PHP_INT_MAX` and collapsed `abc` to `0`, replaying a key the property was
+  never called with. The lenient `007` → `7` reading stays (#119).
+- `ValueCodec` reads a finite float back only in the shape `var_export()` writes
+  it: `1e999` (cast to `INF`), `1.0E-400` (cast to `0.0`), `01.0`, `.5` and
+  whitespace-padded texts were accepted by `is_numeric()` and decoded to a
+  value the encoder could never have stored (#120).
+- `FrequencyArbitrary` reports weights whose sum passes `PHP_INT_MAX` as an
+  `InvalidArgumentException`; the float sum used to reach the typed property
+  and fail with a `TypeError` (#121).
+- `PropertyDefinition` rejects a repeated parameter name — the runner combined
+  names and draws by name, so one draw was dropped without a word and the
+  body received fewer arguments than declared (#122).
+- `DateTimeArbitrary` refuses a bound outside the microsecond range of a
+  64-bit integer (about 292 000 years either side of the epoch) with an
+  `InvalidArgumentException`; the overflowed product used to fail the `int`
+  return type with a `TypeError` (#123).
 
 ## 0.9.0 — 2026-09-05
 

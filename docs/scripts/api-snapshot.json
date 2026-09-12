@@ -767,7 +767,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 54
+                "startLine": 55
             }
         ],
         "constants": [],
@@ -1171,7 +1171,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 67
+                "startLine": 73
             },
             {
                 "name": "variantCount",
@@ -1188,7 +1188,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 86
+                "startLine": 92
             },
             {
                 "name": "withVariants",
@@ -1218,7 +1218,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 104
+                "startLine": 110
             }
         ],
         "constants": [],
@@ -6585,15 +6585,15 @@
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.7.1",
-        "rootReference": "263a85ad409c73c180ee267235538870d1deef3f",
+        "rootVersion": "v0.8.0",
+        "rootReference": "b21c4d63cbdf7b4113027e9471fc4bdf015cd10b",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PhpUnitTrialExecutor",
         "kind": "class",
         "isApi": false,
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Runs the property body and folds what it throws into the engine's\nTrialOutcome the way PHPUnit means it: AssumptionSkipped is a\ndiscard; a skipped or incomplete test (`markTestSkipped()`,\n`markTestIncomplete()`) is a skip — a discard the corpus phase does not prune\non — and remembered, so a property whose every run was skipped is a skipped\ntest, not a falsified one shrunk toward the smallest input that still skips;\nanything else thrown is the failure.",
-        "description": "",
+        "description": "A body that throws inside a property never reaches PHPUnit's own\n`expectException()` mechanism — this executor sees the throwable first —\nso \\Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck::throws() states the expectation here instead: an\nexpected class turns the throw into a pass, and a body that returns without\nthrowing becomes the failure.",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -6612,6 +6612,15 @@
                 "type": "Closure",
                 "description": "",
                 "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "expectedExceptionClass",
+                "type": "?string",
+                "description": "",
+                "default": "NULL",
                 "promoted": true,
                 "promotedVisibility": "private",
                 "readonly": true
@@ -6642,7 +6651,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 37
+                "startLine": 44
             },
             {
                 "name": "everyRunSkippedWith",
@@ -6657,18 +6666,18 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 68
+                "startLine": 91
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/263a85ad409c73c180ee267235538870d1deef3f/src/PhpUnit/PhpUnitTrialExecutor.php#L24",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/b21c4d63cbdf7b4113027e9471fc4bdf015cd10b/src/PhpUnit/PhpUnitTrialExecutor.php#L30",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.7.1",
-        "rootReference": "263a85ad409c73c180ee267235538870d1deef3f",
+        "rootVersion": "v0.8.0",
+        "rootReference": "b21c4d63cbdf7b4113027e9471fc4bdf015cd10b",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
         "kind": "class",
         "isApi": true,
@@ -6744,7 +6753,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 109
+                "startLine": 110
             },
             {
                 "name": "id",
@@ -6767,7 +6776,30 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 130
+                "startLine": 131
+            },
+            {
+                "name": "throws",
+                "static": false,
+                "params": [
+                    {
+                        "name": "exceptionClass",
+                        "type": "non-empty-string",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "The exception class every trial must throw. A trial that throws it\npasses; one that throws anything else, or returns normally, fails and\nshrinks like any other counterexample.",
+                "description": "This is the property-level replacement for `expectException()`, which\ncannot work inside a `check()` closure: the executor observes every\nthrow before PHPUnit's own expectation mechanism does. A skip\n(`markTestSkipped()`, `markTestIncomplete()`) and an\n`Assume::that()` discard are still what they are — the environment's\nverdict about the run, never a pass earned by throwing.",
+                "throws": [],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 156
             },
             {
                 "name": "runs",
@@ -6790,7 +6822,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 144
+                "startLine": 173
             },
             {
                 "name": "seed",
@@ -6813,7 +6845,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 155
+                "startLine": 184
             },
             {
                 "name": "maxShrinks",
@@ -6836,7 +6868,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 165
+                "startLine": 194
             },
             {
                 "name": "maxDiscards",
@@ -6859,7 +6891,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 175
+                "startLine": 204
             },
             {
                 "name": "timeoutMs",
@@ -6882,7 +6914,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 185
+                "startLine": 214
             },
             {
                 "name": "budgetMs",
@@ -6905,7 +6937,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 195
+                "startLine": 224
             },
             {
                 "name": "shrink",
@@ -6928,7 +6960,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 207
+                "startLine": 236
             },
             {
                 "name": "shrinkBudgetMs",
@@ -6951,7 +6983,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 221
+                "startLine": 250
             },
             {
                 "name": "phases",
@@ -6974,7 +7006,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 235
+                "startLine": 264
             },
             {
                 "name": "derandomize",
@@ -6997,7 +7029,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 247
+                "startLine": 276
             },
             {
                 "name": "edgeCases",
@@ -7020,7 +7052,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 263
+                "startLine": 292
             },
             {
                 "name": "path",
@@ -7043,7 +7075,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 276
+                "startLine": 305
             },
             {
                 "name": "auto",
@@ -7066,7 +7098,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 297
+                "startLine": 326
             },
             {
                 "name": "examples",
@@ -7089,7 +7121,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 310
+                "startLine": 339
             },
             {
                 "name": "listeners",
@@ -7112,7 +7144,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 320
+                "startLine": 349
             },
             {
                 "name": "output",
@@ -7142,7 +7174,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 336
+                "startLine": 365
             },
             {
                 "name": "clock",
@@ -7165,7 +7197,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 352
+                "startLine": 381
             },
             {
                 "name": "check",
@@ -7188,18 +7220,18 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 364
+                "startLine": 393
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/263a85ad409c73c180ee267235538870d1deef3f/src/PhpUnit/PropertyCheck.php#L45",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/b21c4d63cbdf7b4113027e9471fc4bdf015cd10b/src/PhpUnit/PropertyCheck.php#L45",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.7.1",
-        "rootReference": "263a85ad409c73c180ee267235538870d1deef3f",
+        "rootVersion": "v0.8.0",
+        "rootReference": "b21c4d63cbdf7b4113027e9471fc4bdf015cd10b",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyTesting",
         "kind": "trait",
         "isApi": true,
@@ -7218,13 +7250,13 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/263a85ad409c73c180ee267235538870d1deef3f/src/PhpUnit/PropertyTesting.php#L25",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/b21c4d63cbdf7b4113027e9471fc4bdf015cd10b/src/PhpUnit/PropertyTesting.php#L25",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.7.1",
-        "rootReference": "263a85ad409c73c180ee267235538870d1deef3f",
+        "rootVersion": "v0.8.0",
+        "rootReference": "b21c4d63cbdf7b4113027e9471fc4bdf015cd10b",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -7285,7 +7317,7 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/263a85ad409c73c180ee267235538870d1deef3f/src/PhpUnit/VerboseListener.php#L27",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/b21c4d63cbdf7b4113027e9471fc4bdf015cd10b/src/PhpUnit/VerboseListener.php#L27",
         "implementedBy": []
     },
     {
@@ -8262,7 +8294,7 @@
                     }
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\Runner\\Corpus",
-                "summary": "The corpus for a `PROPERTY_DB` value, the same instance for the same\nvalue within a process.",
+                "summary": "The corpus for a `PROPERTY_DB` value — the same instance for the same\nvalue *and password* within a process.",
                 "description": "",
                 "throws": [
                     {

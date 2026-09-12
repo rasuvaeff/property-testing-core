@@ -34,7 +34,8 @@ final readonly class DateTimeArbitrary implements ArbitraryInterface
      * @param ?DateTimeImmutable $min The earliest moment, fraction included; the Unix epoch when null.
      * @param ?DateTimeImmutable $max The latest moment, fraction included; 2100-01-01T00:00:00Z when null.
      *
-     * @throws \InvalidArgumentException When $min is after $max.
+     * @throws \InvalidArgumentException When $min is after $max, or a bound lies outside the
+     *         microsecond range of a 64-bit integer (about 292 000 years either side of the epoch).
      */
     public function __construct(?DateTimeImmutable $min = null, ?DateTimeImmutable $max = null)
     {
@@ -60,10 +61,27 @@ final readonly class DateTimeArbitrary implements ArbitraryInterface
      * Requires a 64-bit platform: a second-resolution timestamp scaled to
      * microseconds overflows a 32-bit integer within hours of the epoch. So
      * does the rest of the package, which sizes budgets in nanoseconds.
+     *
+     * Even 64 bits run out some 292 000 years from the epoch, well inside the
+     * range a DateTimeImmutable holds. Past that the product would turn into a
+     * float and fail the return type — a bound the range cannot express is a
+     * configuration error, reported as one.
+     *
+     * @throws \InvalidArgumentException When the moment lies outside the microsecond range of a 64-bit integer.
      */
     private function toMicroseconds(DateTimeImmutable $moment): int
     {
-        return $moment->getTimestamp() * self::MICROSECONDS + (int) $moment->format('u');
+        $seconds = $moment->getTimestamp();
+        $fraction = (int) $moment->format('u');
+
+        if ($seconds < intdiv(PHP_INT_MIN, self::MICROSECONDS) || $seconds > intdiv(PHP_INT_MAX - $fraction, self::MICROSECONDS)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Bound %s lies outside the microsecond range of a 64-bit integer',
+                $moment->format(DATE_ATOM),
+            ));
+        }
+
+        return $seconds * self::MICROSECONDS + $fraction;
     }
 
     private function fromMicroseconds(int $microseconds): DateTimeImmutable

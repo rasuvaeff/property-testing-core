@@ -11,6 +11,7 @@ use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
 use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
 use Testo\Test;
 
 #[Test]
@@ -211,5 +212,48 @@ final class DateTimeArbitraryTest
     public function rejectsInvertedRange(): void
     {
         new DateTimeArbitrary(new DateTimeImmutable('@2000'), new DateTimeImmutable('@1000'));
+    }
+
+    /**
+     * A DateTimeImmutable holds a 64-bit second timestamp, so a bound some
+     * 292 000 years out is a valid moment whose microsecond count is not a
+     * valid integer. The last representable microsecond on either side still
+     * constructs and generates; one past it is refused before the arithmetic
+     * can overflow into a float and a TypeError.
+     */
+    public function acceptsTheLastMicrosecondA64BitIntegerHolds(): void
+    {
+        $min = DateTimeImmutable::createFromFormat('U.u', '-9223372036854.000000');
+        $max = DateTimeImmutable::createFromFormat('U.u', '9223372036854.775807');
+        \assert($min instanceof DateTimeImmutable && $max instanceof DateTimeImmutable);
+
+        $arbitrary = new DateTimeArbitrary($min, $min);
+        Assert::same($arbitrary->generate(new Random(1))->value->format('U.u'), '-9223372036854.000000');
+
+        $arbitrary = new DateTimeArbitrary($max, $max);
+        Assert::same($arbitrary->generate(new Random(1))->value->format('U.u'), '9223372036854.775807');
+    }
+
+    #[DataProvider('unrepresentableBoundProvider')]
+    public function rejectsABoundPastTheMicrosecondRange(string $bound, bool $asMin): void
+    {
+        $moment = DateTimeImmutable::createFromFormat('U.u', $bound);
+        \assert($moment instanceof DateTimeImmutable);
+
+        try {
+            $asMin ? new DateTimeArbitrary($moment) : new DateTimeArbitrary(null, $moment);
+
+            Assert::fail('expected the bound to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('lies outside the microsecond range of a 64-bit integer');
+        }
+    }
+
+    public static function unrepresentableBoundProvider(): iterable
+    {
+        yield 'one second before the negative limit' => ['-9223372036855.000000', true];
+        yield 'one microsecond past the positive limit' => ['9223372036854.775808', false];
+        yield 'one second past the positive limit' => ['9223372036855.000000', false];
+        yield 'far past, as min' => ['9223372036855.000000', true];
     }
 }

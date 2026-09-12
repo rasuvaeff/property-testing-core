@@ -45,6 +45,17 @@ final readonly class PropertyDefinition
             }
         }
 
+        // The runner combines names and drawn values by name, so a repeat
+        // would keep one draw and drop the other without a word.
+        foreach (array_count_values($parameterNames) as $parameter => $occurrences) {
+            if ($occurrences > 1) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Parameter "%s" is declared more than once',
+                    $parameter,
+                ));
+            }
+        }
+
         foreach ($examples as $index => $example) {
             if (count($example) !== count($parameterNames)) {
                 throw new \InvalidArgumentException(sprintf(

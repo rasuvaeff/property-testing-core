@@ -33,6 +33,25 @@ final class PropertyDefinitionTest
         Assert::same($thrown->getMessage(), 'No generator for parameter "y"');
     }
 
+    public function throwsWhenAParameterIsDeclaredTwice(): void
+    {
+        $thrown = null;
+
+        try {
+            new PropertyDefinition(
+                id: 'Case::prop',
+                name: 'prop',
+                generators: ['x' => Gen::int(), 'y' => Gen::int()],
+                parameterNames: ['x', 'y', 'x'],
+            );
+        } catch (\InvalidArgumentException $exception) {
+            $thrown = $exception;
+        }
+
+        Assert::instanceOf($thrown, \InvalidArgumentException::class);
+        Assert::same($thrown->getMessage(), 'Parameter "x" is declared more than once');
+    }
+
     public function throwsWhenAnExampleTupleLengthMismatchesTheParameters(): void
     {
         $thrown = null;

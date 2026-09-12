@@ -92,6 +92,30 @@ final class ValueCodecTest
         yield 'exponent' => [1.0E+25];
     }
 
+    /**
+     * Every shape var_export() emits for a finite float is read back as the
+     * float it spells — the denormal range and a zero mantissa with an
+     * exponent included, since neither is an underflow.
+     */
+    #[DataProvider('finiteFloatTextProvider')]
+    public function decodesEveryFiniteFloatShapeTheEncoderWrites(string $text, float $value): void
+    {
+        Assert::same(ValueCodec::decode(['#' => 'f', 'v' => $text]), [$value]);
+    }
+
+    public static function finiteFloatTextProvider(): iterable
+    {
+        yield 'integral' => ['1.0', 1.0];
+        yield 'zero' => ['0.0', 0.0];
+        yield 'zero with an exponent' => ['0.0E+5', 0.0];
+        yield 'negative' => ['-2.5', -2.5];
+        yield 'positive exponent' => ['1.0E+25', 1.0E+25];
+        yield 'negative exponent' => ['2.5E-10', 2.5E-10];
+        yield 'smallest denormal' => ['5.0E-324', 5.0E-324];
+        yield 'float max' => [var_export(PHP_FLOAT_MAX, return: true), PHP_FLOAT_MAX];
+        yield 'seventeen digits' => ['0.10000000000000001', 0.1];
+    }
+
     public function keepsFullPrecisionAcrossJsonTransport(): void
     {
         Assert::same($this->transport(0.1 + 0.2), 0.1 + 0.2);
@@ -160,6 +184,52 @@ final class ValueCodecTest
 
         \assert($decoded !== null);
         Assert::same($decoded[0], [7 => 'v']);
+    }
+
+    #[DataProvider('integerKeyTextProvider')]
+    public function integerKeyFlagAcceptsEveryDecimalThePlatformHolds(string $text, int $key): void
+    {
+        $decoded = ValueCodec::decode(['#' => 'a', 'p' => [[$text, true, 'v']]]);
+
+        \assert($decoded !== null);
+        Assert::same($decoded[0], [$key => 'v']);
+    }
+
+    public static function integerKeyTextProvider(): iterable
+    {
+        yield 'zero' => ['0', 0];
+        yield 'negative zero' => ['-0', 0];
+        yield 'padded zero' => ['000', 0];
+        yield 'padded negative' => ['-007', -7];
+        yield 'int max' => [(string) PHP_INT_MAX, PHP_INT_MAX];
+        yield 'int min' => [(string) PHP_INT_MIN, PHP_INT_MIN];
+    }
+
+    /**
+     * A bare `(int)` cast never fails: a decimal past the platform range
+     * saturates and a non-numeric text collapses to zero. Both would replay a
+     * key the property was never called with, so the document is refused.
+     */
+    #[DataProvider('unrepresentableIntegerKeyProvider')]
+    public function integerKeyFlagRefusesATextTheCastWouldSilentlyChange(string $text): void
+    {
+        Assert::null(ValueCodec::decode(['#' => 'a', 'p' => [[$text, true, 'v']]]));
+    }
+
+    public static function unrepresentableIntegerKeyProvider(): iterable
+    {
+        yield 'past int max' => ['9223372036854775808'];
+        yield 'past int min' => ['-9223372036854775809'];
+        yield 'twenty digits' => ['99999999999999999999'];
+        yield 'letters' => ['abc'];
+        yield 'empty' => [''];
+        yield 'sign only' => ['-'];
+        yield 'plus sign' => ['+7'];
+        yield 'float' => ['7.0'];
+        yield 'exponent' => ['1e3'];
+        yield 'leading space' => [' 7'];
+        yield 'trailing newline' => ["7\n"];
+        yield 'hex' => ['0x1f'];
     }
 
     /**
@@ -236,6 +306,23 @@ final class ValueCodecTest
         // means only a token this codec wrote is ever accepted.
         yield 'float envelope with an upper-case token' => [['#' => 'f', 'v' => 'NAN']];
         yield 'float envelope with an upper-case infinity token' => [['#' => 'f', 'v' => 'INF']];
+        // The numeric branch follows the same rule: only the var_export() shape
+        // the encoder writes is read back, and only when the cast lands on the
+        // finite value the text spells.
+        yield 'float envelope that overflows to infinity' => [['#' => 'f', 'v' => '1.0E+999']];
+        yield 'float envelope that overflows negatively' => [['#' => 'f', 'v' => '-1.0E+999']];
+        yield 'float envelope that underflows to zero' => [['#' => 'f', 'v' => '1.0E-999']];
+        yield 'float envelope with a bare exponent' => [['#' => 'f', 'v' => '1e999']];
+        yield 'float envelope with an unsigned exponent' => [['#' => 'f', 'v' => '1.0E25']];
+        yield 'float envelope without a fraction' => [['#' => 'f', 'v' => '1']];
+        yield 'float envelope without an integer part' => [['#' => 'f', 'v' => '.5']];
+        yield 'float envelope without fraction digits' => [['#' => 'f', 'v' => '5.']];
+        yield 'float envelope with a leading zero' => [['#' => 'f', 'v' => '01.0']];
+        yield 'float envelope with leading whitespace' => [['#' => 'f', 'v' => ' 1.5']];
+        yield 'float envelope with trailing whitespace' => [['#' => 'f', 'v' => '1.5 ']];
+        yield 'float envelope with a trailing newline' => [['#' => 'f', 'v' => "1.5\n"]];
+        yield 'float envelope with a plus sign' => [['#' => 'f', 'v' => '+1.5']];
+        yield 'float envelope with a hex literal' => [['#' => 'f', 'v' => '0x1.8p1']];
         yield 'bytes envelope without a value' => [['#' => 'b']];
         yield 'bytes envelope with non-base64' => [['#' => 'b', 'v' => '!!!not base64!!!']];
         yield 'enum envelope without a class' => [['#' => 'e', 'n' => 'High']];

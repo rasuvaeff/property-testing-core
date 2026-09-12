@@ -222,7 +222,36 @@ final readonly class ValueCodec
             return null;
         }
 
-        return [$pair[1] ? (int) $key[0] : $key[0], $item[0]];
+        if (!$pair[1]) {
+            return [$key[0], $item[0]];
+        }
+
+        $integer = self::decodeIntegerKey($key[0]);
+
+        return $integer === null ? null : [$integer, $item[0]];
+    }
+
+    /**
+     * The integer key an int-flagged key text stands for, or null when the text
+     * is not a decimal integer the platform can hold.
+     *
+     * The flag wins over the literal text — a hand-edited `007` still decodes to
+     * `7` — but a bare `(int)` cast never fails: a decimal past the 64-bit range
+     * saturates to `PHP_INT_MAX`/`PHP_INT_MIN`, and `abc` collapses to `0`.
+     * Either would replay a key the property was never called with, so the
+     * digits must read back unchanged after the cast.
+     */
+    private static function decodeIntegerKey(string $text): ?int
+    {
+        $integer = (int) $text;
+
+        // Leading zeros are the one lenience; a signed zero has one spelling.
+        $canonical = preg_replace('/^(-?)0+(?=\d)/', '$1', $text);
+        if ($canonical === '-0') {
+            $canonical = '0';
+        }
+
+        return (string) $integer === $canonical ? $integer : null;
     }
 
     /**
@@ -242,10 +271,36 @@ final readonly class ValueCodec
         return match (true) {
             $text === self::FLOAT_INF => [INF],
             $text === self::FLOAT_NEGATIVE_INF => [-INF],
-            // No token above is numeric, so a numeric payload is unambiguous.
-            $text !== null && is_numeric($text) => [(float) $text],
+            $text !== null => self::decodeFiniteFloat($text),
             default => null,
         };
+    }
+
+    /**
+     * Only the shape {@see encodeFloat()} writes is read back: `var_export()`
+     * always emits a digit on both sides of the point and a signed exponent
+     * (`1.0`, `-0.0`, `1.0E+25`, `5.0E-324`), never whitespace, a leading zero
+     * or a bare `1e999`. A looser `is_numeric()` check would cast `1e999` to
+     * INF and `1.0E-400` to 0.0 — values the encoder could not have stored —
+     * and replay a different input.
+     *
+     * @return ?array{0: float}
+     */
+    private static function decodeFiniteFloat(string $text): ?array
+    {
+        if (preg_match('/^(-?(?:0|[1-9]\d*)\.\d+)(?:E[+-]\d+)?\z/', $text, $match) !== 1) {
+            return null;
+        }
+
+        $value = (float) $text;
+
+        // Overflow lands on INF; underflow lands on zero while the mantissa
+        // still carries a non-zero digit. Both are refused, not rounded.
+        if (!is_finite($value) || ($value === 0.0 && preg_match('/[1-9]/', $match[1]) === 1)) {
+            return null;
+        }
+
+        return [$value];
     }
 
     /**

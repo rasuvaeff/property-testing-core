@@ -177,6 +177,26 @@ final class FrequencyArbitraryTest
         new FrequencyArbitrary([[1.5, new IntArbitrary()]]);
     }
 
+    /**
+     * Past PHP_INT_MAX the running sum becomes a float and the typed property
+     * would fail with a TypeError; the constructor must report the
+     * configuration error itself, and only when the sum really overflows.
+     */
+    public function rejectsWeightsWhoseSumOverflowsTheInteger(): void
+    {
+        $exact = new FrequencyArbitrary([[PHP_INT_MAX - 1, new IntArbitrary()], [1, new IntArbitrary()]]);
+
+        Assert::same($exact->variantCount(), 2);
+
+        try {
+            new FrequencyArbitrary([[PHP_INT_MAX, new IntArbitrary()], [1, new IntArbitrary()]]);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Frequency weights must not sum beyond PHP_INT_MAX');
+        }
+    }
+
     public function variantCountIsTheNumberOfWeightedBranches(): void
     {
         $arbitrary = new FrequencyArbitrary([

@@ -50,6 +50,12 @@ final readonly class FrequencyArbitrary implements Swarmable
             if (!$arbitrary instanceof ArbitraryInterface) {
                 throw new \InvalidArgumentException('Frequency pair must contain an ArbitraryInterface');
             }
+            // Past the integer range the sum turns into a float and the typed
+            // property below fails with a TypeError; a configuration error is
+            // reported as one.
+            if ($weight > PHP_INT_MAX - $total) {
+                throw new \InvalidArgumentException('Frequency weights must not sum beyond PHP_INT_MAX');
+            }
 
             $total += $weight;
             $normalized[] = [$weight, $arbitrary];

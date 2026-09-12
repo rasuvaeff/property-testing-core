@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `docs/.api-workspace` moves its path version for core to `0.10.0` and the
+  Testo adapter constraint to `^0.10`, now that the adapter's `^0.9 || ^0.10`
+  bridge is released (0.10.0). The 0.10.0 release notes explain why the path
+  version had to stay at `0.9.0` for a day.
+
 ## 0.10.0 — 2026-09-12
 
 The contract freeze ahead of 1.0. Everything here is something that could not

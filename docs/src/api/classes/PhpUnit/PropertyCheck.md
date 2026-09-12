@@ -9,7 +9,7 @@ description: "Fluent builder mapping the engine's structured PropertyResult onto
 
 `Rasuvaeff\PropertyTesting\PhpUnit\PropertyCheck`
 
-**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/263a85ad409c73c180ee267235538870d1deef3f/src/PhpUnit/PropertyCheck.php#L45) — **Version:** v0.7.1
+**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/b21c4d63cbdf7b4113027e9471fc4bdf015cd10b/src/PhpUnit/PropertyCheck.php#L45) — **Version:** v0.8.0
 
 Fluent builder mapping the engine's structured PropertyResult onto PHPUnit:
 a pass counts one assertion, every failing outcome surfaces as one
@@ -74,6 +74,23 @@ to replay. Pest's `it()`/`test()` bodies are the common case.
 The name given here is used verbatim, and it is also the property's
 display name, so one string identifies it in the corpus, in the events
 and in the printed output.
+
+### throws()
+
+```php
+throws(non-empty-string $exceptionClass): PhpUnit\PropertyCheck
+```
+
+The exception class every trial must throw. A trial that throws it
+passes; one that throws anything else, or returns normally, fails and
+shrinks like any other counterexample.
+
+This is the property-level replacement for `expectException()`, which
+cannot work inside a `check()` closure: the executor observes every
+throw before PHPUnit's own expectation mechanism does. A skip
+(`markTestSkipped()`, `markTestIncomplete()`) and an
+`Assume::that()` discard are still what they are — the environment's
+verdict about the run, never a pass earned by throwing.
 
 ### runs()
 

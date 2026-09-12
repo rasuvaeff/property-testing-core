@@ -33,8 +33,8 @@ $corpus = CorpusFactory::fromDsn('redis://redis:6379', $password);
 static fromDsn(string $dsn, ?string $password = NULL): Runner\Corpus
 ```
 
-The corpus for a `PROPERTY_DB` value, the same instance for the same
-value within a process.
+The corpus for a `PROPERTY_DB` value — the same instance for the same
+value *and password* within a process.
 
 - `$dsn` — A directory path, or a `redis://` / `rediss://` DSN.
 - `$password` — The `AUTH` password for a Redis DSN, read from the environment by the adapter (`PROPERTY_DB_PASSWORD`). Ignored for a directory; empty means none.

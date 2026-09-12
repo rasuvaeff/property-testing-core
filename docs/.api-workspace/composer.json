@@ -5,7 +5,7 @@
     "require": {
         "php": "8.3 - 8.5",
         "rasuvaeff/property-testing-testo": "^0.9",
-        "rasuvaeff/property-testing-phpunit": "^0.7",
+        "rasuvaeff/property-testing-phpunit": "^0.8",
         "phpdocumentor/reflection-docblock": "^5.6"
     },
     "repositories": [

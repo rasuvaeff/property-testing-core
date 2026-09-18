@@ -170,6 +170,23 @@ final class DistributionReportTest
     }
 
     /**
+     * The keys are the machine-readable contract the compatibility policy
+     * freezes (point 4): a key may be added at the end, never renamed or
+     * removed.
+     */
+    public function toArrayKeysAreTheFrozenContract(): void
+    {
+        $report = DistributionReport::of(
+            new RunStatistics(attempts: 1, discards: 0, checks: 1, classifications: ['hit' => 1]),
+            coverageAssessed: true,
+        );
+        $data = $report->toArray();
+
+        Assert::same(array_keys($data), ['attempts', 'discards', 'discardPercent', 'skips', 'checks', 'coverageAssessed', 'labels']);
+        Assert::same(array_keys($data['labels'][0]), ['label', 'count', 'percent', 'required', 'met']);
+    }
+
+    /**
      * Whatever the counters, a share is a percentage: never negative, never
      * above a hundred, and never a NAN that would poison a telemetry pipeline
      * or a comparison downstream.

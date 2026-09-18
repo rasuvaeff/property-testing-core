@@ -243,8 +243,39 @@ final class GenForParametersTest
 
             Assert::fail('expected an InvalidArgumentException');
         } catch (\InvalidArgumentException $e) {
-            Assert::string($e->getMessage())->contains('parameter $anything');
-            Assert::string($e->getMessage())->contains('no usable type');
+            Assert::string($e->getMessage())->contains('parameter $anything is untyped, which this cannot read');
+        }
+    }
+
+    public function rejectsANativeUnionNamingIt(): void
+    {
+        try {
+            Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'withNativeUnion'));
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('parameter $either is typed string|int, which this cannot read');
+        }
+    }
+
+    public function namesAnUnknownClassInsideADocblockType(): void
+    {
+        try {
+            Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'withUnknownClass'));
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('documented as list<Nope>, which this cannot read (unknown class "Nope")');
+        }
+    }
+
+    public function aPsalmParamWinsOverTheParamBesideIt(): void
+    {
+        $generators = Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'psalmParam'));
+        $random = new Random(3);
+
+        for ($i = 0; $i < 50; ++$i) {
+            Assert::true($generators['x']->generate($random)->value >= 1);
         }
     }
 

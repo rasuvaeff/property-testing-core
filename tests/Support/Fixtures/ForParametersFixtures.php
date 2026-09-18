@@ -37,6 +37,19 @@ final class PropertyMethods
 
     public function untyped($anything): void {}
 
+    public function withNativeUnion(int|string $either): void {}
+
+    /**
+     * @param int $x The IDE-facing type; psalm narrows it below.
+     * @psalm-param positive-int $x
+     */
+    public function psalmParam(int $x): void {}
+
+    /**
+     * @param list<Nope> $items
+     */
+    public function withUnknownClass(array $items): void {}
+
     public function variadic(int ...$numbers): void {}
 
     public function withoutParameters(): void {}

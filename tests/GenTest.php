@@ -31,6 +31,7 @@ use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Internal\LeafFallbackArbitrary;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\PushCommand;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Empty_;
 use Rasuvaeff\PropertyTesting\Tests\Support\Priority;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
@@ -77,6 +78,19 @@ final class GenTest
         Assert::instanceOf(Gen::string(), StringArbitrary::class);
         Assert::instanceOf(Gen::stringAscii(), StringArbitrary::class);
         Assert::instanceOf(Gen::stringOf(2, 8), StringArbitrary::class);
+    }
+
+    public function stringOfDefaultsToTheSameBoundsAsStringFromAndBytes(): void
+    {
+        $random = new Random(7);
+
+        for ($i = 0; $i < 30; ++$i) {
+            $length = mb_strlen(Gen::stringOf()->generate($random)->value);
+
+            Assert::true($length >= 0 && $length <= 100);
+        }
+
+        Assert::same(Gen::stringOf()->generate(new Random(5))->value, Gen::stringOf(0, 100)->generate(new Random(5))->value);
     }
 
     public function arrayFactoriesReturnArrayArbitrary(): void
@@ -416,6 +430,17 @@ final class GenTest
         Gen::enum(\stdClass::class);
     }
 
+    public function enumRefusesAnEnumWithoutCasesByName(): void
+    {
+        try {
+            Gen::enum(Empty_::class);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Enum ' . Empty_::class . ' has no cases to pick from');
+        }
+    }
+
     public function floatSpecialCoversTheSpecialValues(): void
     {
         $arbitrary = Gen::floatSpecial();
@@ -661,6 +686,17 @@ final class GenTest
 
         Assert::instanceOf($arbitrary, OneOfArbitrary::class);
         Assert::true(in_array($arbitrary->generate(new Random(1))->value, ['a', 'b', 'c'], strict: true));
+    }
+
+    public function elementsRefusesAnEmptyArrayNamingTheArgument(): void
+    {
+        try {
+            Gen::elements([]);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Gen::elements() requires at least one value in $values');
+        }
     }
 
     public function elementsAcceptsAStringKeyedArray(): void

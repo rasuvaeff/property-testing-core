@@ -116,6 +116,9 @@ final class TypeGenerators
     {
         return match ($type) {
             'int' => Gen::int(),
+            // Not the whole double range: ±1e308 turns every arithmetic
+            // property into an INF/NAN test. Documented as the meaning of a
+            // bare `float`; narrow it with an override or a docblock.
             'float' => Gen::floatBetween(-1_000_000.0, 1_000_000.0),
             'string' => Gen::string(),
             'bool' => Gen::bool(),

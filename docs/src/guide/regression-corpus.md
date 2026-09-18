@@ -114,11 +114,17 @@ diagnostics and lands in CI logs, so the password goes in
 [Environment overrides](/guide/controlling-runs/env-overrides)).
 
 The engine writes the byte-identical document to either store, so moving a
-corpus between the two is a copy. Writes are optimistic rather than locked: a
-write that loses a race re-reads and retries a handful of times, then gives up
-quietly. A corpus is memory, not a ledger — losing one entry to a storm of
-concurrent writers costs a replay, while throwing would fail a run that had
+corpus between the two is a copy. Redis writes are optimistic rather than
+locked: a write that loses a race re-reads and retries a handful of times, then
+gives up quietly. A corpus is memory, not a ledger — losing one entry to a storm
+of concurrent writers costs a replay, while throwing would fail a run that had
 already passed.
+
+Neither store can fail the property, but the filesystem one no longer fails in
+silence: a write it cannot complete — the lock file replaced by a symlink, the
+temp path occupied, a full disk, a failed rename, a document held by another
+format version — throws, and the runner reports it as a `CorpusFailed` event.
+`CorpusStored` is emitted only once the document is on disk.
 
 [`RedisCorpus`](/api/classes/Runner/RedisCorpus) is also usable directly, with
 your own client behind its `CorpusClient` seam;

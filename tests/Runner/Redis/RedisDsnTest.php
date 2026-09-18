@@ -190,6 +190,32 @@ final class RedisDsnTest
         yield 'user and password' => ['redis://user:s3cret@redis'];
         yield 'password only' => ['redis://:s3cret@redis'];
         yield 'user only' => ['redis://user@redis'];
+        // parse_url() returns false for these two: a check that trusts its
+        // answer skips the userinfo and quotes the password in the "not a
+        // usable DSN" message (#128).
+        yield 'user and password without a host' => ['redis://user:s3cret@'];
+        yield 'user and password with a port only' => ['redis://user:s3cret@:6379'];
+        yield 'password with a database only' => ['redis://:s3cret@/2'];
+    }
+
+    /**
+     * An `@` past the authority is not userinfo: a prefix may contain one,
+     * and refusing it as credentials would reject a legitimate key prefix.
+     */
+    public function anAtSignInTheQueryIsNotUserinfo(): void
+    {
+        Assert::same(RedisDsn::parse('redis://redis?prefix=team@suite:')->prefix, 'team@suite:');
+    }
+
+    public function aFragmentIsRefusedRatherThanDropped(): void
+    {
+        try {
+            RedisDsn::parse('redis://redis/1#frag');
+
+            Assert::fail('expected the fragment to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'PROPERTY_DB="redis://redis/1#frag" has a #fragment, which a Redis DSN does not carry');
+        }
     }
 
     #[DataProvider('malformedDsns')]

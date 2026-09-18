@@ -13,7 +13,7 @@ description: "Thrown (as the failure of a property) when discarded inputs — or
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Thrown (as the failure of a property) when discarded inputs — or runs the
 environment refused — exceed their budget before the requested number of

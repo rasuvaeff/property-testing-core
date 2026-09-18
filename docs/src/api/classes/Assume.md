@@ -19,10 +19,10 @@ it to skip combinations of generated values that are out of the
 property's domain (e.g. "cap must be >= baseSeconds") instead of rejecting
 them with a narrow [`Gen`](/api/classes/Gen)::filter(), which is slower.
 
-Discards do not consume [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$runs. The runner warns
-when more than 90% of attempts are discarded and fails with
-[`GaveUpException`](/api/classes/GaveUpException) when [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$maxDiscards is
-exceeded.
+Discards do not consume [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$runs. The runner fails
+with [`GaveUpException`](/api/classes/GaveUpException) when [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$maxDiscards
+is exceeded; it never prints, so a warning about a high discard share (the
+adapters warn above 90%) is the adapter's, not the engine's.
 
 ## Methods
 

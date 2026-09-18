@@ -9,11 +9,11 @@ description: "Thrown by StateMachine::check() when a command's Command::postCond
 
 `Rasuvaeff\PropertyTesting\StateMachine\PostconditionViolationException`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/StateMachine/PostconditionViolationException.php#L19) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/StateMachine/PostconditionViolationException.php#L20) — **Version:** working tree
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Thrown by StateMachine::check() when a command's
 Command::postCondition() returns false.

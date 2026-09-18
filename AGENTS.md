@@ -115,7 +115,11 @@ make release-check
   one `.corpus.lock` file (`FilesystemCorpus::LOCK_FILE`; the per-property
   `<sha1>.json.lock` files of 0.5 and earlier are left alone); `write()` goes
   through a temp file + `rename()`. Do not remove the lock or switch back to a
-  bare `file_put_contents()`. The on-disk format is
+  bare `file_put_contents()`. **A write that cannot complete throws** (lock
+  path is a symlink, temp path occupied, short write, failed rename, foreign
+  format version) — the runner turns it into `CorpusFailed`, and `CorpusStored`
+  means the document is on disk. Do not reintroduce a quiet `return` in those
+  branches: that was #136. The on-disk format is
   byte-compatible with `rasuvaeff/property-testing` 2.8 — `FORMAT_VERSION`
   does not change just because classes moved.
 - `ValueCodec` sends EVERY float through a tagged envelope, as text —

@@ -86,7 +86,8 @@ $definition = new PropertyDefinition(
         seed: null,         // null -> random, reported on failure
         maxShrinks: null,   // cap on ACCEPTED shrink steps; 0 = no shrinking
         maxDiscards: null,  // caps BOTH budgets when set; null -> runs * 10 discards, runs skips
-        timeoutMs: null,    // per-run wall-clock deadline, measured when the run RETURNS (does not interrupt a hung body; shrink trials untimed)
+        timeoutMs: null,    // per-run wall-clock deadline, measured when the run RETURNS (does not interrupt a hung body;
+                            // shrink trials, discarded runs and skipped runs are NOT timed)
         budgetMs: null,     // whole-random-phase wall-clock budget
         shrink: null,           // ShrinkMode::Off|Bounded|Full; null -> Full
         shrinkBudgetMs: null,   // wall-clock budget of the descent; implies ShrinkMode::Bounded
@@ -111,7 +112,9 @@ $definition = new PropertyDefinition(
 //   ShrinkMode::Off; Phase::Corpus gates REPLAY only
 //   (a fresh falsification is still stored) and ANDs with replayRegressions;
 //   no Random -> attempts: 0, checks: 0, no coverage assessment, and Passed
-//   unless an enabled example or corpus replay failed first.
+//   unless an enabled example or corpus replay failed first. A corpus SEED entry
+//   still replays a whole random phase (>= runsBeforeFailure + 1 attempts) — that
+//   replay is the entry; its attempts are not counted in the zero statistics.
 // A shrink budget trades determinism for a bounded descent: same seed, different
 // machine speed, possibly different minimal counterexample.
 
@@ -132,8 +135,8 @@ deterministic deadline/budget tests; `MonotonicClock` is the default.
 
 Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
 
-- `Passed` — carries `RunStatistics` ($attempts, $discards, $skips, $checks,
-  $classifications per label).
+- `Passed` — carries `RunStatistics` ($attempts, $discards, $checks,
+  $classifications per label, $requirements = the cover() thresholds per label, $skips).
 - `Falsified` — carries `PropertyViolationException`;
   `counterExample(): CounterExample` (`seed`, `runsBeforeFailure`,
   `originalArguments`, `shrunkArguments`, `shrinkSteps`, `shrinkTrials`,
@@ -164,6 +167,23 @@ implementation. `discarded()` = the input left the domain (a recorded
 regression that discards on replay is pruned); `skipped()` = the environment
 refused to run the body (the entry is kept). Both mean "checked nothing", but
 they are counted apart on `RunStatistics` and spend separate budgets.
+`Assume::that()` throws `AssumptionSkipped` (`@api`, final): an executor catches it
+and returns `discarded()`.
+
+Marker: every exception the engine reports implements `PropertyTestingException`
+(empty interface extending \Throwable): PropertyViolationException,
+ExampleViolationException, RegressionViolationException, PathViolationException,
+CoverageViolationException, DeadlineExceededException, TimeBudgetExceededException,
+GaveUpException, GenerationExhaustedException, StateMachine\PostconditionViolationException.
+Each still extends \RuntimeException. `AssumptionSkipped` is NOT one (a discard is
+control flow, not a failure — `catch (PropertyTestingException)` in a body must not
+swallow it).
+
+Frozen keys (compatibility policy point 4) — add at the end only, never rename:
+`CounterExample::toArray()`: seed, runsBeforeFailure, originalArguments, shrunkArguments,
+shrinkSteps, shrinkTrials, path, failure ({type, message} | null), discards, skips, edgeCases.
+`DistributionReport::toArray()`: attempts, discards, discardPercent, skips, checks,
+coverageAssessed, labels (each: label, count, percent, required, met).
 
 ### Corpus (`Runner\` namespace)
 
@@ -175,7 +195,10 @@ interface Corpus {
     public function prune(string $id, CorpusEntry $entry): void;
 }
 
-new FilesystemCorpus('/path/to/dir');   // 2.8-compatible JSON storage
+new FilesystemCorpus('/path/to/dir');   // 2.8-compatible JSON storage; '' throws InvalidArgumentException.
+// A write it cannot complete (lock file is a symlink, temp path occupied, full disk, failed
+// rename, document of a foreign FORMAT_VERSION) THROWS RuntimeException -> the runner emits
+// CorpusFailed and drops the corpus for the run; CorpusStored only after a confirmed write.
 new RedisCorpus(new PhpRedisCorpusClient($redis));  // same document, shared between CI and developers
 new RedisCorpus(new PredisCorpusClient($client), prefix: 'suite:', maxValues: 8, maxSeeds: 2);
 // CorpusClient is the seam (get + compareAndSet); RedisCorpus writes optimistically and gives up
@@ -185,7 +208,8 @@ CorpusFactory::fromDsn(EnvironmentOverrides::string(getenv('PROPERTY_DB')) ?? '/
 CorpusFactory::fromDsn('redis://redis:6379/2?prefix=suite-a:'); // RedisCorpus; rediss:// = TLS;
                                         // path = database index, prefix = query; other schemes throw
 CorpusFactory::fromDsn($dsn, getenv('PROPERTY_DB_PASSWORD') ?: null); // AUTH password, never in the DSN
-RedisDsn::parse($dsn, $password);       // host, port, database, prefix, tls, timeout (default 5.0), password; credentials in userinfo refused
+RedisDsn::parse($dsn, $password);       // host, port, database, prefix, tls, timeout (default 5.0), password; credentials in
+                                        // userinfo refused (checked on the raw DSN, the message never echoes it); a #fragment refused
 new LazyPhpRedisCorpusClient(RedisDsn::parse($dsn)); // ext-redis client that connects on first use
 EnvironmentOverrides::runs(getenv('PROPERTY_RUNS'));   // ?positive-int; PHASES -> ?list<Phase>; EDGE_CASES -> ?EdgeCases;
                                         // seed -> ?int (range-checked); string -> ?non-empty-string;
@@ -203,7 +227,9 @@ phase and are dropped when `SEQUENCE_EPOCH` changes.
 `RunDiscarded(arguments, draws, skipped)` (`skipped` = the environment refused
 the run, not an Assume discard), `RunFailed(failure, elapsedNs)`, `ShrinkTried(parameter,
 candidate, accepted)`, `ShrinkAccepted(step, parameter, before, after)`,
-`CorpusReplayed/CorpusPruned/CorpusStored/CorpusFailed` (the corpus threw; property continues without it),
+`CorpusReplayed/CorpusPruned/CorpusStored/CorpusFailed` (the corpus threw — a server down, a
+filesystem write that could not complete; property continues without it; `CorpusStored` only
+after a confirmed write),
 `PropertyFinished(propertyId, ?failure, ?distribution)`.
 
 ```php
@@ -220,42 +246,47 @@ Gen::int()                              // <int>, PHP_INT_MIN..PHP_INT_MAX, shri
 Gen::intBetween(int $min, int $max)     // <int>, [$min, $max]
 Gen::intPositive()                      // <int>, 1..PHP_INT_MAX
 Gen::float()                            // <float>, [0.0, 1.0)
-Gen::floatBetween(float $min, float $max)  // <float>, [$min, $max) -- $max never drawn
+Gen::floatBetween(float $min, float $max)  // <float>, [$min, $max) -- $max never drawn; ($x, $x) = the one value $x;
+                                        // shrinks to the in-range point nearest 0.0 (never $max: at or below zero,
+                                        // the largest float under $max)
 Gen::bool()                             // <bool>
 Gen::string()                           // <string>, Unicode, len 0..100; per char: 50% ASCII printable, 10% troublemakers
                                         // (quotes, backslash, combining, ZWJ, RTL override, BOM, astral emoji...), 10% Latin-1/Ext,
                                         // 10% rest of BMP, 20% uniform U+0001..U+10FFFF (no surrogates)
 Gen::stringAscii()                      // <string>, printable ASCII
-Gen::stringOf(int $minLength, int $maxLength) // <string>, bounded length
+Gen::stringOf(int $minLength = 0, int $maxLength = 100) // <string>, bounded length
 Gen::stringFrom(string $alphabet, int $minLength = 0, int $maxLength = 100) // <string>
 Gen::bytes(int $minLength = 0, int $maxLength = 100)  // <string>, raw bytes
-Gen::arrayOf(ArbitraryInterface $el, int $min = 0, int $max = 100)  // <list<T>>
-Gen::nonEmptyArrayOf(ArbitraryInterface $el, int $max = 100)        // <list<T>>, >= 1
-Gen::uniqueArrayOf(ArbitraryInterface $el, int $min = 0, int $max = 100) // <list<T>>, distinct
+Gen::arrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100)  // <list<T>>
+Gen::nonEmptyArrayOf(ArbitraryInterface $element, int $maxSize = 100)            // <list<T>>, >= 1
+Gen::uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100) // <list<T>>, distinct by ===
+                                        // (NAN !== NAN, so several NANs can appear)
 Gen::subset(array $values, int $minSize = 0, ?int $maxSize = null)  // <list<T>>: subsets of a fixed ordered set; source duplicates rejected (InvalidArgumentException); size uniform over [min, max] (null max = full size); keeps source order; shrinks size first, then elements toward earlier source positions; no discards
-Gen::dictOf(ArbitraryInterface $key, ArbitraryInterface $value, int $min = 0, int $max = 100) // <array<K,V>>
+Gen::dictOf(ArbitraryInterface $key, ArbitraryInterface $value, int $minSize = 0, int $maxSize = 100) // <array<K,V>>;
+                                        // a string key PHP would store as int ("0", "12", "-3") is redrawn like a
+                                        // collision, so a key generator of only such strings yields [] (throws if $minSize > 0)
 Gen::record(array $shape)               // <array<string,mixed>>, fixed-shape map
 Gen::oneOf(mixed ...$values)            // <T>: VALUES, not generators. An ArbitraryInterface among
                                         // them throws InvalidArgumentException -- accepted, it would become the
                                         // data and the body would pass having seen no generated value.
                                         // Pick between generators with Gen::frequency().
-Gen::elements(array $values)            // <T> (array form); rejects arbitraries the same way
-Gen::enum(SomeEnum::class)              // <TEnum of UnitEnum> over enum cases
+Gen::elements(array $values)            // <T> (array form); rejects arbitraries the same way; [] throws naming $values
+Gen::enum(SomeEnum::class)              // <TEnum of UnitEnum> over enum cases; an enum without cases throws naming it
 Gen::constant(mixed $value)             // <T>
 Gen::char()                             // <string>, one ASCII char
 Gen::uuid()                             // <non-empty-string>, v4 UUIDs
-Gen::datetime(?DateTimeImmutable $min, ?DateTimeImmutable $max) // <DateTimeImmutable>, UTC, microsecond precision; shrinks toward epoch via int ladder
+Gen::datetime(?DateTimeImmutable $min = null, ?DateTimeImmutable $max = null) // <DateTimeImmutable>, UTC, microsecond precision; shrinks toward epoch via int ladder
 Gen::floatSpecial()                     // <float> over NAN/±INF/-0.0/float edges
 Gen::intRange(int $min, int $max)       // <array{int, int}>: ordered [lo, hi]
 Gen::recursive(ArbitraryInterface $leaf, Closure $wrap, int $maxDepth = 3)
 Gen::nullable(ArbitraryInterface $inner)        // <mixed>, null or the inner value
-Gen::map(ArbitraryInterface $inner, Closure $fn)     // <TOut>
-Gen::flatMap(ArbitraryInterface $inner, Closure $fn) // <TOut>, dependent domains
-Gen::filter(ArbitraryInterface $inner, Closure $p)   // <T>, 100 retries then GenerationExhaustedException
+Gen::map(ArbitraryInterface $inner, Closure $map)     // <TOut>
+Gen::flatMap(ArbitraryInterface $inner, Closure $flatMap) // <TOut>, dependent domains
+Gen::filter(ArbitraryInterface $inner, Closure $predicate) // <T>, 100 retries then GenerationExhaustedException
 Gen::tuple(ArbitraryInterface ...$elements)          // <list<mixed>>
 Gen::frequency(iterable $pairs)                      // <T>, [weight, arb] pairs -- the one that takes GENERATORS
 Gen::commands(mixed $initialModel, array $commandGenerators, int $minLength = 0, int $maxLength = 100) // <CommandSequence>
-Gen::swarm(ArbitraryInterface $choice)  // <T>: swarm testing. Wraps a CHOICE generator (oneOf/elements/frequency/commands) or any Swarmable; anything else throws. Each generated case may use only a random NON-EMPTY subset of the variants; frequency weights of survivors are kept. Shrinking stays INSIDE that subset (never widens back), which is what keeps an "operation never occurred" finding reproducible. Subset is drawn once per generated value -> wrap the generator whose scope you mean (swarm(commands(...)) = whole sequence; arrayOf(swarm(oneOf(...))) redraws per element). Counterexample reports the value, not the subset; seed replay reproduces both. swarm(commands(...)) with minLength > 0 can throw GenerationExhaustedException when the subset starves the sequence.
+Gen::swarm(ArbitraryInterface $arbitrary)  // <T>: swarm testing. Wraps a CHOICE generator (oneOf/elements/frequency/commands) or any Swarmable; anything else throws. Each generated case may use only a random NON-EMPTY subset of the variants; frequency weights of survivors are kept. Shrinking stays INSIDE that subset (never widens back), which is what keeps an "operation never occurred" finding reproducible. Subset is drawn once per generated value -> wrap the generator whose scope you mean (swarm(commands(...)) = whole sequence; arrayOf(swarm(oneOf(...))) redraws per element). Counterexample reports the value, not the subset; seed replay reproduces both. swarm(commands(...)) with minLength > 0 can throw GenerationExhaustedException when the subset starves the sequence.
 // The concrete classes behind the facade stay @api -- construct them directly, or
 // name one in a type, when you want the implementation rather than the interface.
 // They are NOT in the facade's signatures: Gen::* returns ArbitraryInterface<T>, so
@@ -266,24 +297,29 @@ Gen::swarm(ArbitraryInterface $choice)  // <T>: swarm testing. Wraps a CHOICE ge
 //   NullableArbitrary MappedArbitrary FlatMappedArbitrary FilteredArbitrary TupleArbitrary
 //   FrequencyArbitrary CommandSequenceArbitrary ClassArbitrary SwarmArbitrary
 Gen::forClass(string $class, array $overrides = [], bool $skipInvalid = false, int $maxDepth = 3)
-// <T>: instances from the constructor. Per parameter, in order: override, @param psalm
-// type, native type. Reads int<0,100> | positive-int | non-negative-int | non-empty-string |
-// list<T> | non-empty-list<T> | T[] | array<K,V> | 'a'|'b' | 1|2|3 | 'a'|null | A|B | ?T | enum |
-// DateTimeImmutable | another class (recursive, maxDepth, cycles refused by name). Class names
+// <T>: instances from the constructor. Per parameter, in order: override, docblock psalm
+// type, native type. Docblock spellings: @psalm-param / @phpstan-param win over @param; a
+// @var (@psalm-var, @phpstan-var) on the PROMOTED PROPERTY is read when the constructor
+// docblock says nothing about that parameter. Reads int<0,100> | positive-int |
+// non-negative-int | non-empty-string | list<T> | non-empty-list<T> | T[] | array<K,V> |
+// 'a'|'b' | 1|2|3 | 'a'|null | A|B | ?T | enum | DateTimeImmutable | another class (recursive,
+// maxDepth, cycles refused by name). Native float -> floatBetween(-1e6, 1e6). Class names
 // inside docblock types (list<LineItem>, Status|null, \DateTimeImmutable) resolve through the
 // declaring file's namespace and `use` imports, like the code beneath the docblock. ANYTHING ELSE
-// (bare array, mixed, callable, variadic, a docblock type outside this subset such as
-// float<0.0, 1.0> or array{a: int}) THROWS naming the parameter — never a widened guess; the one
-// fallback is a native CLASS type whose docblock only adds generics (Collection<Item>). An
-// override key naming no parameter THROWS.
+// (bare array, mixed, callable, an untyped parameter, a NATIVE UNION such as int|string, a
+// variadic, a docblock type outside this subset such as float<0.0, 1.0> or array{a: int}, an
+// unknown class name — the message says `unknown class "Nope"`) THROWS naming the parameter and
+// the type — never a widened guess; the one fallback is a native CLASS type whose docblock only
+// adds generics (Collection<Item>). An override key naming no parameter THROWS; an enum without
+// cases throws naming the enum.
 // A constructor that rejects a value throws by default (the generator does not match the domain);
 // skipInvalid: true discards and redraws through Gen::filter (100 attempts -> GenerationExhaustedException),
 // discarding Exceptions only, never Errors. Shrinks through the arguments, rebuilding the instance.
 Gen::forParameters(\ReflectionFunctionAbstract $function, array $overrides = [], int $maxDepth = 3)
 // NOT an arbitrary — returns array<string, ArbitraryInterface> for the function's parameters, by
 // name in signature order. The forClass rules applied to any method or closure: per parameter,
-// override -> @param psalm type -> native type; same supported subset, same refusals (naming the
-// function and the parameter, never a widened guess). Overrides may be PARTIAL: named parameters
+// override -> docblock psalm type (@psalm-param/@phpstan-param over @param) -> native type; same
+// supported subset, same refusals (naming the function and the parameter, never a widened guess). Overrides may be PARTIAL: named parameters
 // are taken as given, the rest derived from the signature. No skipInvalid (nothing is executed);
 // pure function of reflection, Random not involved. Engine half of the adapters' auto mode.
 Gen::ipv4()  Gen::ipv6()  Gen::email()  Gen::url()  // ipv6: canonical RFC 5952 text, shrinks to "::"
@@ -294,9 +330,9 @@ Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compile
                                                         // A delimited pattern throws (the delimiters would otherwise
                                                         // become literals in every generated string).
 Gen::stringMatching(string $pattern, int $maxRepeat = 8) // alias of regex()
-Gen::draw(ArbitraryInterface $arb)      // in-body dependent draw; ONLY inside a running property body
-Gen::sample(ArbitraryInterface $arb, int $count = 10, int $seed = 0)        // eager debug helper
-Gen::sampleShrinks(ArbitraryInterface $arb, int $seed = 0, int $limit = 10) // value + first shrink candidates
+Gen::draw(ArbitraryInterface $arbitrary)      // in-body dependent draw; ONLY inside a running property body
+Gen::sample(ArbitraryInterface $arbitrary, int $count = 10, int $seed = 0)        // eager debug helper
+Gen::sampleShrinks(ArbitraryInterface $arbitrary, int $seed = 0, int $limit = 10) // value + first shrink candidates
 ```
 
 Numeric generators are boundary-biased (~1 in 5 draws returns an in-range edge
@@ -317,7 +353,8 @@ Keep every branch finite; never yield a candidate equal to its parent.
 ### Body helpers
 
 ```php
-Assume::that(bool $condition): void   // throws AssumptionSkipped -> discard
+Assume::that(bool $condition): void   // throws AssumptionSkipped -> discard; the engine never warns about the
+                                      // discard share (an adapter may); the GaveUp budget is the only gate
 Classify::label(string $label): void
 Classify::when(bool $condition, string $label): void
 Classify::cover(bool $condition, string $label, float $minPercent): void // -> CoverageFailed
@@ -332,7 +369,7 @@ $report->skips;                             // environmental skips, counted apar
 $report->unmetRequirements();               // list<LabelShare>
 $report->coverageAssessed;                  // false when the run ended before the assessment
 $report->toArray();                         // telemetry payload
-Gen::draw(ArbitraryInterface $arb): mixed  // recorded on the replay tape, shrunk like a parameter
+Gen::draw(ArbitraryInterface $arbitrary): mixed  // recorded on the replay tape, shrunk like a parameter
 ```
 
 `ValueRenderer::render(mixed $value): string` — the single-line human rendering

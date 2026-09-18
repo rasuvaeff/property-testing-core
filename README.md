@@ -127,6 +127,13 @@ property body. Each `execute($arguments)` call returns a `TrialOutcome` —
   maps assertion exceptions) — the run/shrink loop never learns about
   framework types.
 
+`Assume::that()` signals a discard by throwing `AssumptionSkipped`, which is
+part of this seam: an executor catches it and returns
+`TrialOutcome::discarded()` — exactly what `CallableTrialExecutor` and both
+adapters do. Nothing else in the engine raises it, and it is not a
+`PropertyTestingException` (see below): a body catching the marker must not
+swallow its own discards.
+
 `discarded()` and `skipped()` both mean "this run checked nothing", and they
 count the same everywhere but one place. A discard is a statement about the
 **input**: it left the property's domain, so a recorded regression that
@@ -163,13 +170,27 @@ Configuration errors (`runs < 1`, a missing generator, mismatched parameter
 names) remain exceptions — they are programmer errors, not verdicts about the
 property.
 
+Every exception the engine reports — the ten carried by the results above,
+plus `GenerationExhaustedException` and
+`StateMachine\PostconditionViolationException` when they surface from a body —
+implements the empty marker `PropertyTestingException` (a `\Throwable`), so a
+harness can `catch (PropertyTestingException $e)` for "anything this package
+said" without enumerating the types. Each still extends `\RuntimeException`.
+
 `RunStatistics` exposes the raw phase counters (attempts, discards, skips,
 checks, per-label classification counts) so a reporter can print a distribution
 table or a discard warning — the engine itself never formats framework output.
 
 Serialization: every result survives native `serialize()` when captured stack
 traces carry no argument values (`zend.exception_ignore_args=1`); the portable
-machine format is `CounterExample::toArray()` / `toJson()`.
+machine format is `CounterExample::toArray()` / `toJson()`. Its keys are
+frozen (compatibility policy, point 4): `seed`, `runsBeforeFailure`,
+`originalArguments`, `shrunkArguments`, `shrinkSteps`, `shrinkTrials`, `path`,
+`failure` (`{type, message}` or null), `discards`, `skips`, `edgeCases`. So
+are those of `DistributionReport::toArray()`: `attempts`, `discards`,
+`discardPercent`, `skips`, `checks`, `coverageAssessed`, `labels` (each
+`{label, count, percent, required, met}`). A key may be added at the end in a
+minor; none is renamed or removed short of a major.
 
 ### Generators
 
@@ -184,18 +205,18 @@ through their source domain.
 | `Gen::intBetween($min, $max)` | `IntArbitrary`, `[$min, $max]` | toward `0`, clamped to range |
 | `Gen::intPositive()` | `IntArbitrary`, `1..PHP_INT_MAX` | toward `1` |
 | `Gen::float()` | `FloatArbitrary`, `[0.0, 1.0)` | toward `0.0` |
-| `Gen::floatBetween($min, $max)` | `FloatArbitrary`, `[$min, $max)` — `$max` itself is never drawn | toward `0.0`, clamped to range |
+| `Gen::floatBetween($min, $max)` | `FloatArbitrary`, `[$min, $max)` — `$max` itself is never drawn; `floatBetween($x, $x)` is the one value `$x` | toward the point of `[$min, $max)` nearest to `0.0`: `0.0` when the range holds it, `$min` above zero, the largest float under `$max` at or below zero — never `$max` |
 | `Gen::bool()` | `BoolArbitrary`, `true` / `false` | `true` -> `false` |
 | `Gen::string()` | `StringArbitrary`, Unicode, length 0..100 — half the characters ASCII printable, a tenth troublemakers (quotes, backslash, combining marks, zero-width joiner, right-to-left override, byte order mark, astral emoji, …), a tenth Latin-1/Latin Extended, a tenth the rest of the BMP, a fifth uniform over U+0001..U+10FFFF | toward `''`, then by removing blocks of characters from any position (down to single ones), then each character toward `a` |
 | `Gen::stringAscii()` | `StringArbitrary`, printable ASCII, length 0..100 | toward `''`, then by length, then each character toward `a` |
-| `Gen::stringOf($min, $max)` | `StringArbitrary`, Unicode, bounded length | toward `''`, then by removing blocks of characters from any position (down to single ones), then each character toward `a` |
-| `Gen::stringFrom($alphabet, $min, $max)` | `CharsetStringArbitrary`, characters from a fixed alphabet (multibyte OK) | toward `''`, then by length, then each character toward the first alphabet character |
-| `Gen::bytes($min, $max)` | `BytesArbitrary`, raw byte strings (bytes 0..255) | toward `''`, then by length, then each byte toward `"\x00"` |
-| `Gen::arrayOf($element, $min, $max)` | `ArrayArbitrary`, lists of `$element`, size 0..100 by default | toward `[]`, then by removing blocks of elements from any position (down to single ones), then each element |
-| `Gen::nonEmptyArrayOf($element, $max)` | `ArrayArbitrary`, non-empty lists | by length (never below 1), then each element |
-| `Gen::uniqueArrayOf($element, $min, $max)` | `UniqueArrayArbitrary`, lists of pairwise-distinct elements | like `arrayOf`, but element candidates colliding with another element are skipped |
-| `Gen::subset($values, $min, $max)` | `SubsetArbitrary`, subsets of a fixed ordered set — distinct members of `$values` in source order; duplicates in the source are rejected | size first (toward the empty set), then each kept element toward earlier source positions — the minimal subset is a short prefix |
-| `Gen::dictOf($key, $value, $min, $max)` | `DictionaryArbitrary`, maps with distinct keys from `$key` (int/string) and values from `$value`, size 0..100 by default | toward `[]`, then by size, then each value (keys fixed) |
+| `Gen::stringOf($minLength, $maxLength)` | `StringArbitrary`, Unicode, bounded length (`0..100` by default, like `stringFrom` and `bytes`) | toward `''`, then by removing blocks of characters from any position (down to single ones), then each character toward `a` |
+| `Gen::stringFrom($alphabet, $minLength, $maxLength)` | `CharsetStringArbitrary`, characters from a fixed alphabet (multibyte OK) | toward `''`, then by length, then each character toward the first alphabet character |
+| `Gen::bytes($minLength, $maxLength)` | `BytesArbitrary`, raw byte strings (bytes 0..255) | toward `''`, then by length, then each byte toward `"\x00"` |
+| `Gen::arrayOf($element, $minSize, $maxSize)` | `ArrayArbitrary`, lists of `$element`, size 0..100 by default | toward `[]`, then by removing blocks of elements from any position (down to single ones), then each element |
+| `Gen::nonEmptyArrayOf($element, $maxSize)` | `ArrayArbitrary`, non-empty lists | by length (never below 1), then each element |
+| `Gen::uniqueArrayOf($element, $minSize, $maxSize)` | `UniqueArrayArbitrary`, lists of pairwise-distinct elements (strict `===`, so `NAN` is never equal to itself and may appear more than once) | like `arrayOf`, but element candidates colliding with another element are skipped |
+| `Gen::subset($values, $minSize, $maxSize)` | `SubsetArbitrary`, subsets of a fixed ordered set — distinct members of `$values` in source order; duplicates in the source are rejected | size first (toward the empty set), then each kept element toward earlier source positions — the minimal subset is a short prefix |
+| `Gen::dictOf($key, $value, $minSize, $maxSize)` | `DictionaryArbitrary`, maps with distinct keys from `$key` (int/string) and values from `$value`, size 0..100 by default; a string key that PHP would store as an integer (`"0"`, `"12"`, `"-3"`) is redrawn like a collision, so the map stays `array<string, T>` — a key generator producing only such strings yields `[]` (or throws for `$minSize > 0`) | toward `[]`, then by size, then each value (keys fixed) |
 | `Gen::record($shape)` | `RecordArbitrary`, fixed-shape map `['field' => $arb, ...]` | each field via its arbitrary, key set fixed |
 | `Gen::elements($array)` | `OneOfArbitrary`, one value from an array (array form of `oneOf`, and it rejects arbitraries the same way) | toward earlier-listed distinct values |
 | `Gen::enum(SomeEnum::class)` | `OneOfArbitrary` over the enum's cases | toward earlier-declared cases (declare simpler cases first) |
@@ -208,8 +229,8 @@ through their source domain.
 | `Gen::recursive($leaf, $wrap, $maxDepth)` | bounded recursive structures: `$wrap` lifts the previous level's arbitrary | within the branch that generated the value |
 | `Gen::oneOf(...$values)` | `OneOfArbitrary`, one of the given values — values, not generators: an arbitrary among them is rejected (use `frequency()` to pick between generators) | toward earlier-listed distinct values (put simpler values first) |
 | `Gen::nullable($inner)` | `NullableArbitrary`, `null` or an `$inner` value | prefers `null`, then the inner tree |
-| `Gen::map($inner, $fn)` | `MappedArbitrary`, `$inner` transformed by `$fn` | through the inner tree, re-applying `$fn` |
-| `Gen::flatMap($inner, $fn)` | `FlatMappedArbitrary`, dependent generator returned by `$fn($innerValue)` | source value first (dependent value regenerated), then the dependent tree |
+| `Gen::map($inner, $map)` | `MappedArbitrary`, `$inner` transformed by `$map` | through the inner tree, re-applying `$map` |
+| `Gen::flatMap($inner, $flatMap)` | `FlatMappedArbitrary`, dependent generator returned by `$flatMap($innerValue)` | source value first (dependent value regenerated), then the dependent tree |
 | `Gen::filter($inner, $predicate)` | `FilteredArbitrary`, `$inner` values satisfying `$predicate` (throws `GenerationExhaustedException` after 100 rejected draws — never yields an out-of-domain value) | inner tree, pruning candidates that fail the predicate |
 | `Gen::tuple(...$elements)` | `TupleArbitrary`, fixed-arity tuple, one value per element | each position via its element, arity fixed |
 | `Gen::frequency($pairs)` | `FrequencyArbitrary`, weighted choice over `[weight, arbitrary]` pairs | within the branch that generated the value |
@@ -220,9 +241,9 @@ through their source domain.
 | `Gen::json($maxDepth)` | a JSON-encodable value (null/bool/int/float/string/list/object) | within the generated structure |
 | `Gen::jsonString($maxDepth)` | the `json_encode` text of `Gen::json()` | through the value's tree |
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators), written **without delimiters** — `Gen::regex('[a-z]{3,6}')`, not `'/[a-z]{3,6}/'`; `.` and a negated class draw from printable ASCII (`0x20`..`0x7E`, never a newline) | shorter/simpler matches (via the compiled trees) |
-| `Gen::commands($initialModel, $commandGenerators, $min, $max)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
-| `Gen::swarm($choiceGenerator)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |
-| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — the `@param` psalm type when there is one (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; class names resolve through the file's namespace and `use` imports), the native type otherwise; anything unreadable throws instead of guessing, an override naming no parameter too | through the generated arguments, rebuilding the instance |
+| `Gen::commands($initialModel, $commandGenerators, $minLength, $maxLength)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
+| `Gen::swarm($arbitrary)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |
+| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — the docblock psalm type when there is one (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; class names resolve through the file's namespace and `use` imports), the native type otherwise. Three spellings are read: `@psalm-param`/`@phpstan-param` win over `@param`, and a `@var` (`@psalm-var`) on the promoted property itself is read when the constructor docblock says nothing about it. A native `float` means `floatBetween(-1e6, 1e6)`. Anything unreadable — a bare `array`, `mixed`, a native union, a docblock type outside the subset, an unknown class name (named in the message) — throws instead of guessing, an override naming no parameter too | through the generated arguments, rebuilding the instance |
 | `Gen::forParameters($function, $overrides)` | not an arbitrary but a map: `array<string, ArbitraryInterface>` for the parameters of a `ReflectionFunctionAbstract` (method or closure), by name in signature order — the `forClass` rules applied to any signature; overrides may be partial, the rest is derived; anything unreadable throws naming the function and the parameter | each entry shrinks through its own generator |
 
 Numeric generators (`int*`, `float*`) are **boundary-biased**: roughly one draw in
@@ -349,7 +370,7 @@ no environment:
 | `seed` | `null` | Random-phase seed; null draws one (reported in failures) |
 | `maxShrinks` | `null` | Cap on accepted shrink steps; 0 disables shrinking |
 | `maxDiscards` | `null` | Cap for the discard budget **and** the skip budget when set. Left null the two differ: `runs * 10` for discards, `runs` for skips — a machine that cannot run the property does not need ten chances per check to say so |
-| `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded`. Measured when the run returns: it reports a run that overran, it does not interrupt a body that hangs. Shrink trials are not timed |
+| `timeoutMs` | `null` | Wall-clock deadline per single run → `DeadlineExceeded`. Measured when the run returns: it reports a run that overran, it does not interrupt a body that hangs. Shrink trials are not timed, and neither are discarded or skipped runs — a body that leaves through `Assume::that()` or a framework skip checked nothing, so it is not judged against the deadline |
 | `budgetMs` | `null` | Wall-clock budget for the whole random phase → `TimeBudgetExceeded` |
 | `shrink` | `null` | `ShrinkMode::Off` reports the counterexample as generated; null resolves to `Full` |
 | `shrinkBudgetMs` | `null` | Wall-clock budget for the shrink descent; implies `ShrinkMode::Bounded` |
@@ -449,7 +470,7 @@ new PropertyConfig();                                          // every phase (t
 | Phase set holding anything but a `Phase` | `InvalidArgumentException` — an unrecognised stage would simply not run, and the property would report green having checked nothing |
 | Phase set without `Shrink` | Exactly `ShrinkMode::Off`; the stricter of the two knobs always wins |
 | `Phase::Corpus` | Gates corpus **replay** only, and composes with `replayRegressions` as an AND; a fresh falsification is still recorded |
-| Phase set without `Random` | Nothing is generated: honest zero statistics (`attempts: 0`, `checks: 0`) and coverage requirements dropped rather than assessed against an empty denominator. The result is `Passed` once the enabled earlier phases pass — a pinned example or a corpus entry that fails still reports its own failure |
+| Phase set without `Random` | Nothing is generated: honest zero statistics (`attempts: 0`, `checks: 0`) and coverage requirements dropped rather than assessed against an empty denominator. The result is `Passed` once the enabled earlier phases pass — a pinned example or a corpus entry that fails still reports its own failure. One exception to "nothing": a corpus **seed** entry replays a whole random phase (at least `runsBeforeFailure + 1` attempts, as many as it takes to reach the recorded failure) even without `Random` — that replay is what the entry is — and those attempts are not the random phase, so they do not appear in the zero statistics of the `Passed` that follows |
 
 `PropertyDefinition` adds the identity (`id` keys events and the corpus),
 display `name`, `generators`, `parameterNames`, fixed `examples` (positional
@@ -485,7 +506,13 @@ access at all.
 property (`<sha1(id)>.json`, at most 8 values entries and 2 seed entries,
 oldest evicted; atomic, lock-serialised writes). The format is byte-compatible
 with the corpus written by `rasuvaeff/property-testing` 2.8 — existing corpora
-keep working after the migration.
+keep working after the migration. A write it cannot complete — the lock file
+replaced by a symlink, the temp path occupied, a full disk, a failed rename, a
+document held by another format version — throws, and the runner reports it
+as a `CorpusFailed` event: `CorpusStored` is emitted only after the document
+is on disk, never for a write that silently did nothing. The property's own
+outcome is unaffected either way. An empty directory path is refused at
+construction.
 
 | Entry (`CorpusEntry`) | When | Replay |
 |---|---|---|
@@ -562,8 +589,8 @@ IDE integration attaches without any engine change:
 | `ExampleStarted` / `ExampleFinished` | Around each explicit example |
 | `RunStarted` / `RunPassed` / `RunDiscarded` / `RunFailed` | Around each random run (arguments, draws, labels, elapsed time) |
 | `ShrinkTried` / `ShrinkAccepted` | Per shrink candidate / per accepted step |
-| `CorpusReplayed` / `CorpusPruned` / `CorpusStored` | Corpus activity |
-| `CorpusFailed` | The corpus threw (a Redis server down, a client error); the property went on without it for the rest of the run |
+| `CorpusReplayed` / `CorpusPruned` / `CorpusStored` | Corpus activity; `CorpusStored` only after a confirmed write |
+| `CorpusFailed` | The corpus threw (a Redis server down, a client error, a filesystem write that could not complete); the property went on without it for the rest of the run |
 
 Events carry engine data only — never framework types. A listener exception
 aborts the run (an observer's failure is an infrastructure failure, not

@@ -10,8 +10,9 @@ description: "When to discard a generated run with Assume::that() versus constru
 Discards the current attempt when a precondition does not hold. `runs` is the
 number of successful checks, so discarded attempts are replaced. Prefer
 `Assume::that()` over `Gen::filter()` when the rejection rate is low; when more
-than 90% of attempts are discarded the runner warns that the generators are
-likely misconfigured.
+than 90% of attempts are discarded the adapters warn that the generators are
+likely misconfigured (the engine itself never prints — its only gate is the
+discard budget).
 
 ```php
 Assume::that($cap >= $baseSeconds);

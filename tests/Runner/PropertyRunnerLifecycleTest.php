@@ -28,6 +28,7 @@ use Rasuvaeff\PropertyTesting\Runner\DeadlineExceeded;
 use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Rasuvaeff\PropertyTesting\Runner\ExampleFailed;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
+use Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus;
 use Rasuvaeff\PropertyTesting\Runner\GaveUp;
 use Rasuvaeff\PropertyTesting\Runner\GenerationFailed;
 use Rasuvaeff\PropertyTesting\Runner\Passed;
@@ -74,6 +75,31 @@ final class PropertyRunnerLifecycleTest
 
         Assert::instanceOf($result, Passed::class);
         Assert::same($listener->shapes(), ['PropertyStarted', 'RunStarted', 'RunPassed', 'PropertyFinished']);
+    }
+
+    /**
+     * A generator that yields the same key twice — `yield $a; yield $b;`
+     * inside a loop, or any iterator with repeated keys — must not collapse
+     * to one listener per key: every yielded listener is notified.
+     */
+    public function listenersWithRepeatedKeysAreAllNotified(): void
+    {
+        $first = new CollectingListener();
+        $second = new CollectingListener();
+        $listeners = (static function () use ($first, $second): \Generator {
+            yield 'listener' => $first;
+            yield 'listener' => $second;
+        })();
+
+        $result = (new PropertyRunner())->run(
+            $this->definition(runs: 1),
+            new CallableTrialExecutor(static function (int $value): void {}),
+            $listeners,
+        );
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($first->shapes(), ['PropertyStarted', 'RunStarted', 'RunPassed', 'PropertyFinished']);
+        Assert::same($second->shapes(), $first->shapes());
     }
 
     public function passingRunEmitsTheFullLifecycle(): void
@@ -428,6 +454,54 @@ final class PropertyRunnerLifecycleTest
         Assert::same($corpus->calls, ['remember']);
         Assert::same($listener->ofType(CorpusFailed::class)[0]->operation, 'remember');
         Assert::same($listener->ofType(CorpusStored::class), []);
+    }
+
+    /**
+     * The corpus write that silently did nothing is the one this guards
+     * against: with the lock file replaced by a link, FilesystemCorpus refuses
+     * to lock, the runner announces CorpusFailed — and never CorpusStored, so
+     * nobody believes a counterexample was recorded when the directory holds
+     * no document.
+     */
+    public function aCorpusWriteThatCouldNotCompleteIsReportedAsFailedNotStored(): void
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            return;
+        }
+
+        $directory = sys_get_temp_dir() . '/prop-corpus-' . bin2hex(random_bytes(6));
+        mkdir($directory, 0o777, recursive: true);
+        symlink('/dev/null', $directory . '/.corpus.lock');
+        $listener = new CollectingListener();
+
+        try {
+            $result = (new PropertyRunner())->run(
+                new PropertyDefinition(
+                    id: 'lifecycle::property',
+                    name: 'property',
+                    generators: ['value' => Gen::intBetween(0, 10)],
+                    parameterNames: ['value'],
+                    config: new PropertyConfig(runs: 5, seed: 42, phases: [Phase::Random, Phase::Shrink]),
+                ),
+                new CallableTrialExecutor(static function (int $value): void {
+                    throw new \RuntimeException('always fails');
+                }),
+                [$listener],
+                new FilesystemCorpus($directory),
+            );
+
+            Assert::instanceOf($result, Falsified::class);
+            Assert::same($listener->ofType(CorpusStored::class), []);
+
+            $failed = $listener->ofType(CorpusFailed::class);
+            Assert::same(count($failed), 1);
+            Assert::same($failed[0]->operation, 'remember');
+            Assert::string($failed[0]->failure->getMessage())->contains('is a symbolic link');
+            Assert::same(glob($directory . '/*.json') ?: [], []);
+        } finally {
+            @unlink($directory . '/.corpus.lock');
+            @rmdir($directory);
+        }
     }
 
     public function aSeedReplayWithoutARecordedAttemptUsesTheConfiguredRuns(): void

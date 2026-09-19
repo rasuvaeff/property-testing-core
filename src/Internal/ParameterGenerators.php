@@ -248,7 +248,7 @@ final class ParameterGenerators
                     $subject,
                     $parameter->getName(),
                     $documented,
-                    self::unknownClasses($documented, $resolveClass),
+                    self::unknownClasses($documented, $resolveClass, self::templates($parameter)),
                 ));
             }
         }
@@ -285,7 +285,42 @@ final class ParameterGenerators
      *
      * @param Closure(string): ?string $resolveClass
      */
-    private static function unknownClasses(string $type, Closure $resolveClass): string
+    /**
+     * The generic names the parameter's function and class declare
+     * (`@template T`, `@template-covariant TKey`, and the psalm/phpstan
+     * spellings): a type written with one is unreadable, but `T` is not an
+     * unknown class and the message must not call it one.
+     *
+     * @return list<string>
+     */
+    private static function templates(\ReflectionParameter $parameter): array
+    {
+        $function = $parameter->getDeclaringFunction();
+        $docblocks = [$function->getDocComment()];
+
+        if ($function instanceof \ReflectionMethod) {
+            $docblocks[] = $function->getDeclaringClass()->getDocComment();
+        }
+
+        $names = [];
+
+        foreach ($docblocks as $docblock) {
+            if ($docblock === false) {
+                continue;
+            }
+
+            if (preg_match_all('/@(?:psalm-|phpstan-)?template(?:-covariant|-contravariant)?\s+([A-Za-z_][A-Za-z0-9_]*)/', $docblock, $matches) > 0) {
+                $names = [...$names, ...$matches[1]];
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * @param list<string> $templates
+     */
+    private static function unknownClasses(string $type, Closure $resolveClass, array $templates = []): string
     {
         // Capitalised or fully qualified names only: the lower-case words of a
         // type expression are its keywords (`int`, `list`, `array-key`) and
@@ -297,6 +332,10 @@ final class ParameterGenerators
         $unknown = [];
 
         foreach (array_unique($matches[0]) as $name) {
+            if (in_array($name, $templates, strict: true)) {
+                continue;
+            }
+
             if ($resolveClass($name) === null) {
                 $unknown[] = sprintf('unknown class "%s"', $name);
             }

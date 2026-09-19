@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A refusal over a docblock type no longer calls a generic the function or
+  its class declares (`@template T`) an unknown class: `list<T>` is reported
+  as unreadable, and only a name nothing declares as `unknown class "…"`.
 - `docs/.api-workspace` moves its path version for core to `0.11.0` and the
   adapter constraints to `-testo` `^0.11` / `-phpunit` `^0.9`, the bridged
   releases (0.11.1 / 0.9.1) that accept core 0.11.

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `docs/.api-workspace` moves its path version for core to `0.11.0` and the
+  adapter constraints to `-testo` `^0.11` / `-phpunit` `^0.9`, the bridged
+  releases (0.11.1 / 0.9.1) that accept core 0.11.
+
 ## 0.11.0 — 2026-09-19
 
 - **Fixed:** `RedisDsn::parse()` quoted the password when the DSN carried

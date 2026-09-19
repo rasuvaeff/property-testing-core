@@ -114,7 +114,7 @@ final class CounterExampleTest
             '{"seed":1,"runsBeforeFailure":0,"originalArguments":[],'
             . '"shrunkArguments":{"s":"<\ufffd"},"shrinkSteps":0,"shrinkTrials":0,'
             . '"path":"","failure":null,"discards":0,"skips":0,"edgeCases":"Mixin",'
-            . '"originalNotes":[],"shrunkNotes":[]}',
+            . '"originalNotes":[],"shrunkNotes":[],"replays":0,"passedOnReplay":null}',
         );
     }
 
@@ -192,7 +192,16 @@ final class CounterExampleTest
             'edgeCases',
             'originalNotes',
             'shrunkNotes',
+            'replays',
+            'passedOnReplay',
         ]);
+    }
+
+    public function isFlakyWhenAReplayPassed(): void
+    {
+        Assert::false((new CounterExample(1, 0, [], []))->isFlaky());
+        Assert::false((new CounterExample(1, 0, [], [], replays: 2))->isFlaky());
+        Assert::true((new CounterExample(1, 0, [], [], replays: 2, passedOnReplay: 2))->isFlaky());
     }
 
     public function toArrayNormalisesTheNotesLikeArguments(): void

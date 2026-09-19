@@ -112,6 +112,30 @@ final class PropertyViolationExceptionTest
         Assert::string($exception->getMessage())->notContains('Notes:');
     }
 
+    public function rendersAFlakyLineAfterTheFailureWhenAReplayPassed(): void
+    {
+        $exception = new PropertyViolationException(new CounterExample(
+            seed: 1,
+            runsBeforeFailure: 0,
+            originalArguments: ['x' => 5],
+            shrunkArguments: ['x' => 5],
+            failure: new \RuntimeException('boom'),
+            replays: 2,
+            passedOnReplay: 2,
+        ));
+
+        Assert::string($exception->getMessage())->contains(
+            "\n  Failure:  boom\n  Flaky:    the minimised input passed on replay 2; suspect nondeterminism in the body or the code under test, not this input",
+        );
+    }
+
+    public function omitsTheFlakyLineWhenEveryReplayFailedAgain(): void
+    {
+        $exception = new PropertyViolationException(new CounterExample(1, 0, ['x' => 1], ['x' => 0], replays: 2));
+
+        Assert::string($exception->getMessage())->notContains('Flaky:');
+    }
+
     public function rendersTheUnderlyingFailureMessage(): void
     {
         $exception = new PropertyViolationException(new CounterExample(

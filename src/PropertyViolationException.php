@@ -58,6 +58,13 @@ final class PropertyViolationException extends RuntimeException implements Prope
             $message .= sprintf("\n  Failure:  %s", $c->failure->getMessage());
         }
 
+        if ($c->passedOnReplay !== null) {
+            $message .= sprintf(
+                "\n  Flaky:    the minimised input passed on replay %d; suspect nondeterminism in the body or the code under test, not this input",
+                $c->passedOnReplay,
+            );
+        }
+
         // Last, and only when there is one: the descent this counterexample
         // came from, so replaying it is a copy of the line rather than a
         // second search (`PropertyConfig::$path`, beside the seed above). A

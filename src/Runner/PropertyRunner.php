@@ -506,17 +506,26 @@ final readonly class PropertyRunner
                     ? $this->shrink($property->id, $executor, $trees, $draws, $notes, $random, $maxShrinks, $shrinkMode, $shrinkBudgetMs, $listeners, $outcome->failure)
                     : $this->replayPath($property->id, $executor, $trees, $draws, $notes, $random, $path, $listeners);
 
-                // Drain the coverage requirements like every other exit path:
-                // the 2.8 interceptor left them armed here and relied on the
-                // next property's defensive flush, which a standalone runner
-                // caller does not get between run() calls.
-                Classify::flushRequirements();
-
                 if ($descent instanceof PathViolationException) {
+                    Classify::flushRequirements();
+
                     return new PathFailed($descent);
                 }
 
-                [$shrunk, $shrunkDraws, $shrinkSteps, $shrunkFailure, $shrinkTrials, $shrinkPath, $shrunkNotes] = $descent;
+                [$shrunk, $shrunkDraws, $shrinkSteps, $shrunkFailure, $shrinkTrials, $shrinkPath, $shrunkNotes, $shrunkTrees, $shrunkTape] = $descent;
+
+                // Re-execute the minimised input a few times: a replay that
+                // passes says the failure is nondeterminism in the body or
+                // the code under test, not a counterexample — reported as
+                // such rather than left to oscillate between corpus replays.
+                [$replays, $passedOnReplay] = $this->replayCounterExample($executor, $shrunkTrees, $shrunkTape, $random, $property->config->flakyReplays);
+
+                // Drain the coverage requirements like every other exit path —
+                // after the replays, which arm them again: the 2.8 interceptor
+                // left them armed here and relied on the next property's
+                // defensive flush, which a standalone runner caller does not
+                // get between run() calls.
+                Classify::flushRequirements();
 
                 return new Falsified(new PropertyViolationException(new CounterExample(
                     seed: $seed,
@@ -536,6 +545,8 @@ final readonly class PropertyRunner
                     skips: $skips,
                     originalNotes: $notes,
                     shrunkNotes: $shrunkNotes,
+                    replays: $replays,
+                    passedOnReplay: $passedOnReplay,
                 )));
             }
 
@@ -871,12 +882,13 @@ final readonly class PropertyRunner
      *        that trips a `TypeError` in the body's setup is not a smaller counterexample of an
      *        assertion failure). Null, or a run that failed without an exception, accepts any
      *        failure.
-     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string, 6: array<string, mixed>} The
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string, 6: array<string, mixed>, 7: array<string, Shrinkable>, 8: list<Shrinkable>} The
      *         minimised arguments, the minimised draws (as `draw#N` pseudo-arguments), the number
      *         of accepted shrink steps, the failure of the last accepted candidate (null when
      *         nothing shrank), the total number of candidates tried (accepted and rejected),
-     *         the descent itself as a replayable path (see {@see ShrinkPath}), and the notes of
-     *         the last accepted run (the original's when nothing shrank). Every exit carries
+     *         the descent itself as a replayable path (see {@see ShrinkPath}), the notes of
+     *         the last accepted run (the original's when nothing shrank), and the minimised
+     *         trees and tape themselves, for whatever re-executes the input. Every exit carries
      *         the steps actually taken — a descent cut short by the cap or the budget is still
      *         replayable up to where it stopped.
      */
@@ -894,7 +906,7 @@ final readonly class PropertyRunner
         ?\Throwable $failure = null,
     ): array {
         if ($mode === ShrinkMode::Off) {
-            return [$this->values($trees), $this->drawArguments($tape), 0, null, 0, '', $notes];
+            return [$this->values($trees), $this->drawArguments($tape), 0, null, 0, '', $notes, $trees, $tape];
         }
 
         $deadlineNs = $budgetMs === null ? null : $this->clock->nanoseconds() + $budgetMs * 1_000_000;
@@ -915,7 +927,7 @@ final readonly class PropertyRunner
                 // Checking here (before the per-parameter search) makes maxShrinks=0
                 // return the original counterexample with zero accepted steps.
                 if ($this->capReached($maxShrinks, $currentTape, $steps) || $this->budgetSpent($deadlineNs)) {
-                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps), $currentNotes];
+                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps), $currentNotes, $current, $currentTape];
                 }
 
                 // Counted over every candidate the enumeration yields, skipped
@@ -967,7 +979,7 @@ final readonly class PropertyRunner
 
             while ($position < count($currentTape)) {
                 if ($this->capReached($maxShrinks, $currentTape, $steps) || $this->budgetSpent($deadlineNs)) {
-                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps), $currentNotes];
+                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps), $currentNotes, $current, $currentTape];
                 }
 
                 $index = -1;
@@ -1004,7 +1016,34 @@ final readonly class PropertyRunner
             }
         } while ($improved);
 
-        return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps), $currentNotes];
+        return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps), $currentNotes, $current, $currentTape];
+    }
+
+    /**
+     * Execute the minimised input up to $replays more times and report how
+     * many ran and which one, if any, did not fail — a discard counts as not
+     * failing too: an input that judged the property once and left its domain
+     * the next time is nondeterministic all the same. Stops at the first
+     * replay that passes; the rest would only cost time. Emits nothing: the
+     * replays are a check on the verdict, not runs of the property.
+     *
+     * @param array<string, Shrinkable> $trees
+     * @param list<Shrinkable> $tape
+     * @param int $replays At least 0, as {@see PropertyConfig} guarantees.
+     * @return array{0: int, 1: ?int} Replays performed, and the one-based index of the first that
+     *         passed (null when every replay failed again).
+     */
+    private function replayCounterExample(TrialExecutor $executor, array $trees, array $tape, Random $random, int $replays): array
+    {
+        for ($replay = 1; $replay <= $replays; ++$replay) {
+            [$outcome] = $this->trial($executor, $trees, $tape, $random);
+
+            if (!$outcome->isFailed()) {
+                return [$replay, $replay];
+            }
+        }
+
+        return [max(0, $replays), null];
     }
 
     /**
@@ -1066,7 +1105,7 @@ final readonly class PropertyRunner
      * @param list<Shrinkable> $tape The failing run's recorded in-body draws.
      * @param array<string, mixed> $notes The failing run's {@see \Rasuvaeff\PropertyTesting\Gen::note()} values.
      * @param list<PropertyListener> $listeners
-     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string, 6: array<string, mixed>}|PathViolationException
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string, 6: array<string, mixed>, 7: array<string, Shrinkable>, 8: list<Shrinkable>}|PathViolationException
      *         The same tuple {@see shrink()} returns, or the reason the path could not be followed.
      */
     private function replayPath(
@@ -1142,7 +1181,7 @@ final readonly class PropertyRunner
             ++$steps;
         }
 
-        return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $steps, $path, $currentNotes];
+        return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $steps, $path, $currentNotes, $current, $currentTape];
     }
 
     /**

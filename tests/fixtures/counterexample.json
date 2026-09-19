@@ -20,5 +20,7 @@
     "skips": 2,
     "edgeCases": "Mixin",
     "originalNotes": [],
-    "shrunkNotes": []
+    "shrunkNotes": [],
+    "replays": 0,
+    "passedOnReplay": null
 }

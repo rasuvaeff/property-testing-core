@@ -13,7 +13,7 @@ description: "Thrown (as the failure of an otherwise passing property) when a co
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Thrown (as the failure of an otherwise passing property) when a coverage
 requirement registered via Classify::cover() is not met: the property

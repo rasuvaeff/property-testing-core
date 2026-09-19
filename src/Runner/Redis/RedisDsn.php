@@ -92,13 +92,17 @@ final readonly class RedisDsn
      *        empty value means the same as none — an exported-but-empty variable is not a password.
      *
      * @throws \InvalidArgumentException When the DSN carries credentials, names no host, has a path
-     *         that is not a database index, has an invalid port/timeout, or has an unknown query parameter.
+     *         that is not a database index, has an invalid port/timeout, has an unknown query
+     *         parameter, or has a fragment.
      */
     public static function parse(string $dsn, ?string $password = null): self
     {
-        $parts = parse_url($dsn);
-
-        if (is_array($parts) && (isset($parts['user']) || isset($parts['pass']))) {
+        // Userinfo is looked for in the raw authority — the text between the
+        // scheme and the first `/`, `?` or `#` — before anything else is
+        // read. parse_url() returns false for `redis://user:s3cret@` (no
+        // host), and a check that trusts its answer never sees the
+        // credentials it then quotes in the "not a usable DSN" message.
+        if (preg_match('~^[^:/?#]+://[^/?#]*@~', $dsn) === 1) {
             // Reject credentials rather than drop them silently: parse_url would
             // discard the userinfo, so the connection would go without AUTH
             // while the operator believes it authenticated. The message never
@@ -106,6 +110,17 @@ final readonly class RedisDsn
             throw new \InvalidArgumentException(
                 'PROPERTY_DB carries credentials in its userinfo, which is not supported; pass the password in PROPERTY_DB_PASSWORD instead',
             );
+        }
+
+        $parts = parse_url($dsn);
+
+        if (is_array($parts) && isset($parts['fragment'])) {
+            // Nothing here reads a fragment. Dropping it would be the silent
+            // reinterpretation this class refuses everywhere else.
+            throw new \InvalidArgumentException(sprintf(
+                'PROPERTY_DB="%s" has a #fragment, which a Redis DSN does not carry',
+                $dsn,
+            ));
         }
 
         $host = is_array($parts) ? ($parts['host'] ?? null) : null;

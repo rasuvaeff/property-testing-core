@@ -44,6 +44,39 @@ final class FloatArbitraryTest
         Assert::same(Trees::childValues($node), [5.0]);
     }
 
+    /**
+     * The domain is `[min, max)`, and `max` itself is never generated — so it
+     * must not be shrunk to either. For a range at or below zero the candidate
+     * is the largest float still under `max` (#129).
+     */
+    #[DataProvider('rangesAtOrBelowZero')]
+    public function shrinkNeverReachesTheExcludedUpperBound(float $min, float $max, float $expected): void
+    {
+        $arbitrary = new FloatArbitrary($min, $max);
+
+        for ($seed = 1; $seed <= 20; ++$seed) {
+            $tree = $arbitrary->generate(new Random($seed));
+            $candidates = Trees::childValues($tree);
+
+            foreach ($candidates as $candidate) {
+                Assert::true($candidate < $max, sprintf('seed %d: candidate %s reached the excluded bound %s', $seed, var_export($candidate, return: true), var_export($max, return: true)));
+                Assert::true($candidate >= $min);
+            }
+
+            Assert::same($candidates, $tree->value === $expected ? [] : [$expected]);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{float, float, float}>
+     */
+    public static function rangesAtOrBelowZero(): iterable
+    {
+        yield 'upper bound zero' => [-1.0, 0.0, -5.0e-324];
+        yield 'both bounds negative' => [-5.0, -2.0, -2.0000000000000004];
+        yield 'one ulp wide' => [-2.0000000000000004, -2.0, -2.0000000000000004];
+    }
+
     public function shrinkOfZeroYieldsNothing(): void
     {
         $node = Trees::generateWhere(new FloatArbitrary(), static fn(mixed $v): bool => $v === 0.0);

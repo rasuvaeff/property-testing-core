@@ -95,5 +95,6 @@ static parse(string $dsn, ?string $password = NULL): Runner\Redis\RedisDsn
 **Throws:**
 
 - `InvalidArgumentException` — When the DSN carries credentials, names no host, has a path
-that is not a database index, has an invalid port/timeout, or has an unknown query parameter.
+that is not a database index, has an invalid port/timeout, has an unknown query
+parameter, or has a fragment.
 

@@ -100,7 +100,10 @@ final class Gen
 
     /**
      * Floats in the half-open range [$min, $max) — $max itself is never drawn,
-     * exactly as {@see float()} never draws 1.0.
+     * exactly as {@see float()} never draws 1.0. A degenerate range
+     * (`$min === $max`) has that one value. Shrinks to the point of the range
+     * nearest to zero, which is never $max: for a range at or below zero that
+     * is the largest float under it.
      *
      * @return ArbitraryInterface<float>
      */
@@ -138,12 +141,15 @@ final class Gen
     }
 
     /**
+     * Unicode strings of a bounded length: {@see string()} with the bounds
+     * chosen, and the same defaults as {@see stringFrom()} and {@see bytes()}.
+     *
      * @param int<0, max> $minLength
      * @param int<1, max> $maxLength
      *
      * @return ArbitraryInterface<string>
      */
-    public static function stringOf(int $minLength, int $maxLength): ArbitraryInterface
+    public static function stringOf(int $minLength = 0, int $maxLength = 100): ArbitraryInterface
     {
         return new StringArbitrary($minLength, $maxLength, unicode: true);
     }
@@ -214,7 +220,9 @@ final class Gen
      * $element. Element shrinking keeps the list distinct; the result may be
      * smaller than the drawn size when the element space runs out of fresh
      * values, but never below $minSize — an unreachable minimum throws
-     * {@see GenerationExhaustedException}.
+     * {@see GenerationExhaustedException}. Distinct means `!==`, and `NAN` is
+     * never identical to itself, so a list over {@see floatSpecial()} can
+     * hold several of them.
      *
      * @template TElement
      *
@@ -253,6 +261,10 @@ final class Gen
      * Keys must be int or string; only distinct keys are kept, so the result
      * may be smaller than the drawn size when the key space runs out, but never
      * below $minSize — an unreachable minimum throws {@see GenerationExhaustedException}.
+     * A string key PHP would store as an integer (`"0"`, `"12"`, `"-3"`) is
+     * redrawn like a collision, so the map stays the `array<string, T>` a
+     * string key generator declares — a key generator producing only such
+     * strings yields `[]`, or throws when $minSize is above zero.
      *
      * @template TKey of array-key
      * @template TValue
@@ -314,11 +326,13 @@ final class Gen
      * Gen::forClass(Money::class, ['amount' => Gen::intPositive()]);
      * ```
      *
-     * Per parameter, in order: an override, then the `@param` docblock (psalm
-     * subset), then the native type. The docblock wins over the native type
-     * because it says more — `int` and `int<0, 100>` are the same native type
-     * and a very different value space — and a type this cannot read is an
-     * exception naming the parameter rather than a widened guess. See
+     * Per parameter, in order: an override, then the docblock (psalm subset;
+     * `@psalm-param`/`@phpstan-param` over `@param`, and the promoted
+     * property's own `@var` when the constructor docblock is silent), then
+     * the native type. The docblock wins over the native type because it says
+     * more — `int` and `int<0, 100>` are the same native type and a very
+     * different value space — and a type this cannot read is an exception
+     * naming the parameter rather than a widened guess. See
      * {@see ClassArbitrary} for the supported subset and for what a validating
      * constructor does.
      *
@@ -353,9 +367,10 @@ final class Gen
      * Gen::forParameters($method, ['cap' => Gen::intBetween(0, 60_000)]);   // override one parameter
      * ```
      *
-     * Per parameter, in order: an override, then the `@param` docblock (psalm
-     * subset), then the native type — the same rules, the same supported
-     * subset and the same refusals as {@see forClass()}. Overrides may be
+     * Per parameter, in order: an override, then the docblock (psalm subset;
+     * `@psalm-param`/`@phpstan-param` over `@param`), then the native type —
+     * the same rules, the same supported subset and the same refusals as
+     * {@see forClass()}. Overrides may be
      * partial: the parameters they name are taken as given, the rest are
      * derived from the signature. A type this cannot read is an exception
      * naming the function and the parameter, never a widened guess.
@@ -432,6 +447,10 @@ final class Gen
      */
     public static function elements(array $values): ArbitraryInterface
     {
+        if ($values === []) {
+            throw new \InvalidArgumentException('Gen::elements() requires at least one value in $values');
+        }
+
         return new OneOfArbitrary(...array_values($values));
     }
 
@@ -470,6 +489,10 @@ final class Gen
             static fn(\ReflectionEnumUnitCase $case): \UnitEnum => $case->getValue(),
             (new \ReflectionEnum($enum))->getCases(),
         );
+
+        if ($cases === []) {
+            throw new \InvalidArgumentException(sprintf('Enum %s has no cases to pick from', $enum));
+        }
 
         return new OneOfArbitrary(...$cases);
     }

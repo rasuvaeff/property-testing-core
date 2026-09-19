@@ -17,7 +17,7 @@ use RuntimeException;
  *
  * @api
  */
-final class TimeBudgetExceededException extends RuntimeException
+final class TimeBudgetExceededException extends RuntimeException implements PropertyTestingException
 {
     /**
      * @param int $budgetMs The configured whole-phase budget.

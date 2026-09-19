@@ -23,7 +23,7 @@ use RuntimeException;
  *
  * @api
  */
-final class PathViolationException extends RuntimeException
+final class PathViolationException extends RuntimeException implements PropertyTestingException
 {
     /**
      * @param string $path The path the run was pinned to.

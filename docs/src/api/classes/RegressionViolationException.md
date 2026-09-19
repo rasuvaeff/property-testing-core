@@ -13,7 +13,7 @@ description: "Reported when a recorded regression fails again: the minimised inp
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Reported when a recorded regression fails again: the minimised input of an
 earlier failure, replayed from the on-disk corpus (`PROPERTY_DB`) before the

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Internal;
 
 /**
- * The `@param` types a function's docblock declares, by parameter name.
+ * The parameter types a function's docblocks declare, by parameter name.
  *
  * Deliberately a small reader rather than a docblock parser: it takes the type
  * expression as written and hands it to {@see TypeGenerators}, which is the
@@ -15,10 +15,22 @@ namespace Rasuvaeff\PropertyTesting\Internal;
  * a property method or closure is what
  * {@see \Rasuvaeff\PropertyTesting\Gen::forParameters()} reads.
  *
+ * Three spellings are read, in the order psalm and PHPStan resolve them: the
+ * tool-specific `@psalm-param` / `@phpstan-param` wins over `@param`, and
+ * when the function's docblock says nothing about a promoted constructor
+ * property, the `@var` (`@psalm-var`, `@phpstan-var`) written on the property
+ * itself is read — the place a narrower type lands when the constructor has
+ * no docblock of its own.
+ *
  * @internal
  */
 final class DocblockTypes
 {
+    /** Least to most specific: a later tag overwrites an earlier one for the same parameter. */
+    private const array PARAM_TAGS = ['param', 'phpstan-param', 'psalm-param'];
+
+    private const array VAR_TAGS = ['var', 'phpstan-var', 'psalm-var'];
+
     private function __construct()
     {
         // Static helpers; not instantiable.
@@ -31,25 +43,67 @@ final class DocblockTypes
      */
     public static function of(\ReflectionFunctionAbstract $function): array
     {
+        $types = [];
         $docblock = $function->getDocComment();
 
-        if ($docblock === false) {
-            return [];
+        if ($docblock !== false) {
+            foreach (self::PARAM_TAGS as $tag) {
+                // `@param <type> $name` — the type is everything between the tag
+                // and the variable, which is what keeps `array<string, int>` in
+                // one piece.
+                if (preg_match_all('/@' . $tag . '\s+(?<type>.+?)\s+\$(?<name>[A-Za-z_][A-Za-z0-9_]*)/', $docblock, $matches, PREG_SET_ORDER) === false) {
+                    continue;
+                }
+
+                foreach ($matches as $match) {
+                    $types[$match['name']] = trim($match['type']);
+                }
+            }
         }
 
-        // `@param <type> $name` — the type is everything between the tag and
-        // the variable, which is what keeps `array<string, int>` in one piece.
-        if (preg_match_all('/@param\s+(?<type>.+?)\s+\$(?<name>[A-Za-z_][A-Za-z0-9_]*)/', $docblock, $matches, PREG_SET_ORDER) === false) {
-            return [];
+        if (!$function instanceof \ReflectionMethod || !$function->isConstructor()) {
+            return $types;
         }
 
-        $types = [];
+        foreach ($function->getParameters() as $parameter) {
+            $name = $parameter->getName();
 
-        foreach ($matches as $match) {
-            $types[$match['name']] = trim($match['type']);
+            if (isset($types[$name]) || !$parameter->isPromoted()) {
+                continue;
+            }
+
+            $type = self::promotedVar($function->getDeclaringClass()->getProperty($name));
+
+            if ($type !== null) {
+                $types[$name] = $type;
+            }
         }
 
         return $types;
+    }
+
+    /**
+     * The `@var` type on a promoted property, or null when it carries none.
+     * The type runs to the end of the line or of the comment; a trailing
+     * `$name` (the property form psalm also accepts) is not part of it.
+     */
+    private static function promotedVar(\ReflectionProperty $property): ?string
+    {
+        $docblock = $property->getDocComment();
+
+        if ($docblock === false) {
+            return null;
+        }
+
+        $type = null;
+
+        foreach (self::VAR_TAGS as $tag) {
+            if (preg_match('/@' . $tag . '\s+(?<type>.+?)(?:\s+\$[A-Za-z_][A-Za-z0-9_]*)?\s*(?:\*\/|$)/m', $docblock, $match) === 1) {
+                $type = trim($match['type']);
+            }
+        }
+
+        return $type;
     }
 
     /**

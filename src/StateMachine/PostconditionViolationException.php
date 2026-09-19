@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\StateMachine;
 
+use Rasuvaeff\PropertyTesting\PropertyTestingException;
 use RuntimeException;
 
 /**
@@ -16,7 +17,7 @@ use RuntimeException;
  *
  * @api
  */
-final class PostconditionViolationException extends RuntimeException
+final class PostconditionViolationException extends RuntimeException implements PropertyTestingException
 {
     /**
      * @param list<string> $trace Labels of the commands executed up to and including the failing one.

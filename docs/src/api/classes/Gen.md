@@ -58,7 +58,10 @@ static floatBetween(float $min, float $max): ArbitraryInterface
 ```
 
 Floats in the half-open range [$min, $max) — $max itself is never drawn,
-exactly as float() never draws 1.0.
+exactly as float() never draws 1.0. A degenerate range
+(`$min === $max`) has that one value. Shrinks to the point of the range
+nearest to zero, which is never $max: for a range at or below zero that
+is the largest float under it.
 
 ### bool()
 
@@ -85,8 +88,14 @@ Printable ASCII strings of length 0..100.
 ### stringOf()
 
 ```php
-static stringOf(int<0, max> $minLength, int<1, max> $maxLength): ArbitraryInterface
+static stringOf(
+    int<0, max> $minLength = 0,
+    int<1, max> $maxLength = 100,
+): ArbitraryInterface
 ```
+
+Unicode strings of a bounded length: string() with the bounds
+chosen, and the same defaults as stringFrom() and bytes().
 
 ### char()
 
@@ -156,7 +165,9 @@ Lists of pairwise-distinct elements (strict comparison) drawn from
 $element. Element shrinking keeps the list distinct; the result may be
 smaller than the drawn size when the element space runs out of fresh
 values, but never below $minSize — an unreachable minimum throws
-GenerationExhaustedException.
+GenerationExhaustedException. Distinct means `!==`, and `NAN` is
+never identical to itself, so a list over floatSpecial() can
+hold several of them.
 
 ### subset()
 
@@ -193,6 +204,10 @@ Associative arrays (maps) with keys from $key and values from $value.
 Keys must be int or string; only distinct keys are kept, so the result
 may be smaller than the drawn size when the key space runs out, but never
 below $minSize — an unreachable minimum throws [`GenerationExhaustedException`](/api/classes/GenerationExhaustedException).
+A string key PHP would store as an integer (`"0"`, `"12"`, `"-3"`) is
+redrawn like a collision, so the map stays the `array<string, T>` a
+string key generator declares — a key generator producing only such
+strings yields `[]`, or throws when $minSize is above zero.
 
 ### record()
 
@@ -250,11 +265,13 @@ Gen::forClass(Money::class);
 Gen::forClass(Money::class, ['amount' => Gen::intPositive()]);
 ```
 
-Per parameter, in order: an override, then the `@param` docblock (psalm
-subset), then the native type. The docblock wins over the native type
-because it says more — `int` and `int<0, 100>` are the same native type
-and a very different value space — and a type this cannot read is an
-exception naming the parameter rather than a widened guess. See
+Per parameter, in order: an override, then the docblock (psalm subset;
+`@psalm-param`/`@phpstan-param` over `@param`, and the promoted
+property's own `@var` when the constructor docblock is silent), then
+the native type. The docblock wins over the native type because it says
+more — `int` and `int<0, 100>` are the same native type and a very
+different value space — and a type this cannot read is an exception
+naming the parameter rather than a widened guess. See
 [`Arbitrary\ClassArbitrary`](/api/classes/Arbitrary/ClassArbitrary) for the supported subset and for what a validating
 constructor does.
 
@@ -283,9 +300,10 @@ Gen::forParameters(new \ReflectionMethod(BackoffTest::class, 'delayStaysWithinCa
 Gen::forParameters($method, ['cap' => Gen::intBetween(0, 60_000)]);   // override one parameter
 ```
 
-Per parameter, in order: an override, then the `@param` docblock (psalm
-subset), then the native type — the same rules, the same supported
-subset and the same refusals as `forClass`(). Overrides may be
+Per parameter, in order: an override, then the docblock (psalm subset;
+`@psalm-param`/`@phpstan-param` over `@param`), then the native type —
+the same rules, the same supported subset and the same refusals as
+`forClass`(). Overrides may be
 partial: the parameters they name are taken as given, the rest are
 derived from the signature. A type this cannot read is an exception
 naming the function and the parameter, never a widened guess.

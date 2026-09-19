@@ -15,7 +15,7 @@ use RuntimeException;
  *
  * @api
  */
-final class PropertyViolationException extends RuntimeException
+final class PropertyViolationException extends RuntimeException implements PropertyTestingException
 {
     public function __construct(private readonly CounterExample $counterExample)
     {

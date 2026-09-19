@@ -17,7 +17,9 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * cluster at edges. The exclusive upper bound is never emitted.
  *
  * Shrinking floats reliably is hard (no natural "smallest" value), so the
- * shrink tree has a single candidate: zero, clamped into the configured range.
+ * shrink tree has a single candidate: the point of `[min, max)` nearest to
+ * zero — never the excluded upper bound, so for a range at or below zero it
+ * is the largest float under `max`.
  * For fine-grained shrinking on a numeric input, generate an integer and
  * {@see \Rasuvaeff\PropertyTesting\Gen::map()} it to a float — with integrated
  * shrinking the mapped value shrinks through the integer's tree.
@@ -79,15 +81,51 @@ final readonly class FloatArbitrary implements ArbitraryInterface
     private function tree(float $value): Shrinkable
     {
         return Shrinkable::of($value, function () use ($value): \Generator {
-            // Shrink toward zero, clamped to the configured range so the candidate
-            // stays in the generated domain (mirrors IntArbitrary). For a range
-            // that excludes zero, e.g. [5.0, 10.0], the target is the nearest
-            // bound (5.0).
-            $target = max($this->min, min($this->max, 0.0));
+            $target = $this->shrinkTarget();
 
             if ($value !== $target) {
                 yield Shrinkable::leaf($target);
             }
         });
+    }
+
+    /**
+     * The point of `[min, max)` nearest to zero — the one candidate every
+     * value shrinks to (mirrors IntArbitrary's clamp). `0.0` when the range
+     * holds it, `min` when the range lies above zero, and for a range at or
+     * below zero the largest float still under `max`: the upper bound itself
+     * is excluded from generation, so it must not appear as a counterexample
+     * either. A degenerate range (`min === max`) has that one value only.
+     */
+    private function shrinkTarget(): float
+    {
+        if ($this->max > 0.0) {
+            return max($this->min, 0.0);
+        }
+
+        return max($this->min, $this->below($this->max));
+    }
+
+    /**
+     * The largest double strictly less than $value, for a finite $value at or
+     * below zero: PHP has no `nextafter()`, so the IEEE 754 bit pattern is
+     * stepped instead. Exact, so the candidate is the same on every machine.
+     */
+    private function below(float $value): float
+    {
+        if ($value === 0.0) {
+            // Below zero (of either sign) sits the smallest negative subnormal.
+            return -5.0e-324;
+        }
+
+        /** @var array{1: int} $bits */
+        $bits = unpack('J', pack('E', $value));
+
+        // With the sign bit set, the pattern one higher is the double one
+        // step further from zero.
+        /** @var array{1: float} $stepped */
+        $stepped = unpack('E', pack('J', $bits[1] + 1));
+
+        return $stepped[1];
     }
 }

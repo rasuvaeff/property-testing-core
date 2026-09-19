@@ -13,7 +13,7 @@ description: "Thrown when a bounded-attempt generator cannot produce a value tha
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Thrown when a bounded-attempt generator cannot produce a value that satisfies
 its constraint within its attempt budget: [`Arbitrary\FilteredArbitrary`](/api/classes/Arbitrary/FilteredArbitrary)

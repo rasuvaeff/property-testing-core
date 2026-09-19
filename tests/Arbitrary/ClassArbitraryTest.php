@@ -17,6 +17,7 @@ use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\AnnotatedTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Currency;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Cyclic;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\DocblockClassTypes;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Empty_;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\GenericCollection;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\LiteralsHoldingSeparators;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NarrowedFloat;
@@ -25,10 +26,15 @@ use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Nested;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NoConstructor;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\NotInstantiable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Ordered;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\PromotedVarTypes;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\ToolSpecificParamTags;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Unreadable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Validating;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Variadic;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\WithEmptyEnum;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\WithEnumAndDate;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\WithNativeUnion;
+use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\WithUnknownDocblockClass;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\WrapsNotInstantiable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
@@ -91,6 +97,57 @@ final class ClassArbitraryTest
             Assert::true(in_array($value->status, ['draft', 'published'], strict: true));
             // ?non-empty-string
             Assert::true($value->note === null || $value->note !== '');
+        }
+    }
+
+    /**
+     * The narrower type lands on the promoted property when the constructor
+     * has no docblock of its own — `@var int<0, max>` above `public int
+     * $amount` — and it has to be read there too, or the constructor rejects
+     * what the native type generated (#132). A method-docblock `@param` still
+     * wins over the property's `@var`.
+     */
+    public function readsTheVarOnAPromotedProperty(): void
+    {
+        $random = new Random(3);
+        $arbitrary = new ClassArbitrary(PromotedVarTypes::class);
+
+        for ($i = 0; $i < 50; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::true($value->amount >= 0);
+            Assert::true(in_array($value->side, ['a', 'b'], strict: true));
+            Assert::true($value->digit >= 0 && $value->digit <= 9);
+            Assert::true($value->base >= 1 && $value->base <= 300);
+        }
+
+        Assert::same(
+            DocblockTypes::of(new \ReflectionMethod(PromotedVarTypes::class, '__construct')),
+            ['base' => 'int<1, 300>', 'amount' => 'int<0, max>', 'side' => "'a'|'b'", 'digit' => 'int<0, 9>'],
+        );
+    }
+
+    /**
+     * `@psalm-param` and `@phpstan-param` are how psalm and PHPStan narrow a
+     * `@param` written for the IDE; they win over it whatever the order, and
+     * psalm's spelling wins over PHPStan's.
+     */
+    public function toolSpecificParamTagsWinOverParam(): void
+    {
+        Assert::same(
+            DocblockTypes::of(new \ReflectionMethod(ToolSpecificParamTags::class, '__construct')),
+            ['x' => 'positive-int', 'y' => 'int<-9, -1>', 'z' => 'int<6, 9>'],
+        );
+
+        $random = new Random(3);
+        $arbitrary = new ClassArbitrary(ToolSpecificParamTags::class);
+
+        for ($i = 0; $i < 50; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            Assert::true($value->x >= 1);
+            Assert::true($value->y >= -9 && $value->y <= -1);
+            Assert::true($value->z >= 6 && $value->z <= 9);
         }
     }
 
@@ -429,6 +486,39 @@ final class ClassArbitraryTest
         } catch (\InvalidArgumentException $e) {
             Assert::string($e->getMessage())->contains('parameter $anything is typed array');
             Assert::string($e->getMessage())->contains('pass an override');
+        }
+    }
+
+    public function aNativeUnionIsRefusedByItsOwnName(): void
+    {
+        try {
+            new ClassArbitrary(WithNativeUnion::class);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('parameter $either is typed string|int, which this cannot read');
+        }
+    }
+
+    public function anUnknownClassInsideADocblockTypeIsNamed(): void
+    {
+        try {
+            new ClassArbitrary(WithUnknownDocblockClass::class);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('parameter $items is documented as list<Nope>, which this cannot read (unknown class "Nope"); pass an override');
+        }
+    }
+
+    public function anEmptyEnumIsRefusedByName(): void
+    {
+        try {
+            new ClassArbitrary(WithEmptyEnum::class);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Enum ' . Empty_::class . ' has no cases to pick from');
         }
     }
 

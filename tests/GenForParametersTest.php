@@ -269,6 +269,30 @@ final class GenForParametersTest
         }
     }
 
+    /**
+     * A generic the function declares is unreadable, not unknown: the
+     * refusal names the class that really is unknown and leaves `T` alone.
+     */
+    public function aDeclaredTemplateIsNotAnUnknownClass(): void
+    {
+        try {
+            Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'withATemplateAndAnUnknownClass'));
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('parameter $items is documented as list<T>, which this cannot read; pass an override');
+            Assert::string($e->getMessage())->notContains('unknown class "T"');
+        }
+
+        try {
+            Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'withATemplateAndAnUnknownClass'), ['items' => Gen::constant([])]);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('documented as array<string, Nope>, which this cannot read (unknown class "Nope")');
+        }
+    }
+
     public function aPsalmParamWinsOverTheParamBesideIt(): void
     {
         $generators = Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'psalmParam'));

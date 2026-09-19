@@ -50,6 +50,13 @@ final class PropertyMethods
      */
     public function withUnknownClass(array $items): void {}
 
+    /**
+     * @template T of object
+     * @param list<T> $items
+     * @param array<string, Nope> $named
+     */
+    public function withATemplateAndAnUnknownClass(array $items, array $named): void {}
+
     public function variadic(int ...$numbers): void {}
 
     public function withoutParameters(): void {}

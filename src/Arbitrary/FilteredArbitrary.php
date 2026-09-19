@@ -6,7 +6,9 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Closure;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Enumerable;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
+use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -25,10 +27,10 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * satisfies the predicate (a rejected candidate's subtree is pruned with it).
  *
  * @template TInner
- * @implements ArbitraryInterface<TInner>
+ * @implements Enumerable<TInner>
  * @api
  */
-final readonly class FilteredArbitrary implements ArbitraryInterface
+final readonly class FilteredArbitrary implements Enumerable
 {
     private const int MAX_ATTEMPTS = 100;
 
@@ -60,6 +62,31 @@ final readonly class FilteredArbitrary implements ArbitraryInterface
             self::MAX_ATTEMPTS,
             'the predicate rejected every generated value; widen the source arbitrary, raise the attempt budget, or build dependent values with Gen::flatMap() instead of filtering',
         );
+    }
+
+    /**
+     * The source's size — an upper bound, since the predicate is only
+     * applied while walking.
+     */
+    #[\Override]
+    public function domainSize(): ?int
+    {
+        return Domain::sizeOf($this->inner);
+    }
+
+    #[\Override]
+    public function enumerate(): iterable
+    {
+        if (!$this->inner instanceof Enumerable) {
+            throw new \LogicException('Gen::filter(): the source generator has no finite domain to enumerate');
+        }
+
+        /** @var Shrinkable<TInner> $node */
+        foreach ($this->inner->enumerate() as $node) {
+            if (($this->predicate)($node->value)) {
+                yield $this->filtered($node);
+            }
+        }
     }
 
     /**

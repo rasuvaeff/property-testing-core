@@ -227,6 +227,20 @@ final class DistributionReportTest
         ]);
     }
 
+    public function toArrayCarriesTheExhaustiveOutcomeOnlyWhenTheRunAskedForIt(): void
+    {
+        $walked = DistributionReport::of(new RunStatistics(attempts: 4, discards: 0, checks: 4, classifications: [], domainSize: 4), coverageAssessed: true);
+        Assert::same($walked->domainSize, 4);
+        Assert::same($walked->toArray()['exhaustive'], ['domainSize' => 4]);
+
+        $declined = DistributionReport::of(new RunStatistics(attempts: 4, discards: 0, checks: 4, classifications: [], exhaustiveDeclined: 'too big'), coverageAssessed: true);
+        Assert::same($declined->exhaustiveDeclined, 'too big');
+        Assert::same($declined->toArray()['exhaustive'], ['declined' => 'too big']);
+
+        $sampled = DistributionReport::of(new RunStatistics(attempts: 4, discards: 0, checks: 4, classifications: []), coverageAssessed: true);
+        Assert::false(array_key_exists('exhaustive', $sampled->toArray()));
+    }
+
     /**
      * The keys are the machine-readable contract the compatibility policy
      * freezes (point 4): a key may be added at the end, never renamed or

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Enumerable;
+use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -17,10 +19,10 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * Shrinking keeps the key set fixed and shrinks one field at a time through
  * that field's own shrink tree, so each value shrinks within its domain.
  *
- * @implements ArbitraryInterface<array<string, mixed>>
+ * @implements Enumerable<array<string, mixed>>
  * @api
  */
-final readonly class RecordArbitrary implements ArbitraryInterface
+final readonly class RecordArbitrary implements Enumerable
 {
     /** @var non-empty-array<string, ArbitraryInterface> */
     private array $shape;
@@ -49,6 +51,36 @@ final readonly class RecordArbitrary implements ArbitraryInterface
             static fn(ArbitraryInterface $arbitrary): Shrinkable => $arbitrary->generate($random),
             $this->shape,
         ));
+    }
+
+    /**
+     * The product of the fields' domains, when every field has one.
+     */
+    #[\Override]
+    public function domainSize(): ?int
+    {
+        return Domain::product($this->shape);
+    }
+
+    /**
+     * First field varying slowest.
+     */
+    #[\Override]
+    public function enumerate(): iterable
+    {
+        $shape = [];
+
+        foreach ($this->shape as $key => $field) {
+            if (!$field instanceof Enumerable) {
+                throw new \LogicException(sprintf('Gen::record(): field "%s" has no finite domain to enumerate', $key));
+            }
+
+            $shape[$key] = $field;
+        }
+
+        foreach (Domain::cartesian($shape) as $fields) {
+            yield $this->tree($fields);
+        }
     }
 
     /**

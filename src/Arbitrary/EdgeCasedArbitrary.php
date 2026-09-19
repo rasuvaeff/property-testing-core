@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Enumerable;
+use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -26,10 +28,10 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * to the value it would replace is skipped: no candidate equals its parent.
  *
  * @template T
- * @implements ArbitraryInterface<T>
+ * @implements Enumerable<T>
  * @api
  */
-final readonly class EdgeCasedArbitrary implements ArbitraryInterface
+final readonly class EdgeCasedArbitrary implements Enumerable
 {
     private const int BIAS_DENOMINATOR = 5;
 
@@ -64,6 +66,27 @@ final readonly class EdgeCasedArbitrary implements ArbitraryInterface
         }
 
         return $this->wrap($this->inner->generate($random));
+    }
+
+    /**
+     * The delegate's domain: the edge values are taken as members of it.
+     */
+    #[\Override]
+    public function domainSize(): ?int
+    {
+        return Domain::sizeOf($this->inner);
+    }
+
+    #[\Override]
+    public function enumerate(): iterable
+    {
+        if (!$this->inner instanceof Enumerable) {
+            throw new \LogicException('Gen::withEdgeCases(): the inner generator has no finite domain to enumerate');
+        }
+
+        foreach ($this->inner->enumerate() as $node) {
+            yield $this->wrap($node);
+        }
     }
 
     /**

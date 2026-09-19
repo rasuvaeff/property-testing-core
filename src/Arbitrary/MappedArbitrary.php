@@ -6,6 +6,8 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Closure;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Enumerable;
+use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -19,10 +21,10 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  *
  * @template TInner
  * @template TOutput
- * @implements ArbitraryInterface<TOutput>
+ * @implements Enumerable<TOutput>
  * @api
  */
-final readonly class MappedArbitrary implements ArbitraryInterface
+final readonly class MappedArbitrary implements Enumerable
 {
     /**
      * @param ArbitraryInterface<TInner> $inner
@@ -40,5 +42,27 @@ final readonly class MappedArbitrary implements ArbitraryInterface
     public function generate(Random $random): Shrinkable
     {
         return $this->inner->generate($random)->map($this->map);
+    }
+
+    /**
+     * The source's size: a map that sends two source values to one output
+     * walks both, so this is an upper bound on the distinct outputs.
+     */
+    #[\Override]
+    public function domainSize(): ?int
+    {
+        return Domain::sizeOf($this->inner);
+    }
+
+    #[\Override]
+    public function enumerate(): iterable
+    {
+        if (!$this->inner instanceof Enumerable) {
+            throw new \LogicException('Gen::map(): the source generator has no finite domain to enumerate');
+        }
+
+        foreach ($this->inner->enumerate() as $node) {
+            yield $node->map($this->map);
+        }
     }
 }

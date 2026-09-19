@@ -35,6 +35,11 @@ final readonly class RunStatistics
      *        `$classifications` gives.
      * @param array<string, array<string, int>> $intersections Per table, how many passing runs hit
      *        each pair of its tags together, keyed `tagA & tagB` with the two tags in sorted order.
+     * @param ?int $domainSize The size of the parameter domain the phase enumerated instead of
+     *        sampling ({@see PropertyConfig::$exhaustive}); null when it sampled.
+     * @param ?string $exhaustiveDeclined Why an exhaustive run sampled after all — a parameter
+     *        without a finite domain, or a domain above the budget; null when it enumerated or
+     *        was never asked to.
      */
     public function __construct(
         public int $attempts,
@@ -45,5 +50,7 @@ final readonly class RunStatistics
         public int $skips = 0,
         public array $tables = [],
         public array $intersections = [],
+        public ?int $domainSize = null,
+        public ?string $exhaustiveDeclined = null,
     ) {}
 }

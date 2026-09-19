@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Enumerable;
+use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -16,10 +18,10 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * Shrinking keeps the arity fixed and shrinks one position at a time through
  * that position's own shrink tree, so each component shrinks within its domain.
  *
- * @implements ArbitraryInterface<list<mixed>>
+ * @implements Enumerable<list<mixed>>
  * @api
  */
-final readonly class TupleArbitrary implements ArbitraryInterface
+final readonly class TupleArbitrary implements Enumerable
 {
     /** @var non-empty-list<ArbitraryInterface<mixed>> */
     private array $elements;
@@ -45,6 +47,43 @@ final readonly class TupleArbitrary implements ArbitraryInterface
             static fn(ArbitraryInterface $element): Shrinkable => $element->generate($random),
             $this->elements,
         ));
+    }
+
+    /**
+     * The product of the elements' domains, when every element has one.
+     */
+    #[\Override]
+    public function domainSize(): ?int
+    {
+        return Domain::product($this->elements);
+    }
+
+    /**
+     * First element varying slowest.
+     */
+    #[\Override]
+    public function enumerate(): iterable
+    {
+        foreach (Domain::cartesian($this->enumerableElements('Gen::tuple()', $this->elements)) as $components) {
+            yield $this->tree(array_values($components));
+        }
+    }
+
+    /**
+     * @param array<array-key, ArbitraryInterface> $elements
+     *
+     * @return array<array-key, Enumerable>
+     */
+    private function enumerableElements(string $generator, array $elements): array
+    {
+        foreach ($elements as $element) {
+            if (!$element instanceof Enumerable) {
+                throw new \LogicException($generator . ': an element generator has no finite domain to enumerate');
+            }
+        }
+
+        /** @var array<array-key, Enumerable> */
+        return $elements;
     }
 
     /**

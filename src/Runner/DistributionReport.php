@@ -48,6 +48,8 @@ final readonly class DistributionReport
      *        each pair of its tags together, the pair rendered `tagA & tagB` in sorted order. Only
      *        pairs that occurred at least once; a table whose runs never hit two tags at once has an
      *        empty list here.
+     * @param ?int $domainSize The parameter domain enumerated instead of sampled; null when sampled.
+     * @param ?string $exhaustiveDeclined Why an exhaustive run sampled after all; null otherwise.
      */
     public function __construct(
         public int $attempts,
@@ -58,6 +60,8 @@ final readonly class DistributionReport
         public int $skips = 0,
         public array $tables = [],
         public array $intersections = [],
+        public ?int $domainSize = null,
+        public ?string $exhaustiveDeclined = null,
     ) {}
 
     /**
@@ -100,6 +104,8 @@ final readonly class DistributionReport
             skips: $statistics->skips,
             tables: $tables,
             intersections: $intersections,
+            domainSize: $statistics->domainSize,
+            exhaustiveDeclined: $statistics->exhaustiveDeclined,
         );
     }
 
@@ -208,6 +214,13 @@ final readonly class DistributionReport
                     'intersections' => array_map(self::tagShare(...), $this->intersections[$table] ?? []),
                 ];
             }
+        }
+
+        // Likewise only for a run that asked to enumerate: what it got.
+        if ($this->domainSize !== null) {
+            $data['exhaustive'] = ['domainSize' => $this->domainSize];
+        } elseif ($this->exhaustiveDeclined !== null) {
+            $data['exhaustive'] = ['declined' => $this->exhaustiveDeclined];
         }
 
         return $data;

@@ -69,8 +69,23 @@ final readonly class PropertyConfig
      *        ({@see EdgeCases::None}). Turn them off when the edges are what the property cannot
      *        use — a body discarding `0`, a range end that violates a precondition — so the discard
      *        budget stops paying for one run in five.
-     *        Last in the signature on purpose: a parameter added anywhere else moves the ones after
-     *        it, and every caller passing $path positionally would silently mean something else.
+     *        A parameter added anywhere before this one moves the ones after it, and every caller
+     *        passing $path positionally would silently mean something else — later parameters are
+     *        appended after it.
+     * @param bool $exhaustive Whether the random phase enumerates the whole parameter domain instead
+     *        of sampling it, when it can: every parameter's generator must implement
+     *        {@see \Rasuvaeff\PropertyTesting\Enumerable} with a finite domain, and the product of
+     *        the sizes must not exceed $exhaustiveBudget. When it cannot, the phase samples as usual
+     *        and the {@see DistributionReport} says why. A pass over an enumerated domain is a proof
+     *        over the parameters — in-body draws stay random inside each input — and the walk is
+     *        seed-independent, so $runs is ignored in favour of the domain size.
+     * @param int $exhaustiveBudget The largest domain $exhaustive will enumerate; above it the phase
+     *        samples. At least 1.
+     * @param int $flakyReplays How many times the minimised counterexample is re-executed after a
+     *        falsification to tell a real counterexample from nondeterminism in the body or the code
+     *        under test. A replay that passes marks the counterexample flaky
+     *        ({@see \Rasuvaeff\PropertyTesting\CounterExample::$flaky}); 0 disables the check.
+     *        Charged to wall clock only, never to $runs.
      */
     public function __construct(
         public int $runs = 100,
@@ -85,9 +100,18 @@ final readonly class PropertyConfig
         public bool $derandomize = false,
         public ?string $path = null,
         public EdgeCases $edgeCases = EdgeCases::Mixin,
+        public bool $exhaustive = false,
+        public int $exhaustiveBudget = 10_000,
+        public int $flakyReplays = 2,
     ) {
         if ($runs < 1) {
             throw new \InvalidArgumentException('Runs must be greater than or equal to 1');
+        }
+        if ($exhaustiveBudget < 1) {
+            throw new \InvalidArgumentException('Exhaustive budget must be greater than or equal to 1');
+        }
+        if ($flakyReplays < 0) {
+            throw new \InvalidArgumentException('Flaky replays must be greater than or equal to 0');
         }
         if ($maxShrinks !== null && $maxShrinks < 0) {
             throw new \InvalidArgumentException('Max shrinks must be greater than or equal to 0');

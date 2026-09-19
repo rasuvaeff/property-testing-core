@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
-use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Enumerable;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -16,10 +16,10 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * There is nothing smaller than a constant, so it does not shrink.
  *
  * @template TValue
- * @implements ArbitraryInterface<TValue>
+ * @implements Enumerable<TValue>
  * @api
  */
-final readonly class ConstantArbitrary implements ArbitraryInterface
+final readonly class ConstantArbitrary implements Enumerable
 {
     /**
      * @param TValue $value
@@ -35,5 +35,17 @@ final readonly class ConstantArbitrary implements ArbitraryInterface
     public function generate(Random $random): Shrinkable
     {
         return Shrinkable::leaf($this->value);
+    }
+
+    #[\Override]
+    public function domainSize(): ?int
+    {
+        return 1;
+    }
+
+    #[\Override]
+    public function enumerate(): iterable
+    {
+        yield Shrinkable::leaf($this->value);
     }
 }

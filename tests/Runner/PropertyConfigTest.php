@@ -31,6 +31,9 @@ final class PropertyConfigTest
         Assert::same($config->shrink, ShrinkMode::Full);
         Assert::same($config->phases, Phase::all());
         Assert::false($config->derandomize);
+        Assert::false($config->exhaustive);
+        Assert::same($config->exhaustiveBudget, 10_000);
+        Assert::same($config->flakyReplays, 2);
     }
 
     public function everyPhaseRunsByDefault(): void
@@ -162,6 +165,16 @@ final class PropertyConfigTest
         yield 'bounded shrinking without a budget' => [
             static fn(): PropertyConfig => new PropertyConfig(shrink: ShrinkMode::Bounded),
             'Bounded shrinking requires a shrink budget',
+        ];
+
+        yield 'zero exhaustive budget' => [
+            static fn(): PropertyConfig => new PropertyConfig(exhaustiveBudget: 0),
+            'Exhaustive budget must be greater than or equal to 1',
+        ];
+
+        yield 'negative flaky replays' => [
+            static fn(): PropertyConfig => new PropertyConfig(flakyReplays: -1),
+            'Flaky replays must be greater than or equal to 0',
         ];
 
         yield 'empty phase set' => [

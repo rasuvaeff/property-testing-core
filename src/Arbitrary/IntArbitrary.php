@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
-use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Enumerable;
 use Rasuvaeff\PropertyTesting\Internal\Boundary;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
@@ -23,10 +23,10 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * subtree toward the same target — a binary search for the minimal failing
  * integer.
  *
- * @implements ArbitraryInterface<int>
+ * @implements Enumerable<int>
  * @api
  */
-final readonly class IntArbitrary implements ArbitraryInterface
+final readonly class IntArbitrary implements Enumerable
 {
     private const int BIAS_DENOMINATOR = 5;
 
@@ -50,6 +50,35 @@ final readonly class IntArbitrary implements ArbitraryInterface
         }
 
         return $this->tree($random->int($this->min, $this->max));
+    }
+
+    /**
+     * Saturates: a range wider than `PHP_INT_MAX` values (the full int range
+     * above all) reports `PHP_INT_MAX`, which no budget accepts.
+     */
+    #[\Override]
+    public function domainSize(): ?int
+    {
+        // Subtracting first can overflow to a float for the full range; the
+        // comparison catches both that and an exact PHP_INT_MAX-wide span.
+        $width = $this->max - $this->min;
+
+        return is_int($width) && $width < PHP_INT_MAX ? max(1, $width + 1) : PHP_INT_MAX;
+    }
+
+    /**
+     * Ascending from the minimum.
+     */
+    #[\Override]
+    public function enumerate(): iterable
+    {
+        for ($value = $this->min; ; ++$value) {
+            yield $this->tree($value);
+
+            if ($value === $this->max) {
+                return;
+            }
+        }
     }
 
     /** @return Shrinkable<int> */

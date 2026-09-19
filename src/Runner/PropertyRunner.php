@@ -27,6 +27,7 @@ use Rasuvaeff\PropertyTesting\Event\ShrinkTried;
 use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
+use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
 use Rasuvaeff\PropertyTesting\Internal\ReplayVerdict;
 use Rasuvaeff\PropertyTesting\Internal\ShrinkPath;
@@ -98,6 +99,14 @@ final readonly class PropertyRunner
         Classify::beginRun();
         DrawContext::disarm();
 
+        // Exhaustive mode decides once, before any phase: either the whole
+        // parameter domain is walked (seed-independent, so the same walk
+        // serves the random phase and a seed replay), or the reason it is
+        // not goes into the report and the phase samples.
+        [$domainSize, $exhaustiveDeclined] = $config->exhaustive
+            ? $this->exhaustiveDomain($property, $config->exhaustiveBudget)
+            : [null, null];
+
         $this->emit($listeners, new PropertyStarted($property->id, $seed, $runs));
 
         if ($config->runs(Phase::Examples)) {
@@ -165,7 +174,7 @@ final readonly class PropertyRunner
                     // entry's mode, not the current configuration's: a suite
                     // that switched modes since must still see its regression.
                     $replayRuns = max($runs, ($entry->runsBeforeFailure ?? -1) + 1);
-                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $entry->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $this->maxSkips($config->maxDiscards, $replayRuns), $listeners, null);
+                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $entry->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $this->maxSkips($config->maxDiscards, $replayRuns), $listeners, null, $domainSize, $exhaustiveDeclined);
 
                     if ($replay->failure() instanceof \Throwable) {
                         return $this->finish($listeners, $property->id, $replay, $this->assessedCoverage($replay));
@@ -200,7 +209,7 @@ final readonly class PropertyRunner
             )), coverageAssessed: false);
         }
 
-        $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $maxSkips, $listeners, $config->path);
+        $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $maxSkips, $listeners, $config->path, $domainSize, $exhaustiveDeclined);
 
         if ($corpus instanceof Corpus && $result instanceof Falsified) {
             $counterExample = $result->counterExample();
@@ -213,6 +222,31 @@ final readonly class PropertyRunner
         }
 
         return $this->finish($listeners, $property->id, $result, $this->assessedCoverage($result));
+    }
+
+    /**
+     * Whether the property's parameter domain can be enumerated within
+     * $budget: the domain size when it can, otherwise the reason it cannot —
+     * naming the first parameter without a finite domain, or the size against
+     * the budget. In-body draws are not parameters and do not count.
+     *
+     * @return array{0: ?int, 1: ?string}
+     */
+    private function exhaustiveDomain(PropertyDefinition $property, int $budget): array
+    {
+        foreach ($property->parameterNames as $name) {
+            if (Domain::sizeOf($property->generators[$name]) === null) {
+                return [null, sprintf('parameter "%s" has no finite domain to enumerate', $name)];
+            }
+        }
+
+        $size = Domain::product($property->generators) ?? PHP_INT_MAX;
+
+        if ($size > $budget) {
+            return [null, sprintf('the domain has %s inputs, above the exhaustive budget of %d', $size === PHP_INT_MAX ? 'more than ' . PHP_INT_MAX : (string) $size, $budget)];
+        }
+
+        return [$size, null];
     }
 
     /**
@@ -342,6 +376,8 @@ final readonly class PropertyRunner
         int $maxSkips,
         array $listeners,
         ?string $path,
+        ?int $domainSize = null,
+        ?string $exhaustiveDeclined = null,
     ): PropertyResult {
         $maxShrinks = $property->config->maxShrinks;
         $shrinkMode = $property->config->shrink;
@@ -361,7 +397,12 @@ final readonly class PropertyRunner
         /** @var array<string, array<string, int>> $intersections */
         $intersections = [];
 
-        while ($checks < $runs) {
+        // An enumerated domain is walked to its end regardless of $runs — a
+        // discarded input is skipped, not resampled — and the walk is the
+        // same for every seed; the seed still drives the in-body draws.
+        $enumeration = $domainSize === null ? null : Domain::cartesian($this->enumerableGenerators($property));
+
+        while ($enumeration === null ? $checks < $runs : $enumeration->valid()) {
             // The budget is a wall-clock cap on the whole phase: once it runs
             // out, completing the remaining checks would only overrun further,
             // so the property fails instead of silently checking less.
@@ -382,7 +423,7 @@ final readonly class PropertyRunner
                             successfulRuns: $checks,
                             requiredRuns: $runs,
                         ),
-                        statistics: new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips, $tables, $intersections),
+                        statistics: new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips, $tables, $intersections, $domainSize, $exhaustiveDeclined),
                     );
                 }
             }
@@ -391,7 +432,14 @@ final readonly class PropertyRunner
             Classify::beginRun();
 
             try {
-                $trees = $this->generate($property->generators, $property->parameterNames, $random);
+                if ($enumeration === null) {
+                    $trees = $this->generate($property->generators, $property->parameterNames, $random);
+                } else {
+                    // Keyed by parameter name already — the cartesian walk
+                    // keeps the keys it was given, in their order.
+                    $trees = $enumeration->current() ?? throw new \LogicException('The enumeration ended while still valid');
+                    $enumeration->next();
+                }
             } catch (GenerationExhaustedException $exhausted) {
                 // A generator could not produce a valid value (e.g. Gen::filter()
                 // whose predicate rejected every draw). Report it as a clean
@@ -445,7 +493,7 @@ final readonly class PropertyRunner
                             exhaustedBySkips: $discards <= $maxDiscards,
                             maxSkips: $maxSkips,
                         ),
-                        statistics: new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips, $tables, $intersections),
+                        statistics: new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips, $tables, $intersections, $domainSize, $exhaustiveDeclined),
                     );
                 }
 
@@ -538,7 +586,7 @@ final readonly class PropertyRunner
 
         $requirements = Classify::flushRequirements();
 
-        $statistics = new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips, $tables, $intersections);
+        $statistics = new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips, $tables, $intersections, $domainSize, $exhaustiveDeclined);
         $violation = $this->coverageViolation($property->name, $requirements, $classifications, $checks);
 
         if ($violation instanceof CoverageViolationException) {
@@ -594,6 +642,29 @@ final readonly class PropertyRunner
             $name,
             implode('; ', $unmet),
         ));
+    }
+
+    /**
+     * The generators in parameter order, as the enumerables
+     * {@see exhaustiveDomain()} already found them to be.
+     *
+     * @return array<string, \Rasuvaeff\PropertyTesting\Enumerable>
+     */
+    private function enumerableGenerators(PropertyDefinition $property): array
+    {
+        $enumerables = [];
+
+        foreach ($property->parameterNames as $name) {
+            $generator = $property->generators[$name];
+
+            if (!$generator instanceof \Rasuvaeff\PropertyTesting\Enumerable) {
+                throw new \LogicException(sprintf('Parameter "%s" was found enumerable and no longer is', $name));
+            }
+
+            $enumerables[$name] = $generator;
+        }
+
+        return $enumerables;
     }
 
     /**
@@ -1200,9 +1271,11 @@ final readonly class PropertyRunner
     }
 
     /**
+     * @template TValue
+     *
      * @param list<string> $parameterNames
-     * @param list<mixed> $arguments
-     * @return array<string, mixed>
+     * @param list<TValue> $arguments
+     * @return array<string, TValue>
      */
     private function named(array $parameterNames, array $arguments): array
     {

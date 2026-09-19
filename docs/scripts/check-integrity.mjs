@@ -25,9 +25,9 @@ const pkgDir = join(docsDir, '..')
 // тихо деградирует обратно".
 const COMPLETENESS_BUDGET = {
     'type without a summary': 0,
-    'method without a summary': 28,
+    'method without a summary': 27,
     'parameter without a description': 125,
-    'constructor parameter without a description': 103,
+    'constructor parameter without a description': 102,
     'throwing method without @throws': 13,
 }
 

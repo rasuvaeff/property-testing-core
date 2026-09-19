@@ -13,7 +13,7 @@ description: "Reported when a run pinned to a shrink path cannot follow it: the 
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Reported when a run pinned to a shrink path cannot follow it: the candidate
 a step names is gone, no longer differs from the value it would replace, or

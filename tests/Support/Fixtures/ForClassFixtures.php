@@ -178,3 +178,65 @@ final readonly class WrapsNotInstantiable
         public NotInstantiable $inner,
     ) {}
 }
+
+final readonly class PromotedVarTypes
+{
+    /** @param int<1, 300> $base */
+    public function __construct(
+        /** @var int<0, max> */
+        public int $amount,
+        /** @psalm-var 'a'|'b' */
+        public string $side,
+        /**
+         * @var int<0, 9> $digit
+         */
+        public int $digit,
+        public int $base,
+    ) {
+        if ($amount < 0) {
+            throw new \InvalidArgumentException('Amount must be greater than or equal to 0');
+        }
+    }
+}
+
+final readonly class ToolSpecificParamTags
+{
+    /**
+     * @param int $x The IDE-facing type; psalm narrows it below.
+     * @psalm-param positive-int $x
+     * @phpstan-param int<-9, -1> $y
+     * @param int $y The IDE-facing type, written after the narrowing.
+     * @param int $z The IDE-facing type; both tools narrow it, psalm's wins.
+     * @phpstan-param int<0, 5> $z
+     * @psalm-param int<6, 9> $z
+     */
+    public function __construct(
+        public int $x,
+        public int $y,
+        public int $z,
+    ) {}
+}
+
+final readonly class WithNativeUnion
+{
+    public function __construct(
+        public int|string $either,
+    ) {}
+}
+
+final readonly class WithUnknownDocblockClass
+{
+    /** @param list<Nope> $items */
+    public function __construct(
+        public array $items,
+    ) {}
+}
+
+enum Empty_ {}
+
+final readonly class WithEmptyEnum
+{
+    public function __construct(
+        public Empty_ $nothing,
+    ) {}
+}

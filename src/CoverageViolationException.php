@@ -12,4 +12,4 @@ namespace Rasuvaeff\PropertyTesting;
  *
  * @api
  */
-final class CoverageViolationException extends \RuntimeException {}
+final class CoverageViolationException extends \RuntimeException implements PropertyTestingException {}

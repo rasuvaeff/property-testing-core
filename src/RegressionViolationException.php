@@ -18,7 +18,7 @@ use RuntimeException;
  *
  * @api
  */
-final class RegressionViolationException extends RuntimeException
+final class RegressionViolationException extends RuntimeException implements PropertyTestingException
 {
     /**
      * @param array<string, mixed> $arguments The recorded input, keyed by parameter name.

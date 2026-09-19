@@ -61,9 +61,19 @@ final readonly class FilesystemCorpus implements Corpus
      */
     private const string LOCK_FILE = '.corpus.lock';
 
+    /**
+     * @param string $directory The directory the documents live in; created on the first write.
+     *
+     * @throws \InvalidArgumentException When $directory is empty — the paths would then be built
+     *         under the filesystem root, which is never the corpus anyone meant.
+     */
     public function __construct(
         private string $directory,
-    ) {}
+    ) {
+        if ($directory === '') {
+            throw new \InvalidArgumentException('The corpus directory must not be empty');
+        }
+    }
 
     /**
      * The usable entries recorded for $id, cheapest first (values before seeds,
@@ -105,7 +115,18 @@ final readonly class FilesystemCorpus implements Corpus
      * Records $counterExample as the newest entry for $id, preferring its
      * minimised arguments over the bare seed.
      *
+     * Either the document is on disk when this returns, or it throws: a
+     * write that could not complete — the lock file replaced by a link, the
+     * temp path occupied, a short write on a full disk, a failed rename, a
+     * document held by another format version — is reported, never skipped
+     * in silence. The runner turns the exception into a
+     * {@see \Rasuvaeff\PropertyTesting\Event\CorpusFailed} event and goes on
+     * without the corpus; the property's outcome is untouched, but nobody is
+     * told a counterexample was recorded when it was not.
+     *
      * @param list<string> $parameterNames The property method's current parameters, in order.
+     *
+     * @throws \RuntimeException When the document could not be written.
      */
     #[\Override]
     public function remember(string $id, CounterExample $counterExample, array $parameterNames): void
@@ -113,9 +134,7 @@ final readonly class FilesystemCorpus implements Corpus
         $this->withLock(
             $id,
             function () use ($id, $counterExample, $parameterNames): void {
-                if ($this->holdsForeignFormat($id)) {
-                    return;
-                }
+                $this->refuseForeignFormat($id);
 
                 $entry = CorpusDocument::encodeEntry($counterExample, $parameterNames, self::SEQUENCE_EPOCH);
                 $key = CorpusDocument::keyOf($entry);
@@ -135,7 +154,8 @@ final readonly class FilesystemCorpus implements Corpus
      * Drops $entry from $id's corpus — the replay no longer fails, so the
      * regression is fixed and the entry has served its purpose.
      *
-     * @throws \RuntimeException When the entry cannot be re-encoded to the key that identifies it.
+     * @throws \RuntimeException When the entry cannot be re-encoded to the key that identifies it,
+     *         or when the document could not be written.
      */
     #[\Override]
     public function prune(string $id, CorpusEntry $entry): void
@@ -143,9 +163,7 @@ final readonly class FilesystemCorpus implements Corpus
         $this->withLock(
             $id,
             function () use ($id, $entry): void {
-                if ($this->holdsForeignFormat($id)) {
-                    return;
-                }
+                $this->refuseForeignFormat($id);
 
                 // A hydrated entry re-encodes to the very bytes it was read from,
                 // so the key identifies the same stored entry.
@@ -204,6 +222,8 @@ final readonly class FilesystemCorpus implements Corpus
 
     /**
      * @param list<array<string, mixed>> $entries
+     *
+     * @throws \RuntimeException When the document did not reach its path.
      */
     private function write(string $id, array $entries): void
     {
@@ -238,8 +258,7 @@ final readonly class FilesystemCorpus implements Corpus
         // shared corpus directory an attacker can predict it and pre-plant a
         // symlink; a plain write would follow it and overwrite whatever it
         // points at. Refusing the existing path turns that arbitrary write into
-        // a skipped corpus write, which is harmless — the corpus is best-effort
-        // memory, not a ledger.
+        // a refused corpus write — reported, and harmless to the property.
         $handle = @fopen($tmp, 'x');
 
         // The write runs under the property's lock, so no other writer can be
@@ -254,7 +273,11 @@ final readonly class FilesystemCorpus implements Corpus
         }
 
         if ($handle === false) {
-            return;
+            throw new \RuntimeException(sprintf(
+                'Could not create the corpus temp file of property "%s": the path "%s" is occupied',
+                $id,
+                $tmp,
+            ));
         }
 
         // The length check keeps a full disk from shrinking the corpus: a
@@ -268,7 +291,10 @@ final readonly class FilesystemCorpus implements Corpus
         if ($written !== \strlen($payload)) {
             @unlink($tmp);
 
-            return;
+            throw new \RuntimeException(sprintf(
+                'Could not write the corpus document of property "%s" in full; the previous document is kept',
+                $id,
+            ));
         }
 
         if (!@rename($tmp, $file)) {
@@ -276,6 +302,11 @@ final readonly class FilesystemCorpus implements Corpus
             // destination open) must not leave the temp file behind; the corpus
             // simply keeps its previous state.
             @unlink($tmp);
+
+            throw new \RuntimeException(sprintf(
+                'Could not move the corpus document of property "%s" into place; the previous document is kept',
+                $id,
+            ));
         }
     }
 
@@ -315,8 +346,12 @@ final readonly class FilesystemCorpus implements Corpus
         if (is_link($path)) {
             // A pre-planted link would be opened for writing (nothing is ever
             // written through it, but the same threat model refuses the temp
-            // path). The corpus is best-effort memory: skip, do not follow.
-            return;
+            // path). Refuse, do not follow — and say so.
+            throw new \RuntimeException(sprintf(
+                'Could not lock the corpus for property "%s": "%s" is a symbolic link',
+                $id,
+                $path,
+            ));
         }
 
         $lock = @fopen($path, 'c');
@@ -338,22 +373,30 @@ final readonly class FilesystemCorpus implements Corpus
     }
 
     /**
-     * Whether the property's document was written by another format version.
-     * Such a document reads as empty, and a write would replace it — the
-     * newer (or older) version's entries lost without a trace. It is left as
-     * it is; that version keeps its memory and this one goes without.
+     * Refuses to write over a document another format version wrote. Such a
+     * document reads as empty, and a write would replace it — the newer (or
+     * older) version's entries lost without a trace. It is left as it is;
+     * that version keeps its memory and this one goes without, which is
+     * reported rather than passed off as a recorded counterexample.
+     *
+     * @throws \RuntimeException
      */
-    private function holdsForeignFormat(string $id): bool
+    private function refuseForeignFormat(string $id): void
     {
         $file = $this->path($id);
 
         if (!is_file($file)) {
-            return false;
+            return;
         }
 
         $content = @file_get_contents($file);
 
-        return is_string($content) && CorpusDocument::isForeignFormat($content, self::FORMAT_VERSION);
+        if (is_string($content) && CorpusDocument::isForeignFormat($content, self::FORMAT_VERSION)) {
+            throw new \RuntimeException(sprintf(
+                'The corpus document of property "%s" was written by another format version and is left as it is',
+                $id,
+            ));
+        }
     }
 
     private function path(string $id): string

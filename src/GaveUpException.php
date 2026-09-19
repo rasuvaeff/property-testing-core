@@ -20,7 +20,7 @@ use RuntimeException;
  *
  * @api
  */
-final class GaveUpException extends RuntimeException
+final class GaveUpException extends RuntimeException implements PropertyTestingException
 {
     /**
      * @param string $propertyName Property that gave up, as the adapter named it.

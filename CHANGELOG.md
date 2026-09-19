@@ -1,5 +1,71 @@
 # Changelog
 
+## Unreleased
+
+- A refusal over a docblock type no longer calls a generic the function or
+  its class declares (`@template T`) an unknown class: `list<T>` is reported
+  as unreadable, and only a name nothing declares as `unknown class "…"`.
+- `docs/.api-workspace` moves its path version for core to `0.11.0` and the
+  adapter constraints to `-testo` `^0.11` / `-phpunit` `^0.9`, the bridged
+  releases (0.11.1 / 0.9.1) that accept core 0.11.
+
+## 0.11.0 — 2026-09-19
+
+- **Fixed:** `RedisDsn::parse()` quoted the password when the DSN carried
+  userinfo but no host (`redis://user:s3cret@`, `redis://user:s3cret@:6379`):
+  `parse_url()` returns `false` there, and the userinfo check trusted its
+  answer. Credentials are now looked for in the raw authority before anything
+  else is read, so the "carries credentials" message is the one you get, and it
+  never echoes the DSN (#128).
+- **Fixed:** `floatBetween($min, $max)` shrank to `$max` when the range lay at
+  or below zero — the one value the generator never produces. The shrink target
+  is the point of `[$min, $max)` nearest to `0.0`: for such a range the largest
+  float under `$max`. Generation is unchanged; `SEQUENCE_EPOCH` stays (#129).
+- **Fixed:** `FilesystemCorpus` no longer skips a write in silence. A lock file
+  replaced by a symlink, an occupied temp path, a short write, a failed rename
+  or a document held by another format version now throw `RuntimeException`,
+  which the runner reports as `CorpusFailed`; `CorpusStored` is emitted only
+  once the document is on disk. The property's outcome is unaffected, as
+  before (#136).
+- **Fixed:** `PropertyRunner::run()` dropped listeners from an iterable that
+  repeated keys — `iterator_to_array()` kept the keys (#134).
+- `PropertyTestingException`: an empty marker interface (extends `\Throwable`)
+  implemented by all ten `@api` exceptions, so `catch (PropertyTestingException)`
+  catches whatever the engine reports. `AssumptionSkipped` stays outside it on
+  purpose — a discard is control flow, not a failure (#130).
+- `AssumptionSkipped` is `@api`: every `TrialExecutor` has to catch it to map
+  `Assume::that()` to `TrialOutcome::discarded()`, and the executor seam is
+  documented as such (#131).
+- `Gen::forClass()` / `Gen::forParameters()` read `@psalm-param` and
+  `@phpstan-param` (winning over `@param`) and the `@var` written on a promoted
+  constructor property when the constructor docblock says nothing about it.
+  `/** @var int<0, max> */ public int $amount` no longer generates from the
+  native `int` (#132).
+- `Gen::stringOf()` defaults its bounds to `0..100`, like `stringFrom()` and
+  `bytes()` (#133).
+- `new FilesystemCorpus('')` and a Redis DSN with a `#fragment` are refused with
+  `InvalidArgumentException` instead of writing under `/` or dropping the
+  fragment (#135).
+- Refusal messages name what they refuse: a native union or an untyped
+  parameter is reported as `typed int|string` / `untyped` rather than "with no
+  usable type", an unknown class inside a docblock type is named (`unknown
+  class "Nope"`), and an enum without cases or `Gen::elements([])` says which
+  enum or argument is empty instead of "OneOf requires at least one value".
+- Documentation: `llms.txt` and the README tables name the `Gen::*` parameters
+  as the signatures do (`$minSize`/`$maxSize`, `$map`, `$flatMap`,
+  `$predicate`, `$arbitrary`); the frozen keys of `CounterExample::toArray()`
+  and `DistributionReport::toArray()` are listed and pinned by a test; a corpus
+  seed entry replaying without `Phase::Random`, `timeoutMs` not judging
+  discarded or skipped runs, the engine never warning about the discard share,
+  a native `float` meaning `floatBetween(-1e6, 1e6)`, `dictOf` redrawing
+  integer-like string keys, `floatBetween($x, $x)` and `NAN` under
+  `uniqueArrayOf` are written down. `composer-require-checker.json` is
+  export-ignored.
+- `docs/.api-workspace` moves its path version for core to `0.10.0` and the
+  Testo adapter constraint to `^0.10`, now that the adapter's `^0.9 || ^0.10`
+  bridge is released (0.10.0). The 0.10.0 release notes explain why the path
+  version had to stay at `0.9.0` for a day.
+
 ## 0.10.0 — 2026-09-12
 
 The contract freeze ahead of 1.0. Everything here is something that could not

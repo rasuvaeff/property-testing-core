@@ -13,7 +13,7 @@ description: "Reported when an explicit example (a fixed input declared via the 
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Reported when an explicit example (a fixed input declared via the property's
 `Examples` method) fails. Examples run before the random inputs and are not

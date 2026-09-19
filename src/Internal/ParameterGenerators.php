@@ -15,7 +15,7 @@ use Rasuvaeff\PropertyTesting\Gen;
  * constructor's parameters, instantiated) and
  * {@see \Rasuvaeff\PropertyTesting\Gen::forParameters()} (any function's
  * parameters, handed back as a map). The resolution rules are one thing —
- * an explicit override, then the `@param` docblock, then the native type —
+ * an explicit override, then the docblock ({@see DocblockTypes}), then the native type —
  * and $subject is the only difference between the callers: it names whose
  * parameter a refusal is about.
  *
@@ -244,10 +244,11 @@ final class ParameterGenerators
             // narrow its generics (`Collection<Item>`), never its values.
             if (!$native instanceof \ReflectionNamedType || $native->isBuiltin()) {
                 throw new \InvalidArgumentException(sprintf(
-                    'Cannot generate %s: parameter $%s is documented as %s, which this cannot read; pass an override',
+                    'Cannot generate %s: parameter $%s is documented as %s, which this cannot read%s; pass an override',
                     $subject,
                     $parameter->getName(),
                     $documented,
+                    self::unknownClasses($documented, $resolveClass, self::templates($parameter)),
                 ));
             }
         }
@@ -263,11 +264,84 @@ final class ParameterGenerators
         }
 
         throw new \InvalidArgumentException(sprintf(
-            'Cannot generate %s: parameter $%s is typed %s, which this cannot read; pass an override',
+            'Cannot generate %s: parameter $%s is %s, which this cannot read; pass an override',
             $subject,
             $parameter->getName(),
-            $documented ?? ($native instanceof \ReflectionNamedType ? $native->getName() : 'with no usable type'),
+            match (true) {
+                $documented !== null => 'typed ' . $documented,
+                $native instanceof \ReflectionNamedType => 'typed ' . $native->getName(),
+                // A union or intersection type: reflection prints it as written.
+                $native instanceof \ReflectionType => 'typed ' . $native->__toString(),
+                default => 'untyped',
+            },
         ));
+    }
+
+    /**
+     * ` (unknown class "Nope")` for every capitalised name in $type the file
+     * cannot resolve, or nothing. A refusal that only repeats the docblock
+     * leaves the reader checking the supported subset, when the cause is a
+     * typo or a missing `use` — the one thing worth saying is which name.
+     *
+     * @param Closure(string): ?string $resolveClass
+     */
+    /**
+     * The generic names the parameter's function and class declare
+     * (`@template T`, `@template-covariant TKey`, and the psalm/phpstan
+     * spellings): a type written with one is unreadable, but `T` is not an
+     * unknown class and the message must not call it one.
+     *
+     * @return list<string>
+     */
+    private static function templates(\ReflectionParameter $parameter): array
+    {
+        $function = $parameter->getDeclaringFunction();
+        $docblocks = [$function->getDocComment()];
+
+        if ($function instanceof \ReflectionMethod) {
+            $docblocks[] = $function->getDeclaringClass()->getDocComment();
+        }
+
+        $names = [];
+
+        foreach ($docblocks as $docblock) {
+            if ($docblock === false) {
+                continue;
+            }
+
+            if (preg_match_all('/@(?:psalm-|phpstan-)?template(?:-covariant|-contravariant)?\s+([A-Za-z_][A-Za-z0-9_]*)/', $docblock, $matches) > 0) {
+                $names = [...$names, ...$matches[1]];
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * @param list<string> $templates
+     */
+    private static function unknownClasses(string $type, Closure $resolveClass, array $templates = []): string
+    {
+        // Capitalised or fully qualified names only: the lower-case words of a
+        // type expression are its keywords (`int`, `list`, `array-key`) and
+        // the keys of an `array{a: int}` shape, never a class.
+        if (preg_match_all('/(?<![\w\'\\\\-])\\\\?[A-Z][A-Za-z0-9_]*(?:\\\\[A-Za-z_][A-Za-z0-9_]*)*(?![\w\'-])/', $type, $matches) === false) {
+            return '';
+        }
+
+        $unknown = [];
+
+        foreach (array_unique($matches[0]) as $name) {
+            if (in_array($name, $templates, strict: true)) {
+                continue;
+            }
+
+            if ($resolveClass($name) === null) {
+                $unknown[] = sprintf('unknown class "%s"', $name);
+            }
+        }
+
+        return $unknown === [] ? '' : ' (' . implode(', ', $unknown) . ')';
     }
 
     /**

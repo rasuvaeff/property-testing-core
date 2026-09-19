@@ -9,7 +9,7 @@ description: "Generates floats in the half-open range [min, max)."
 
 `Rasuvaeff\PropertyTesting\Arbitrary\FloatArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/FloatArbitrary.php#L28) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/FloatArbitrary.php#L30) — **Version:** working tree
 
 **Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
@@ -20,7 +20,9 @@ in-range boundary value (0.0 or min) instead of a uniform one, because bugs
 cluster at edges. The exclusive upper bound is never emitted.
 
 Shrinking floats reliably is hard (no natural "smallest" value), so the
-shrink tree has a single candidate: zero, clamped into the configured range.
+shrink tree has a single candidate: the point of `[min, max)` nearest to
+zero — never the excluded upper bound, so for a range at or below zero it
+is the largest float under `max`.
 For fine-grained shrinking on a numeric input, generate an integer and
 [`Gen`](/api/classes/Gen)::map() it to a float — with integrated
 shrinking the mapped value shrinks through the integer's tree.

@@ -169,6 +169,28 @@ final class CounterExampleTest
      * must keep producing it. A deliberate change regenerates the fixture in
      * the same commit.
      */
+    /**
+     * The keys are the machine-readable contract the compatibility policy
+     * freezes (point 4): a key may be added at the end, never renamed or
+     * removed.
+     */
+    public function toArrayKeysAreTheFrozenContract(): void
+    {
+        Assert::same(array_keys((new CounterExample(1, 0, [], []))->toArray()), [
+            'seed',
+            'runsBeforeFailure',
+            'originalArguments',
+            'shrunkArguments',
+            'shrinkSteps',
+            'shrinkTrials',
+            'path',
+            'failure',
+            'discards',
+            'skips',
+            'edgeCases',
+        ]);
+    }
+
     public function toArrayCarriesTheEdgeCaseMode(): void
     {
         Assert::same((new CounterExample(1, 0, [], [], edgeCases: EdgeCases::None))->toArray()['edgeCases'], 'None');

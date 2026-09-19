@@ -46,7 +46,7 @@ __construct(
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `$directory` | `string` | *required* |  |
+| `$directory` | `string` | *required* | The directory the documents live in; created on the first write. |
 
 ## Methods
 
@@ -82,6 +82,19 @@ minimised arguments over the bare seed.
 
 - `$parameterNames` — The property method's current parameters, in order.
 
+**Throws:**
+
+- `RuntimeException` — When the document could not be written.
+
+Either the document is on disk when this returns, or it throws: a
+write that could not complete — the lock file replaced by a link, the
+temp path occupied, a short write on a full disk, a failed rename, a
+document held by another format version — is reported, never skipped
+in silence. The runner turns the exception into a
+[`Event\CorpusFailed`](/api/classes/Event/CorpusFailed) event and goes on
+without the corpus; the property's outcome is untouched, but nobody is
+told a counterexample was recorded when it was not.
+
 ### prune()
 
 ```php
@@ -93,5 +106,6 @@ regression is fixed and the entry has served its purpose.
 
 **Throws:**
 
-- `RuntimeException` — When the entry cannot be re-encoded to the key that identifies it.
+- `RuntimeException` — When the entry cannot be re-encoded to the key that identifies it,
+or when the document could not be written.
 

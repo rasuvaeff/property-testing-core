@@ -243,8 +243,63 @@ final class GenForParametersTest
 
             Assert::fail('expected an InvalidArgumentException');
         } catch (\InvalidArgumentException $e) {
-            Assert::string($e->getMessage())->contains('parameter $anything');
-            Assert::string($e->getMessage())->contains('no usable type');
+            Assert::string($e->getMessage())->contains('parameter $anything is untyped, which this cannot read');
+        }
+    }
+
+    public function rejectsANativeUnionNamingIt(): void
+    {
+        try {
+            Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'withNativeUnion'));
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('parameter $either is typed string|int, which this cannot read');
+        }
+    }
+
+    public function namesAnUnknownClassInsideADocblockType(): void
+    {
+        try {
+            Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'withUnknownClass'));
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('documented as list<Nope>, which this cannot read (unknown class "Nope")');
+        }
+    }
+
+    /**
+     * A generic the function declares is unreadable, not unknown: the
+     * refusal names the class that really is unknown and leaves `T` alone.
+     */
+    public function aDeclaredTemplateIsNotAnUnknownClass(): void
+    {
+        try {
+            Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'withATemplateAndAnUnknownClass'));
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('parameter $items is documented as list<T>, which this cannot read; pass an override');
+            Assert::string($e->getMessage())->notContains('unknown class "T"');
+        }
+
+        try {
+            Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'withATemplateAndAnUnknownClass'), ['items' => Gen::constant([])]);
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::string($e->getMessage())->contains('documented as array<string, Nope>, which this cannot read (unknown class "Nope")');
+        }
+    }
+
+    public function aPsalmParamWinsOverTheParamBesideIt(): void
+    {
+        $generators = Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'psalmParam'));
+        $random = new Random(3);
+
+        for ($i = 0; $i < 50; ++$i) {
+            Assert::true($generators['x']->generate($random)->value >= 1);
         }
     }
 

@@ -35,17 +35,17 @@ never treats a non-void-returning method as a test.
 | `Gen::intBetween($min, $max)` | `[$min, $max]` | toward `0`, clamped to range |
 | `Gen::intPositive()` | `1..PHP_INT_MAX` | toward `1` |
 | `Gen::float()` | `[0.0, 1.0)` | toward `0.0` |
-| `Gen::floatBetween($min, $max)` | `[$min, $max)` — `$max` itself is never drawn | toward `0.0`, clamped to range |
+| `Gen::floatBetween($min, $max)` | `[$min, $max)` — `$max` itself is never drawn | toward the point of `[$min, $max)` nearest to `0.0` — never `$max` |
 | `Gen::bool()` | `true` / `false` | `true` -> `false` |
 | `Gen::string()` | Unicode, length 0..100 — half the characters ASCII printable, a tenth troublemakers (quotes, backslash, combining marks, zero-width joiner, right-to-left override, byte order mark, astral emoji), a tenth Latin-1/Latin Extended, a tenth the rest of the BMP, a fifth uniform over U+0001..U+10FFFF | toward `''`, then by length, then each character toward `a` |
 | `Gen::stringAscii()` | printable ASCII, length 0..100 | toward `''`, then by length, then each character toward `a` |
-| `Gen::stringOf($min, $max)` | Unicode, bounded length | toward `''`, then by length, then each character toward `a` |
-| `Gen::stringFrom($alphabet, $min, $max)` | characters from a fixed alphabet (multibyte OK) | toward `''`, then by length, then each character toward the first alphabet character |
-| `Gen::bytes($min, $max)` | raw byte strings (bytes 0..255) | toward `''`, then by length, then each byte toward `"\x00"` |
-| `Gen::arrayOf($element, $min, $max)` | lists of `$element`, size 0..100 by default | toward `[]`, then by length, then each element |
-| `Gen::nonEmptyArrayOf($element, $max)` | non-empty lists | by length (never below 1), then each element |
-| `Gen::uniqueArrayOf($element, $min, $max)` | lists of pairwise-distinct elements | like `arrayOf`, but element candidates colliding with another element are skipped |
-| `Gen::dictOf($key, $value, $min, $max)` | maps with distinct keys from `$key` (int/string) and values from `$value`, size 0..100 by default | toward `[]`, then by size, then each value (keys fixed) |
+| `Gen::stringOf($minLength, $maxLength)` | Unicode, bounded length | toward `''`, then by length, then each character toward `a` |
+| `Gen::stringFrom($alphabet, $minLength, $maxLength)` | characters from a fixed alphabet (multibyte OK) | toward `''`, then by length, then each character toward the first alphabet character |
+| `Gen::bytes($minLength, $maxLength)` | raw byte strings (bytes 0..255) | toward `''`, then by length, then each byte toward `"\x00"` |
+| `Gen::arrayOf($element, $minSize, $maxSize)` | lists of `$element`, size 0..100 by default | toward `[]`, then by length, then each element |
+| `Gen::nonEmptyArrayOf($element, $maxSize)` | non-empty lists | by length (never below 1), then each element |
+| `Gen::uniqueArrayOf($element, $minSize, $maxSize)` | lists of pairwise-distinct elements | like `arrayOf`, but element candidates colliding with another element are skipped |
+| `Gen::dictOf($key, $value, $minSize, $maxSize)` | maps with distinct keys from `$key` (int/string) and values from `$value`, size 0..100 by default | toward `[]`, then by size, then each value (keys fixed) |
 | `Gen::record($shape)` | fixed-shape map `['field' => $arb, ...]` | each field via its arbitrary, key set fixed |
 | `Gen::elements($array)` | one **value** from an array (array form of `oneOf`); an `ArbitraryInterface` among them is refused | toward earlier-listed distinct values |
 | `Gen::enum(SomeEnum::class)` | `OneOfArbitrary` over the enum's cases | toward earlier-declared cases (declare simpler cases first) |
@@ -58,8 +58,8 @@ never treats a non-void-returning method as a test.
 | `Gen::recursive($leaf, $wrap, $maxDepth)` | bounded recursive structures: `$wrap` lifts the previous level's arbitrary | within the branch that generated the value |
 | `Gen::oneOf(...$values)` | one of the given **values**, not generators — an `ArbitraryInterface` among them is refused, because accepted it would become the generated value itself. Pick between generators with `Gen::frequency()` | toward earlier-listed distinct values (put simpler values first) |
 | `Gen::nullable($inner)` | `null` or an `$inner` value | prefers `null`, then the inner tree |
-| `Gen::map($inner, $fn)` | `$inner` transformed by `$fn` | through the inner tree, re-applying `$fn` |
-| `Gen::flatMap($inner, $fn)` | dependent generator returned by `$fn($innerValue)` | source value first (dependent value regenerated), then the dependent tree |
+| `Gen::map($inner, $map)` | `$inner` transformed by `$map` | through the inner tree, re-applying `$map` |
+| `Gen::flatMap($inner, $flatMap)` | dependent generator returned by `$flatMap($innerValue)` | source value first (dependent value regenerated), then the dependent tree |
 | `Gen::filter($inner, $predicate)` | `$inner` values satisfying `$predicate` (throws `GenerationExhaustedException` after 100 rejected draws — never yields an out-of-domain value) | inner tree, pruning candidates that fail the predicate |
 | `Gen::tuple(...$elements)` | fixed-arity tuple, one value per element | each position via its element, arity fixed |
 | `Gen::frequency($pairs)` | weighted choice over `[weight, arbitrary]` pairs | within the branch that generated the value |
@@ -70,9 +70,9 @@ never treats a non-void-returning method as a test.
 | `Gen::json($maxDepth)` | a JSON-encodable value (null/bool/int/float/string/list/object) | within the generated structure |
 | `Gen::jsonString($maxDepth)` | the `json_encode` text of `Gen::json()` | through the value's tree |
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators). **Write the pattern without delimiters** — `[a-z]+`, not `/[a-z]+/`; a delimited one is refused rather than compiled with the delimiters as literals. `.` and a negated class draw from printable ASCII (`0x20`..`0x7E`, never a newline) | shorter/simpler matches (via the compiled trees) |
-| `Gen::subset($values, $min, $max)` | subsets of a fixed ordered set — distinct members of `$values` in source order; duplicates in the source are rejected | size first (toward the empty set), then each kept element toward earlier source positions — the minimal subset is a short prefix |
-| `Gen::commands($initialModel, $commandGenerators, $min, $max)` | valid command sequences for stateful testing — see [State machine](/guide/state-machine/concepts) | drops command blocks, then simplifies each command |
-| `Gen::swarm($choiceGenerator)` | swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants — see [Swarm testing](/guide/generators/swarm) | inside the subset the case came from, never widening back |
+| `Gen::subset($values, $minSize, $maxSize)` | subsets of a fixed ordered set — distinct members of `$values` in source order; duplicates in the source are rejected | size first (toward the empty set), then each kept element toward earlier source positions — the minimal subset is a short prefix |
+| `Gen::commands($initialModel, $commandGenerators, $minLength, $maxLength)` | valid command sequences for stateful testing — see [State machine](/guide/state-machine/concepts) | drops command blocks, then simplifies each command |
+| `Gen::swarm($arbitrary)` | swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants — see [Swarm testing](/guide/generators/swarm) | inside the subset the case came from, never widening back |
 | `Gen::forClass($class, $overrides, $skipInvalid, $maxDepth)` | instances built through a constructor, one generator per parameter: an override, then the `@param` psalm type (`int<0, 100>` beats a bare `int`), then the native type — see [Generating from a class](/guide/generators/from-a-class) | through each parameter's own tree |
 | `Gen::forParameters($reflectionFunction, $overrides)` | the same resolution over any function, method or closure, returned as `array<string, ArbitraryInterface>` in signature order; overrides may be partial | per parameter, as above |
 

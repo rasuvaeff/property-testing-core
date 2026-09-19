@@ -18,7 +18,7 @@ use RuntimeException;
  *
  * @api
  */
-final class DeadlineExceededException extends RuntimeException
+final class DeadlineExceededException extends RuntimeException implements PropertyTestingException
 {
     /**
      * @param array<string, mixed> $arguments The run's generated arguments (including `draw#N` pseudo-arguments).

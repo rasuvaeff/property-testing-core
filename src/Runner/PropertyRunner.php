@@ -82,7 +82,7 @@ final readonly class PropertyRunner
         iterable $listeners = [],
         ?Corpus $corpus = null,
     ): PropertyResult {
-        $listeners = array_values(is_array($listeners) ? $listeners : iterator_to_array($listeners));
+        $listeners = array_values(is_array($listeners) ? $listeners : iterator_to_array($listeners, preserve_keys: false));
 
         $config = $property->config;
         $runs = $config->runs;

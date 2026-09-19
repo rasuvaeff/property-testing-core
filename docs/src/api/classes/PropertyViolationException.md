@@ -13,7 +13,7 @@ description: "Reported when a property is falsified."
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Reported when a property is falsified.
 

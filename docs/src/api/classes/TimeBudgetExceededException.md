@@ -13,7 +13,7 @@ description: "Thrown (as the failure of a property) when the random phase's wall
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Thrown (as the failure of a property) when the random phase's wall-clock
 time exceeds the `Runner\PropertyConfig`::$budgetMs budget before the

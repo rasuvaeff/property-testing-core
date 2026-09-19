@@ -27,11 +27,15 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * ```
  *
  * Types are read in this order, per parameter: an explicit override, then the
- * `@param` docblock (psalm subset — `int<0, 100>`, `positive-int`,
+ * docblock (psalm subset — `int<0, 100>`, `positive-int`,
  * `non-empty-string`, `list<T>`, `array<K, V>`, `'a'|'b'`, `?T`, unions), then
- * the native type. Anything it cannot read is an exception naming the
- * parameter, never a widened guess: a generator that does not match the domain
- * turns into somebody else's failing test.
+ * the native type — a bare `float` meaning `floatBetween(-1e6, 1e6)`. The
+ * docblock is read in the three spellings psalm and PHPStan accept:
+ * `@psalm-param` / `@phpstan-param` win over `@param`, and a `@var` on the
+ * promoted property itself counts when the constructor's docblock says
+ * nothing about that parameter. Anything it cannot read is an exception
+ * naming the parameter, never a widened guess: a generator that does not
+ * match the domain turns into somebody else's failing test.
  *
  * **A validating constructor is not a special case.** Constructors in this
  * family reject bad input, and by default a rejection propagates — it says the

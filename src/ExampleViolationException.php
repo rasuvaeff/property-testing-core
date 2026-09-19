@@ -14,7 +14,7 @@ use RuntimeException;
  *
  * @api
  */
-final class ExampleViolationException extends RuntimeException
+final class ExampleViolationException extends RuntimeException implements PropertyTestingException
 {
     /**
      * @param int $index Zero-based position of the failing example.

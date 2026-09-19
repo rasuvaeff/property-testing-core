@@ -13,7 +13,7 @@ description: "Thrown (as the failure of a property) when a single run's body tak
 
 **Extends:** `RuntimeException`
 
-**Implements:** `Stringable`, `Throwable`
+**Implements:** `Throwable`, `Stringable`, [`PropertyTestingException`](/api/classes/PropertyTestingException)
 
 Thrown (as the failure of a property) when a single run's body takes longer
 than the `Runner\PropertyConfig`::$timeoutMs deadline. The offending

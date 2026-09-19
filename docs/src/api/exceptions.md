@@ -11,12 +11,14 @@ Every `@api` type across all three packages that implements `Throwable`.
 
 | Exception | Package | Extends | Summary |
 |---|---|---|---|
+| [`AssumptionSkipped`](/api/classes/AssumptionSkipped) | core | `RuntimeException` | Thrown by Assume::that() to discard the current property run without counting it as a failure or a… |
 | [`CoverageViolationException`](/api/classes/CoverageViolationException) | core | `RuntimeException` | Thrown (as the failure of an otherwise passing property) when a coverage requirement registered… |
 | [`DeadlineExceededException`](/api/classes/DeadlineExceededException) | core | `RuntimeException` | Thrown (as the failure of a property) when a single run's body takes longer than the… |
 | [`ExampleViolationException`](/api/classes/ExampleViolationException) | core | `RuntimeException` | Reported when an explicit example (a fixed input declared via the property's `Examples` method)… |
 | [`GaveUpException`](/api/classes/GaveUpException) | core | `RuntimeException` | Thrown (as the failure of a property) when discarded inputs — or runs the environment refused —… |
 | [`GenerationExhaustedException`](/api/classes/GenerationExhaustedException) | core | `RuntimeException` | Thrown when a bounded-attempt generator cannot produce a value that satisfies its constraint… |
 | [`PathViolationException`](/api/classes/PathViolationException) | core | `RuntimeException` | Reported when a run pinned to a shrink path cannot follow it: the candidate a step names is gone,… |
+| [`PropertyTestingException`](/api/classes/PropertyTestingException) | core | — | Marker for every exception this engine reports, so a caller can catch the package as a whole… |
 | [`PropertyViolationException`](/api/classes/PropertyViolationException) | core | `RuntimeException` | Reported when a property is falsified. |
 | [`RegressionViolationException`](/api/classes/RegressionViolationException) | core | `RuntimeException` | Reported when a recorded regression fails again: the minimised input of an earlier failure,… |
 | [`PostconditionViolationException`](/api/classes/StateMachine/PostconditionViolationException) | core | `RuntimeException` | Thrown by StateMachine::check() when a command's Command::postCondition() returns false. |

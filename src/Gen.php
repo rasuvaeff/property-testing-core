@@ -12,6 +12,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\BytesArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\CharsetStringArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ClassArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\CommandSequenceArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\CompositeArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ConstantArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\DateTimeArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\DictionaryArbitrary;
@@ -731,6 +732,41 @@ final class Gen
         $value = DrawContext::draw($arbitrary);
 
         return $value;
+    }
+
+    /**
+     * A generator whose body draws several dependent values through a
+     * {@see Draw} and returns what it built — a reusable
+     * {@see ArbitraryInterface} where nested {@see flatMap()} calls would nest
+     * further right with every dependency:
+     *
+     *     $interval = Gen::composite(static fn (Draw $d): Interval => new Interval(
+     *         $min = $d->draw(Gen::datetime()),
+     *         $d->draw(Gen::datetime(min: $min)),   // sees the prior draw
+     *     ));
+     *
+     * Shrinking works on the draws, earliest first: a candidate re-executes
+     * the body with one draw replaced by a smaller one and the rest replayed,
+     * so a shrunk interval is still an interval the body would have built.
+     * A body that throws an `Exception` for a smaller draw refuses that
+     * candidate (skipped with its subtree, like {@see map()}). The body sees
+     * no other randomness — it must draw everything it needs — and the
+     * result composes like any generator: with {@see map()}, {@see arrayOf()},
+     * a provider. Contrast in-body {@see draw()}, which exists only inside a
+     * property body and cannot be reused as a value.
+     *
+     * The descent through a composite's draws is bounded at the same depth
+     * the runner applies to in-body draws (1000 accepted steps).
+     *
+     * @template T
+     *
+     * @param Closure(Draw): T $body
+     *
+     * @return ArbitraryInterface<T>
+     */
+    public static function composite(Closure $body): ArbitraryInterface
+    {
+        return new CompositeArbitrary($body);
     }
 
     /**

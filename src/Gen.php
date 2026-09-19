@@ -38,6 +38,11 @@ use Rasuvaeff\PropertyTesting\Internal\Ipv6Formatter;
 use Rasuvaeff\PropertyTesting\Internal\LeafFallbackArbitrary;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Internal\RegexCompiler;
+use Rasuvaeff\PropertyTesting\Internal\RuleMachine;
+use Rasuvaeff\PropertyTesting\StateMachine\Command;
+use Rasuvaeff\PropertyTesting\StateMachine\CommandSequence;
+use Rasuvaeff\PropertyTesting\StateMachine\RuleSequence;
+use Rasuvaeff\PropertyTesting\StateMachine\RuleStep;
 
 /**
  * Facade with static factories for the built-in {@see ArbitraryInterface}s.
@@ -1104,6 +1109,80 @@ final class Gen
         int $maxLength = 100,
     ): ArbitraryInterface {
         return new CommandSequenceArbitrary($initialModel, $commandGenerators, $minLength, $maxLength);
+    }
+
+    /**
+     * A sequence of steps over a rule-based machine: one class whose
+     * `#[Rule]` methods are the steps, whose `#[Invariant]` methods hold
+     * after every step, and whose own fields are the model —
+     * {@see commands()} without a class per command:
+     *
+     *     final class QueueMachine
+     *     {
+     *         private array $model = [];
+     *
+     *         public function __construct(private readonly Queue $sut) {}
+     *
+     *         #[Rule]
+     *         public function enqueue(int $value): void          // drawn like a property's parameters
+     *         {
+     *             $this->sut->push($value);
+     *             $this->model[] = $value;
+     *         }
+     *
+     *         #[Rule]
+     *         #[Precondition('notEmpty')]
+     *         public function dequeue(): void
+     *         {
+     *             Assert::same($this->sut->pop(), array_shift($this->model));
+     *         }
+     *
+     *         public function notEmpty(): bool { return $this->model !== []; }
+     *
+     *         #[Invariant]
+     *         public function sizeMatches(): void
+     *         {
+     *             Assert::same($this->sut->size(), count($this->model));
+     *         }
+     *     }
+     *
+     *     Gen::rules(QueueMachine::class, static fn (): QueueMachine => new QueueMachine(new Queue()))
+     *
+     * The body calls {@see \Rasuvaeff\PropertyTesting\StateMachine\RuleSequence::run()},
+     * which builds a fresh machine from $factory, checks the invariants, and
+     * walks the steps — skipping one whose precondition is false in the
+     * machine's current state, running the rule and then every invariant for
+     * the others. An exception is the failed postcondition. Sequences are
+     * generated and shrunk exactly as {@see commands()} sequences are: steps
+     * dropped, arguments simplified. Rule parameters are drawn as
+     * {@see forParameters()} draws them, with overrides from a
+     * `public static function <rule>Generators(): array` or the method the
+     * attribute names. A machine with no rule, a rule that is not a public
+     * instance method, or a guard that does not exist is refused here, by name.
+     *
+     * The {@see \Rasuvaeff\PropertyTesting\StateMachine\Command} interface
+     * stays the primitive for a machine whose model is a separate value;
+     * this is the shape for the common case where the model is a few fields.
+     *
+     * @template TMachine of object
+     *
+     * @param class-string<TMachine> $machine
+     * @param Closure(): TMachine $factory A fresh machine, system under test included, per run.
+     *
+     * @return ArbitraryInterface<\Rasuvaeff\PropertyTesting\StateMachine\RuleSequence>
+     */
+    public static function rules(string $machine, Closure $factory, int $minLength = 0, int $maxLength = 100): ArbitraryInterface
+    {
+        $definition = new RuleMachine($machine);
+
+        return self::map(
+            new CommandSequenceArbitrary(null, $definition->stepGenerators, $minLength, $maxLength),
+            static fn(CommandSequence $sequence): RuleSequence => new RuleSequence(
+                $factory,
+                array_values(array_filter($sequence->commands, static fn(Command $command): bool => $command instanceof RuleStep)),
+                $definition->invariants,
+            ),
+        );
     }
 
     /**

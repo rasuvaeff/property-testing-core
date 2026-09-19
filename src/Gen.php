@@ -1146,10 +1146,10 @@ final class Gen
      *         }
      *     }
      *
-     *     Gen::rules(QueueMachine::class, static fn (): QueueMachine => new QueueMachine(new Queue()))
+     *     Gen::rules(QueueMachine::class)
      *
-     * The body calls {@see \Rasuvaeff\PropertyTesting\StateMachine\RuleSequence::run()},
-     * which builds a fresh machine from $factory, checks the invariants, and
+     * The body calls {@see \Rasuvaeff\PropertyTesting\StateMachine\RuleSequence::run()}
+     * with a factory for a fresh machine, which checks the invariants and
      * walks the steps — skipping one whose precondition is false in the
      * machine's current state, running the rule and then every invariant for
      * the others. An exception is the failed postcondition. Sequences are
@@ -1164,21 +1164,17 @@ final class Gen
      * stays the primitive for a machine whose model is a separate value;
      * this is the shape for the common case where the model is a few fields.
      *
-     * @template TMachine of object
-     *
-     * @param class-string<TMachine> $machine
-     * @param Closure(): TMachine $factory A fresh machine, system under test included, per run.
+     * @param class-string $machine
      *
      * @return ArbitraryInterface<\Rasuvaeff\PropertyTesting\StateMachine\RuleSequence>
      */
-    public static function rules(string $machine, Closure $factory, int $minLength = 0, int $maxLength = 100): ArbitraryInterface
+    public static function rules(string $machine, int $minLength = 0, int $maxLength = 100): ArbitraryInterface
     {
         $definition = new RuleMachine($machine);
 
         return self::map(
             new CommandSequenceArbitrary(null, $definition->stepGenerators, $minLength, $maxLength),
             static fn(CommandSequence $sequence): RuleSequence => new RuleSequence(
-                $factory,
                 array_values(array_filter($sequence->commands, static fn(Command $command): bool => $command instanceof RuleStep)),
                 $definition->invariants,
             ),

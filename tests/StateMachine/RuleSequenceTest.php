@@ -20,19 +20,19 @@ final class RuleSequenceTest
     public function buildsAFreshMachinePerRunAndChecksInvariantsFirst(): void
     {
         $built = [];
-        $sequence = new RuleSequence(
-            static function () use (&$built): StackMachine {
-                $machine = new StackMachine(new Stack());
-                $built[] = $machine;
+        $factory = static function () use (&$built): StackMachine {
+            $machine = new StackMachine(new Stack());
+            $built[] = $machine;
 
-                return $machine;
-            },
+            return $machine;
+        };
+        $sequence = new RuleSequence(
             [new RuleStep('push', ['value' => 1], null, ['sizeMatches']), new RuleStep('pop', [], 'notEmpty', ['sizeMatches'])],
             ['sizeMatches'],
         );
 
-        $sequence->run();
-        $sequence->run();
+        $sequence->run($factory);
+        $sequence->run($factory);
 
         Assert::same(count($built), 2);
         Assert::same($built[0]->trace, ['push:1', 'pop']);
@@ -45,13 +45,12 @@ final class RuleSequenceTest
     {
         $machines = [];
         $sequence = new RuleSequence(
-            static function () use (&$machines): StackMachine {
-                return $machines[] = new StackMachine(new Stack());
-            },
             [new RuleStep('pop', [], 'notEmpty'), new RuleStep('push', ['value' => 2]), new RuleStep('pop', [], 'notEmpty')],
         );
 
-        $sequence->run();
+        $sequence->run(static function () use (&$machines): StackMachine {
+            return $machines[] = new StackMachine(new Stack());
+        });
 
         Assert::same($machines[0]->trace, ['push:2', 'pop']);
     }
@@ -60,14 +59,13 @@ final class RuleSequenceTest
     {
         $machines = [];
         $sequence = new RuleSequence(
-            static function () use (&$machines): StackMachine {
-                return $machines[] = new StackMachine(new BuggyStack());
-            },
             [new RuleStep('push', ['value' => 1]), new RuleStep('push', ['value' => 2]), new RuleStep('pop', [], 'notEmpty'), new RuleStep('push', ['value' => 3])],
         );
 
         try {
-            $sequence->run();
+            $sequence->run(static function () use (&$machines): StackMachine {
+                return $machines[] = new StackMachine(new BuggyStack());
+            });
 
             Assert::fail('expected the buggy pop to throw');
         } catch (\RuntimeException $e) {
@@ -79,9 +77,16 @@ final class RuleSequenceTest
 
     public function rendersAsTheTraceOfItsSteps(): void
     {
-        $sequence = new RuleSequence(static fn(): StackMachine => new StackMachine(new Stack()), [new RuleStep('push', ['value' => 1]), new RuleStep('pop', [])]);
+        $sequence = new RuleSequence([new RuleStep('push', ['value' => 1]), new RuleStep('pop', [])]);
 
         Assert::same((string) $sequence, '[push(value: 1), pop()]');
-        Assert::same((string) new RuleSequence(static fn(): StackMachine => new StackMachine(new Stack()), []), '[]');
+        Assert::same((string) new RuleSequence([]), '[]');
+    }
+
+    public function serializesInsideAResultWithoutTheFactory(): void
+    {
+        $sequence = new RuleSequence([new RuleStep('push', ['value' => 1])], ['sizeMatches']);
+
+        Assert::same((string) unserialize(serialize($sequence)), '[push(value: 1)]');
     }
 }

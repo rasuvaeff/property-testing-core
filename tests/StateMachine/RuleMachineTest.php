@@ -17,19 +17,19 @@ use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
 use Rasuvaeff\PropertyTesting\StateMachine\RuleSequence;
 use Rasuvaeff\PropertyTesting\StateMachine\RuleStep;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\BuggyStack;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\InstanceGenerators;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\MissingGuard;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\MissingNamedGenerators;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\NamedGenerators;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\NonArrayGenerators;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\NoRules;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\ParameterisedInvariant;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\PrivateGuard;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\PrivateRule;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\InstanceGenerators;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\MissingGuard;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\MissingNamedGenerators;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\NamedGenerators;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\NonArrayGenerators;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\NoRules;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\ParameterisedInvariant;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\PrivateGuard;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\PrivateRule;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\StaticRule;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\UnnamedGenerators;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Stack;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\StackMachine;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\StaticRule;
-use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\UnnamedGenerators;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -46,7 +46,7 @@ final class RuleMachineTest
 {
     public function generatesSequencesOfRuleSteps(): void
     {
-        $arbitrary = Gen::rules(StackMachine::class, static fn(): StackMachine => new StackMachine(new Stack()), maxLength: 10);
+        $arbitrary = Gen::rules(StackMachine::class, maxLength: 10);
         $random = new Random(3);
         $rules = [];
 
@@ -83,11 +83,13 @@ final class RuleMachineTest
         // The smallest FIFO-vs-LIFO witness: two distinct pushes and a pop.
         Assert::same((string) $shrunk, '[push(value: 0), push(value: 1), pop()]');
         Assert::string($failing->failure()->getMessage())->contains('popped 0, expected 1');
+        // The sequence is a plain value: the factory lives in the body, not in it.
+        Assert::same((string) unserialize(serialize($shrunk)), (string) $shrunk);
     }
 
     public function overridesNamedByTheAttributeWin(): void
     {
-        $arbitrary = Gen::rules(NamedGenerators::class, static fn(): NamedGenerators => new NamedGenerators(), minLength: 5, maxLength: 5);
+        $arbitrary = Gen::rules(NamedGenerators::class, minLength: 5, maxLength: 5);
         $random = new Random(1);
 
         for ($i = 0; $i < 20; ++$i) {
@@ -101,7 +103,7 @@ final class RuleMachineTest
     public function refusesAMisdeclaredMachineByName(string $class, string $message): void
     {
         try {
-            Gen::rules($class, static fn(): object => new \stdClass());
+            Gen::rules($class);
 
             Assert::fail('expected an InvalidArgumentException');
         } catch (\InvalidArgumentException $e) {
@@ -130,12 +132,12 @@ final class RuleMachineTest
             new PropertyDefinition(
                 id: 'rules::property',
                 name: 'property',
-                generators: ['sequence' => Gen::rules(StackMachine::class, $factory, maxLength: 20)],
+                generators: ['sequence' => Gen::rules(StackMachine::class, maxLength: 20)],
                 parameterNames: ['sequence'],
                 config: new PropertyConfig(runs: 100, seed: 42),
             ),
-            new CallableTrialExecutor(static function (RuleSequence $sequence): void {
-                $sequence->run();
+            new CallableTrialExecutor(static function (RuleSequence $sequence) use ($factory): void {
+                $sequence->run($factory);
             }),
         );
     }

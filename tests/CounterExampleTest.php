@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Tests;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
 use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
+use Rasuvaeff\PropertyTesting\ValueRenderer;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
 use Testo\Codecov\Covers;
@@ -112,7 +113,8 @@ final class CounterExampleTest
             $counterExample->toJson(),
             '{"seed":1,"runsBeforeFailure":0,"originalArguments":[],'
             . '"shrunkArguments":{"s":"<\ufffd"},"shrinkSteps":0,"shrinkTrials":0,'
-            . '"path":"","failure":null,"discards":0,"skips":0,"edgeCases":"Mixin"}',
+            . '"path":"","failure":null,"discards":0,"skips":0,"edgeCases":"Mixin",'
+            . '"originalNotes":[],"shrunkNotes":[]}',
         );
     }
 
@@ -188,7 +190,19 @@ final class CounterExampleTest
             'discards',
             'skips',
             'edgeCases',
+            'originalNotes',
+            'shrunkNotes',
         ]);
+    }
+
+    public function toArrayNormalisesTheNotesLikeArguments(): void
+    {
+        $example = new CounterExample(1, 0, [], [], originalNotes: ['parsed' => 1.5, 'obj' => new \stdClass()], shrunkNotes: ['parsed' => 0.0]);
+        $data = $example->toArray();
+
+        Assert::same($data['originalNotes'], ValueRenderer::normalize(['parsed' => 1.5, 'obj' => new \stdClass()]));
+        Assert::same($data['shrunkNotes'], ValueRenderer::normalize(['parsed' => 0.0]));
+        Assert::same((new CounterExample(1, 0, [], []))->toArray()['originalNotes'], []);
     }
 
     public function toArrayCarriesTheEdgeCaseMode(): void

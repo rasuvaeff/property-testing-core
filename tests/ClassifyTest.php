@@ -76,6 +76,53 @@ final class ClassifyTest
         Assert::same(Classify::flushRun(), []);
     }
 
+    public function tabulateRecordsTagsByTableForTheRun(): void
+    {
+        Classify::tabulate('payload', 'large');
+        Classify::tabulate('features', ['compressed', 'retried']);
+        Classify::tabulate('features', 'compressed');
+        Classify::tabulate('empty', []);
+
+        Assert::same(Classify::flushTables(), [
+            'payload' => ['large'],
+            'features' => ['compressed', 'retried'],
+        ]);
+    }
+
+    public function aNumericTagComesBackAsTheStringItWasRecordedWith(): void
+    {
+        Classify::tabulate('bucket', '42');
+
+        $tables = Classify::flushTables();
+
+        Assert::same($tables['bucket'], ['42']);
+    }
+
+    public function flushTablesClearsTheBuffer(): void
+    {
+        Classify::tabulate('t', 'a');
+        Classify::flushTables();
+
+        Assert::same(Classify::flushTables(), []);
+    }
+
+    public function beginRunClearsBufferedTables(): void
+    {
+        Classify::tabulate('t', 'a');
+        Classify::beginRun();
+
+        Assert::same(Classify::flushTables(), []);
+    }
+
+    public function tablesAreSeparateFromLabels(): void
+    {
+        Classify::tabulate('t', 'a');
+        Classify::label('b');
+
+        Assert::same(Classify::flushRun(), ['b']);
+        Assert::same(Classify::flushTables(), ['t' => ['a']]);
+    }
+
     public function coverRegistersTheRequirementRegardlessOfTheCondition(): void
     {
         Classify::cover(condition: false, label: 'rare', minPercent: 25.0);

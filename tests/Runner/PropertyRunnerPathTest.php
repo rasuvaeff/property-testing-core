@@ -74,6 +74,22 @@ final class PropertyRunnerPathTest
         Assert::same($example->path, self::INT_PATH);
     }
 
+    public function aReplayCarriesTheNotesOfTheLastStepItFollowed(): void
+    {
+        $noting = static function (int $value): void {
+            Gen::note('value', $value);
+
+            if ($value >= 100) {
+                throw new \RuntimeException(sprintf('%d is not below 100', $value));
+            }
+        };
+
+        $example = $this->falsify($noting, path: self::INT_PATH);
+
+        Assert::same($example->shrunkNotes, ['value' => 100]);
+        Assert::same($example->originalNotes, ['value' => $example->originalArguments['value']]);
+    }
+
     public function inBodyDrawsReplayUnderTheirPseudoNames(): void
     {
         $example = $this->falsify($this->belowHundredAfterADraw());

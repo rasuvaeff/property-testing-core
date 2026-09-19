@@ -87,6 +87,31 @@ final class PropertyViolationExceptionTest
         Assert::false(str_contains($exception->getMessage(), 'Changed:'));
     }
 
+    public function rendersTheShrunkNotesAfterTheArgumentsAndBeforeTheFailure(): void
+    {
+        $exception = new PropertyViolationException(new CounterExample(
+            seed: 1,
+            runsBeforeFailure: 0,
+            originalArguments: ['s' => 'abc'],
+            shrunkArguments: ['s' => 'a'],
+            shrinkSteps: 2,
+            failure: new \RuntimeException('mismatch'),
+            originalNotes: ['encoded' => 'YWJj'],
+            shrunkNotes: ['encoded' => 'YQ=='],
+        ));
+
+        $message = $exception->getMessage();
+        Assert::string($message)->contains("\n  Notes:    encoded=\"YQ==\"\n  Failure:  mismatch");
+        Assert::string($message)->notContains('YWJj');
+    }
+
+    public function omitsTheNotesLineWhenTheBodyAttachedNone(): void
+    {
+        $exception = new PropertyViolationException(new CounterExample(1, 0, ['x' => 1], ['x' => 0]));
+
+        Assert::string($exception->getMessage())->notContains('Notes:');
+    }
+
     public function rendersTheUnderlyingFailureMessage(): void
     {
         $exception = new PropertyViolationException(new CounterExample(

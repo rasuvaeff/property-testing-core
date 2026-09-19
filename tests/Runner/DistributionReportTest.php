@@ -169,6 +169,64 @@ final class DistributionReportTest
         ]);
     }
 
+    public function tablesAreSharedOverTheChecksAndOrderedLikeLabels(): void
+    {
+        $report = DistributionReport::of(
+            new RunStatistics(
+                attempts: 4,
+                discards: 0,
+                checks: 4,
+                classifications: [],
+                tables: ['features' => ['retried' => 1, 'compressed' => 3, 'deduped' => 1], 'size' => [42 => 4]],
+                intersections: ['features' => ['compressed & retried' => 1]],
+            ),
+            coverageAssessed: true,
+        );
+
+        Assert::same(
+            array_map(static fn(LabelShare $s): array => [$s->label, $s->count, $s->percent, $s->required], $report->tables['features']),
+            [['compressed', 3, 75.0, null], ['deduped', 1, 25.0, null], ['retried', 1, 25.0, null]],
+        );
+        Assert::same(
+            array_map(static fn(LabelShare $s): array => [$s->label, $s->count], $report->tables['size']),
+            [['42', 4]],
+        );
+        Assert::same(
+            array_map(static fn(LabelShare $s): array => [$s->label, $s->count, $s->percent], $report->intersections['features']),
+            [['compressed & retried', 1, 25.0]],
+        );
+        Assert::same($report->intersections['size'], []);
+    }
+
+    public function toArrayCarriesTablesOnlyWhenTheRunTabulated(): void
+    {
+        $report = DistributionReport::of(
+            new RunStatistics(
+                attempts: 2,
+                discards: 0,
+                checks: 2,
+                classifications: [],
+                tables: ['features' => ['a' => 2, 'b' => 1]],
+                intersections: ['features' => ['a & b' => 1]],
+            ),
+            coverageAssessed: true,
+        );
+        $data = $report->toArray();
+
+        Assert::same(array_keys($data), ['attempts', 'discards', 'discardPercent', 'skips', 'checks', 'coverageAssessed', 'labels', 'tables']);
+        Assert::same($data['tables'], [
+            'features' => [
+                'tags' => [
+                    ['label' => 'a', 'count' => 2, 'percent' => 100.0],
+                    ['label' => 'b', 'count' => 1, 'percent' => 50.0],
+                ],
+                'intersections' => [
+                    ['label' => 'a & b', 'count' => 1, 'percent' => 50.0],
+                ],
+            ],
+        ]);
+    }
+
     /**
      * The keys are the machine-readable contract the compatibility policy
      * freezes (point 4): a key may be added at the end, never renamed or

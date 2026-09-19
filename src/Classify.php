@@ -55,6 +55,15 @@ final class Classify
     private static array $requirements = [];
 
     /**
+     * Tags recorded during the current run through {@see tabulate()}, by
+     * table (each table used as a set). `array-key` for the same reason
+     * {@see $current} is.
+     *
+     * @var array<string, array<array-key, true>>
+     */
+    private static array $currentTables = [];
+
+    /**
      * Record $label for the current run.
      */
     public static function label(string $label): void
@@ -105,9 +114,34 @@ final class Classify
      *
      * @internal Driven by the property runner.
      */
+    /**
+     * Record one or more tags of $table for the current run: the categories
+     * a run belongs to at once, aggregated into a per-table tally with the
+     * pairwise intersections of tags that were hit together. Observability
+     * only — no minimum share, no verdict; {@see cover()} stays the one
+     * enforcement tool:
+     *
+     *     Classify::tabulate('payload', $size < 1024 ? 'small' : 'large');
+     *     Classify::tabulate('features', array_keys(array_filter([
+     *         'compressed' => $compressed, 'retried' => $attempt > 1,
+     *     ])));
+     *
+     * A tag recorded several times within one run counts once for that run,
+     * like a label. An empty tag list records nothing.
+     *
+     * @param string|list<string> $tags
+     */
+    public static function tabulate(string $table, string|array $tags): void
+    {
+        foreach (is_array($tags) ? $tags : [$tags] as $tag) {
+            self::$currentTables[$table][$tag] = true;
+        }
+    }
+
     public static function beginRun(): void
     {
         self::$current = [];
+        self::$currentTables = [];
     }
 
     /**
@@ -130,6 +164,28 @@ final class Classify
         self::$current = [];
 
         return $labels;
+    }
+
+    /**
+     * Return the tables recorded during the current run — table name to the
+     * tags hit, as the strings the body recorded — and clear them.
+     *
+     * @internal Driven by the property runner.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function flushTables(): array
+    {
+        $tables = array_map(
+            static fn(array $tags): array => array_map(
+                static fn(int|string $tag): string => (string) $tag,
+                array_keys($tags),
+            ),
+            self::$currentTables,
+        );
+        self::$currentTables = [];
+
+        return $tables;
     }
 
     /**

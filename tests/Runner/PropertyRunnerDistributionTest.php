@@ -67,6 +67,59 @@ final class PropertyRunnerDistributionTest
         );
     }
 
+    public function aPassReportsEveryTableWithItsTagSharesAndIntersections(): void
+    {
+        $report = $this->reportOf(
+            static function (int $value): void {
+                Classify::tabulate('parity', $value % 2 === 0 ? 'even' : 'odd');
+                Classify::tabulate('features', array_keys(array_filter([
+                    'big' => $value > 5000,
+                    'round' => $value % 10 === 0,
+                    'odd' => $value % 2 === 1,
+                ])));
+            },
+            runs: 200,
+        );
+
+        Assert::instanceOf($report, DistributionReport::class);
+        Assert::same(array_keys($report->tables), ['parity', 'features']);
+
+        $parity = array_sum(array_map(static fn(LabelShare $share): int => $share->count, $report->tables['parity']));
+        Assert::same($parity, 200);
+        Assert::same($report->intersections['parity'], []);
+
+        $features = [];
+        foreach ($report->tables['features'] as $share) {
+            $features[$share->label] = $share->count;
+        }
+        $pairs = [];
+        foreach ($report->intersections['features'] as $share) {
+            $pairs[$share->label] = $share->count;
+        }
+
+        // `round` and `odd` are exclusive; `big & odd` and `big & round` occur.
+        Assert::false(isset($pairs['odd & round']));
+        Assert::true($pairs['big & odd'] > 0 && $pairs['big & odd'] <= min($features['big'], $features['odd']));
+        Assert::true($pairs['big & round'] > 0 && $pairs['big & round'] <= min($features['big'], $features['round']));
+        Assert::same(array_keys($report->toArray()['tables']), ['parity', 'features']);
+    }
+
+    public function discardedRunsDoNotEnterTheTables(): void
+    {
+        $report = $this->reportOf(
+            static function (int $value): void {
+                Classify::tabulate('seen', 'value');
+                Assume::that($value % 2 === 0);
+            },
+            runs: 100,
+        );
+
+        Assert::instanceOf($report, DistributionReport::class);
+        Assert::true($report->discards > 0);
+        Assert::same($report->tables['seen'][0]->count, $report->checks);
+        Assert::same($report->tables['seen'][0]->percent, 100.0);
+    }
+
     public function aNumericLabelReachesListenersAsAStringOnBothPaths(): void
     {
         // Two surfaces, one root cause: the labels on RunPassed and the label

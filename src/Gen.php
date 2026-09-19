@@ -15,6 +15,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\CommandSequenceArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ConstantArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\DateTimeArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\DictionaryArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\EdgeCasedArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\FilteredArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\FlatMappedArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\FloatArbitrary;
@@ -216,23 +217,63 @@ final class Gen
     }
 
     /**
-     * Lists of pairwise-distinct elements (strict comparison) drawn from
-     * $element. Element shrinking keeps the list distinct; the result may be
-     * smaller than the drawn size when the element space runs out of fresh
-     * values, but never below $minSize — an unreachable minimum throws
-     * {@see GenerationExhaustedException}. Distinct means `!==`, and `NAN` is
-     * never identical to itself, so a list over {@see floatSpecial()} can
-     * hold several of them.
+     * Lists of pairwise-distinct elements drawn from $element. Element
+     * shrinking keeps the list distinct; the result may be smaller than the
+     * drawn size when the element space runs out of fresh values, but never
+     * below $minSize — an unreachable minimum throws
+     * {@see GenerationExhaustedException}.
+     *
+     * Without $by, distinct means `!==` on the values: `NAN` is never
+     * identical to itself, so a list over {@see floatSpecial()} can hold
+     * several of them, and objects are distinct unless they are the same
+     * instance. With $by, distinct means `===` on the `int|string` key the
+     * closure returns for each value — uniqueness by one field of a value
+     * object, with shrinking that still never produces two elements sharing
+     * a key:
+     *
+     *     Gen::uniqueArrayOf($userGen, 3, 10, by: static fn (User $u): string => $u->id)
+     *
+     * A key of any other type is refused with {@see \InvalidArgumentException}
+     * at generation time; identity comparison of key objects would make every
+     * element unique and void the guarantee without a failure.
      *
      * @template TElement
      *
      * @param ArbitraryInterface<TElement> $element
+     * @param null|Closure(TElement): (int|string) $by
      *
      * @return ArbitraryInterface<list<TElement>>
      */
-    public static function uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100): ArbitraryInterface
+    public static function uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100, ?Closure $by = null): ArbitraryInterface
     {
-        return new UniqueArrayArbitrary($element, $minSize, $maxSize);
+        return new UniqueArrayArbitrary($element, $minSize, $maxSize, $by);
+    }
+
+    /**
+     * $inner with author-supplied boundary values: one draw in five is one of
+     * $edgeCases instead of a generated value, and a generated value shrinks
+     * through the edge values first — in the order listed, so put the
+     * most-preferred minimum first — before its own tree:
+     *
+     *     Gen::withEdgeCases(Gen::intBetween(0, $n), 0, $n, $n - 1)
+     *     Gen::withEdgeCases(Gen::stringOf(), '', 'a')
+     *
+     * The bias is explicit and scoped to this generator, so it stays on
+     * under {@see \Rasuvaeff\PropertyTesting\Runner\EdgeCases::None}, which turns off only the built-in
+     * boundary bias. The wrapper rolls on the run's randomness and leaves
+     * $inner's own sequence for a seed untouched. Edge values are taken as
+     * members of $inner's domain — nothing checks that they are.
+     *
+     * @template T
+     *
+     * @param ArbitraryInterface<T> $inner
+     * @param T ...$edgeCases
+     *
+     * @return ArbitraryInterface<T>
+     */
+    public static function withEdgeCases(ArbitraryInterface $inner, mixed ...$edgeCases): ArbitraryInterface
+    {
+        return new EdgeCasedArbitrary($inner, array_values($edgeCases));
     }
 
     /**
@@ -689,6 +730,29 @@ final class Gen
         $value = DrawContext::draw($arbitrary);
 
         return $value;
+    }
+
+    /**
+     * Attach a computed value to the counterexample report: the parsed form
+     * of a string, the delay a backoff chose, the index a search landed on —
+     * whatever the body derived and the assertion message does not carry.
+     *
+     *     $encoded = encode($s);
+     *     Gen::note('encoded', $encoded);
+     *     Assert::same(decode($encoded), $s);
+     *
+     * Notes belong to one run and surface only when that run is reported:
+     * the counterexample carries the notes of the original failing run and of
+     * the shrunk one, rendered after the arguments. A passing run's notes are
+     * dropped, so the cost is one array per run. Not a replacement for
+     * {@see Classify::label()}, which aggregates over the whole run set.
+     *
+     * A later note under the same label replaces the earlier one. Outside a
+     * property run this throws, like {@see draw()}.
+     */
+    public static function note(string $label, mixed $value): void
+    {
+        DrawContext::note($label, $value);
     }
 
     /**

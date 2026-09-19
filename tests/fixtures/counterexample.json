@@ -18,5 +18,7 @@
     },
     "discards": 1,
     "skips": 2,
-    "edgeCases": "Mixin"
+    "edgeCases": "Mixin",
+    "originalNotes": [],
+    "shrunkNotes": []
 }

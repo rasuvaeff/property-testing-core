@@ -30,6 +30,11 @@ final readonly class RunStatistics
      *        hook). Counted apart from the discards because they say nothing about the generators,
      *        and a report that folded them in would advise narrowing generators that are not at
      *        fault.
+     * @param array<string, array<array-key, int>> $tables Per-table, per-tag counts from
+     *        `Classify::tabulate()` over the passing runs; `array-key` for the reason
+     *        `$classifications` gives.
+     * @param array<string, array<string, int>> $intersections Per table, how many passing runs hit
+     *        each pair of its tags together, keyed `tagA & tagB` with the two tags in sorted order.
      */
     public function __construct(
         public int $attempts,
@@ -38,5 +43,7 @@ final readonly class RunStatistics
         public array $classifications,
         public array $requirements = [],
         public int $skips = 0,
+        public array $tables = [],
+        public array $intersections = [],
     ) {}
 }

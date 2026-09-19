@@ -38,6 +38,10 @@ final readonly class CounterExample
      * @param int $skips Number of runs the environment refused (a skipped hook or body) before the
      *        failure. Counted apart from `$discards`: a discard says the generated input left the
      *        property's domain, a skip says nothing about the input at all.
+     * @param array<string, mixed> $originalNotes What {@see Gen::note()} attached during the run
+     *        that first failed, by label.
+     * @param array<string, mixed> $shrunkNotes What {@see Gen::note()} attached during the run of
+     *        the minimised arguments — the original notes when nothing shrank.
      */
     public function __construct(
         public int $seed,
@@ -51,6 +55,8 @@ final readonly class CounterExample
         public string $path = '',
         public EdgeCases $edgeCases = EdgeCases::Mixin,
         public int $skips = 0,
+        public array $originalNotes = [],
+        public array $shrunkNotes = [],
     ) {}
 
     /**
@@ -74,6 +80,8 @@ final readonly class CounterExample
             'discards' => $this->discards,
             'skips' => $this->skips,
             'edgeCases' => $this->edgeCases->name,
+            'originalNotes' => \Rasuvaeff\PropertyTesting\ValueRenderer::normalize($this->originalNotes),
+            'shrunkNotes' => \Rasuvaeff\PropertyTesting\ValueRenderer::normalize($this->shrunkNotes),
         ];
     }
 

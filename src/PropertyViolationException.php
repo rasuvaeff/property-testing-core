@@ -48,6 +48,12 @@ final class PropertyViolationException extends RuntimeException implements Prope
             $message .= sprintf("\n  Changed:  %s", $diff);
         }
 
+        // The notes of the run being acted on: the shrunk one, which is the
+        // original when nothing shrank. Only when the body attached any.
+        if ($c->shrunkNotes !== []) {
+            $message .= sprintf("\n  Notes:    %s", $this->format($c->shrunkNotes));
+        }
+
         if ($c->failure instanceof \Throwable) {
             $message .= sprintf("\n  Failure:  %s", $c->failure->getMessage());
         }

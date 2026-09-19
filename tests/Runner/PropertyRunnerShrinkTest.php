@@ -257,6 +257,31 @@ final class PropertyRunnerShrinkTest
         Assert::same($example->originalNotes, ['n' => $example->originalArguments['n']]);
     }
 
+    public function aRandomizerOverTheDrawnEngineShrinksItsDecisions(): void
+    {
+        $result = (new PropertyRunner())->run(
+            $this->definition(['randomizer' => Gen::randomizer()], ['randomizer'], runs: 50),
+            new CallableTrialExecutor(static function (\Random\Randomizer $randomizer): void {
+                $shuffled = $randomizer->shuffleArray([1, 2, 3, 4]);
+
+                if ($shuffled !== [1, 2, 3, 4]) {
+                    throw new \RuntimeException('not the identity: ' . implode(',', $shuffled));
+                }
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        // The randomizer itself is a leaf; the decisions are the tape.
+        Assert::true(array_key_exists('draw#1', $example->originalArguments));
+        Assert::true($example->shrinkSteps > 0);
+        Assert::true(strlen($example->shrunkArguments['draw#1']) === 8);
+
+        // The shrunk tape still falsifies — and is byte-wise smaller than the original.
+        Assert::true($example->shrunkArguments['draw#1'] <= $example->originalArguments['draw#1']);
+        Assert::string($result->failure()->getMessage())->contains('not the identity');
+    }
+
     public function eachTapePositionShrinksInPlace(): void
     {
         $listener = new CollectingListener();

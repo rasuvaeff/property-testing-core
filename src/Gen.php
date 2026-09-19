@@ -24,6 +24,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\MappedArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\NullableArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\RandomEngineArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\RecordArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\StringArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\SubsetArbitrary;
@@ -794,6 +795,50 @@ final class Gen
     public static function uuid(): ArbitraryInterface
     {
         return new UuidArbitrary();
+    }
+
+    /**
+     * A {@see \Random\Engine} whose randomness comes from the property's own
+     * draw tape, for code under test that takes a `Random\Randomizer` (or an
+     * engine): jittered backoff, shuffles, weighted picks, replica selection.
+     * A fixed seed reproduces such a failure but cannot shrink it; this engine
+     * records each `generate()` as an in-body {@see draw()} of eight bytes,
+     * so the failing sequence of random decisions is replayed by position and
+     * shrunk through the bytes' own tree:
+     *
+     *     #[Property]
+     *     public function backoffStaysUnderCap(int $attempt, \Random\Engine $engine): void
+     *     {
+     *         $delay = (new JitteredBackoff(new \Random\Randomizer($engine)))->delayMs($attempt);
+     *
+     *         Assert::true($delay <= 60_000);
+     *     }
+     *
+     * The bytes shrink toward `"\0"`, which `Randomizer::getInt($min, $max)`
+     * maps to `$min` and `shuffleArray()` to a near-identity permutation — the
+     * natural minimum for most code. Each engine call is one tape position
+     * (`draw#N` in the counterexample) and the descent is bounded like every
+     * in-body draw, so a body that consumes thousands of random values per
+     * run shrinks only as far as that cap allows. Valid only inside a run.
+     * {@see forParameters()} derives it for a `Random\Engine` parameter, and
+     * a `Random\Randomizer` parameter wraps it.
+     *
+     * @return ArbitraryInterface<\Random\Engine>
+     */
+    public static function randomEngine(): ArbitraryInterface
+    {
+        return new RandomEngineArbitrary();
+    }
+
+    /**
+     * A {@see \Random\Randomizer} over {@see randomEngine()}: the native API
+     * the code under test already accepts, with shrinkable randomness behind it.
+     *
+     * @return ArbitraryInterface<\Random\Randomizer>
+     */
+    public static function randomizer(): ArbitraryInterface
+    {
+        return self::map(self::randomEngine(), static fn(\Random\Engine $engine): \Random\Randomizer => new \Random\Randomizer($engine));
     }
 
     /**

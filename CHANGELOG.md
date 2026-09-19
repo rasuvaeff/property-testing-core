@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.0 — 2026-09-19
 
 - **Fixed:** `RedisDsn::parse()` quoted the password when the DSN carried
   userinfo but no host (`redis://user:s3cret@`, `redis://user:s3cret@:6379`):

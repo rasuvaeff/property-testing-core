@@ -698,48 +698,127 @@ final class FilesystemCorpusTest
 
     /**
      * remember()'s read-modify-write must block on the cross-process lock and
-     * lose neither commit. The parent holds a shared lock — an exclusive
-     * acquire blocks against it, while a writer mutated down to LOCK_SH (or to
-     * no lock at all) sails through and fails the running-state assertion.
+     * lose neither commit. A holder process takes the exclusive lock, a
+     * writer process calls remember() against it, and the kernel's own lock
+     * table (`/proc/locks`) is the barrier that says the writer is blocked —
+     * no sleep, no guess. A writer mutated down to LOCK_SH, or to no lock at
+     * all, never shows up as a waiter and has written its entry by the time
+     * the table is read.
+     *
+     * The lock is held by a child rather than by this process on purpose: a
+     * child spawned while the parent holds the lock inherits the descriptor,
+     * and infection's include interceptor turns every flock() of the test
+     * process into LOCK_SH — a lock this process held could never be released
+     * under mutation, and the test hung into the timeout instead of judging.
      */
     public function rememberBlocksOnTheCrossProcessLockAndLosesNothing(): void
     {
+        if (DIRECTORY_SEPARATOR === '\\' || !is_readable('/proc/locks')) {
+            // The barrier is Linux's lock table; elsewhere the test has no
+            // deterministic way to see "blocked".
+            return;
+        }
+
         $storage = $this->storage();
         $storage->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
 
-        $lock = fopen($this->dir . '/.corpus.lock', 'c');
-        Assert::true(\is_resource($lock));
-        Assert::true(flock($lock, LOCK_SH));
-
-        $ready = $this->dir . '/ready';
-        $worker = $this->dir . '/worker.php';
-        file_put_contents($worker, $this->workerScript());
+        $held = $this->dir . '/held';
+        $release = $this->dir . '/release';
+        $holderScript = $this->dir . '/holder.php';
+        $workerScript = $this->dir . '/worker.php';
+        file_put_contents($holderScript, $this->holderScript());
+        file_put_contents($workerScript, $this->workerScript());
 
         $pipes = [];
-        $process = proc_open([PHP_BINARY, $worker, $this->dir, self::ID, $ready], [], $pipes);
-        Assert::true(\is_resource($process));
+        $holder = proc_open([PHP_BINARY, $holderScript, $this->dir . '/.corpus.lock', $held, $release], [], $pipes);
+        Assert::true(\is_resource($holder));
+        Assert::true($this->awaitFile($held), 'the holder never reported the lock as taken');
+
+        $worker = proc_open([PHP_BINARY, $workerScript, $this->dir, self::ID, $this->dir . '/ready'], [], $pipes);
+        Assert::true(\is_resource($worker));
 
         try {
-            // The worker signals right before calling remember(); once it has,
-            // the only thing between it and completion is the lock.
-            $deadline = microtime(as_float: true) + 10.0;
+            Assert::true(
+                $this->awaitBlockedOnLock($worker, $this->dir . '/.corpus.lock'),
+                'the writer did not block on the corpus lock',
+            );
 
-            while (!is_file($ready) && microtime(as_float: true) < $deadline) {
-                usleep(10_000);
-            }
-
-            Assert::true(is_file($ready));
-
-            usleep(300_000);
-            Assert::true(proc_get_status($process)['running']);
+            // Blocked means nothing was written through the lock.
+            Assert::same(count($storage->recall(self::ID, ['x'])), 1);
         } finally {
-            flock($lock, LOCK_UN);
-            fclose($lock);
+            touch($release);
         }
 
-        Assert::same(proc_close($process), 0);
+        Assert::same(proc_close($holder), 0);
+        Assert::same(proc_close($worker), 0);
 
-        Assert::same(count($this->storage()->recall(self::ID, ['x'])), 2);
+        Assert::same(count($storage->recall(self::ID, ['x'])), 2);
+    }
+
+    /**
+     * Whether $process shows up in the kernel's lock table as a waiter on
+     * $lockFile before it exits or the deadline passes. Polling the table is a
+     * barrier, not a guess: the line exists exactly while the process sits in
+     * a blocking flock().
+     *
+     * @param resource $process
+     */
+    private function awaitBlockedOnLock($process, string $lockFile): bool
+    {
+        $pid = proc_get_status($process)['pid'];
+        $pattern = sprintf('/^\d+: -> FLOCK\s+ADVISORY\s+WRITE\s+%d\s+[0-9a-f]+:[0-9a-f]+:%d\s/m', $pid, fileinode($lockFile));
+        $deadline = microtime(as_float: true) + 10.0;
+
+        while (microtime(as_float: true) < $deadline) {
+            if (preg_match($pattern, (string) file_get_contents('/proc/locks')) === 1) {
+                return true;
+            }
+
+            if (!proc_get_status($process)['running']) {
+                return false;
+            }
+
+            usleep(5_000);
+        }
+
+        return false;
+    }
+
+    private function awaitFile(string $file): bool
+    {
+        $deadline = microtime(as_float: true) + 10.0;
+
+        while (!is_file($file) && microtime(as_float: true) < $deadline) {
+            usleep(5_000);
+        }
+
+        return is_file($file);
+    }
+
+    /**
+     * Takes the corpus lock the way FilesystemCorpus does, reports it, and
+     * keeps it until told to let go.
+     */
+    private function holderScript(): string
+    {
+        return <<<'PHP'
+            <?php
+
+            declare(strict_types=1);
+
+            [, $lockFile, $held, $release] = $argv;
+
+            $lock = fopen($lockFile, 'c');
+            flock($lock, LOCK_EX);
+            touch($held);
+
+            while (!is_file($release)) {
+                usleep(5_000);
+            }
+
+            flock($lock, LOCK_UN);
+            fclose($lock);
+            PHP;
     }
 
     private function workerScript(): string

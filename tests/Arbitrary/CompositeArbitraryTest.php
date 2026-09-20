@@ -216,6 +216,39 @@ final class CompositeArbitraryTest
         foreach (Trees::valuesToDepth($node, 2) as $candidate) {
             Assert::same($candidate, 0);
         }
+
+        // Skipped, not stopped at: a later candidate that does change the
+        // value is still reached. Parity of 64: every halving candidate
+        // (0, 32, 48, ...) is even like the parent until the last one, 63.
+        $parity = new CompositeArbitrary(static fn(Draw $d): int => $d->draw(Gen::intBetween(0, 100)) % 2);
+        $even = null;
+        for ($seed = 0; $even === null; ++$seed) {
+            $candidate = $parity->generate(new Random($seed));
+
+            if ($candidate->value === 0 && Trees::childValues($candidate) !== []) {
+                $even = $candidate;
+            }
+        }
+
+        // The first candidate, 0, is even like the parent; the odd ones after it survive.
+        Assert::same(array_values(array_unique(Trees::childValues($even))), [1]);
+    }
+
+    public function positionsAreKeyedApartFromTheSeedItself(): void
+    {
+        // Seed 1 at position 12 and seed 11 at position 2 would share a stream
+        // if the seed and the position were merely concatenated.
+        $first = new Draw(1, EdgeCases::Mixin);
+        $second = new Draw(11, EdgeCases::Mixin);
+        $twelfth = null;
+        for ($i = 0; $i < 13; ++$i) {
+            $twelfth = $first->draw(Gen::intBetween(0, 1_000_000));
+        }
+        $second->draw(Gen::intBetween(0, 1_000_000));
+        $second->draw(Gen::intBetween(0, 1_000_000));
+        $third = $second->draw(Gen::intBetween(0, 1_000_000));
+
+        Assert::true($twelfth !== $third);
     }
 
     public function descentDepthIsCapped(): void

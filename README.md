@@ -645,7 +645,7 @@ environment variables are **adapter** conventions: the adapters read them and
 resolve them into a `PropertyConfig` and a `Corpus`. What the engine ships is
 the *meaning* of the values, so both adapters agree on it:
 `EnvironmentOverrides::runs()` / `seed()` / `phases()` / `edgeCases()` /
-`flag()` / `string()` parse a raw `getenv()` value (unset or empty → `null`, a
+`flag()` / `string()` / `count($variable, …)` parse a raw `getenv()` value (unset or empty → `null`, a
 malformed one → `InvalidArgumentException` naming the variable), and
 `CorpusFactory::fromDsn()` turns a `PROPERTY_DB` value into a corpus — a
 directory path is a `FilesystemCorpus`, `redis://host[:port][/db][?prefix=key-prefix&timeout=seconds]`

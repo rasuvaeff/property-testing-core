@@ -23,7 +23,7 @@ Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
   never throws to report a property outcome — it returns a structured
   `PropertyResult`. `PROPERTY_RUNS`/`PROPERTY_SEED`/`PROPERTY_VERBOSE`/
   `PROPERTY_DB` are adapter conventions: the adapter READS the variable and hands
-  the value to `EnvironmentOverrides::runs()/seed()/phases()/edgeCases()/flag()/string()`
+  the value to `EnvironmentOverrides::runs()/seed()/phases()/edgeCases()/flag()/string()/count()`
   (unset/empty -> null, malformed -> InvalidArgumentException naming the variable) and
   `CorpusFactory::fromDsn()` (path -> FilesystemCorpus; `redis://host[:port][/db][?prefix=&timeout=seconds]`
   or `rediss://` -> RedisCorpus via ext-redis or predis, memoized per value; other scheme ->
@@ -224,6 +224,7 @@ new LazyPhpRedisCorpusClient(RedisDsn::parse($dsn)); // ext-redis client that co
 EnvironmentOverrides::runs(getenv('PROPERTY_RUNS'));   // ?positive-int; PHASES -> ?list<Phase>; EDGE_CASES -> ?EdgeCases;
                                         // seed -> ?int (range-checked); string -> ?non-empty-string;
                                         // flag -> ?bool: unset/'' = null, '0'/'false'/'off'/'no' = off (case-insensitive), else on
+EnvironmentOverrides::count('PROPERTY_SEARCH_RUNS', getenv('PROPERTY_SEARCH_RUNS')); // ?int<0, max>; 0 is valid ("none")
 ```
 
 Values entries (data-representable minimised input) replay as ONE run; seed

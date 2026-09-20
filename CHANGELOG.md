@@ -59,6 +59,9 @@
   `$exhaustiveDeclined`, `$search`; `DistributionReport` the matching
   fields; `CorpusFailed::$operation` may now be `recallTargets` or
   `rememberTargets`. All appended with defaults.
+- **Added:** `EnvironmentOverrides::count($variable, $value)` — a
+  non-negative integer for count-shaped variables such as
+  `PROPERTY_SEARCH_RUNS`, where `0` is a valid "none".
 - The adapter contract suite pins the path version at `0.11.0`, which both
   adapters accept; it sat at `0.10.0`.
 - A refusal over a docblock type no longer calls a generic the function or

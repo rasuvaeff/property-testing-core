@@ -87,9 +87,10 @@ final class SearchDocumentTest
 
     public function parameterOrderDoesNotMatterForRecallOnlyTheNamesDo(): void
     {
-        $document = (string) SearchDocument::encode('p', ['n' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 1.0, 'arguments' => ['a' => 1, 'b' => 2]]]]], ['a', 'b']);
+        $document = (string) SearchDocument::encode('p', ['n' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 1.0, 'arguments' => ['a' => 1, 'b' => 2]]]]], ['b', 'a']);
 
         Assert::same(SearchDocument::decode($document, ['b', 'a'])['n']['entries'][0]['arguments'], ['b' => 2, 'a' => 1]);
+        Assert::same(SearchDocument::decode($document, ['a', 'b'])['n']['entries'][0]['arguments'], ['a' => 1, 'b' => 2]);
     }
 
     public function anIntegralScoreComesBackAsAFloat(): void

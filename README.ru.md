@@ -647,7 +647,7 @@ new PropertyConfig();                                          // все фаз�
 `PROPERTY_DB` — конвенции **адаптеров**: адаптеры читают их и разрешают в
 `PropertyConfig` и `Corpus`. Движок поставляет *смысл* значений, чтобы оба
 адаптера понимали их одинаково: `EnvironmentOverrides::runs()` / `seed()` /
-`phases()` / `edgeCases()` / `flag()` / `string()` разбирают сырое значение из
+`phases()` / `edgeCases()` / `flag()` / `string()` / `count($variable, …)` разбирают сырое значение из
 `getenv()` (не задано или пусто → `null`, испорчено →
 `InvalidArgumentException` с именем переменной), а `CorpusFactory::fromDsn()`
 превращает значение `PROPERTY_DB` в корпус: путь к каталогу —

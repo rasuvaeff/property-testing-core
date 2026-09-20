@@ -227,7 +227,7 @@
                 "name": "domainSize",
                 "static": false,
                 "params": [],
-                "returnType": "?int",
+                "returnType": "int",
                 "summary": "How many distinct values enumerate() walks, or null when the\ndomain is not finite in this configuration. Saturates at\n`PHP_INT_MAX` rather than overflowing — a budget compares against it,\nnothing computes with it. An upper bound is acceptable where the exact\ncount is not known without walking (a filter over a finite source).",
                 "description": "",
                 "throws": [],
@@ -811,7 +811,7 @@
                 "name": "domainSize",
                 "static": false,
                 "params": [],
-                "returnType": "?int",
+                "returnType": "int",
                 "summary": "How many distinct values enumerate() walks, or null when the\ndomain is not finite in this configuration. Saturates at\n`PHP_INT_MAX` rather than overflowing — a budget compares against it,\nnothing computes with it. An upper bound is acceptable where the exact\ncount is not known without walking (a filter over a finite source).",
                 "description": "",
                 "throws": [],
@@ -2014,7 +2014,7 @@
                 "name": "domainSize",
                 "static": false,
                 "params": [],
-                "returnType": "?int",
+                "returnType": "int",
                 "summary": "How many distinct values enumerate() walks, or null when the\ndomain is not finite in this configuration. Saturates at\n`PHP_INT_MAX` rather than overflowing — a budget compares against it,\nnothing computes with it. An upper bound is acceptable where the exact\ncount is not known without walking (a filter over a finite source).",
                 "description": "",
                 "throws": [],
@@ -3443,7 +3443,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 83
+                "startLine": 84
             }
         ],
         "constants": [],
@@ -8611,8 +8611,8 @@
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.9.1",
-        "rootReference": "8c638871bb4e5361d38c372dbc36ef80b6cb3a32",
+        "rootVersion": "v0.10.0",
+        "rootReference": "430b9a18e94ed5716e2889da7a36489f7512a811",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PhpUnitTrialExecutor",
         "kind": "class",
         "isApi": false,
@@ -8677,7 +8677,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 44
+                "startLine": 45
             },
             {
                 "name": "everyRunSkippedWith",
@@ -8692,18 +8692,18 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 91
+                "startLine": 95
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/8c638871bb4e5361d38c372dbc36ef80b6cb3a32/src/PhpUnit/PhpUnitTrialExecutor.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/430b9a18e94ed5716e2889da7a36489f7512a811/src/PhpUnit/PhpUnitTrialExecutor.php#L31",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.9.1",
-        "rootReference": "8c638871bb4e5361d38c372dbc36ef80b6cb3a32",
+        "rootVersion": "v0.10.0",
+        "rootReference": "430b9a18e94ed5716e2889da7a36489f7512a811",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
         "kind": "class",
         "isApi": true,
@@ -8779,7 +8779,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 112
+                "startLine": 125
             },
             {
                 "name": "id",
@@ -8802,7 +8802,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 133
+                "startLine": 146
             },
             {
                 "name": "throws",
@@ -8818,14 +8818,14 @@
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
                 "summary": "The exception class every trial must throw. A trial that throws it\npasses; one that throws anything else, or returns normally, fails and\nshrinks like any other counterexample.",
-                "description": "This is the property-level replacement for `expectException()`, which\ncannot work inside a `check()` closure: the executor observes every\nthrow before PHPUnit's own expectation mechanism does. A skip\n(`markTestSkipped()`, `markTestIncomplete()`) and an\n`Assume::that()` discard are still what they are — the environment's\nverdict about the run, never a pass earned by throwing.",
+                "description": "This is the property-level replacement for `expectException()`, which\ncannot work inside a `check()` closure: the executor observes every\nthrow before PHPUnit's own expectation mechanism does. A failed\nassertion is never the expected throw, and a class it is an instance\nof (`\\Exception`, `\\Throwable`) is refused here. A skip\n(`markTestSkipped()`, `markTestIncomplete()`) and an\n`Assume::that()` discard are still what they are — the environment's\nverdict about the run, never a pass earned by throwing.",
                 "throws": [],
                 "throwsInBody": true,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 158
+                "startLine": 173
             },
             {
                 "name": "runs",
@@ -8848,7 +8848,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 175
+                "startLine": 199
             },
             {
                 "name": "seed",
@@ -8871,7 +8871,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 187
+                "startLine": 211
             },
             {
                 "name": "maxShrinks",
@@ -8894,7 +8894,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 197
+                "startLine": 221
             },
             {
                 "name": "maxDiscards",
@@ -8917,7 +8917,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 208
+                "startLine": 232
             },
             {
                 "name": "timeoutMs",
@@ -8940,7 +8940,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 219
+                "startLine": 243
             },
             {
                 "name": "budgetMs",
@@ -8963,7 +8963,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 230
+                "startLine": 254
             },
             {
                 "name": "shrink",
@@ -8986,7 +8986,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 243
+                "startLine": 267
             },
             {
                 "name": "shrinkBudgetMs",
@@ -9009,7 +9009,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 257
+                "startLine": 281
             },
             {
                 "name": "phases",
@@ -9032,7 +9032,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 272
+                "startLine": 296
             },
             {
                 "name": "derandomize",
@@ -9055,7 +9055,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 284
+                "startLine": 308
             },
             {
                 "name": "edgeCases",
@@ -9078,7 +9078,99 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 300
+                "startLine": 324
+            },
+            {
+                "name": "exhaustive",
+                "static": false,
+                "params": [
+                    {
+                        "name": "exhaustive",
+                        "type": "bool",
+                        "description": "",
+                        "default": "true",
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Walk the whole parameter domain instead of sampling it, when every\ngenerator has a finite domain (`Enumerable`) and the product fits\nexhaustiveBudget(); otherwise the phase samples and a warning\nsays why. runs() is ignored when it walks. `PROPERTY_EXHAUSTIVE`\nturns it on for the whole suite.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 338
+            },
+            {
+                "name": "exhaustiveBudget",
+                "static": false,
+                "params": [
+                    {
+                        "name": "exhaustiveBudget",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "The largest domain exhaustive() walks; 10 000 by default.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 348
+            },
+            {
+                "name": "flakyReplays",
+                "static": false,
+                "params": [
+                    {
+                        "name": "flakyReplays",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Re-executions of the minimised counterexample after the descent — one\nthat passes marks the counterexample flaky, with a `Flaky:` line in the\nfailure. 2 by default; 0 disables the check.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 361
+            },
+            {
+                "name": "searchRuns",
+                "static": false,
+                "params": [
+                    {
+                        "name": "searchRuns",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
+                "summary": "Bodies the targeted search may execute after the random phase, for a\nbody that calls `Target::maximize()`/`minimize()`: the best-scoring\ninputs are mutated one parameter at a time. 0 (the default) performs no\nsearch. `PROPERTY_SEARCH_RUNS` overrides it for the whole suite.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 375
             },
             {
                 "name": "path",
@@ -9101,7 +9193,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 314
+                "startLine": 390
             },
             {
                 "name": "auto",
@@ -9124,7 +9216,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 335
+                "startLine": 411
             },
             {
                 "name": "examples",
@@ -9147,7 +9239,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 348
+                "startLine": 424
             },
             {
                 "name": "listeners",
@@ -9170,7 +9262,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 358
+                "startLine": 434
             },
             {
                 "name": "output",
@@ -9200,7 +9292,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 374
+                "startLine": 450
             },
             {
                 "name": "clock",
@@ -9223,7 +9315,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 390
+                "startLine": 466
             },
             {
                 "name": "check",
@@ -9246,18 +9338,18 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 402
+                "startLine": 478
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/8c638871bb4e5361d38c372dbc36ef80b6cb3a32/src/PhpUnit/PropertyCheck.php#L45",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/430b9a18e94ed5716e2889da7a36489f7512a811/src/PhpUnit/PropertyCheck.php#L50",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.9.1",
-        "rootReference": "8c638871bb4e5361d38c372dbc36ef80b6cb3a32",
+        "rootVersion": "v0.10.0",
+        "rootReference": "430b9a18e94ed5716e2889da7a36489f7512a811",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyTesting",
         "kind": "trait",
         "isApi": true,
@@ -9276,13 +9368,13 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/8c638871bb4e5361d38c372dbc36ef80b6cb3a32/src/PhpUnit/PropertyTesting.php#L25",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/430b9a18e94ed5716e2889da7a36489f7512a811/src/PhpUnit/PropertyTesting.php#L25",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.9.1",
-        "rootReference": "8c638871bb4e5361d38c372dbc36ef80b6cb3a32",
+        "rootVersion": "v0.10.0",
+        "rootReference": "430b9a18e94ed5716e2889da7a36489f7512a811",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -9338,18 +9430,18 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 37
+                "startLine": 38
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/8c638871bb4e5361d38c372dbc36ef80b6cb3a32/src/PhpUnit/VerboseListener.php#L27",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/430b9a18e94ed5716e2889da7a36489f7512a811/src/PhpUnit/VerboseListener.php#L28",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.11.1",
-        "rootReference": "80e655feb1c622f029f332759a9d324a16f4af19",
+        "rootVersion": "v0.12.0",
+        "rootReference": "c618f33e2c232e9d07c0bddf20dae7cf46cf5d27",
         "class": "Rasuvaeff\\PropertyTesting\\Property",
         "kind": "class",
         "isApi": true,
@@ -9512,6 +9604,42 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "exhaustive",
+                "type": "bool",
+                "description": "Walk the whole parameter domain instead of sampling it, when every\ngenerator has a finite domain (`Enumerable`) and the product fits $exhaustiveBudget;\notherwise the phase samples and the report says why. `runs` is ignored when it walks.\n`PROPERTY_EXHAUSTIVE` turns it on for the suite.",
+                "default": "false",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "exhaustiveBudget",
+                "type": "int",
+                "description": "The largest domain $exhaustive walks; at least 1.",
+                "default": "10000",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "flakyReplays",
+                "type": "int",
+                "description": "Re-executions of the minimised counterexample after the descent; one\nthat passes marks the counterexample flaky (a `Flaky:` line names the replay). 0\ndisables the check.",
+                "default": "2",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "searchRuns",
+                "type": "int",
+                "description": "Bodies the targeted search may execute after the random phase, for a\nbody that calls `Target::maximize()`/`minimize()`: the best-scoring inputs are mutated\none parameter at a time. 0 (the default) performs no search. `PROPERTY_SEARCH_RUNS`\noverrides it for the suite.",
+                "default": "0",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [
@@ -9531,7 +9659,7 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/80e655feb1c622f029f332759a9d324a16f4af19/src/Property.php#L35",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Property.php#L35",
         "implementedBy": []
     },
     {
@@ -10823,6 +10951,41 @@
                 "startLine": 54
             },
             {
+                "name": "count",
+                "static": true,
+                "params": [
+                    {
+                        "name": "variable",
+                        "type": "string",
+                        "description": "The variable's name, for the message.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "value",
+                        "type": "string|false",
+                        "description": "The variable's value as `getenv()` reports it; `false` when unset.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?int",
+                "summary": "A count variable such as `PROPERTY_SEARCH_RUNS`: a non-negative\ninteger, where `0` means \"none\" and is a valid way to switch a phase\noff from the environment.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When the value is not a non-negative integer within range."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 81
+            },
+            {
                 "name": "seed",
                 "static": true,
                 "params": [
@@ -10848,7 +11011,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 78
+                "startLine": 105
             },
             {
                 "name": "phases",
@@ -10876,7 +11039,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 119
+                "startLine": 146
             },
             {
                 "name": "edgeCases",
@@ -10904,7 +11067,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 155
+                "startLine": 182
             },
             {
                 "name": "flag",
@@ -10927,7 +11090,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 183
+                "startLine": 210
             },
             {
                 "name": "string",
@@ -10950,7 +11113,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 200
+                "startLine": 227
             }
         ],
         "constants": [],
@@ -15043,8 +15206,8 @@
     },
     {
         "root": "testo",
-        "rootVersion": "v0.11.1",
-        "rootReference": "80e655feb1c622f029f332759a9d324a16f4af19",
+        "rootVersion": "v0.12.0",
+        "rootReference": "c618f33e2c232e9d07c0bddf20dae7cf46cf5d27",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\PropertyInterceptor",
         "kind": "class",
         "isApi": true,
@@ -15124,18 +15287,18 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 84
+                "startLine": 91
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/80e655feb1c622f029f332759a9d324a16f4af19/src/Testo/PropertyInterceptor.php#L54",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Testo/PropertyInterceptor.php#L61",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.11.1",
-        "rootReference": "80e655feb1c622f029f332759a9d324a16f4af19",
+        "rootVersion": "v0.12.0",
+        "rootReference": "c618f33e2c232e9d07c0bddf20dae7cf46cf5d27",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\TestoTrialExecutor",
         "kind": "class",
         "isApi": false,
@@ -15209,7 +15372,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 68
+                "startLine": 70
             },
             {
                 "name": "everyRunSkipped",
@@ -15224,7 +15387,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 175
+                "startLine": 182
             },
             {
                 "name": "firstSkip",
@@ -15239,7 +15402,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 183
+                "startLine": 190
             },
             {
                 "name": "attributes",
@@ -15254,18 +15417,18 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 211
+                "startLine": 218
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/80e655feb1c622f029f332759a9d324a16f4af19/src/Testo/TestoTrialExecutor.php#L44",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Testo/TestoTrialExecutor.php#L46",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.11.1",
-        "rootReference": "80e655feb1c622f029f332759a9d324a16f4af19",
+        "rootVersion": "v0.12.0",
+        "rootReference": "c618f33e2c232e9d07c0bddf20dae7cf46cf5d27",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -15321,12 +15484,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 37
+                "startLine": 38
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/80e655feb1c622f029f332759a9d324a16f4af19/src/Testo/VerboseListener.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Testo/VerboseListener.php#L31",
         "implementedBy": []
     },
     {

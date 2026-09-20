@@ -72,7 +72,7 @@ because it cannot analyse the implementations it will be handed.
 ### domainSize()
 
 ```php
-domainSize(): ?int
+domainSize(): int
 ```
 
 How many distinct values enumerate() walks, or null when the

@@ -9,7 +9,7 @@ description: "The Testo adapter for a Property: resolves the test framework's co
 
 `Rasuvaeff\PropertyTesting\Testo\PropertyInterceptor`
 
-**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/80e655feb1c622f029f332759a9d324a16f4af19/src/Testo/PropertyInterceptor.php#L54) — **Version:** v0.11.1
+**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Testo/PropertyInterceptor.php#L61) — **Version:** v0.12.0
 
 **Implements:** `Testo\Pipeline\Middleware\TestRunInterceptor`, `Testo\Pipeline\Interceptor`
 

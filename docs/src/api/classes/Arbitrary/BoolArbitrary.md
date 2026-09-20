@@ -34,7 +34,7 @@ be finite, so shrinking terminates.
 ### domainSize()
 
 ```php
-domainSize(): ?int
+domainSize(): int
 ```
 
 How many distinct values enumerate() walks, or null when the

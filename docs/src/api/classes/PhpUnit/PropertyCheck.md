@@ -9,7 +9,7 @@ description: "Fluent builder mapping the engine's structured PropertyResult onto
 
 `Rasuvaeff\PropertyTesting\PhpUnit\PropertyCheck`
 
-**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/8c638871bb4e5361d38c372dbc36ef80b6cb3a32/src/PhpUnit/PropertyCheck.php#L45) — **Version:** v0.9.1
+**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/430b9a18e94ed5716e2889da7a36489f7512a811/src/PhpUnit/PropertyCheck.php#L50) — **Version:** v0.10.0
 
 Fluent builder mapping the engine's structured PropertyResult onto PHPUnit:
 a pass counts one assertion, every failing outcome surfaces as one
@@ -87,7 +87,9 @@ shrinks like any other counterexample.
 
 This is the property-level replacement for `expectException()`, which
 cannot work inside a `check()` closure: the executor observes every
-throw before PHPUnit's own expectation mechanism does. A skip
+throw before PHPUnit's own expectation mechanism does. A failed
+assertion is never the expected throw, and a class it is an instance
+of (`\Exception`, `\Throwable`) is refused here. A skip
 (`markTestSkipped()`, `markTestIncomplete()`) and an
 `Assume::that()` discard are still what they are — the environment's
 verdict about the run, never a pass earned by throwing.
@@ -196,6 +198,47 @@ Whether the numeric generators keep biasing toward their boundary values
 Turn them off when the edges are what this property cannot use — a body
 discarding `0`, a range end that violates a precondition — so the
 discard budget stops paying for one run in five.
+
+### exhaustive()
+
+```php
+exhaustive(bool $exhaustive = true): PhpUnit\PropertyCheck
+```
+
+Walk the whole parameter domain instead of sampling it, when every
+generator has a finite domain (`Enumerable`) and the product fits
+exhaustiveBudget(); otherwise the phase samples and a warning
+says why. runs() is ignored when it walks. `PROPERTY_EXHAUSTIVE`
+turns it on for the whole suite.
+
+### exhaustiveBudget()
+
+```php
+exhaustiveBudget(int $exhaustiveBudget): PhpUnit\PropertyCheck
+```
+
+The largest domain exhaustive() walks; 10 000 by default.
+
+### flakyReplays()
+
+```php
+flakyReplays(int $flakyReplays): PhpUnit\PropertyCheck
+```
+
+Re-executions of the minimised counterexample after the descent — one
+that passes marks the counterexample flaky, with a `Flaky:` line in the
+failure. 2 by default; 0 disables the check.
+
+### searchRuns()
+
+```php
+searchRuns(int $searchRuns): PhpUnit\PropertyCheck
+```
+
+Bodies the targeted search may execute after the random phase, for a
+body that calls `Target::maximize()`/`minimize()`: the best-scoring
+inputs are mutated one parameter at a time. 0 (the default) performs no
+search. `PROPERTY_SEARCH_RUNS` overrides it for the whole suite.
 
 ### path()
 

@@ -40,6 +40,23 @@ static runs(string|false $value): ?int
 
 - `InvalidArgumentException` — When the value is not a positive integer within range.
 
+### count()
+
+```php
+static count(string $variable, string|false $value): ?int
+```
+
+A count variable such as `PROPERTY_SEARCH_RUNS`: a non-negative
+integer, where `0` means "none" and is a valid way to switch a phase
+off from the environment.
+
+- `$variable` — The variable's name, for the message.
+- `$value` — The variable's value as `getenv()` reports it; `false` when unset.
+
+**Throws:**
+
+- `InvalidArgumentException` — When the value is not a non-negative integer within range.
+
 ### seed()
 
 ```php

@@ -9,7 +9,7 @@ description: "Marks a test method as a property: the PropertyInterceptor takes o
 
 `Rasuvaeff\PropertyTesting\Property`
 
-**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/80e655feb1c622f029f332759a9d324a16f4af19/src/Property.php#L35) — **Version:** v0.11.1
+**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Property.php#L35) — **Version:** v0.12.0
 
 **Implements:** `Testo\Pipeline\Attribute\Interceptable`
 
@@ -49,6 +49,10 @@ __construct(
     \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
     bool $auto = false,
     ?class-string<\Throwable> $throws = NULL,
+    bool $exhaustive = false,
+    int $exhaustiveBudget = 10000,
+    int $flakyReplays = 2,
+    int $searchRuns = 0,
 )
 ```
 
@@ -70,6 +74,10 @@ __construct(
 | `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | Whether the numeric generators keep biasing toward their boundary values ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::Mixin, the default) or generate uniformly ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::None). Turn them off when the edges are what this property cannot use — a body discarding `0`, a range end that violates a precondition — so the discard budget stops paying for one run in five. |
 | `$auto` | `bool` | `false` | Derive a generator from the property's signature for every parameter the provider does not cover — the `@param` psalm type when there is one (`int&lt;1, 300&gt;` beats a bare `int`), the native type otherwise, and an error naming the parameter for anything unreadable. The provider (explicit or conventional) becomes the overrides and may be partial; it may also cover everything, in which case auto derives nothing. Deliberately opt-in and deliberately without an environment knob: the environment dials the suite, while this changes what one property's arguments mean. |
 | `$throws` | `?class-string<\Throwable>` | `NULL` | The exception class every run must throw. A run that throws it (or a subclass) passes; one that returns normally fails with `Expected &lt;class&gt; to be thrown, but it was not` and shrinks like any other counterexample; one that throws another class fails with that throw. A skip and an `Assume::that()` discard keep their meaning — never a pass earned by throwing. This is the per-run replacement for `#[ExpectException]`, which observes the aggregate result and is refused on a property. The matching throw is recorded as an assertion, so a body that asserts nothing else is not reported as risky. |
+| `$exhaustive` | `bool` | `false` | Walk the whole parameter domain instead of sampling it, when every generator has a finite domain (`Enumerable`) and the product fits $exhaustiveBudget; otherwise the phase samples and the report says why. `runs` is ignored when it walks. `PROPERTY_EXHAUSTIVE` turns it on for the suite. |
+| `$exhaustiveBudget` | `int` | `10000` | The largest domain $exhaustive walks; at least 1. |
+| `$flakyReplays` | `int` | `2` | Re-executions of the minimised counterexample after the descent; one that passes marks the counterexample flaky (a `Flaky:` line names the replay). 0 disables the check. |
+| `$searchRuns` | `int` | `0` | Bodies the targeted search may execute after the random phase, for a body that calls `Target::maximize()`/`minimize()`: the best-scoring inputs are mutated one parameter at a time. 0 (the default) performs no search. `PROPERTY_SEARCH_RUNS` overrides it for the suite. |
 
 ## Properties
 

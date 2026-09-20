@@ -210,8 +210,8 @@ final readonly class DistributionReport
 
             foreach ($this->tables as $table => $tags) {
                 $data['tables'][$table] = [
-                    'tags' => array_map(self::tagShare(...), $tags),
-                    'intersections' => array_map(self::tagShare(...), $this->intersections[$table] ?? []),
+                    'tags' => array_map($this->tagShare(...), $tags),
+                    'intersections' => array_map($this->tagShare(...), $this->intersections[$table] ?? []),
                 ];
             }
         }
@@ -229,7 +229,7 @@ final readonly class DistributionReport
     /**
      * @return array{label: string, count: int, percent: float}
      */
-    private static function tagShare(LabelShare $share): array
+    private function tagShare(LabelShare $share): array
     {
         return ['label' => $share->label, 'count' => $share->count, 'percent' => $share->percent];
     }

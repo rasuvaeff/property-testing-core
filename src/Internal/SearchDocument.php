@@ -76,7 +76,7 @@ final class SearchDocument
     public static function decode(string $content, array $parameterNames): array
     {
         try {
-            $document = json_decode($content, true, flags: JSON_THROW_ON_ERROR);
+            $document = json_decode($content, associative: true, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             return [];
         }

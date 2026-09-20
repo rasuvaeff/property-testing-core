@@ -77,7 +77,7 @@ final class SearchPool
     public function recall(string $label, TargetDirection $direction, array $entries): void
     {
         foreach ($entries as $entry) {
-            $this->offer($label, $direction, $entry['score'], array_map(static fn(mixed $value): Shrinkable => Shrinkable::leaf($value), $entry['arguments']));
+            $this->offer($label, $direction, $entry['score'], array_map(Shrinkable::leaf(...), $entry['arguments']));
             $this->improvements[$label] = 0;
         }
 

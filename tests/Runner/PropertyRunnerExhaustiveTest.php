@@ -196,7 +196,7 @@ final class PropertyRunnerExhaustiveTest
         $result = $this->run(
             ['n' => Gen::intBetween(0, 99)],
             static function (int $n): void {
-                Assume::that(false);
+                Assume::that(condition: false);
             },
             maxDiscards: 3,
         );
@@ -260,7 +260,7 @@ final class PropertyRunnerExhaustiveTest
         $second = $this->run(['flag' => Gen::bool()], $body, corpus: $replaying);
 
         Assert::instanceOf($second, Falsified::class);
-        Assert::same($second->counterExample()->shrunkArguments['flag'], true);
+        Assert::same($second->counterExample()->shrunkArguments['flag'], expected: true);
         Assert::same($replaying->pruned, []);
     }
 
@@ -301,7 +301,7 @@ final class PropertyRunnerExhaustiveTest
                 config: new PropertyConfig(runs: $runs, seed: 42, maxDiscards: $maxDiscards, exhaustive: true, exhaustiveBudget: $budget),
             ),
             new CallableTrialExecutor($body),
-            $listener === null ? [] : [$listener],
+            $listener instanceof \Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener ? [$listener] : [],
             $corpus,
         );
     }

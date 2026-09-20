@@ -132,7 +132,8 @@ final class PropertyRunnerSearchTest
         Assert::same(count($improvements), $report->targets['sum']->improvements);
         Assert::null($improvements[0]->previous);
         Assert::same($improvements[count($improvements) - 1]->score, $report->targets['sum']->best);
-        for ($i = 1; $i < count($improvements); ++$i) {
+        $counter = count($improvements);
+        for ($i = 1; $i < $counter; ++$i) {
             Assert::same($improvements[$i]->previous, $improvements[$i - 1]->score);
             Assert::true($improvements[$i]->score > $improvements[$i - 1]->score);
         }
@@ -248,7 +249,7 @@ final class PropertyRunnerSearchTest
                 config: new PropertyConfig(runs: $runs, seed: $seed, maxDiscards: $maxDiscards, searchRuns: $searchRuns),
             ),
             new CallableTrialExecutor($body),
-            $listener === null ? [] : [$listener],
+            $listener instanceof \Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener ? [$listener] : [],
             $corpus,
         );
     }

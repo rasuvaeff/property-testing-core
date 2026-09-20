@@ -169,13 +169,17 @@ final readonly class RuleMachine
             throw new \InvalidArgumentException(sprintf('Gen::rules(): generators %s::%s() must return an array, got %s', $class->getName(), $provider, get_debug_type($overrides)));
         }
 
+        $generators = [];
+
+        /** @var mixed $generator */
         foreach ($overrides as $name => $generator) {
             if (!is_string($name) || !$generator instanceof ArbitraryInterface) {
                 throw new \InvalidArgumentException(sprintf('Gen::rules(): generators %s::%s() must map parameter names to generators', $class->getName(), $provider));
             }
+
+            $generators[$name] = $generator;
         }
 
-        /** @var array<string, ArbitraryInterface> */
-        return $overrides;
+        return $generators;
     }
 }

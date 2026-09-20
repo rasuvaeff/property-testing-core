@@ -148,7 +148,7 @@ final class CompositeArbitraryTest
 
         // The body refuses at generation time too; find a seed it accepts.
         $node = null;
-        for ($seed = 0; $node === null; ++$seed) {
+        for ($seed = 0; !$node instanceof \Rasuvaeff\PropertyTesting\Shrinkable; ++$seed) {
             try {
                 $candidate = $arbitrary->generate(new Random($seed));
             } catch (\InvalidArgumentException) {

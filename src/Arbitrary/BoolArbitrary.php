@@ -24,7 +24,7 @@ final readonly class BoolArbitrary implements Enumerable
     }
 
     #[\Override]
-    public function domainSize(): ?int
+    public function domainSize(): int
     {
         return 2;
     }
@@ -32,8 +32,8 @@ final readonly class BoolArbitrary implements Enumerable
     #[\Override]
     public function enumerate(): iterable
     {
-        yield $this->tree(false);
-        yield $this->tree(true);
+        yield $this->tree(value: false);
+        yield $this->tree(value: true);
     }
 
     /** @return Shrinkable<bool> */

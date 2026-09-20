@@ -194,10 +194,10 @@ final class PropertyRunnerFlakyTest
                 name: 'property',
                 generators: ['n' => Gen::intBetween(0, 1000)],
                 parameterNames: ['n'],
-                config: new PropertyConfig(runs: 50, seed: 42, flakyReplays: $replays, path: $path),
+                config: new PropertyConfig(runs: 50, seed: 42, path: $path, flakyReplays: $replays),
             ),
             new CallableTrialExecutor($body),
-            $listener === null ? [] : [$listener],
+            $listener instanceof \Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener ? [$listener] : [],
         );
     }
 }

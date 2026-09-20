@@ -38,7 +38,7 @@ final readonly class ConstantArbitrary implements Enumerable
     }
 
     #[\Override]
-    public function domainSize(): ?int
+    public function domainSize(): int
     {
         return 1;
     }

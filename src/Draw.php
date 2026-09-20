@@ -68,9 +68,10 @@ final class Draw
 
         $this->recorded[] = $node;
         ++$this->position;
+        /** @var T $value */
+        $value = $node->value;
 
-        /** @var T */
-        return $node->value;
+        return $value;
     }
 
     /**

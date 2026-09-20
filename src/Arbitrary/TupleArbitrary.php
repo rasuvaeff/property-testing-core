@@ -76,14 +76,17 @@ final readonly class TupleArbitrary implements Enumerable
      */
     private function enumerableElements(string $generator, array $elements): array
     {
-        foreach ($elements as $element) {
+        $enumerables = [];
+
+        foreach ($elements as $key => $element) {
             if (!$element instanceof Enumerable) {
                 throw new \LogicException($generator . ': an element generator has no finite domain to enumerate');
             }
+
+            $enumerables[$key] = $element;
         }
 
-        /** @var array<array-key, Enumerable> */
-        return $elements;
+        return $enumerables;
     }
 
     /**

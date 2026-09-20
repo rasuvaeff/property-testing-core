@@ -80,7 +80,7 @@ final readonly class OneOfArbitrary implements Swarmable, Enumerable
     }
 
     #[\Override]
-    public function domainSize(): ?int
+    public function domainSize(): int
     {
         return count($this->values);
     }

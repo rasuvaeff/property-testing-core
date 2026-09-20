@@ -330,7 +330,7 @@ final readonly class PropertyRunner
         $this->emit($listeners, new PropertyFinished(
             $propertyId,
             $result->failure(),
-            $statistics === null ? null : DistributionReport::of($statistics, $coverageAssessed),
+            $statistics instanceof \Rasuvaeff\PropertyTesting\Runner\RunStatistics ? DistributionReport::of($statistics, $coverageAssessed) : null,
             $statistics?->search,
         ));
 
@@ -401,7 +401,7 @@ final readonly class PropertyRunner
         // same for every seed; the seed still drives the in-body draws.
         $enumeration = $domainSize === null ? null : Domain::cartesian($this->enumerableGenerators($property));
 
-        while ($enumeration === null ? $counters->checks < $runs : $enumeration->valid()) {
+        while ($enumeration instanceof \Generator ? $enumeration->valid() : $counters->checks < $runs) {
             $overrun = $this->budgetExceeded($property, $budgetMs, $phaseStart, $runs, $counters);
 
             if ($overrun instanceof PropertyResult) {
@@ -409,7 +409,7 @@ final readonly class PropertyRunner
             }
 
             try {
-                if ($enumeration === null) {
+                if (!$enumeration instanceof \Generator) {
                     $trees = $this->generate($property->generators, $property->parameterNames, $random);
                 } else {
                     // Keyed by parameter name already — the cartesian walk

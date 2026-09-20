@@ -40,6 +40,8 @@ final class RedisDsnTest
         yield 'timeout in the query' => ['redis://redis?timeout=0.25', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false, 0.25];
         yield 'tls scheme' => ['rediss://redis:6380/1', 'redis', 6380, 1, RedisDsn::DEFAULT_PREFIX, true, RedisDsn::DEFAULT_TIMEOUT];
         yield 'scheme case does not matter' => ['REDISS://redis', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, true, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'lowest port' => ['redis://redis:1', 'redis', 1, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
+        yield 'highest port' => ['redis://redis:65535', 'redis', 65535, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
         yield 'ipv6 literal loses its brackets' => ['redis://[::1]:6379/0', '::1', 6379, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
         yield 'trailing slash is no database' => ['redis://redis/', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];
         yield 'empty prefix means the default' => ['redis://redis?prefix=', 'redis', RedisDsn::DEFAULT_PORT, 0, RedisDsn::DEFAULT_PREFIX, false, RedisDsn::DEFAULT_TIMEOUT];

@@ -31,6 +31,10 @@ __construct(
     string $path = '',
     \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
     int $skips = 0,
+    array<string,mixed> $originalNotes = [],
+    array<string,mixed> $shrunkNotes = [],
+    int $replays = 0,
+    ?int $passedOnReplay = NULL,
 )
 ```
 
@@ -47,8 +51,21 @@ __construct(
 | `$path` | `string` | `''` | The accepted shrink steps that lead from the original arguments to the minimised ones, as `name:index` segments joined by `/`. Passed back through [`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$path (together with the seed) it replays this descent instead of searching for it again. Empty when nothing shrank. A debugging aid, not a durable identifier: it indexes into each node's shrink candidates, so editing a generator orphans it — the regression corpus is what survives a refactor. |
 | `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | The boundary-value mode the failing run was generated under. The seed reproduces the failure only under the same mode (the modes share the roll but not the values it selects), so a seed replay — the corpus above all — carries it along. |
 | `$skips` | `int` | `0` | Number of runs the environment refused (a skipped hook or body) before the failure. Counted apart from `$discards`: a discard says the generated input left the property's domain, a skip says nothing about the input at all. |
+| `$originalNotes` | `array<string,mixed>` | `[]` | What [`Gen`](/api/classes/Gen)::note() attached during the run that first failed, by label. |
+| `$shrunkNotes` | `array<string,mixed>` | `[]` | What [`Gen`](/api/classes/Gen)::note() attached during the run of the minimised arguments — the original notes when nothing shrank. |
+| `$replays` | `int` | `0` | How many times the minimised input was re-executed after the descent ([`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$flakyReplays) to tell a counterexample from nondeterminism — up to the configured count, stopping at the first replay that passed. |
+| `$passedOnReplay` | `?int` | `NULL` | The one-based replay that did not fail, when one did: the counterexample is flaky — the body or the code under test is nondeterministic, and the input is not by itself what falsifies the property. Null when every replay failed again (or none ran). |
 
 ## Methods
+
+### isFlaky()
+
+```php
+isFlaky(): bool
+```
+
+Whether a replay of the minimised input passed: the failure is not a
+function of the input alone.
 
 ### toArray()
 

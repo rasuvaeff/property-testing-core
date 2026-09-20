@@ -11,7 +11,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
 /**
  * Process-local channel between {@see \Rasuvaeff\PropertyTesting\Gen::draw()}
  * calls in a property body and the property runner — the replay tape that makes in-body draws
- * shrinkable.
+ * shrinkable — and the notes {@see \Rasuvaeff\PropertyTesting\Gen::note()} attaches to a run.
  *
  * During a normal run the tape is empty: every draw generates a fresh
  * {@see Shrinkable} from the run's {@see Random} and records it. During a
@@ -48,6 +48,14 @@ final class DrawContext
     private static array $recorded = [];
 
     /**
+     * Values the body attached to the current run, by label; a later note
+     * under the same label replaces the earlier one.
+     *
+     * @var array<string, mixed>
+     */
+    private static array $notes = [];
+
+    /**
      * Prepare the context for one execution of the property body.
      *
      * @param list<Shrinkable> $tape
@@ -58,6 +66,37 @@ final class DrawContext
         self::$tape = $tape;
         self::$position = 0;
         self::$recorded = [];
+        self::$notes = [];
+    }
+
+    /**
+     * Attach a labelled value to the current run. Kept until {@see disarm()};
+     * the runner reads it through {@see notes()} for the run it reports.
+     *
+     * @param string $label The note's name.
+     * @param mixed $value What to show beside it.
+     *
+     * @throws \RuntimeException Outside a property run.
+     */
+    public static function note(string $label, mixed $value): void
+    {
+        if (!self::$random instanceof Random) {
+            throw new \RuntimeException('Gen::note() may only be called inside a property run');
+        }
+
+        // A replace rather than an element write: the merge keeps the array's
+        // declared type where an element assignment of `mixed` would not.
+        self::$notes = array_replace(self::$notes, [$label => $value]);
+    }
+
+    /**
+     * The notes of the current run, in the order first attached.
+     *
+     * @return array<string, mixed>
+     */
+    public static function notes(): array
+    {
+        return self::$notes;
     }
 
     /**
@@ -96,6 +135,7 @@ final class DrawContext
         self::$tape = [];
         self::$position = 0;
         self::$recorded = [];
+        self::$notes = [];
 
         return $recorded;
     }

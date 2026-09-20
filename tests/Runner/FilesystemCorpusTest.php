@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 use Rasuvaeff\PropertyTesting\CounterExample;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
 use Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus;
+use Rasuvaeff\PropertyTesting\Runner\TargetDirection;
 use Rasuvaeff\PropertyTesting\Tests\Support\Priority;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -286,6 +287,46 @@ final class FilesystemCorpusTest
         $storage->prune(self::ID, CorpusEntry::values(['x' => 51], 1));
 
         Assert::false(is_file($this->file()));
+    }
+
+    public function targetsLiveInASeparateSearchDocument(): void
+    {
+        $storage = $this->storage();
+        $targets = ['sum' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 9.5, 'arguments' => ['x' => 9]]]]];
+
+        Assert::same($storage->recallTargets(self::ID, ['x']), []);
+
+        $storage->rememberTargets(self::ID, $targets, ['x']);
+
+        Assert::true(is_file($this->searchFile()));
+        Assert::false(is_file($this->file()));
+        Assert::same($storage->recallTargets(self::ID, ['x']), $targets);
+        // The regression side is untouched by the search side and vice versa.
+        Assert::same($storage->recall(self::ID, ['x']), []);
+        $storage->remember(self::ID, $this->counterExample(['x' => 51], 1), ['x']);
+        Assert::same($storage->recallTargets(self::ID, ['x']), $targets);
+    }
+
+    public function rememberingTargetsReplacesTheDocumentAndAnEmptyPoolRemovesIt(): void
+    {
+        $storage = $this->storage();
+        $storage->rememberTargets(self::ID, ['sum' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 1.0, 'arguments' => ['x' => 1]]]]], ['x']);
+        $storage->rememberTargets(self::ID, ['sum' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 2.0, 'arguments' => ['x' => 2]]]]], ['x']);
+
+        Assert::same($storage->recallTargets(self::ID, ['x'])['sum']['entries'], [['score' => 2.0, 'arguments' => ['x' => 2]]]);
+
+        $storage->rememberTargets(self::ID, [], ['x']);
+
+        Assert::false(is_file($this->searchFile()));
+        Assert::same($storage->recallTargets(self::ID, ['x']), []);
+    }
+
+    public function targetsRecordedUnderOtherParametersAreNotRecalled(): void
+    {
+        $storage = $this->storage();
+        $storage->rememberTargets(self::ID, ['sum' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 1.0, 'arguments' => ['x' => 1]]]]], ['x']);
+
+        Assert::same($storage->recallTargets(self::ID, ['y']), []);
     }
 
     public function pruningAnUnknownEntryIsANoOp(): void
@@ -888,6 +929,11 @@ final class FilesystemCorpusTest
     private function file(): string
     {
         return $this->dir . '/' . sha1(self::ID) . '.json';
+    }
+
+    private function searchFile(): string
+    {
+        return $this->dir . '/' . sha1(self::ID) . '.search.json';
     }
 
     /**

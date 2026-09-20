@@ -77,3 +77,29 @@ list of candidates, and `map($fn)` to transform an entire existing tree.
 Building one from scratch — including the exact discipline the termination
 invariant requires — is covered with a worked example in
 [Custom arbitrary](/guide/generators/custom-arbitrary).
+
+## Notes on the counterexample
+
+A shrunk counterexample renders its arguments and its `draw#N` values. An
+intermediate value the body computed — the parsed form of a string, the delay
+a backoff chose, the index a search landed on — is invisible unless the
+assertion message carries it, and debugging then means re-running with a
+`var_dump` in the body. `Gen::note('encoded', $encoded)` attaches such a
+value to the current run; the counterexample keeps the notes of the original
+failing run and of the minimised one
+([`CounterExample::$originalNotes`](/api/classes/CounterExample) /
+`$shrunkNotes`), and the message renders the minimised run's after the
+arguments:
+
+```
+  Shrunk:   s="a" (2 shrink step(s), 5 trial(s))
+  Notes:    encoded="YQ=="
+  Failure:  mismatch
+```
+
+Notes are kept only for the run being reported — a passing run's are
+dropped, a rejected shrink candidate's are not adopted — so the cost is one
+array per run. They are not stored in the corpus: a replay recomputes them.
+And they are not labels: `Classify` aggregates over the whole run set, a note
+belongs to one run. Outside a run, `Gen::note()` throws like `Gen::draw()`.
+

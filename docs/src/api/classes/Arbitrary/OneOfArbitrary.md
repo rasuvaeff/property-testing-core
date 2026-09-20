@@ -9,9 +9,9 @@ description: "Picks a value uniformly at random from a fixed set."
 
 `Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/OneOfArbitrary.php#L26) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/OneOfArbitrary.php#L28) — **Version:** working tree
 
-**Implements:** [`Swarmable`](/api/classes/Swarmable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+**Implements:** [`Swarmable`](/api/classes/Swarmable), [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
 **Type parameters:**
 
@@ -68,6 +68,28 @@ a promise implementations make, and a swarm still checks it at runtime
 because it cannot analyse the implementations it will be handed.
 
 *Documentation inherited from [`Swarmable`](/api/classes/Swarmable).*
+
+### domainSize()
+
+```php
+domainSize(): ?int
+```
+
+How many distinct values enumerate() walks, or null when the
+domain is not finite in this configuration. Saturates at
+`PHP_INT_MAX` rather than overflowing — a budget compares against it,
+nothing computes with it. An upper bound is acceptable where the exact
+count is not known without walking (a filter over a finite source).
+
+*Documentation inherited from [`Enumerable`](/api/classes/Enumerable).*
+
+### enumerate()
+
+```php
+enumerate(): iterable
+```
+
+In the listed order; a value listed twice is walked twice.
 
 ### withVariants()
 

@@ -9,7 +9,7 @@ description: "The fluent entry point a PHPUnit TestCase mixes in:"
 
 `Rasuvaeff\PropertyTesting\PhpUnit\PropertyTesting`
 
-**Trait** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/b21c4d63cbdf7b4113027e9471fc4bdf015cd10b/src/PhpUnit/PropertyTesting.php#L25) — **Version:** v0.8.0
+**Trait** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/8c638871bb4e5361d38c372dbc36ef80b6cb3a32/src/PhpUnit/PropertyTesting.php#L25) — **Version:** v0.9.1
 
 The fluent entry point a PHPUnit TestCase mixes in:
 

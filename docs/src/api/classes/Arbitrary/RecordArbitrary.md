@@ -9,9 +9,9 @@ description: "Fixed-shape associative array: produces a map with one value per n
 
 `Rasuvaeff\PropertyTesting\Arbitrary\RecordArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/RecordArbitrary.php#L23) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/RecordArbitrary.php#L25) — **Version:** working tree
 
-**Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+**Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
 Fixed-shape associative array: produces a map with one value per named field,
 each drawn from that field's arbitrary. Useful for generating DTO-shaped
@@ -47,4 +47,24 @@ toward a zero/empty/identity element) and every branch of the tree must
 be finite, so shrinking terminates.
 
 *Documentation inherited from [`ArbitraryInterface`](/api/classes/ArbitraryInterface).*
+
+### domainSize()
+
+```php
+domainSize(): ?int
+```
+
+The product of the fields' domains, when every field has one.
+
+### enumerate()
+
+```php
+enumerate(): iterable
+```
+
+First field varying slowest.
+
+**Throws:**
+
+- `LogicException` — When the source has no finite domain (\Rasuvaeff\PropertyTesting\Arbitrary\domainSize() is null).
 

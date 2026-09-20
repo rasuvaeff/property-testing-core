@@ -142,6 +142,39 @@ final class CorpusDocumentTest
         yield 'null' => [null];
     }
 
+    public function keyOfPrefixesTheKindSoAValuesEntryAndASeedEntryNeverCollide(): void
+    {
+        Assert::same(CorpusDocument::keyOf(['kind' => 'values', 'seed' => 1, 'epoch' => self::EPOCH, 'args' => ['a' => 1]]), 'v:{"a":1}');
+        Assert::same(CorpusDocument::keyOf(['kind' => 'seed', 'seed' => 1, 'epoch' => self::EPOCH]), 's:1');
+        Assert::same(CorpusDocument::keyOf(['kind' => 'seed', 'seed' => 2, 'epoch' => self::EPOCH]), 's:2');
+    }
+
+    public function encodeEntryPrefersAValuesEntryWhenTheArgumentsAreRepresentable(): void
+    {
+        $entry = CorpusDocument::encodeEntry(
+            new CounterExample(seed: 7, runsBeforeFailure: 4, originalArguments: ['x' => 5], shrunkArguments: ['x' => 4]),
+            ['x'],
+            self::EPOCH,
+        );
+
+        Assert::same($entry, ['kind' => 'values', 'seed' => 7, 'epoch' => self::EPOCH, 'args' => ['x' => 4]]);
+    }
+
+    public function hydrateReadsAValuesEntryAsValues(): void
+    {
+        $entry = CorpusDocument::hydrate(['kind' => 'values', 'seed' => 7, 'epoch' => self::EPOCH, 'args' => ['x' => 4]], ['x'], self::EPOCH);
+
+        Assert::true($entry?->isValues());
+        Assert::same($entry->arguments, ['x' => 4]);
+    }
+
+    public function hydrateReadsAZeroRunsBeforeFailure(): void
+    {
+        $entry = CorpusDocument::hydrate(['kind' => 'seed', 'seed' => 7, 'epoch' => self::EPOCH, 'runsBeforeFailure' => 0], [], self::EPOCH);
+
+        Assert::same($entry?->runsBeforeFailure, 0);
+    }
+
     public function keyOfIgnoresTheOrderOfTheArguments(): void
     {
         // hydrate() hands a reordered signature back in the current order, so

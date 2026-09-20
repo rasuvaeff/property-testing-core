@@ -9,7 +9,7 @@ description: "The property finished."
 
 `Rasuvaeff\PropertyTesting\Event\PropertyFinished`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Event/PropertyFinished.php#L16) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Event/PropertyFinished.php#L17) — **Version:** working tree
 
 **Implements:** [`Event\PropertyEvent`](/api/classes/Event/PropertyEvent)
 
@@ -24,6 +24,7 @@ __construct(
     string $propertyId,
     ?Throwable $failure,
     ?\Runner\DistributionReport $distribution = NULL,
+    ?\Runner\SearchReport $search = NULL,
 )
 ```
 
@@ -32,4 +33,5 @@ __construct(
 | `$propertyId` | `string` | *required* |  |
 | `$failure` | `?Throwable` | *required* |  |
 | `$distribution` | `?\Runner\DistributionReport` | `NULL` | What the random phase generated, as data — the labels with their shares, the `cover()` thresholds beside them, the discards. Null for an outcome that carries no counters: a falsification stops at the counterexample, and an example, regression, deadline or generation failure never reached the random phase's accounting. Listeners are where telemetry lives, which is why the report travels here and not only on the result. |
+| `$search` | `?\Runner\SearchReport` | `NULL` | What the targeted search amounted to, for a run that reported a [`Target`](/api/classes/Target) and carries counters; null otherwise. |
 

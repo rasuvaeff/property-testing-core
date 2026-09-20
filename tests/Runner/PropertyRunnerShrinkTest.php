@@ -14,6 +14,7 @@ use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
+use Rasuvaeff\PropertyTesting\Runner\ShrinkMode;
 use Rasuvaeff\PropertyTesting\Runner\TrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\TrialOutcome;
 use Rasuvaeff\PropertyTesting\Tests\Support\ChainArbitrary;
@@ -190,6 +191,95 @@ final class PropertyRunnerShrinkTest
             array_values(array_unique(array_map(static fn(ShrinkAccepted $event): string => $event->parameter, $accepted))),
             ['draw#1'],
         );
+    }
+
+    public function notesFollowTheOriginalAndTheShrunkRun(): void
+    {
+        $result = (new PropertyRunner())->run(
+            $this->definition(['n' => Gen::intBetween(0, 1000)], ['n'], runs: 50),
+            new CallableTrialExecutor(static function (int $n): void {
+                Gen::note('double', $n * 2);
+                Gen::note('seen', 'yes');
+
+                if ($n >= 10) {
+                    throw new \RuntimeException('too big');
+                }
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->shrunkArguments, ['n' => 10]);
+        Assert::same($example->originalNotes, ['double' => $example->originalArguments['n'] * 2, 'seen' => 'yes']);
+        Assert::same($example->shrunkNotes, ['double' => 20, 'seen' => 'yes']);
+        Assert::string($result->failure()->getMessage())->contains('Notes:    double=20, seen="yes"');
+    }
+
+    public function notesOfARejectedShrinkCandidateAreNotAdopted(): void
+    {
+        // A candidate that passes leaves a note too; only the notes of a
+        // candidate that still fails may replace the current ones.
+        $result = (new PropertyRunner())->run(
+            $this->definition(['n' => Gen::intBetween(0, 1000)], ['n'], runs: 50),
+            new CallableTrialExecutor(static function (int $n): void {
+                Gen::note('n', $n);
+
+                if ($n >= 10) {
+                    throw new \RuntimeException('too big');
+                }
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        Assert::same($result->counterExample()->shrunkNotes, ['n' => 10]);
+    }
+
+    public function notesAreTheOriginalOnesWhenShrinkingIsOff(): void
+    {
+        $result = (new PropertyRunner())->run(
+            new PropertyDefinition(
+                id: 'shrink::property',
+                name: 'property',
+                generators: ['n' => Gen::intBetween(10, 1000)],
+                parameterNames: ['n'],
+                config: new PropertyConfig(runs: 5, seed: 42, shrink: ShrinkMode::Off),
+            ),
+            new CallableTrialExecutor(static function (int $n): void {
+                Gen::note('n', $n);
+
+                throw new \RuntimeException('always');
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->shrunkNotes, $example->originalNotes);
+        Assert::same($example->originalNotes, ['n' => $example->originalArguments['n']]);
+    }
+
+    public function aRandomizerOverTheDrawnEngineShrinksItsDecisions(): void
+    {
+        $result = (new PropertyRunner())->run(
+            $this->definition(['randomizer' => Gen::randomizer()], ['randomizer'], runs: 50),
+            new CallableTrialExecutor(static function (\Random\Randomizer $randomizer): void {
+                $shuffled = $randomizer->shuffleArray([1, 2, 3, 4]);
+
+                if ($shuffled !== [1, 2, 3, 4]) {
+                    throw new \RuntimeException('not the identity: ' . implode(',', $shuffled));
+                }
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        // The randomizer itself is a leaf; the decisions are the tape.
+        Assert::true(array_key_exists('draw#1', $example->originalArguments));
+        Assert::true($example->shrinkSteps > 0);
+        Assert::true(strlen($example->shrunkArguments['draw#1']) === 8);
+
+        // The shrunk tape still falsifies — and is byte-wise smaller than the original.
+        Assert::true($example->shrunkArguments['draw#1'] <= $example->originalArguments['draw#1']);
+        Assert::string($result->failure()->getMessage())->contains('not the identity');
     }
 
     public function eachTapePositionShrinksInPlace(): void

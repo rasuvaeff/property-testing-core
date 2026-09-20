@@ -12,9 +12,11 @@ use Rasuvaeff\PropertyTesting\Arbitrary\BytesArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\CharsetStringArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ClassArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\CommandSequenceArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\CompositeArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\ConstantArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\DateTimeArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\DictionaryArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\EdgeCasedArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\FilteredArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\FlatMappedArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\FloatArbitrary;
@@ -23,6 +25,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\MappedArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\NullableArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\OneOfArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\RandomEngineArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\RecordArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\StringArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\SubsetArbitrary;
@@ -35,6 +38,11 @@ use Rasuvaeff\PropertyTesting\Internal\Ipv6Formatter;
 use Rasuvaeff\PropertyTesting\Internal\LeafFallbackArbitrary;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Internal\RegexCompiler;
+use Rasuvaeff\PropertyTesting\Internal\RuleMachine;
+use Rasuvaeff\PropertyTesting\StateMachine\Command;
+use Rasuvaeff\PropertyTesting\StateMachine\CommandSequence;
+use Rasuvaeff\PropertyTesting\StateMachine\RuleSequence;
+use Rasuvaeff\PropertyTesting\StateMachine\RuleStep;
 
 /**
  * Facade with static factories for the built-in {@see ArbitraryInterface}s.
@@ -216,23 +224,63 @@ final class Gen
     }
 
     /**
-     * Lists of pairwise-distinct elements (strict comparison) drawn from
-     * $element. Element shrinking keeps the list distinct; the result may be
-     * smaller than the drawn size when the element space runs out of fresh
-     * values, but never below $minSize — an unreachable minimum throws
-     * {@see GenerationExhaustedException}. Distinct means `!==`, and `NAN` is
-     * never identical to itself, so a list over {@see floatSpecial()} can
-     * hold several of them.
+     * Lists of pairwise-distinct elements drawn from $element. Element
+     * shrinking keeps the list distinct; the result may be smaller than the
+     * drawn size when the element space runs out of fresh values, but never
+     * below $minSize — an unreachable minimum throws
+     * {@see GenerationExhaustedException}.
+     *
+     * Without $by, distinct means `!==` on the values: `NAN` is never
+     * identical to itself, so a list over {@see floatSpecial()} can hold
+     * several of them, and objects are distinct unless they are the same
+     * instance. With $by, distinct means `===` on the `int|string` key the
+     * closure returns for each value — uniqueness by one field of a value
+     * object, with shrinking that still never produces two elements sharing
+     * a key:
+     *
+     *     Gen::uniqueArrayOf($userGen, 3, 10, by: static fn (User $u): string => $u->id)
+     *
+     * A key of any other type is refused with {@see \InvalidArgumentException}
+     * at generation time; identity comparison of key objects would make every
+     * element unique and void the guarantee without a failure.
      *
      * @template TElement
      *
      * @param ArbitraryInterface<TElement> $element
+     * @param null|Closure(TElement): (int|string) $by The key each element is distinct by; null compares the values.
      *
      * @return ArbitraryInterface<list<TElement>>
      */
-    public static function uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100): ArbitraryInterface
+    public static function uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100, ?Closure $by = null): ArbitraryInterface
     {
-        return new UniqueArrayArbitrary($element, $minSize, $maxSize);
+        return new UniqueArrayArbitrary($element, $minSize, $maxSize, $by);
+    }
+
+    /**
+     * $inner with author-supplied boundary values: one draw in five is one of
+     * $edgeCases instead of a generated value, and a generated value shrinks
+     * through the edge values first — in the order listed, so put the
+     * most-preferred minimum first — before its own tree:
+     *
+     *     Gen::withEdgeCases(Gen::intBetween(0, $n), 0, $n, $n - 1)
+     *     Gen::withEdgeCases(Gen::stringOf(), '', 'a')
+     *
+     * The bias is explicit and scoped to this generator, so it stays on
+     * under {@see \Rasuvaeff\PropertyTesting\Runner\EdgeCases::None}, which turns off only the built-in
+     * boundary bias. The wrapper rolls on the run's randomness and leaves
+     * $inner's own sequence for a seed untouched. Edge values are taken as
+     * members of $inner's domain — nothing checks that they are.
+     *
+     * @template T
+     *
+     * @param ArbitraryInterface<T> $inner The generator to bias.
+     * @param T ...$edgeCases The boundary values, most-preferred minimum first; at least one.
+     *
+     * @return ArbitraryInterface<T>
+     */
+    public static function withEdgeCases(ArbitraryInterface $inner, mixed ...$edgeCases): ArbitraryInterface
+    {
+        return new EdgeCasedArbitrary($inner, array_values($edgeCases));
     }
 
     /**
@@ -692,6 +740,67 @@ final class Gen
     }
 
     /**
+     * A generator whose body draws several dependent values through a
+     * {@see Draw} and returns what it built — a reusable
+     * {@see ArbitraryInterface} where nested {@see flatMap()} calls would nest
+     * further right with every dependency:
+     *
+     *     $interval = Gen::composite(static fn (Draw $d): Interval => new Interval(
+     *         $min = $d->draw(Gen::datetime()),
+     *         $d->draw(Gen::datetime(min: $min)),   // sees the prior draw
+     *     ));
+     *
+     * Shrinking works on the draws, earliest first: a candidate re-executes
+     * the body with one draw replaced by a smaller one and the rest replayed,
+     * so a shrunk interval is still an interval the body would have built.
+     * A body that throws an `Exception` for a smaller draw refuses that
+     * candidate (skipped with its subtree, like {@see map()}). The body sees
+     * no other randomness — it must draw everything it needs — and the
+     * result composes like any generator: with {@see map()}, {@see arrayOf()},
+     * a provider. Contrast in-body {@see draw()}, which exists only inside a
+     * property body and cannot be reused as a value.
+     *
+     * The descent through a composite's draws is bounded at the same depth
+     * the runner applies to in-body draws (1000 accepted steps).
+     *
+     * @template T
+     *
+     * @param Closure(Draw): T $body Builds one value from the draws it takes through the seam.
+     *
+     * @return ArbitraryInterface<T>
+     */
+    public static function composite(Closure $body): ArbitraryInterface
+    {
+        return new CompositeArbitrary($body);
+    }
+
+    /**
+     * Attach a computed value to the counterexample report: the parsed form
+     * of a string, the delay a backoff chose, the index a search landed on —
+     * whatever the body derived and the assertion message does not carry.
+     *
+     *     $encoded = encode($s);
+     *     Gen::note('encoded', $encoded);
+     *     Assert::same(decode($encoded), $s);
+     *
+     * Notes belong to one run and surface only when that run is reported:
+     * the counterexample carries the notes of the original failing run and of
+     * the shrunk one, rendered after the arguments. A passing run's notes are
+     * dropped, so the cost is one array per run. Not a replacement for
+     * {@see Classify::label()}, which aggregates over the whole run set.
+     *
+     * A later note under the same label replaces the earlier one. Outside a
+     * property run this throws, like {@see draw()}.
+     *
+     * @param string $label The note's name in the report.
+     * @param mixed $value What to show beside it, rendered like an argument.
+     */
+    public static function note(string $label, mixed $value): void
+    {
+        DrawContext::note($label, $value);
+    }
+
+    /**
      * Fixed-arity tuple: one value per element arbitrary, in order. The property
      * receives the tuple as a single array argument; shrinking reduces each
      * position through its own arbitrary while keeping the arity fixed.
@@ -730,6 +839,50 @@ final class Gen
     public static function uuid(): ArbitraryInterface
     {
         return new UuidArbitrary();
+    }
+
+    /**
+     * A {@see \Random\Engine} whose randomness comes from the property's own
+     * draw tape, for code under test that takes a `Random\Randomizer` (or an
+     * engine): jittered backoff, shuffles, weighted picks, replica selection.
+     * A fixed seed reproduces such a failure but cannot shrink it; this engine
+     * records each `generate()` as an in-body {@see draw()} of eight bytes,
+     * so the failing sequence of random decisions is replayed by position and
+     * shrunk through the bytes' own tree:
+     *
+     *     #[Property]
+     *     public function backoffStaysUnderCap(int $attempt, \Random\Engine $engine): void
+     *     {
+     *         $delay = (new JitteredBackoff(new \Random\Randomizer($engine)))->delayMs($attempt);
+     *
+     *         Assert::true($delay <= 60_000);
+     *     }
+     *
+     * The bytes shrink toward `"\0"`, which `Randomizer::getInt($min, $max)`
+     * maps to `$min` and `shuffleArray()` to a near-identity permutation — the
+     * natural minimum for most code. Each engine call is one tape position
+     * (`draw#N` in the counterexample) and the descent is bounded like every
+     * in-body draw, so a body that consumes thousands of random values per
+     * run shrinks only as far as that cap allows. Valid only inside a run.
+     * {@see forParameters()} derives it for a `Random\Engine` parameter, and
+     * a `Random\Randomizer` parameter wraps it.
+     *
+     * @return ArbitraryInterface<\Random\Engine>
+     */
+    public static function randomEngine(): ArbitraryInterface
+    {
+        return new RandomEngineArbitrary();
+    }
+
+    /**
+     * A {@see \Random\Randomizer} over {@see randomEngine()}: the native API
+     * the code under test already accepts, with shrinkable randomness behind it.
+     *
+     * @return ArbitraryInterface<\Random\Randomizer>
+     */
+    public static function randomizer(): ArbitraryInterface
+    {
+        return self::map(self::randomEngine(), static fn(\Random\Engine $engine): \Random\Randomizer => new \Random\Randomizer($engine));
     }
 
     /**
@@ -959,6 +1112,78 @@ final class Gen
         int $maxLength = 100,
     ): ArbitraryInterface {
         return new CommandSequenceArbitrary($initialModel, $commandGenerators, $minLength, $maxLength);
+    }
+
+    /**
+     * A sequence of steps over a rule-based machine: one class whose
+     * `#[Rule]` methods are the steps, whose `#[Invariant]` methods hold
+     * after every step, and whose own fields are the model —
+     * {@see commands()} without a class per command:
+     *
+     *     final class QueueMachine
+     *     {
+     *         private array $model = [];
+     *
+     *         public function __construct(private readonly Queue $sut) {}
+     *
+     *         #[Rule]
+     *         public function enqueue(int $value): void          // drawn like a property's parameters
+     *         {
+     *             $this->sut->push($value);
+     *             $this->model[] = $value;
+     *         }
+     *
+     *         #[Rule]
+     *         #[Precondition('notEmpty')]
+     *         public function dequeue(): void
+     *         {
+     *             Assert::same($this->sut->pop(), array_shift($this->model));
+     *         }
+     *
+     *         public function notEmpty(): bool { return $this->model !== []; }
+     *
+     *         #[Invariant]
+     *         public function sizeMatches(): void
+     *         {
+     *             Assert::same($this->sut->size(), count($this->model));
+     *         }
+     *     }
+     *
+     *     Gen::rules(QueueMachine::class)
+     *
+     * The body calls {@see \Rasuvaeff\PropertyTesting\StateMachine\RuleSequence::run()}
+     * with a factory for a fresh machine, which checks the invariants and
+     * walks the steps — skipping one whose precondition is false in the
+     * machine's current state, running the rule and then every invariant for
+     * the others. An exception is the failed postcondition. Sequences are
+     * generated and shrunk exactly as {@see commands()} sequences are: steps
+     * dropped, arguments simplified. Rule parameters are drawn as
+     * {@see forParameters()} draws them, with overrides from a
+     * `public static function <rule>Generators(): array` or the method the
+     * attribute names. A machine with no rule, a rule that is not a public
+     * instance method, or a guard that does not exist is refused here, by name.
+     *
+     * The {@see \Rasuvaeff\PropertyTesting\StateMachine\Command} interface
+     * stays the primitive for a machine whose model is a separate value;
+     * this is the shape for the common case where the model is a few fields.
+     *
+     * @param class-string $machine The machine class: its `#[Rule]` methods are the steps.
+     * @param int $minLength The fewest steps a sequence has.
+     * @param int $maxLength The most steps a sequence has.
+     *
+     * @return ArbitraryInterface<\Rasuvaeff\PropertyTesting\StateMachine\RuleSequence>
+     */
+    public static function rules(string $machine, int $minLength = 0, int $maxLength = 100): ArbitraryInterface
+    {
+        $definition = new RuleMachine($machine);
+
+        return self::map(
+            new CommandSequenceArbitrary(null, $definition->stepGenerators, $minLength, $maxLength),
+            static fn(CommandSequence $sequence): RuleSequence => new RuleSequence(
+                array_values(array_filter($sequence->commands, static fn(Command $command): bool => $command instanceof RuleStep)),
+                $definition->invariants,
+            ),
+        );
     }
 
     /**

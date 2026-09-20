@@ -87,6 +87,56 @@ final class PropertyViolationExceptionTest
         Assert::false(str_contains($exception->getMessage(), 'Changed:'));
     }
 
+    public function rendersTheShrunkNotesAfterTheArgumentsAndBeforeTheFailure(): void
+    {
+        $exception = new PropertyViolationException(new CounterExample(
+            seed: 1,
+            runsBeforeFailure: 0,
+            originalArguments: ['s' => 'abc'],
+            shrunkArguments: ['s' => 'a'],
+            shrinkSteps: 2,
+            failure: new \RuntimeException('mismatch'),
+            originalNotes: ['encoded' => 'YWJj'],
+            shrunkNotes: ['encoded' => 'YQ=='],
+        ));
+
+        $message = $exception->getMessage();
+        Assert::string($message)->contains("\n  Notes:    encoded=\"YQ==\"\n  Failure:  mismatch");
+        Assert::string($message)->notContains('YWJj');
+        Assert::true(str_starts_with($message, 'Property falsified after 0 successful run(s); seed=1'));
+    }
+
+    public function omitsTheNotesLineWhenTheBodyAttachedNone(): void
+    {
+        $exception = new PropertyViolationException(new CounterExample(1, 0, ['x' => 1], ['x' => 0]));
+
+        Assert::string($exception->getMessage())->notContains('Notes:');
+    }
+
+    public function rendersAFlakyLineAfterTheFailureWhenAReplayPassed(): void
+    {
+        $exception = new PropertyViolationException(new CounterExample(
+            seed: 1,
+            runsBeforeFailure: 0,
+            originalArguments: ['x' => 5],
+            shrunkArguments: ['x' => 5],
+            failure: new \RuntimeException('boom'),
+            replays: 2,
+            passedOnReplay: 2,
+        ));
+
+        Assert::string($exception->getMessage())->contains(
+            "\n  Failure:  boom\n  Flaky:    the minimised input passed on replay 2; suspect nondeterminism in the body or the code under test, not this input",
+        );
+    }
+
+    public function omitsTheFlakyLineWhenEveryReplayFailedAgain(): void
+    {
+        $exception = new PropertyViolationException(new CounterExample(1, 0, ['x' => 1], ['x' => 0], replays: 2));
+
+        Assert::string($exception->getMessage())->notContains('Flaky:');
+    }
+
     public function rendersTheUnderlyingFailureMessage(): void
     {
         $exception = new PropertyViolationException(new CounterExample(

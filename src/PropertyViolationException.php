@@ -48,8 +48,21 @@ final class PropertyViolationException extends RuntimeException implements Prope
             $message .= sprintf("\n  Changed:  %s", $diff);
         }
 
+        // The notes of the run being acted on: the shrunk one, which is the
+        // original when nothing shrank. Only when the body attached any.
+        if ($c->shrunkNotes !== []) {
+            $message .= sprintf("\n  Notes:    %s", $this->format($c->shrunkNotes));
+        }
+
         if ($c->failure instanceof \Throwable) {
             $message .= sprintf("\n  Failure:  %s", $c->failure->getMessage());
+        }
+
+        if ($c->passedOnReplay !== null) {
+            $message .= sprintf(
+                "\n  Flaky:    the minimised input passed on replay %d; suspect nondeterminism in the body or the code under test, not this input",
+                $c->passedOnReplay,
+            );
         }
 
         // Last, and only when there is one: the descent this counterexample

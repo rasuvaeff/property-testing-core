@@ -82,11 +82,51 @@ make release-check
   (a circular dev dependency). They drive the engine directly through
   `tests/Support/Check::property()`, which rethrows a failing outcome so the
   usual counterexample message surfaces.
-- **Sequential-only.** `Classify` (labels + coverage requirements) and
-  `DrawContext` (the `Gen::draw()` replay tape) are process-local statics,
-  armed and drained around every body execution, with a defensive flush at
-  the start of `run()`. The runner drains coverage requirements on every exit
-  path of the random phase. Do not add concurrency without redesigning them.
+- **Sequential-only.** `Classify` (labels, tables, coverage requirements),
+  `Target` (scores + the per-property direction registry) and `DrawContext`
+  (the `Gen::draw()` replay tape and the `Gen::note()` notes) are
+  process-local statics, armed and drained around every body execution, with
+  a defensive flush at the start of `run()`. The runner drains coverage
+  requirements on every exit path of the random phase — **after** the flaky
+  replays on the falsification path, because a replay executes the body and
+  re-arms them — and drains the target directions in `finish()`. Do not add
+  concurrency without redesigning them.
+- **The search document is not the regression document.** `SearchCorpus`
+  (`recallTargets`/`rememberTargets`) is a separate optional interface, the
+  way `Enumerable` and `Swarmable` are separate from `ArbitraryInterface`:
+  adding a method to the published `Corpus` would break every implementer.
+  `FilesystemCorpus` writes `<sha1>.search.json` beside `<sha1>.json`,
+  `RedisCorpus` the `:search` key beside the regression key, both through
+  `Internal\SearchDocument` (its own `FORMAT_VERSION`). The three regression
+  guards (seed-vs-values, parameter names, `SEQUENCE_EPOCH`) do not apply to
+  it and must not be made to; it is replaced whole after every search phase.
+- **Exhaustive mode decides once, before any phase**, in
+  `PropertyRunner::exhaustiveDomain()`: either every parameter's generator
+  is `Enumerable` with a finite domain and the product fits the budget, or
+  the reason goes on `RunStatistics::$exhaustiveDeclined`. The walk
+  (`Internal\Domain::cartesian()`) is seed-independent by construction and a
+  corpus seed entry replays the same walk. `Enumerable::domainSize()` answers
+  `null` for a wrapper over an unbounded source and saturates at
+  `PHP_INT_MAX` otherwise — never overflow to a float. In-body draws are
+  not parameters and stay random.
+- **A generated value never carries a closure.** `RuleSequence` takes the
+  machine factory in `run($factory)`, not in its constructor, so a
+  falsified result still serializes and the corpus never sees a `Closure` —
+  the split `StateMachine::check($sequence, $factory)` already makes. Found
+  by review on the first cut of #143; `RuleSequenceTest` pins it.
+- **`Gen::composite()` draws from per-position streams**, derived from one
+  seed captured at generation time (`crc32($seed . '/' . $position)`): a
+  shrink candidate replays the prefix and re-draws the suffix, so a later
+  draw whose generator did not change comes back as it was, and one whose
+  generator changed (a `max` over a shrunk `min`) is re-drawn through the
+  new range rather than replayed as a node of the old one. Do not replay the
+  suffix by position — that was the first cut, and it left `[0, 53]` where
+  `[0, 5]` was the minimum. Depth is capped like in-body draws.
+- **`Gen::withEdgeCases()` rolls on the run's stream but leaves the inner
+  sequence untouched**, so `SeedDeterminismVectorsTest` did not move and
+  the epoch stayed at 2 through 0.12. It ignores `EdgeCases::None` on
+  purpose (explicit opt-in beats a global opt-out), and skips the index
+  roll when there is exactly one edge value.
 - **Event model.** Events carry engine data only — property id, seed,
   attempts, arguments, labels, elapsed time, failures, counterexamples;
   framework types never appear in an event. A listener exception aborts the
@@ -165,7 +205,7 @@ make release-check
   The job asserts the path install took effect (`composer show` prints a
   `path :` line) precisely so it cannot silently pass against the released
   core from Packagist. Its path-repository `versions` override is pinned at
-  `0.9.0` because both adapters accept `^0.9`: when core moves to a version
+  `0.11.0` because both adapters accept `^0.11`: when core moves to a version
   they do not accept, this job is *supposed* to fail until the adapters are
   updated — do not paper over it by widening the override. Keeping it in step
   is part of a core release, not an afterthought: the pin sat at `0.7.0` while
@@ -191,7 +231,7 @@ make release-check
         set -e
         cleanup() { composer config --unset repositories.core; rm -f composer.lock; }
         trap cleanup EXIT
-        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"0.9.0\"}}}"
+        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"0.11.0\"}}}"
         composer update
         composer test
     ' || failed="$failed $adapter"

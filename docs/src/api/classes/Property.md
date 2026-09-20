@@ -9,7 +9,7 @@ description: "Marks a test method as a property: the PropertyInterceptor takes o
 
 `Rasuvaeff\PropertyTesting\Property`
 
-**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/3f27cb49cbd30fc100e7dc6e5a0b00dac2b2030d/src/Property.php#L35) — **Version:** v0.10.0
+**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/80e655feb1c622f029f332759a9d324a16f4af19/src/Property.php#L35) — **Version:** v0.11.1
 
 **Implements:** `Testo\Pipeline\Attribute\Interceptable`
 
@@ -35,9 +35,9 @@ the native type otherwise.
 __construct(
     int $runs = 100,
     ?int $seed = NULL,
-    callable|string|null $generators = NULL,
+    callable|array<array-key,mixed>|string|null $generators = NULL,
     ?int $maxShrinks = NULL,
-    callable|string|null $examples = NULL,
+    callable|array<array-key,mixed>|string|null $examples = NULL,
     ?int $maxDiscards = NULL,
     ?int $timeoutMs = NULL,
     ?int $budgetMs = NULL,
@@ -48,6 +48,7 @@ __construct(
     ?string $path = NULL,
     \Runner\EdgeCases $edgeCases = Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin,
     bool $auto = false,
+    ?class-string<\Throwable> $throws = NULL,
 )
 ```
 
@@ -55,9 +56,9 @@ __construct(
 |---|---|---|---|
 | `$runs` | `int` | `100` | Number of successful random inputs to check. Discarded inputs do not count. |
 | `$seed` | `?int` | `NULL` | Fixed seed for reproducibility. Omit to let the runner pick a random one (the failing seed is reported by [`PropertyViolationException`](/api/classes/PropertyViolationException)). |
-| `$generators` | `callable|string|null` | `NULL` | Method name or callable returning array&lt;string, ArbitraryInterface&gt;. Defaults to `&lt;testMethod&gt;Generators`. |
+| `$generators` | `callable|array<array-key,mixed>|string|null` | `NULL` | Method name or callable returning array&lt;string, ArbitraryInterface&gt;. Defaults to `&lt;testMethod&gt;Generators`. |
 | `$maxShrinks` | `?int` | `NULL` | Cap on the number of accepted shrink steps. Null (default) means no cap. 0 disables shrinking, reporting the original counterexample unchanged. |
-| `$examples` | `callable|string|null` | `NULL` | Method name or callable returning fixed positional argument tuples, each run (before the random inputs) as an explicit example. Defaults to `&lt;testMethod&gt;Examples` when that method exists. |
+| `$examples` | `callable|array<array-key,mixed>|string|null` | `NULL` | Method name or callable returning fixed positional argument tuples, each run (before the random inputs) as an explicit example. Defaults to `&lt;testMethod&gt;Examples` when that method exists. |
 | `$maxDiscards` | `?int` | `NULL` | Maximum number of discarded inputs before the property gives up. Null (default) uses ten times the resolved run count. |
 | `$timeoutMs` | `?int` | `NULL` | Wall-clock deadline for a single run (random or example) in milliseconds. A body that takes longer fails the property with a [`DeadlineExceededException`](/api/classes/DeadlineExceededException) naming the offending input — protection against pathological inputs (catastrophic regex, deep recursion, unbounded backoff). Measured after the run returns, so a body that never returns cannot be interrupted; shrink trials are not measured. Null (default) disables the deadline. |
 | `$budgetMs` | `?int` | `NULL` | Wall-clock budget for the whole random phase in milliseconds. When it runs out before $runs successful checks complete, the property fails with a [`TimeBudgetExceededException`](/api/classes/TimeBudgetExceededException). Null (default) disables the budget. |
@@ -68,11 +69,12 @@ __construct(
 | `$path` | `?string` | `NULL` | A recorded shrink descent (`CounterExample::$path`) followed instead of searched for again. It needs the $seed of the run that produced it — the steps mean nothing against another one — and it is a debugging aid, not a fixture: editing a generator orphans it, which is what the regression corpus is for. |
 | `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | Whether the numeric generators keep biasing toward their boundary values ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::Mixin, the default) or generate uniformly ([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::None). Turn them off when the edges are what this property cannot use — a body discarding `0`, a range end that violates a precondition — so the discard budget stops paying for one run in five. |
 | `$auto` | `bool` | `false` | Derive a generator from the property's signature for every parameter the provider does not cover — the `@param` psalm type when there is one (`int&lt;1, 300&gt;` beats a bare `int`), the native type otherwise, and an error naming the parameter for anything unreadable. The provider (explicit or conventional) becomes the overrides and may be partial; it may also cover everything, in which case auto derives nothing. Deliberately opt-in and deliberately without an environment knob: the environment dials the suite, while this changes what one property's arguments mean. |
+| `$throws` | `?class-string<\Throwable>` | `NULL` | The exception class every run must throw. A run that throws it (or a subclass) passes; one that returns normally fails with `Expected &lt;class&gt; to be thrown, but it was not` and shrinks like any other counterexample; one that throws another class fails with that throw. A skip and an `Assume::that()` discard keep their meaning — never a pass earned by throwing. This is the per-run replacement for `#[ExpectException]`, which observes the aggregate result and is refused on a property. The matching throw is recorded as an assertion, so a body that asserts nothing else is not reported as risky. |
 
 ## Properties
 
 | Property | Type | Readonly | Description |
 |---|---|---|---|
-| `generators` | `Closure|string|null` | yes |  |
-| `examples` | `Closure|string|null` | yes |  |
+| `generators` | `\Closure|array<array-key,mixed>|string|null` | yes | A non-callable array is kept as written so that the interceptor can refuse it by name; the attribute itself validates nothing. |
+| `examples` | `\Closure|array<array-key,mixed>|string|null` | yes |  |
 

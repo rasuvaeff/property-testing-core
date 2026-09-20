@@ -24,12 +24,15 @@ use Rasuvaeff\PropertyTesting\Event\RunPassed;
 use Rasuvaeff\PropertyTesting\Event\RunStarted;
 use Rasuvaeff\PropertyTesting\Event\ShrinkAccepted;
 use Rasuvaeff\PropertyTesting\Event\ShrinkTried;
+use Rasuvaeff\PropertyTesting\Event\TargetImproved;
 use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
+use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Internal\ReplayVerdict;
+use Rasuvaeff\PropertyTesting\Internal\SearchPool;
 use Rasuvaeff\PropertyTesting\Internal\ShrinkPath;
 use Rasuvaeff\PropertyTesting\PathViolationException;
 use Rasuvaeff\PropertyTesting\PropertyListener;
@@ -37,6 +40,7 @@ use Rasuvaeff\PropertyTesting\PropertyViolationException;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\RegressionViolationException;
 use Rasuvaeff\PropertyTesting\Shrinkable;
+use Rasuvaeff\PropertyTesting\Target;
 use Rasuvaeff\PropertyTesting\TimeBudgetExceededException;
 
 /**
@@ -97,6 +101,8 @@ final readonly class PropertyRunner
         // aborted property may have left over.
         Classify::flushRequirements();
         Classify::beginRun();
+        Target::flushDirections();
+        Target::beginRun();
         DrawContext::disarm();
 
         // Exhaustive mode decides once, before any phase: either the whole
@@ -209,7 +215,7 @@ final readonly class PropertyRunner
             )), coverageAssessed: false);
         }
 
-        $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $maxSkips, $listeners, $config->path, $domainSize, $exhaustiveDeclined);
+        $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $maxSkips, $listeners, $config->path, $domainSize, $exhaustiveDeclined, $corpus);
 
         if ($corpus instanceof Corpus && $result instanceof Falsified) {
             $counterExample = $result->counterExample();
@@ -315,7 +321,18 @@ final readonly class PropertyRunner
         PropertyResult $result,
         bool $coverageAssessed,
     ): PropertyResult {
-        $this->emit($listeners, new PropertyFinished($propertyId, $result->failure(), $this->distribution($result, $coverageAssessed)));
+        // The target directions live for the property, like the coverage
+        // requirements: drained here so nothing leaks into the next run().
+        Target::flushDirections();
+
+        $statistics = $this->statisticsOf($result);
+
+        $this->emit($listeners, new PropertyFinished(
+            $propertyId,
+            $result->failure(),
+            $statistics === null ? null : DistributionReport::of($statistics, $coverageAssessed),
+            $statistics?->search,
+        ));
 
         return $result;
     }
@@ -332,26 +349,20 @@ final readonly class PropertyRunner
     }
 
     /**
-     * The distribution of the run that just ended, for the outcomes that carry
-     * counters; null for the rest. Built here, once, from counters the phase
-     * accumulated — {@see Classify::label()} runs inside the body on every run,
-     * this runs after the last one.
+     * The counters of the run that just ended, for the outcomes that carry
+     * them; null for the rest. The distribution and the search report are
+     * built from these once, here — {@see Classify::label()} runs inside the
+     * body on every run, this runs after the last one.
      */
-    private function distribution(PropertyResult $result, bool $coverageAssessed): ?DistributionReport
+    private function statisticsOf(PropertyResult $result): ?RunStatistics
     {
-        $statistics = match (true) {
+        return match (true) {
             $result instanceof Passed => $result->statistics,
             $result instanceof CoverageFailed => $result->statistics,
             $result instanceof GaveUp => $result->statistics,
             $result instanceof TimeBudgetExceeded => $result->statistics,
             default => null,
         };
-
-        if (!$statistics instanceof RunStatistics) {
-            return null;
-        }
-
-        return DistributionReport::of($statistics, $coverageAssessed);
     }
 
     /**
@@ -378,58 +389,24 @@ final readonly class PropertyRunner
         ?string $path,
         ?int $domainSize = null,
         ?string $exhaustiveDeclined = null,
+        ?Corpus $corpus = null,
     ): PropertyResult {
-        $maxShrinks = $property->config->maxShrinks;
-        $shrinkMode = $property->config->shrink;
-        $shrinkBudgetMs = $shrinkMode === ShrinkMode::Bounded ? $property->config->shrinkBudgetMs : null;
-        $timeoutMs = $property->config->timeoutMs;
         $budgetMs = $property->config->budgetMs;
-
-        $discards = 0;
-        $skips = 0;
-        $checks = 0;
-        $attempts = 0;
+        $counters = new PhaseCounters($domainSize, $exhaustiveDeclined);
+        $pool = new SearchPool();
         $phaseStart = $this->clock->nanoseconds();
-        /** @var array<array-key, int> $classifications */
-        $classifications = [];
-        /** @var array<string, array<array-key, int>> $tables */
-        $tables = [];
-        /** @var array<string, array<string, int>> $intersections */
-        $intersections = [];
 
         // An enumerated domain is walked to its end regardless of $runs — a
         // discarded input is skipped, not resampled — and the walk is the
         // same for every seed; the seed still drives the in-body draws.
         $enumeration = $domainSize === null ? null : Domain::cartesian($this->enumerableGenerators($property));
 
-        while ($enumeration === null ? $checks < $runs : $enumeration->valid()) {
-            // The budget is a wall-clock cap on the whole phase: once it runs
-            // out, completing the remaining checks would only overrun further,
-            // so the property fails instead of silently checking less.
-            if ($budgetMs !== null) {
-                $phaseElapsedNs = $this->clock->nanoseconds() - $phaseStart;
+        while ($enumeration === null ? $counters->checks < $runs : $enumeration->valid()) {
+            $overrun = $this->budgetExceeded($property, $budgetMs, $phaseStart, $runs, $counters);
 
-                if ($phaseElapsedNs > $budgetMs * 1_000_000) {
-                    // Drained AND kept: an exit that never reached the coverage
-                    // assessment still reports what the body demanded, beside
-                    // the shares it actually got.
-                    $requirements = Classify::flushRequirements();
-
-                    return new TimeBudgetExceeded(
-                        exception: new TimeBudgetExceededException(
-                            propertyName: $property->name,
-                            budgetMs: $budgetMs,
-                            elapsedMs: (float) $phaseElapsedNs / 1e6,
-                            successfulRuns: $checks,
-                            requiredRuns: $runs,
-                        ),
-                        statistics: new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips, $tables, $intersections, $domainSize, $exhaustiveDeclined),
-                    );
-                }
+            if ($overrun instanceof PropertyResult) {
+                return $overrun;
             }
-
-            ++$attempts;
-            Classify::beginRun();
 
             try {
                 if ($enumeration === null) {
@@ -450,161 +427,335 @@ final readonly class PropertyRunner
                 return new GenerationFailed($exhausted);
             }
 
-            $arguments = $this->values($trees);
+            $verdict = $this->attempt($property, $executor, $random, $seed, $trees, $counters, $pool, $listeners, $path, $runs, $maxDiscards, $maxSkips);
 
-            $this->emit($listeners, new RunStarted($property->id, $attempts, $arguments));
+            if ($verdict instanceof PropertyResult) {
+                return $verdict;
+            }
+        }
 
-            DrawContext::arm($random);
-            $runStart = $this->clock->nanoseconds();
-            $outcome = $executor->execute($arguments);
-            $runElapsedNs = $this->clock->nanoseconds() - $runStart;
-            $notes = DrawContext::notes();
-            $draws = DrawContext::disarm();
-            $labels = Classify::flushRun();
-            $tabulated = Classify::flushTables();
+        // The search phase: opt-in, and only for a body that targeted
+        // something. Every input it evaluates is a check like the random
+        // phase's — the same accounting, the same budgets, the same exits.
+        $search = null;
 
-            // A discarded run is neither a failure nor a check. An
-            // environmental skip is a discard in every way but one: it says
-            // nothing about the generators, so it is counted apart and spends
-            // a budget of its own. Charged to the same one, a machine missing
-            // a dependency exhausted the discard budget and was told to narrow
-            // generators that were never at fault.
-            if ($outcome->isDiscarded()) {
-                $this->emit($listeners, new RunDiscarded($property->id, $attempts, $arguments, $this->drawArguments($draws), $outcome->isSkipped()));
+        if ($property->config->searchRuns > 0 && Target::directions() !== []) {
+            $verdict = $this->search($property, $executor, $random, $seed, $counters, $pool, $listeners, $path, $runs, $maxDiscards, $maxSkips, $budgetMs, $phaseStart, $corpus);
 
-                if ($outcome->isSkipped()) {
-                    ++$skips;
-                } else {
-                    ++$discards;
-                }
-
-                if ($discards > $maxDiscards || $skips > $maxSkips) {
-                    $requirements = Classify::flushRequirements();
-
-                    return new GaveUp(
-                        exception: new GaveUpException(
-                            propertyName: $property->name,
-                            requiredRuns: $runs,
-                            successfulRuns: $checks,
-                            discardedRuns: $discards,
-                            attempts: $attempts,
-                            maxDiscards: $maxDiscards,
-                            skippedRuns: $skips,
-                            exhaustedBySkips: $discards <= $maxDiscards,
-                            maxSkips: $maxSkips,
-                        ),
-                        statistics: new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips, $tables, $intersections, $domainSize, $exhaustiveDeclined),
-                    );
-                }
-
-                continue;
+            if ($verdict instanceof PropertyResult) {
+                return $verdict;
             }
 
-            if ($outcome->isFailed()) {
-                $this->emit($listeners, new RunFailed($property->id, $attempts, $arguments, $this->drawArguments($draws), $outcome->failure, $runElapsedNs));
-                $descent = $path === null
-                    ? $this->shrink($property->id, $executor, $trees, $draws, $notes, $random, $maxShrinks, $shrinkMode, $shrinkBudgetMs, $listeners, $outcome->failure)
-                    : $this->replayPath($property->id, $executor, $trees, $draws, $notes, $random, $path, $listeners);
-
-                if ($descent instanceof PathViolationException) {
-                    Classify::flushRequirements();
-
-                    return new PathFailed($descent);
-                }
-
-                [$shrunk, $shrunkDraws, $shrinkSteps, $shrunkFailure, $shrinkTrials, $shrinkPath, $shrunkNotes, $shrunkTrees, $shrunkTape] = $descent;
-
-                // Re-execute the minimised input a few times: a replay that
-                // passes says the failure is nondeterminism in the body or
-                // the code under test, not a counterexample — reported as
-                // such rather than left to oscillate between corpus replays.
-                [$replays, $passedOnReplay] = $this->replayCounterExample($executor, $shrunkTrees, $shrunkTape, $random, $property->config->flakyReplays);
-
-                // Drain the coverage requirements like every other exit path —
-                // after the replays, which arm them again: the 2.8 interceptor
-                // left them armed here and relied on the next property's
-                // defensive flush, which a standalone runner caller does not
-                // get between run() calls.
-                Classify::flushRequirements();
-
-                return new Falsified(new PropertyViolationException(new CounterExample(
-                    seed: $seed,
-                    runsBeforeFailure: $checks,
-                    originalArguments: array_merge($arguments, $this->drawArguments($draws)),
-                    shrunkArguments: array_merge($shrunk, $shrunkDraws),
-                    shrinkSteps: $shrinkSteps,
-                    // Report the failure of the minimised sequence, not the
-                    // original: for a shrunk counterexample the two can differ
-                    // (e.g. a different failing step), and the developer acts on
-                    // the minimal one. Falls back to the original when nothing shrank.
-                    failure: $shrunkFailure ?? $outcome->failure,
-                    discards: $discards,
-                    shrinkTrials: $shrinkTrials,
-                    path: $shrinkPath,
-                    edgeCases: $random->edgeCases,
-                    skips: $skips,
-                    originalNotes: $notes,
-                    shrunkNotes: $shrunkNotes,
-                    replays: $replays,
-                    passedOnReplay: $passedOnReplay,
-                )));
-            }
-
-            // A passing but overlong run is a failure in its own right: the
-            // input is pathological for the code under test. Checked after the
-            // falsification branch so an assertion failure (more actionable)
-            // wins when both happen, but before RunPassed — a timed-out run
-            // must not be announced as successful. Reported unshrunk — shrink
-            // acceptance would have to re-measure wall time, and timing noise
-            // makes that descent non-deterministic.
-            if ($timeoutMs !== null && $runElapsedNs > $timeoutMs * 1_000_000) {
-                Classify::flushRequirements();
-
-                return new DeadlineExceeded(new DeadlineExceededException(
-                    propertyName: $property->name,
-                    arguments: array_merge($arguments, $this->drawArguments($draws)),
-                    elapsedMs: (float) $runElapsedNs / 1e6,
-                    timeoutMs: $timeoutMs,
-                ));
-            }
-
-            $this->emit($listeners, new RunPassed($property->id, $attempts, $arguments, $this->drawArguments($draws), $labels, $runElapsedNs));
-
-            foreach ($labels as $label) {
-                $classifications[$label] = ($classifications[$label] ?? 0) + 1;
-            }
-
-            foreach ($tabulated as $table => $tags) {
-                foreach ($tags as $tag) {
-                    $tables[$table][$tag] = ($tables[$table][$tag] ?? 0) + 1;
-                }
-
-                // Every pair of tags hit together, in sorted order so `a & b`
-                // and `b & a` are one key.
-                sort($tags, SORT_STRING);
-                $count = count($tags);
-
-                for ($i = 0; $i < $count; ++$i) {
-                    for ($j = $i + 1; $j < $count; ++$j) {
-                        $pair = $tags[$i] . ' & ' . $tags[$j];
-                        $intersections[$table][$pair] = ($intersections[$table][$pair] ?? 0) + 1;
-                    }
-                }
-            }
-
-            ++$checks;
+            $search = $verdict;
         }
 
         $requirements = Classify::flushRequirements();
 
-        $statistics = new RunStatistics($attempts, $discards, $checks, $classifications, $requirements, $skips, $tables, $intersections, $domainSize, $exhaustiveDeclined);
-        $violation = $this->coverageViolation($property->name, $requirements, $classifications, $checks);
+        $statistics = $counters->statistics($requirements, $search);
+        $violation = $this->coverageViolation($property->name, $requirements, $counters->classifications, $counters->checks);
 
         if ($violation instanceof CoverageViolationException) {
             return new CoverageFailed($violation, $statistics);
         }
 
         return new Passed($statistics);
+    }
+
+    /**
+     * The phase's wall-clock cap, checked before every attempt: once it runs
+     * out, completing the remaining checks would only overrun further, so the
+     * property fails instead of silently checking less.
+     */
+    private function budgetExceeded(PropertyDefinition $property, ?int $budgetMs, int $phaseStart, int $runs, PhaseCounters $counters): ?PropertyResult
+    {
+        if ($budgetMs === null) {
+            return null;
+        }
+
+        $phaseElapsedNs = $this->clock->nanoseconds() - $phaseStart;
+
+        if ($phaseElapsedNs <= $budgetMs * 1_000_000) {
+            return null;
+        }
+
+        // Drained AND kept: an exit that never reached the coverage
+        // assessment still reports what the body demanded, beside the
+        // shares it actually got.
+        $requirements = Classify::flushRequirements();
+
+        return new TimeBudgetExceeded(
+            exception: new TimeBudgetExceededException(
+                propertyName: $property->name,
+                budgetMs: $budgetMs,
+                elapsedMs: (float) $phaseElapsedNs / 1e6,
+                successfulRuns: $counters->checks,
+                requiredRuns: $runs,
+            ),
+            statistics: $counters->statistics($requirements),
+        );
+    }
+
+    /**
+     * One input through the body: executed, classified, and either accounted
+     * for (null) or turned into the result that ends the phase — a
+     * falsification with its descent, an exhausted discard budget, an overlong
+     * run. A passing run's target scores go to the pool, and a new best is
+     * announced.
+     *
+     * @param array<string, Shrinkable> $trees
+     * @param list<PropertyListener> $listeners
+     */
+    private function attempt(
+        PropertyDefinition $property,
+        TrialExecutor $executor,
+        Random $random,
+        int $seed,
+        array $trees,
+        PhaseCounters $counters,
+        SearchPool $pool,
+        array $listeners,
+        ?string $path,
+        int $runs,
+        int $maxDiscards,
+        int $maxSkips,
+    ): ?PropertyResult {
+        $maxShrinks = $property->config->maxShrinks;
+        $shrinkMode = $property->config->shrink;
+        $shrinkBudgetMs = $shrinkMode === ShrinkMode::Bounded ? $property->config->shrinkBudgetMs : null;
+        $timeoutMs = $property->config->timeoutMs;
+
+        ++$counters->attempts;
+        Classify::beginRun();
+        Target::beginRun();
+
+        $arguments = $this->values($trees);
+
+        $this->emit($listeners, new RunStarted($property->id, $counters->attempts, $arguments));
+
+        DrawContext::arm($random);
+        $runStart = $this->clock->nanoseconds();
+        $outcome = $executor->execute($arguments);
+        $runElapsedNs = $this->clock->nanoseconds() - $runStart;
+        $notes = DrawContext::notes();
+        $draws = DrawContext::disarm();
+        $labels = Classify::flushRun();
+        $tabulated = Classify::flushTables();
+        $scores = Target::flushRun();
+
+        // A discarded run is neither a failure nor a check. An
+        // environmental skip is a discard in every way but one: it says
+        // nothing about the generators, so it is counted apart and spends
+        // a budget of its own. Charged to the same one, a machine missing
+        // a dependency exhausted the discard budget and was told to narrow
+        // generators that were never at fault.
+        if ($outcome->isDiscarded()) {
+            $this->emit($listeners, new RunDiscarded($property->id, $counters->attempts, $arguments, $this->drawArguments($draws), $outcome->isSkipped()));
+
+            if ($outcome->isSkipped()) {
+                ++$counters->skips;
+            } else {
+                ++$counters->discards;
+            }
+
+            if ($counters->discards > $maxDiscards || $counters->skips > $maxSkips) {
+                $requirements = Classify::flushRequirements();
+
+                return new GaveUp(
+                    exception: new GaveUpException(
+                        propertyName: $property->name,
+                        requiredRuns: $runs,
+                        successfulRuns: $counters->checks,
+                        discardedRuns: $counters->discards,
+                        attempts: $counters->attempts,
+                        maxDiscards: $maxDiscards,
+                        skippedRuns: $counters->skips,
+                        exhaustedBySkips: $counters->discards <= $maxDiscards,
+                        maxSkips: $maxSkips,
+                    ),
+                    statistics: $counters->statistics($requirements),
+                );
+            }
+
+            return null;
+        }
+
+        if ($outcome->isFailed()) {
+            $this->emit($listeners, new RunFailed($property->id, $counters->attempts, $arguments, $this->drawArguments($draws), $outcome->failure, $runElapsedNs));
+            $descent = $path === null
+                ? $this->shrink($property->id, $executor, $trees, $draws, $notes, $random, $maxShrinks, $shrinkMode, $shrinkBudgetMs, $listeners, $outcome->failure)
+                : $this->replayPath($property->id, $executor, $trees, $draws, $notes, $random, $path, $listeners);
+
+            if ($descent instanceof PathViolationException) {
+                Classify::flushRequirements();
+
+                return new PathFailed($descent);
+            }
+
+            [$shrunk, $shrunkDraws, $shrinkSteps, $shrunkFailure, $shrinkTrials, $shrinkPath, $shrunkNotes, $shrunkTrees, $shrunkTape] = $descent;
+
+            // Re-execute the minimised input a few times: a replay that
+            // passes says the failure is nondeterminism in the body or
+            // the code under test, not a counterexample — reported as
+            // such rather than left to oscillate between corpus replays.
+            [$replays, $passedOnReplay] = $this->replayCounterExample($executor, $shrunkTrees, $shrunkTape, $random, $property->config->flakyReplays);
+
+            // Drain the coverage requirements like every other exit path —
+            // after the replays, which arm them again: the 2.8 interceptor
+            // left them armed here and relied on the next property's
+            // defensive flush, which a standalone runner caller does not
+            // get between run() calls.
+            Classify::flushRequirements();
+
+            return new Falsified(new PropertyViolationException(new CounterExample(
+                seed: $seed,
+                runsBeforeFailure: $counters->checks,
+                originalArguments: array_merge($arguments, $this->drawArguments($draws)),
+                shrunkArguments: array_merge($shrunk, $shrunkDraws),
+                shrinkSteps: $shrinkSteps,
+                // Report the failure of the minimised sequence, not the
+                // original: for a shrunk counterexample the two can differ
+                // (e.g. a different failing step), and the developer acts on
+                // the minimal one. Falls back to the original when nothing shrank.
+                failure: $shrunkFailure ?? $outcome->failure,
+                discards: $counters->discards,
+                shrinkTrials: $shrinkTrials,
+                path: $shrinkPath,
+                edgeCases: $random->edgeCases,
+                skips: $counters->skips,
+                originalNotes: $notes,
+                shrunkNotes: $shrunkNotes,
+                replays: $replays,
+                passedOnReplay: $passedOnReplay,
+            )));
+        }
+
+        // A passing but overlong run is a failure in its own right: the
+        // input is pathological for the code under test. Checked after the
+        // falsification branch so an assertion failure (more actionable)
+        // wins when both happen, but before RunPassed — a timed-out run
+        // must not be announced as successful. Reported unshrunk — shrink
+        // acceptance would have to re-measure wall time, and timing noise
+        // makes that descent non-deterministic.
+        if ($timeoutMs !== null && $runElapsedNs > $timeoutMs * 1_000_000) {
+            Classify::flushRequirements();
+
+            return new DeadlineExceeded(new DeadlineExceededException(
+                propertyName: $property->name,
+                arguments: array_merge($arguments, $this->drawArguments($draws)),
+                elapsedMs: (float) $runElapsedNs / 1e6,
+                timeoutMs: $timeoutMs,
+            ));
+        }
+
+        $this->emit($listeners, new RunPassed($property->id, $counters->attempts, $arguments, $this->drawArguments($draws), $labels, $runElapsedNs));
+        $counters->passed($labels, $tabulated);
+
+        foreach ($scores as $label => $score) {
+            $direction = Target::directions()[$label];
+            $previous = $pool->best($label);
+
+            if ($pool->offer($label, $direction, $score, $trees)) {
+                $this->emit($listeners, new TargetImproved($property->id, $label, $direction, $score, $previous, $arguments));
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Hill climbing over the pool: for as many runs as configured, take one
+     * of the best inputs of a label (better ones more often), regenerate one
+     * parameter, keep the rest, and let {@see attempt()} judge it — a better
+     * score joins the pool, a failure ends the phase like any other. Labels
+     * take turns. A {@see SearchCorpus} seeds the pool before the climb and
+     * receives it after, so the next run resumes from here.
+     *
+     * @param list<PropertyListener> $listeners
+     * @return PropertyResult|SearchReport The result that ended the search, or its report.
+     */
+    private function search(
+        PropertyDefinition $property,
+        TrialExecutor $executor,
+        Random $random,
+        int $seed,
+        PhaseCounters $counters,
+        SearchPool $pool,
+        array $listeners,
+        ?string $path,
+        int $runs,
+        int $maxDiscards,
+        int $maxSkips,
+        ?int $budgetMs,
+        int $phaseStart,
+        ?Corpus $corpus,
+    ): PropertyResult|SearchReport {
+        if ($corpus instanceof SearchCorpus) {
+            try {
+                $recalled = $corpus->recallTargets($property->id, $property->parameterNames);
+            } catch (\Throwable $failure) {
+                $this->emit($listeners, new CorpusFailed($property->id, 'recallTargets', $failure));
+                $recalled = [];
+                $corpus = null;
+            }
+
+            foreach ($recalled as $label => $target) {
+                // A label the body now pushes the other way, or never
+                // reported this run, has nothing to resume from.
+                if ((Target::directions()[$label] ?? null) === $target['direction']) {
+                    $pool->recall($label, $target['direction'], $target['entries']);
+                }
+            }
+        }
+
+        $evaluations = 0;
+        $parameters = $property->parameterNames;
+
+        for ($run = 0; $run < $property->config->searchRuns; ++$run) {
+            $labels = $pool->labels();
+
+            if ($labels === []) {
+                break;
+            }
+
+            $overrun = $this->budgetExceeded($property, $budgetMs, $phaseStart, $runs, $counters);
+
+            if ($overrun instanceof PropertyResult) {
+                return $overrun;
+            }
+
+            $label = $labels[$run % count($labels)];
+            $trees = $pool->pick($label, $random);
+            $name = $parameters[$random->int(0, count($parameters) - 1)];
+
+            try {
+                $trees[$name] = $property->generators[$name]->generate($random);
+            } catch (GenerationExhaustedException $exhausted) {
+                Classify::flushRequirements();
+
+                return new GenerationFailed($exhausted);
+            }
+
+            ++$evaluations;
+            $verdict = $this->attempt($property, $executor, $random, $seed, $trees, $counters, $pool, $listeners, $path, $runs, $maxDiscards, $maxSkips);
+
+            if ($verdict instanceof PropertyResult) {
+                return $verdict;
+            }
+        }
+
+        if ($corpus instanceof SearchCorpus) {
+            $this->corpusCall($listeners, $property->id, 'rememberTargets', static function () use ($corpus, $property, $pool): void {
+                $corpus->rememberTargets($property->id, $pool->export(), $property->parameterNames);
+            });
+        }
+
+        $targets = [];
+
+        foreach (Target::directions() as $label => $direction) {
+            $targets[$label] = new TargetOutcome($label, $direction, $pool->best($label), $pool->improvements($label), $pool->recalledCount($label));
+        }
+
+        return new SearchReport($evaluations, $targets);
     }
 
     /**
@@ -831,7 +982,7 @@ final readonly class PropertyRunner
      * property's — and the caller drops the corpus for the rest of the run.
      *
      * @param list<PropertyListener> $listeners
-     * @param 'remember'|'prune' $operation
+     * @param 'remember'|'prune'|'rememberTargets' $operation
      * @param \Closure(): void $call
      */
     private function corpusCall(array $listeners, string $propertyId, string $operation, \Closure $call): bool

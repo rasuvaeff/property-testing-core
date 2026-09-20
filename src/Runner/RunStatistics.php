@@ -40,6 +40,8 @@ final readonly class RunStatistics
      * @param ?string $exhaustiveDeclined Why an exhaustive run sampled after all — a parameter
      *        without a finite domain, or a domain above the budget; null when it enumerated or
      *        was never asked to.
+     * @param ?SearchReport $search What the targeted search amounted to; null when the property
+     *        targeted nothing.
      */
     public function __construct(
         public int $attempts,
@@ -52,5 +54,6 @@ final readonly class RunStatistics
         public array $intersections = [],
         public ?int $domainSize = null,
         public ?string $exhaustiveDeclined = null,
+        public ?SearchReport $search = null,
     ) {}
 }

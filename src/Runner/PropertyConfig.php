@@ -86,6 +86,12 @@ final readonly class PropertyConfig
      *        under test. A replay that passes marks the counterexample flaky
      *        ({@see \Rasuvaeff\PropertyTesting\CounterExample::$flaky}); 0 disables the check.
      *        Charged to wall clock only, never to $runs.
+     * @param int $searchRuns How many bodies the targeted search may execute after the random phase
+     *        when the body reports a {@see \Rasuvaeff\PropertyTesting\Target}: the best-scoring
+     *        inputs are mutated one parameter at a time and kept when they score better. 0 (the
+     *        default) performs no search; a property that targets nothing is unaffected either
+     *        way. Search runs are checks like any other — a failing one falsifies the property —
+     *        and count toward the same discard and time budgets.
      */
     public function __construct(
         public int $runs = 100,
@@ -103,6 +109,7 @@ final readonly class PropertyConfig
         public bool $exhaustive = false,
         public int $exhaustiveBudget = 10_000,
         public int $flakyReplays = 2,
+        public int $searchRuns = 0,
     ) {
         if ($runs < 1) {
             throw new \InvalidArgumentException('Runs must be greater than or equal to 1');
@@ -112,6 +119,9 @@ final readonly class PropertyConfig
         }
         if ($flakyReplays < 0) {
             throw new \InvalidArgumentException('Flaky replays must be greater than or equal to 0');
+        }
+        if ($searchRuns < 0) {
+            throw new \InvalidArgumentException('Search runs must be greater than or equal to 0');
         }
         if ($maxShrinks !== null && $maxShrinks < 0) {
             throw new \InvalidArgumentException('Max shrinks must be greater than or equal to 0');

@@ -34,6 +34,7 @@ final class PropertyConfigTest
         Assert::false($config->exhaustive);
         Assert::same($config->exhaustiveBudget, 10_000);
         Assert::same($config->flakyReplays, 2);
+        Assert::same($config->searchRuns, 0);
     }
 
     public function everyPhaseRunsByDefault(): void
@@ -175,6 +176,11 @@ final class PropertyConfigTest
         yield 'negative flaky replays' => [
             static fn(): PropertyConfig => new PropertyConfig(flakyReplays: -1),
             'Flaky replays must be greater than or equal to 0',
+        ];
+
+        yield 'negative search runs' => [
+            static fn(): PropertyConfig => new PropertyConfig(searchRuns: -1),
+            'Search runs must be greater than or equal to 0',
         ];
 
         yield 'empty phase set' => [

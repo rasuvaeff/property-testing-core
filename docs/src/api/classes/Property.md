@@ -9,7 +9,7 @@ description: "Marks a test method as a property: the PropertyInterceptor takes o
 
 `Rasuvaeff\PropertyTesting\Property`
 
-**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Property.php#L35) — **Version:** v0.12.0
+**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Property.php#L35) — **Version:** v1.0.0
 
 **Implements:** `Testo\Pipeline\Attribute\Interceptable`
 

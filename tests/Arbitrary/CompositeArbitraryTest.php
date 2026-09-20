@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\Arbitrary\CompositeArbitrary;
+use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Draw;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
+use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -28,6 +30,30 @@ final class CompositeArbitraryTest
 
             return [$min, $max];
         });
+    }
+
+    /**
+     * The first node, over seeds 0, 1, 2, …, that the predicate accepts; a
+     * seed the generator refuses is skipped.
+     *
+     * @param ArbitraryInterface<mixed> $arbitrary
+     * @param \Closure(Shrinkable<mixed>): bool $accept
+     *
+     * @return Shrinkable<mixed>
+     */
+    private function firstGenerated(ArbitraryInterface $arbitrary, \Closure $accept): Shrinkable
+    {
+        for ($seed = 0; ; ++$seed) {
+            try {
+                $candidate = $arbitrary->generate(new Random($seed));
+            } catch (\InvalidArgumentException) {
+                continue;
+            }
+
+            if ($accept($candidate)) {
+                return $candidate;
+            }
+        }
     }
 
     public function laterDrawsSeeEarlierOnes(): void
@@ -147,18 +173,7 @@ final class CompositeArbitraryTest
         });
 
         // The body refuses at generation time too; find a seed it accepts.
-        $node = null;
-        for ($seed = 0; !$node instanceof \Rasuvaeff\PropertyTesting\Shrinkable; ++$seed) {
-            try {
-                $candidate = $arbitrary->generate(new Random($seed));
-            } catch (\InvalidArgumentException) {
-                continue;
-            }
-
-            if ($candidate->value >= 50) {
-                $node = $candidate;
-            }
-        }
+        $node = $this->firstGenerated($arbitrary, static fn(Shrinkable $candidate): bool => $candidate->value >= 50);
 
         $candidates = Trees::valuesToDepth($node, 3);
         Assert::true(in_array(0, $candidates, strict: true));
@@ -221,14 +236,10 @@ final class CompositeArbitraryTest
         // value is still reached. Parity of 64: every halving candidate
         // (0, 32, 48, ...) is even like the parent until the last one, 63.
         $parity = new CompositeArbitrary(static fn(Draw $d): int => $d->draw(Gen::intBetween(0, 100)) % 2);
-        $even = null;
-        for ($seed = 0; $even === null; ++$seed) {
-            $candidate = $parity->generate(new Random($seed));
-
-            if ($candidate->value === 0 && Trees::childValues($candidate) !== []) {
-                $even = $candidate;
-            }
-        }
+        $even = $this->firstGenerated(
+            $parity,
+            static fn(Shrinkable $candidate): bool => $candidate->value === 0 && Trees::childValues($candidate) !== [],
+        );
 
         // The first candidate, 0, is even like the parent; the odd ones after it survive.
         Assert::same(array_values(array_unique(Trees::childValues($even))), [1]);
@@ -290,18 +301,7 @@ final class CompositeArbitraryTest
 
             return $n;
         });
-        $node = null;
-        for ($seed = 0; $node === null; ++$seed) {
-            try {
-                $candidate = $arbitrary->generate(new Random($seed));
-            } catch (\InvalidArgumentException) {
-                continue;
-            }
-
-            if ($candidate->value >= 64) {
-                $node = $candidate;
-            }
-        }
+        $node = $this->firstGenerated($arbitrary, static fn(Shrinkable $candidate): bool => $candidate->value >= 64);
 
         // The first candidate (0) is refused; the halving ladder after it survives.
         $children = Trees::childValues($node);

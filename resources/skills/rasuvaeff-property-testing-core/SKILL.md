@@ -113,14 +113,14 @@ descent, implies `ShrinkMode::Bounded`), `phases`, `derandomize`, `path`,
 from the signature, below), `edgeCases` (boundary bias, below). The PHPUnit
 adapter's fluent chain has one method per knob.
 
-**`auto: true` (-testo ≥0.6): the generators method can be omitted** when the
+**`auto: true`: the generators method can be omitted** when the
 parameters are fully described by `@param` psalm types and native types — a
 generator is derived per parameter from the property's own signature
 (`Gen::forParameters` rules). A provider (explicit or conventional) becomes
 PARTIAL overrides: name only what the type cannot express (a float range, a
 `flatMap` pair), the rest derives. With auto, a provider key that is not a
 parameter is an error. Strictly opt-in — bare `int`/`float` derive their full
-native domain. PHPUnit adapter parity (≥0.5):
+native domain. PHPUnit adapter parity:
 `$this->forAll()->auto()->check(/** @param int<0, 9> $n */ function (int $n): void {…})`.
 
 `PropertyConfig` (engine level, for callers that build a `PropertyDefinition`
@@ -168,7 +168,7 @@ rejected at construction.
 | From alphabet | `Gen::stringFrom($alphabet, $min, $max)` | **Preferred for parser inputs** — the alphabet is the caller's responsibility: pick one that excludes the parser's delimiter chars (`,`, `=`, `&`, ...) so the value cannot break out of its field, but DOES include the chars you want the parser to handle |
 | Bytes (HMAC, raw) | `Gen::bytes($min, $max)` | |
 | Array | `Gen::arrayOf($element, $min, $max)` | |
-| Unique array (ids, keys) | `Gen::uniqueArrayOf($element, $min, $max)` | Distinct by `===`; for VOs unique by one field add `by: fn ($u) => $u->id` (key must be `int\|string`, core ≥0.12) |
+| Unique array (ids, keys) | `Gen::uniqueArrayOf($element, $min, $max)` | Distinct by `===`; for VOs unique by one field add `by: fn ($u) => $u->id` (key must be `int\|string`) |
 | Map / dictionary | `Gen::dictOf($keyArb, $valueArb, $min, $max)` | |
 | Fixed-shape object/VO | `Gen::record(['id' => Gen::uuid(), 'age' => Gen::intBetween(0, 120)])` | |
 | One of N | `Gen::oneOf($a, $b, $c)` or `Gen::elements([$a, $b, $c])` | **VALUES, not generators.** Passing an `ArbitraryInterface` is rejected since core 0.9 — it used to make the generator object itself the generated value. To pick between generators use `Gen::frequency()` |
@@ -183,14 +183,14 @@ rejected at construction.
 | Recursive structure (tree) | `Gen::recursive($leaf, $wrap, $maxDepth)` | |
 | Nullable | `Gen::nullable($inner)` | |
 | Dependent on previous value | `Gen::flatMap($inner, fn($x) => $dependent)` | Integrated shrinking preserved |
-| Several dependent values, reusable | `Gen::composite(fn (Draw $d) => new Interval($min = $d->draw(...), $d->draw(Gen::datetime(min: $min))))` | An ordinary generator (composes with `map`/`arrayOf`/providers); shrinks the draws, earliest first; a body that throws for a shrunk draw refuses the candidate (core ≥0.12) |
+| Several dependent values, reusable | `Gen::composite(fn (Draw $d) => new Interval($min = $d->draw(...), $d->draw(Gen::datetime(min: $min))))` | An ordinary generator (composes with `map`/`arrayOf`/providers); shrinks the draws, earliest first; a body that throws for a shrunk draw refuses the candidate |
 | In-body draw (rare, multiple deps) | `Gen::draw($arb)` | ONLY inside a running property body; replay tape recorded |
-| Known dangerous values must be tried | `Gen::withEdgeCases($inner, $v1, $v2, ...)` | 1 draw in 5 is one of them, shrinks through them first (preferred minimum first); stays on under `EdgeCases::None` (core ≥0.12) |
-| SUT takes a `Random\Randomizer` (jitter, shuffle) | `Gen::randomizer()` / `Gen::randomEngine()` — or just type the parameter `\Random\Randomizer` under `auto` | The SUT's random decisions ride the draw tape and SHRINK toward `"\0"` (`getInt` → `$min`); a fixed seed only reproduces (core ≥0.12) |
+| Known dangerous values must be tried | `Gen::withEdgeCases($inner, $v1, $v2, ...)` | 1 draw in 5 is one of them, shrinks through them first (preferred minimum first); stays on under `EdgeCases::None` |
+| SUT takes a `Random\Randomizer` (jitter, shuffle) | `Gen::randomizer()` / `Gen::randomEngine()` — or just type the parameter `\Random\Randomizer` under `auto` | The SUT's random decisions ride the draw tape and SHRINK toward `"\0"` (`getInt` → `$min`); a fixed seed only reproduces |
 | Constant (for commands) | `Gen::constant($value)` | |
-| Stateful without a class per command | `Gen::rules(Machine::class, maxLength: 50)` | See Stateful below (core ≥0.12) |
-| VO/config from its constructor | `Gen::forClass(Money::class, $overrides)` | Per parameter: override → `@param` psalm type (`int<0, 100>` beats `int`) → native type; unreadable types THROW naming the parameter, never a widened guess; `skipInvalid: true` discards constructor-rejected values (core ≥0.3) |
-| Generators from any signature | `Gen::forParameters($reflectionFn, $overrides)` | The forClass rules for a method/closure's parameters, returned as `array<string, ArbitraryInterface>` in signature order; overrides may be PARTIAL — named params taken as given, rest derived (core ≥0.4) |
+| Stateful without a class per command | `Gen::rules(Machine::class, maxLength: 50)` | See Stateful below |
+| VO/config from its constructor | `Gen::forClass(Money::class, $overrides)` | Per parameter: override → `@param` psalm type (`int<0, 100>` beats `int`) → native type; unreadable types THROW naming the parameter, never a widened guess; `skipInvalid: true` discards constructor-rejected values |
+| Generators from any signature | `Gen::forParameters($reflectionFn, $overrides)` | The forClass rules for a method/closure's parameters, returned as `array<string, ArbitraryInterface>` in signature order; overrides may be PARTIAL — named params taken as given, rest derived |
 
 Numeric generators are **boundary-biased**: ~1 in 5 draws returns an in-range
 edge value. Sized generators never go below their minimum. If the body
@@ -211,11 +211,11 @@ after the first draw.
 | Body inputs are sometimes invalid | `Gen::flatMap` / `Gen::draw` to **construct** valid ones; `Assume::that($valid)` only when construction is impossible |
 | Need "every branch hit at least N%" | `Classify::cover($condition, $label, $minPercent)` — fails with `CoverageFailed` even if every run passed |
 | Just want distribution in the report | `Classify::when($condition, $label)` / `Classify::label($label)` — tags only, no gate |
-| A run belongs to several categories at once, want the cross-table | `Classify::tabulate('features', ['compressed', 'retried'])` — per-table tallies + pairwise intersections (`'compressed & retried'`) on `DistributionReport::$tables`/`$intersections`; no gate (core ≥0.12) |
-| Counterexample lacks the value the body computed | `Gen::note('encoded', $encoded)` — rendered as a `Notes:` line for the shrunk run, on `CounterExample::$shrunkNotes`; NOT a label (core ≥0.12) |
-| Small domain, want a PROOF over the parameters, not a sample | `#[Property(exhaustive: true)]` (`exhaustiveBudget: 10_000`) — walks the whole product when every parameter's generator is `Enumerable` (`constant`/`bool`/`intBetween`/`elements`/`enum`/`nullable`/`tuple`/`record`/`map`/`filter`/`withEdgeCases` over those); otherwise samples and `DistributionReport::$exhaustiveDeclined` says why. In-body draws stay random. `runs` is ignored when it walks (core ≥0.12) |
-| Suite oscillates red/green on the same counterexample | Already on by default: `flakyReplays: 2` re-executes the minimised input; a replay that passes gives `CounterExample::isFlaky()` and a `Flaky:` line → suspect nondeterminism (clock, `mt_rand`, unordered map), not the input. `flakyReplays: 0` to disable (core ≥0.12) |
-| Bug lives at an extreme (longest delay, deepest recursion, fullest queue) | `Target::maximize('delay', $delay)` (or `minimize`) in the body + `#[Property(searchRuns: 100)]` — hill climbing over the best inputs, one parameter regenerated at a time, after the random phase; `TargetImproved` events, `SearchReport` on `PropertyFinished`. Finds corners/extremes (corner bug: 52% → 98% of seeds at equal budget); does NOT find a needle needing one parameter tuned to another within a few units. With `PROPERTY_DB` the pool persists in a separate search document (core ≥0.12) |
+| A run belongs to several categories at once, want the cross-table | `Classify::tabulate('features', ['compressed', 'retried'])` — per-table tallies + pairwise intersections (`'compressed & retried'`) on `DistributionReport::$tables`/`$intersections`; no gate |
+| Counterexample lacks the value the body computed | `Gen::note('encoded', $encoded)` — rendered as a `Notes:` line for the shrunk run, on `CounterExample::$shrunkNotes`; NOT a label |
+| Small domain, want a PROOF over the parameters, not a sample | `#[Property(exhaustive: true)]` (`exhaustiveBudget: 10_000`) — walks the whole product when every parameter's generator is `Enumerable` (`constant`/`bool`/`intBetween`/`elements`/`enum`/`nullable`/`tuple`/`record`/`map`/`filter`/`withEdgeCases` over those); otherwise samples and `DistributionReport::$exhaustiveDeclined` says why. In-body draws stay random. `runs` is ignored when it walks |
+| Suite oscillates red/green on the same counterexample | Already on by default: `flakyReplays: 2` re-executes the minimised input; a replay that passes gives `CounterExample::isFlaky()` and a `Flaky:` line → suspect nondeterminism (clock, `mt_rand`, unordered map), not the input. `flakyReplays: 0` to disable |
+| Bug lives at an extreme (longest delay, deepest recursion, fullest queue) | `Target::maximize('delay', $delay)` (or `minimize`) in the body + `#[Property(searchRuns: 100)]` — hill climbing over the best inputs, one parameter regenerated at a time, after the random phase; `TargetImproved` events, `SearchReport` on `PropertyFinished`. Finds corners/extremes (corner bug: 52% → 98% of seeds at equal budget); does NOT find a needle needing one parameter tuned to another within a few units. With `PROPERTY_DB` the pool persists in a separate search document |
 | Body has wall-clock risk (catastrophic regex, deep recursion) | `#[Property(timeoutMs: 1000)]` — single run over deadline = `DeadlineExceeded`. Measured when the run returns — it reports an overrun, it cannot interrupt a body that never returns; a truly hanging body needs a timeout inside the body |
 | Whole random phase has SLA | `#[Property(budgetMs: 5000)]` — `TimeBudgetExceeded` |
 
@@ -305,7 +305,7 @@ For state machines, retries, lifecycles. Four files in `tests/Support/`:
 step. Shrinking drops command blocks then simplifies each command's params;
 replay skips commands whose precondition a dropped step invalidated.
 
-### Rule-based façade (core ≥0.12) — the default for a model that is a few fields
+### Rule-based façade — the default for a model that is a few fields
 
 One class, no `Command` implementations: `#[Rule]` methods are the steps
 (parameters drawn like a property's; overrides via `public static

@@ -33,7 +33,7 @@ exact mapping.
 
 ```bash
 composer remove --dev rasuvaeff/property-testing
-composer require --dev "rasuvaeff/property-testing-testo:^0.10" -W
+composer require --dev "rasuvaeff/property-testing-testo:^1.0" -W
 ```
 
 That is the whole migration. Every import, attribute, generator method and
@@ -67,7 +67,7 @@ Two things about that command are not optional:
   Requiring the adapter while 2.x is still in `composer.json` fails with
   `Your requirements could not be resolved`.
 - **`-W` (`--with-all-dependencies`).** The Testo adapter requires
-  `testo/testo ^0.10.39 || ^1.0`. If your lock file pins an older `testo/testo`,
+  `testo/testo ^0.10.39`. If your lock file pins an older `testo/testo`,
   Composer refuses the install without permission to raise it; `-W` lets it
   bump `testo/testo` and its satellites within their allowed ranges.
 
@@ -203,8 +203,8 @@ constructors — is written out in
 [Compatibility policy](/guide/compatibility); read that before treating a minor
 upgrade as risky.
 
-`1.0` follows once the public boundary has been exercised by consumers outside
-the monorepo.
+The engine, both adapters and `-names` are at `1.0`: from here on, anything
+the policy lists as frozen changes only with a major.
 
 ## Staying on 2.x
 

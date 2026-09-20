@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.0.0 — 2026-09-20
+
+The stability release. The `@api` surface is that of 0.12.0, unchanged: no
+type, method or parameter was added, removed or renamed, and a project on
+`^0.12` upgrades by widening the constraint to `^1.0`. What the number
+promises from here on is written out in the compatibility policy
+(`README.md`, `docs/src/guide/compatibility.md`): the `@api` surface, the
+corpus format (`FilesystemCorpus::FORMAT_VERSION` does not change within
+1.x), the machine-readable keys of `CounterExample::toArray()` and
+`DistributionReport::toArray()`, event fields and order, append-only
+constructors — while seed → values stays outside SemVer, fenced by
+`FilesystemCorpus::SEQUENCE_EPOCH`. The `Gen::*` parameter names are frozen
+as they stand: `$minLength`/`$maxLength` for strings, bytes and sequences,
+`$minSize`/`$maxSize` for collections, `$min`/`$max` for ranges.
+
+- The adapters (`rasuvaeff/property-testing-testo`,
+  `rasuvaeff/property-testing-phpunit`) and `rasuvaeff/property-testing-names`
+  release their own `1.0.0` requiring this package as `^1.0`, in that order
+  (policy §8).
+- **Docs:** the version gates that dated each feature (`core ≥0.12`,
+  `-testo ≥0.6`, `-phpunit ≥0.5`, …) are gone from the skill, the guides and
+  the migration document — every 1.0 install has all of them. The migration
+  recipe requires `-testo:^1.0`.
+- `composer rector` is green again: the three seed-hunting loops in
+  `CompositeArbitraryTest` share one `firstGenerated()` helper instead of a
+  nullable sentinel that `FlipTypeControlToUseExclusiveTypeRector` rewrote.
+
 ## 0.12.0 — 2026-09-20
 
 - **Added:** `Gen::uniqueArrayOf(..., by:)` — uniqueness by the `int|string`

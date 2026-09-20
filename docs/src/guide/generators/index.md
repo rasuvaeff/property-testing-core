@@ -12,7 +12,7 @@ is not expressible. Instead name a method that returns
 `array<string, ArbitraryInterface>` keyed by parameter name. When the `generators`
 argument is omitted the runner falls back to a method named `<testMethod>Generators`.
 
-Since `property-testing-testo` 0.5 (and `-phpunit`'s fluent API from the start),
+In both adapters,
 `generators` and `examples` also accept a callable, which is how a provider gets
 reused between test classes: `[Provider::class, 'method']`, `'Provider::method'`,
 or an invokable object (`new Provider()`) — all valid attribute expressions on

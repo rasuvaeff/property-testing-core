@@ -8611,8 +8611,8 @@
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.10.0",
-        "rootReference": "430b9a18e94ed5716e2889da7a36489f7512a811",
+        "rootVersion": "v1.0.0",
+        "rootReference": "e286bf83a70481952a0759da9241b8af15a170ec",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PhpUnitTrialExecutor",
         "kind": "class",
         "isApi": false,
@@ -8697,13 +8697,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/430b9a18e94ed5716e2889da7a36489f7512a811/src/PhpUnit/PhpUnitTrialExecutor.php#L31",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/e286bf83a70481952a0759da9241b8af15a170ec/src/PhpUnit/PhpUnitTrialExecutor.php#L31",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.10.0",
-        "rootReference": "430b9a18e94ed5716e2889da7a36489f7512a811",
+        "rootVersion": "v1.0.0",
+        "rootReference": "e286bf83a70481952a0759da9241b8af15a170ec",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
         "kind": "class",
         "isApi": true,
@@ -9343,13 +9343,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/430b9a18e94ed5716e2889da7a36489f7512a811/src/PhpUnit/PropertyCheck.php#L50",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/e286bf83a70481952a0759da9241b8af15a170ec/src/PhpUnit/PropertyCheck.php#L50",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.10.0",
-        "rootReference": "430b9a18e94ed5716e2889da7a36489f7512a811",
+        "rootVersion": "v1.0.0",
+        "rootReference": "e286bf83a70481952a0759da9241b8af15a170ec",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyTesting",
         "kind": "trait",
         "isApi": true,
@@ -9368,13 +9368,13 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/430b9a18e94ed5716e2889da7a36489f7512a811/src/PhpUnit/PropertyTesting.php#L25",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/e286bf83a70481952a0759da9241b8af15a170ec/src/PhpUnit/PropertyTesting.php#L25",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v0.10.0",
-        "rootReference": "430b9a18e94ed5716e2889da7a36489f7512a811",
+        "rootVersion": "v1.0.0",
+        "rootReference": "e286bf83a70481952a0759da9241b8af15a170ec",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -9435,13 +9435,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/430b9a18e94ed5716e2889da7a36489f7512a811/src/PhpUnit/VerboseListener.php#L28",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/e286bf83a70481952a0759da9241b8af15a170ec/src/PhpUnit/VerboseListener.php#L28",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.12.0",
-        "rootReference": "c618f33e2c232e9d07c0bddf20dae7cf46cf5d27",
+        "rootVersion": "v1.0.0",
+        "rootReference": "0e741eb459d4204c7504fa2ac27db81e129deafa",
         "class": "Rasuvaeff\\PropertyTesting\\Property",
         "kind": "class",
         "isApi": true,
@@ -9659,7 +9659,7 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Property.php#L35",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Property.php#L35",
         "implementedBy": []
     },
     {
@@ -15206,8 +15206,8 @@
     },
     {
         "root": "testo",
-        "rootVersion": "v0.12.0",
-        "rootReference": "c618f33e2c232e9d07c0bddf20dae7cf46cf5d27",
+        "rootVersion": "v1.0.0",
+        "rootReference": "0e741eb459d4204c7504fa2ac27db81e129deafa",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\PropertyInterceptor",
         "kind": "class",
         "isApi": true,
@@ -15292,13 +15292,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Testo/PropertyInterceptor.php#L61",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Testo/PropertyInterceptor.php#L61",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.12.0",
-        "rootReference": "c618f33e2c232e9d07c0bddf20dae7cf46cf5d27",
+        "rootVersion": "v1.0.0",
+        "rootReference": "0e741eb459d4204c7504fa2ac27db81e129deafa",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\TestoTrialExecutor",
         "kind": "class",
         "isApi": false,
@@ -15422,13 +15422,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Testo/TestoTrialExecutor.php#L46",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Testo/TestoTrialExecutor.php#L46",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v0.12.0",
-        "rootReference": "c618f33e2c232e9d07c0bddf20dae7cf46cf5d27",
+        "rootVersion": "v1.0.0",
+        "rootReference": "0e741eb459d4204c7504fa2ac27db81e129deafa",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -15489,7 +15489,7 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/c618f33e2c232e9d07c0bddf20dae7cf46cf5d27/src/Testo/VerboseListener.php#L31",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Testo/VerboseListener.php#L31",
         "implementedBy": []
     },
     {

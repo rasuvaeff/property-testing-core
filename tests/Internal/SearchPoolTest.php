@@ -37,6 +37,58 @@ final class SearchPoolTest
         Assert::same(array_map(static fn(array $e): float => $e['score'], $pool->export()['up']['entries']), [9.0, 9.0, 5.0, 3.0]);
     }
 
+    public function countsOnlyImprovementsNotEveryOffer(): void
+    {
+        $pool = new SearchPool();
+        $pool->offer('up', TargetDirection::Maximize, 1.0, $this->trees(1));
+        $pool->offer('up', TargetDirection::Maximize, 2.0, $this->trees(2));
+        $pool->offer('up', TargetDirection::Maximize, 3.0, $this->trees(3));
+        $pool->offer('up', TargetDirection::Maximize, 0.0, $this->trees(0));
+
+        Assert::same($pool->improvements('up'), 3);
+        Assert::same($pool->export()['up']['direction'], TargetDirection::Maximize);
+    }
+
+    public function recallsAccumulateAcrossCallsAndExportKeepsEveryLabel(): void
+    {
+        $pool = new SearchPool();
+        $pool->recall('up', TargetDirection::Maximize, [['score' => 1.0, 'arguments' => ['n' => 1]], ['score' => 2.0, 'arguments' => ['n' => 2]]]);
+        $pool->recall('up', TargetDirection::Maximize, [['score' => 3.0, 'arguments' => ['n' => 3]]]);
+        $pool->offer('down', TargetDirection::Minimize, 5.0, $this->trees(5));
+
+        Assert::same($pool->recalledCount('up'), 3);
+        Assert::same(array_keys($pool->export()), ['up', 'down']);
+        Assert::same($pool->export()['down']['direction'], TargetDirection::Minimize);
+    }
+
+    public function picksTheOnlyEntryOfASingletonPool(): void
+    {
+        $pool = new SearchPool();
+        $pool->offer('up', TargetDirection::Maximize, 1.0, $this->trees(1));
+        $random = new Random(3);
+
+        for ($i = 0; $i < 20; ++$i) {
+            Assert::same($pool->pick('up', $random)['n']->value, 1);
+        }
+    }
+
+    public function pickReachesTheLastEntryToo(): void
+    {
+        $pool = new SearchPool();
+        $pool->offer('up', TargetDirection::Maximize, 2.0, $this->trees(2));
+        $pool->offer('up', TargetDirection::Maximize, 1.0, $this->trees(1));
+        $random = new Random(3);
+        $seen = [];
+
+        for ($i = 0; $i < 100; ++$i) {
+            $seen[$pool->pick('up', $random)['n']->value] = true;
+        }
+
+        $values = array_keys($seen);
+        sort($values);
+        Assert::same($values, [1, 2]);
+    }
+
     public function minimisationSortsTheOtherWay(): void
     {
         $pool = new SearchPool();

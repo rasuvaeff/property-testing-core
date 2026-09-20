@@ -34,6 +34,64 @@ final class SearchDocumentTest
         Assert::same(SearchDocument::decode($document, ['base', 'label']), $targets);
     }
 
+    public function theDocumentIsPrettyPrintedUnescapedAndNewlineTerminated(): void
+    {
+        $document = (string) SearchDocument::encode('p', ['n' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 1.0, 'arguments' => ['a' => 'x/y ü']]]]], ['a']);
+
+        Assert::true(str_ends_with($document, "}\n"));
+        Assert::false(str_starts_with($document, "\n"));
+        Assert::string($document)->contains("\n    \"format\": 1");
+        Assert::string($document)->contains('x/y ü');
+    }
+
+    public function aLabelWithNothingRepresentableIsSkippedAndTheNextIsKept(): void
+    {
+        $targets = [
+            'closures' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 2.0, 'arguments' => ['a' => static fn(): int => 1]]]],
+            'ints' => ['direction' => TargetDirection::Minimize, 'entries' => [['score' => 1.0, 'arguments' => ['a' => 1]]]],
+        ];
+
+        $decoded = SearchDocument::decode((string) SearchDocument::encode('p', $targets, ['a']), ['a']);
+
+        Assert::same(array_keys($decoded), ['ints']);
+        Assert::same($decoded['ints']['direction'], TargetDirection::Minimize);
+    }
+
+    public function decodingSkipsEveryMalformedLabelAndEntryAndKeepsTheRest(): void
+    {
+        $document = json_encode(['id' => 'p', 'format' => 1, 'targets' => [
+            '7' => ['direction' => 'maximize', 'entries' => [['score' => 1, 'args' => ['a' => 1]]]],
+            'noEntries' => ['direction' => 'maximize'],
+            'sideways' => ['direction' => 'sideways', 'entries' => [['score' => 1, 'args' => ['a' => 1]]]],
+            'ok' => ['direction' => 'maximize', 'entries' => [
+                ['args' => ['a' => 1]],
+                ['score' => 1],
+                ['score' => 1, 'args' => ['a' => ['~' => 'nope']]],
+                ['score' => 3, 'args' => ['a' => 3]],
+            ]],
+            'alsoOk' => ['direction' => 'minimize', 'entries' => [['score' => 4, 'args' => ['a' => 4]]]],
+        ]], JSON_THROW_ON_ERROR);
+
+        Assert::same(SearchDocument::decode($document, ['a']), [
+            'ok' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 3.0, 'arguments' => ['a' => 3]]]],
+            'alsoOk' => ['direction' => TargetDirection::Minimize, 'entries' => [['score' => 4.0, 'arguments' => ['a' => 4]]]],
+        ]);
+    }
+
+    public function aForeignFormatWithValidEntriesStillDecodesToNothing(): void
+    {
+        $document = json_encode(['id' => 'p', 'format' => 99, 'targets' => ['n' => ['direction' => 'maximize', 'entries' => [['score' => 1, 'args' => ['a' => 1]]]]]], JSON_THROW_ON_ERROR);
+
+        Assert::same(SearchDocument::decode($document, ['a']), []);
+    }
+
+    public function parameterOrderDoesNotMatterForRecallOnlyTheNamesDo(): void
+    {
+        $document = (string) SearchDocument::encode('p', ['n' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 1.0, 'arguments' => ['a' => 1, 'b' => 2]]]]], ['a', 'b']);
+
+        Assert::same(SearchDocument::decode($document, ['b', 'a'])['n']['entries'][0]['arguments'], ['b' => 2, 'a' => 1]);
+    }
+
     public function anIntegralScoreComesBackAsAFloat(): void
     {
         $document = SearchDocument::encode('p', ['n' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 3.0, 'arguments' => ['a' => 1]]]]], ['a']);

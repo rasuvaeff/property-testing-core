@@ -234,6 +234,61 @@ final class CompositeArbitraryTest
         Assert::same($shallow->value, [1, $capped->value[1]]);
     }
 
+    public function eachAcceptedStepCostsExactlyOneLevelOfDepth(): void
+    {
+        $triple = static fn(Draw $d): array => [$d->draw(Gen::intBetween(1, 1000)), $d->draw(Gen::intBetween(1, 1000)), $d->draw(Gen::intBetween(1, 1000))];
+        $allAboveOne = static fn(mixed $v): bool => $v[0] > 1 && $v[1] > 1 && $v[2] > 1;
+        $always = static fn(mixed $v): bool => true;
+
+        $capped = Trees::generateWhere(new CompositeArbitrary($triple, maxDepth: 2), $allAboveOne);
+        $shallow = Trees::descendWhile($capped, $always);
+
+        Assert::same($shallow->value, [1, 1, $capped->value[2]]);
+    }
+
+    public function aRefusedCandidateDoesNotEndTheEnumeration(): void
+    {
+        $arbitrary = new CompositeArbitrary(static function (Draw $d): int {
+            $n = $d->draw(Gen::intBetween(0, 100));
+
+            if ($n === 0) {
+                throw new \InvalidArgumentException('zero refused');
+            }
+
+            return $n;
+        });
+        $node = null;
+        for ($seed = 0; $node === null; ++$seed) {
+            try {
+                $candidate = $arbitrary->generate(new Random($seed));
+            } catch (\InvalidArgumentException) {
+                continue;
+            }
+
+            if ($candidate->value >= 64) {
+                $node = $candidate;
+            }
+        }
+
+        // The first candidate (0) is refused; the halving ladder after it survives.
+        $children = Trees::childValues($node);
+        Assert::true(count($children) >= 2);
+        Assert::false(in_array(0, $children, strict: true));
+    }
+
+    public function twoDrawsAtDifferentPositionsUseDifferentStreams(): void
+    {
+        $arbitrary = new CompositeArbitrary(static fn(Draw $d): array => [$d->draw(Gen::intBetween(0, 1_000_000)), $d->draw(Gen::intBetween(0, 1_000_000))]);
+        $differ = 0;
+
+        for ($seed = 0; $seed < 20; ++$seed) {
+            [$a, $b] = $arbitrary->generate(new Random($seed))->value;
+            $differ += $a === $b ? 0 : 1;
+        }
+
+        Assert::true($differ >= 19);
+    }
+
     public function honoursTheEdgeCaseModeOfTheOuterStream(): void
     {
         $arbitrary = new CompositeArbitrary(static fn(Draw $d): int => $d->draw(Gen::intBetween(1, 1_000_000)));

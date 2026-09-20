@@ -103,6 +103,7 @@ final class PropertyViolationExceptionTest
         $message = $exception->getMessage();
         Assert::string($message)->contains("\n  Notes:    encoded=\"YQ==\"\n  Failure:  mismatch");
         Assert::string($message)->notContains('YWJj');
+        Assert::true(str_starts_with($message, 'Property falsified after 0 successful run(s); seed=1'));
     }
 
     public function omitsTheNotesLineWhenTheBodyAttachedNone(): void

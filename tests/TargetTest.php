@@ -47,8 +47,9 @@ final class TargetTest
     public function flushDirectionsClearsTheRegistry(): void
     {
         Target::minimize('depth', 1);
+        Target::maximize('delay', 1);
 
-        Assert::same(Target::flushDirections(), ['depth' => TargetDirection::Minimize]);
+        Assert::same(Target::flushDirections(), ['depth' => TargetDirection::Minimize, 'delay' => TargetDirection::Maximize]);
         Assert::same(Target::directions(), []);
     }
 

@@ -215,6 +215,39 @@ final class PropertyRunnerSearchTest
         Assert::same($corpus->rememberedTargets, []);
     }
 
+    public function aSingleParameterPropertyIsSearchedToo(): void
+    {
+        $result = (new PropertyRunner())->run(
+            new PropertyDefinition(
+                id: 'search::single',
+                name: 'single',
+                generators: ['n' => Gen::intBetween(0, 1000)],
+                parameterNames: ['n'],
+                config: new PropertyConfig(runs: 20, seed: 5, searchRuns: 30),
+            ),
+            new CallableTrialExecutor(static function (int $n): void {
+                Target::maximize('n', $n);
+            }),
+        );
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($result->statistics->search?->evaluations, 30);
+        Assert::same($result->statistics->checks, 50);
+    }
+
+    public function aDirectionLeftOverByAnAbortedPropertyIsFlushedBeforeTheRun(): void
+    {
+        // A previous run that never reached finish() (a listener threw)
+        // leaves its registry armed; the next run must not inherit it.
+        Target::maximize('sum', 1);
+
+        $result = $this->run(static function (int $a, int $b, int $c): void {
+            Target::minimize('sum', $a + $b + $c);
+        }, runs: 3, searchRuns: 0);
+
+        Assert::instanceOf($result, Passed::class);
+    }
+
     public function targetDirectionsDoNotLeakIntoTheNextProperty(): void
     {
         $this->run(static function (int $a, int $b, int $c): void {

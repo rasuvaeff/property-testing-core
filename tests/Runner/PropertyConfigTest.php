@@ -116,6 +116,14 @@ final class PropertyConfigTest
         Assert::same($config->shrink, ShrinkMode::Bounded);
     }
 
+    public function acceptsTheSmallestExhaustiveBudgetAndNoFlakyReplays(): void
+    {
+        $config = new PropertyConfig(exhaustiveBudget: 1, flakyReplays: 0, searchRuns: 0);
+
+        Assert::same($config->exhaustiveBudget, 1);
+        Assert::same($config->flakyReplays, 0);
+    }
+
     #[DataProvider('invalidProvider')]
     public function rejectsOutOfRangeValues(\Closure $construct, string $message): void
     {

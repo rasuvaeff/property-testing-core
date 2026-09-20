@@ -27,6 +27,7 @@ use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\ParameterisedI
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\PrivateGuard;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\PrivateRule;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\StaticRule;
+use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\TwoOverrides;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Machines\UnnamedGenerators;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\Stack;
 use Rasuvaeff\PropertyTesting\Tests\StateMachine\Support\StackMachine;
@@ -95,6 +96,19 @@ final class RuleMachineTest
         for ($i = 0; $i < 20; ++$i) {
             foreach ($arbitrary->generate($random)->value->steps as $step) {
                 Assert::true($step->arguments['n'] >= 0 && $step->arguments['n'] <= 3);
+            }
+        }
+    }
+
+    public function everyOverriddenParameterIsHonoured(): void
+    {
+        $arbitrary = Gen::rules(TwoOverrides::class, minLength: 3, maxLength: 3);
+        $random = new Random(2);
+
+        for ($i = 0; $i < 20; ++$i) {
+            foreach ($arbitrary->generate($random)->value->steps as $step) {
+                Assert::true($step->arguments['n'] >= 0 && $step->arguments['n'] <= 1);
+                Assert::true($step->arguments['m'] >= 10 && $step->arguments['m'] <= 11);
             }
         }
     }

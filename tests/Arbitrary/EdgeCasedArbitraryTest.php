@@ -113,11 +113,29 @@ final class EdgeCasedArbitraryTest
 
         Assert::false(in_array(7, Trees::childValues($node), strict: true));
 
+        Assert::same(Trees::childValues($node)[0], 8);
+
         $duplicate = Trees::generateWhere(
             new EdgeCasedArbitrary(new IntArbitrary(100, 100), [8, 8]),
             static fn(mixed $v): bool => $v === 8,
         );
         Assert::false(in_array(8, Trees::childValues($duplicate), strict: true));
+
+        // An edge value listed again later (index 2) skips its own duplicate
+        // at index 0 and still reaches the value between them.
+        $repeated = new EdgeCasedArbitrary(new IntArbitrary(100, 100), [7, 5, 7]);
+        $ladders = [];
+        for ($seed = 0; $seed < 200; ++$seed) {
+            $candidate = $repeated->generate(new Random($seed));
+
+            if ($candidate->value === 7) {
+                $ladders[implode(',', Trees::childValues($candidate))] = true;
+            }
+        }
+        // Index 0 has no earlier values, index 2 has exactly [5].
+        $keys = array_map(strval(...), array_keys($ladders));
+        sort($keys);
+        Assert::same($keys, ['', '5']);
     }
 
     public function everyCandidateOfAGeneratedValueStaysOnTheEdgeThenInnerLadder(): void

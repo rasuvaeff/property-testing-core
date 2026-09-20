@@ -944,6 +944,8 @@ seed'ом из отчёта: это PRNG, не CSPRNG; никогда не ис�
 | `standalone_runner.php` | прямое управление движком: `PropertyDefinition`, `CallableTrialExecutor`, структурный `PropertyResult` | Нет |
 | `for_class.php` | `Gen::forClass()` с psalm-аннотациями и без, override на один параметр, валидирующий конструктор в обоих режимах | Нет |
 | `swarm.php` | swarm-тестирование над choice-генератором и над `Gen::commands()`; спуск, не выходящий за подмножество | Нет |
+| `targeted_search.php` | угловой баг, который 300 случайных прогонов пропускают, а 200 случайных + 100 поисковых с `Target::maximize()` находят | Нет |
+| `rule_machine.php` | rule-based stateful-фасад против корректного стека и FIFO-стека, сжатого до кратчайшего свидетеля | Нет |
 | `custom_listeners.php` | console reporter и telemetry-коллектор как чистые `PropertyListener` | Нет |
 | `case-studies/regex-anchor.php` | валидатор с якорем `$`, принимающий завершающий перевод строки | Нет |
 | `case-studies/saturating-minus.php` | вычитание, дающее отрицательную длительность вместо насыщения | Нет |

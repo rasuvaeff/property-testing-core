@@ -941,6 +941,8 @@ See [examples/](examples/) for runnable scripts.
 | `standalone_runner.php` | driving the engine directly: `PropertyDefinition`, `CallableTrialExecutor`, structured `PropertyResult` | No |
 | `for_class.php` | `Gen::forClass()` with and without psalm annotations, an override narrowing one parameter, and a validating constructor both ways | No |
 | `swarm.php` | swarm testing over a choice generator and over `Gen::commands()`, and a shrink descent that stays inside its subset | No |
+| `targeted_search.php` | a corner bug missed by 300 random runs and found by 200 random + 100 search runs climbing `Target::maximize()` | No |
+| `rule_machine.php` | the rule-based stateful façade against a correct stack and a FIFO one, shrunk to the shortest witness | No |
 | `custom_listeners.php` | a console reporter and a telemetry collector as pure `PropertyListener`s | No |
 | `case-studies/regex-anchor.php` | a `$`-anchored validator accepting a trailing newline | No |
 | `case-studies/saturating-minus.php` | subtraction producing a negative duration instead of saturating | No |

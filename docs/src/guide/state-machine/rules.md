@@ -65,7 +65,7 @@ public static function queueBehavesLikeAListGenerators(): array
 | Attribute | On | Meaning |
 |---|---|---|
 | `#[Rule]` | a public instance method | One step the sequence may take. Its parameters are drawn as [`Gen::forParameters()`](/guide/generators/from-a-class) draws them: an override, the docblock type, the native type. Overrides come from a `public static function <rule>Generators(): array` on the machine, or from the method `#[Rule(generators: 'name')]` points at. The body drives the system under test, updates the model, and asserts — an exception is the failed postcondition |
-| `#[Precondition('method')]` | a rule | Names a public bool method of the machine. A step whose guard is false in the machine's current state is **skipped**, not failed — the same skip-on-replay contract a dropped `Command` step has |
+| `#[Precondition('method')]` | a rule | Names a public method of the machine returning `bool`. A step whose guard is false in the machine's current state is **skipped**, not failed — the same skip-on-replay contract a dropped `Command` step has |
 | `#[Invariant]` | a public instance method without parameters | Runs before the first step and after every executed one; an exception falsifies the sequence at that step |
 
 `Gen::rules()` reads the class once and refuses, by name, a machine with no

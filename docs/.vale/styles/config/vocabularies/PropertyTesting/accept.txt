@@ -11,50 +11,56 @@
 # Deliberately NOT listed: shrink, shrinking, shrunk, arbitrary. The
 # dictionary already accepts them, and listing them would put them under
 # Vale.Terms for no gain.
+# The Java property-testing library, cited on the from-a-class page for its
+# type-driven @ForAll.
+# Surname of the Swarm Testing paper's first author (ISSTA 2012), cited on the
+# swarm page. A proper noun the dictionary does not carry.
+# The two PHP Redis clients the corpus can talk through, and the framework
+# whose DSN shape the `redis://` parsing follows. Lowercase `predis` is the
+# package's own spelling (predis/predis), so it is not a sentence-initial
+# variant the way the common nouns above are.
+# The URI component a `redis://user:pass@host` DSN puts the credentials in —
+# RFC 3986's own name for it, and the one the refusal message uses.
 [Aa]ccessor(?:s)?
 [Aa]rbitraries
 [Aa]rity
 [Aa]utoloader
 [Bb]ackoff
+[Cc]artesian
 [Cc]odecov
 [Cc]ombinators
 [Dd]erandomiz(?:e|ed|es|ing)
 [Dd]ocblock(?:s)?
 [Ee]num
+[Ee]xtremum
+flatMap
 [Gg]etter(?:s)?
+Groce
 [Ii]njective
 [Ii]nts
 [Ii]nvokable
+[Jj]ittered
+jqwik
 [Mm]isconfigured
 [Mm]onorepo
 [Mm]ultibyte
 [Nn]amespace
-[Pp]ostcondition
-[Rr]egexes
-[Rr]ollout
-[Ss]ubtree
-[Uu]nshrunk
-[Uu]ntrusted
-[Vv]ariadic
-[Vv]alidator
-[Ww]alkthrough
-flatMap
-# The Java property-testing library, cited on the from-a-class page for its
-# type-driven @ForAll.
-jqwik
-# Surname of the Swarm Testing paper's first author (ISSTA 2012), cited on the
-# swarm page. A proper noun the dictionary does not carry.
-Groce
 PCRE
 PHPUnit
-PROPERTY_DB
-Testo
-# The two PHP Redis clients the corpus can talk through, and the framework
-# whose DSN shape the `redis://` parsing follows. Lowercase `predis` is the
-# package's own spelling (predis/predis), so it is not a sentence-initial
-# variant the way the common nouns above are.
+[Pp]ostcondition
 predis
+PROPERTY_DB
+[Rr]egexes
+[Rr]esampled
+[Rr]ollout
+[Ss]eedable
+[Ss]ubtree
 Symfony
-# The URI component a `redis://user:pass@host` DSN puts the credentials in —
-# RFC 3986's own name for it, and the one the refusal message uses.
+Testo
 userinfo
+[Uu]nshrunk
+[Uu]nshuffled
+[Uu]ntrusted
+[Vv]alidator
+[Vv]ariadic
+[Ww]alkthrough

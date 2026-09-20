@@ -26,7 +26,7 @@ public function backoffStaysUnderCap(int $base, int $attempt): void
 `Target::maximize($label, $score)` and `minimize()` record a score for the
 current run. Without a search phase they cost one array write per run and
 change nothing. With `searchRuns > 0` on the
-[config](/api/classes/Runner/PropertyConfig), a search phase follows the
+[configuration](/api/classes/Runner/PropertyConfig), a search phase follows the
 random one:
 
 1. every passing run of the random phase has already put its scores into a
@@ -97,7 +97,7 @@ regression key — deliberately: an older reader never mistakes a
 best-scoring input for a regression and never prunes it as one, and the
 regression document's own guards (parameter names, the sequence epoch,
 values-versus-seed entries) are untouched. Arguments are encoded through the
-same codec as a values entry; an input the codec cannot represent is left
+same `ValueCodec` as a values entry; an input it cannot represent is left
 out. On recall, an entry recorded under other parameter names, and a label
 the body now pushes the other way, are ignored. A document that cannot be
 read or written is a [`CorpusFailed`](/api/classes/Event/CorpusFailed) event

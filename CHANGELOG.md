@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 — 2026-09-20
 
 - **Added:** `Gen::uniqueArrayOf(..., by:)` — uniqueness by the `int|string`
   key a closure returns per element, for value objects unique by one field;

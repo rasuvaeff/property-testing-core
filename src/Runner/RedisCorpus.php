@@ -181,6 +181,7 @@ final readonly class RedisCorpus implements Corpus, SearchCorpus
      * The search document of $id, from its own key beside the regression
      * document's.
      *
+     * @param string $id The property id.
      * @param list<string> $parameterNames The property method's current parameters, in order.
      *
      * @return Targets
@@ -197,7 +198,8 @@ final readonly class RedisCorpus implements Corpus, SearchCorpus
      * Replaces the search document of $id — the pool is the whole truth, so
      * no compare-and-set is needed; an empty pool removes the key.
      *
-     * @param Targets $targets
+     * @param string $id The property id.
+     * @param Targets $targets The pool, by label.
      * @param list<string> $parameterNames The property method's current parameters, in order.
      */
     #[\Override]

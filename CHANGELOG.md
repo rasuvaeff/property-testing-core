@@ -2,6 +2,65 @@
 
 ## Unreleased
 
+- **Added:** `Gen::uniqueArrayOf(..., by:)` — uniqueness by the `int|string`
+  key a closure returns per element, for value objects unique by one field;
+  a key of any other type is refused at generation time rather than compared
+  by identity. Value-based uniqueness is unchanged, sequence and all (#146).
+- **Added:** `Gen::withEdgeCases($inner, ...$edgeCases)` — per-generator
+  boundary values: one draw in five is one of them, they come first in the
+  shrink order, and the bias stays on under `EdgeCases::None`. The wrapper
+  rolls on the run's randomness and leaves the inner sequence untouched, so
+  the sequence epoch does not move (#144).
+- **Added:** `Gen::note($label, $value)` — a computed value attached to the
+  run, carried on the counterexample as `$originalNotes`/`$shrunkNotes` and
+  rendered as a `Notes:` line for the minimised run. `CounterExample::toArray()`
+  gains the two keys, always present (#142).
+- **Added:** `Classify::tabulate($table, $tags)` — per-run categories a run
+  may belong to several of, tallied per table with the pairwise intersections
+  of tags hit together, on `RunStatistics`/`DistributionReport::$tables` and
+  `$intersections`; `toArray()` carries a `tables` key only when a run
+  tabulated (#149).
+- **Added:** `Gen::randomEngine()` / `Gen::randomizer()` — a `Random\Engine`
+  (and the `Randomizer` over it) whose output is drawn from the property's
+  tape, so code that takes a randomizer has its random decisions recorded,
+  replayed and shrunk toward `"\0"`; `Gen::forParameters()` derives both from
+  the native parameter types (#141).
+- **Added:** `Gen::composite(Closure(Draw): T)` — several dependent draws in
+  one reusable generator, shrinking the draws earliest first with later draws
+  re-drawn through the new range from a stream of their own position; the
+  descent is capped like in-body draws (#148).
+- **Added:** exhaustive mode — `PropertyConfig::$exhaustive` /
+  `$exhaustiveBudget` walk the whole parameter product instead of sampling
+  when every generator implements the new `Enumerable` seam
+  (`domainSize()`/`enumerate()`: constant, bool, int, oneOf/elements/enum,
+  nullable, tuple, record, map, filter, withEdgeCases) and the product fits
+  the budget; the walk is seed-independent, and `RunStatistics`/
+  `DistributionReport` report `$domainSize` or `$exhaustiveDeclined` (#147).
+- **Added:** flaky detection — `PropertyConfig::$flakyReplays` (default 2)
+  re-executes the minimised counterexample; a replay that passes marks it
+  flaky (`CounterExample::isFlaky()`, `$replays`, `$passedOnReplay`, a
+  `Flaky:` line in the message). No new events; wall clock only (#145).
+- **Added:** rule-based stateful façade — `#[Rule]`, `#[Precondition]`,
+  `#[Invariant]` on one machine class, `Gen::rules($machine)` producing a
+  `RuleSequence` of `RuleStep`s over the existing command-sequence generation
+  and shrinking; `RuleSequence::run($factory)` builds a fresh machine per run
+  and keeps the factory out of the value (#143).
+- **Added:** targeted search — `Target::maximize()`/`minimize()` report a
+  score, `PropertyConfig::$searchRuns` opens a hill-climbing phase after the
+  random one (one parameter regenerated at a time over a pool of the best
+  inputs), `TargetImproved` announces every new best, `SearchReport` on
+  `PropertyFinished`/`RunStatistics` sums it up, and the new `SearchCorpus`
+  seam (implemented by `FilesystemCorpus` and `RedisCorpus`, in a separate
+  search document) keeps the pool between runs. Measured on a corner bug at
+  equal budget: 52 → 98 of 100 seeds; no gain, no loss where the score does
+  not lead to the bug (#150).
+- `PropertyFinished` gains a fourth constructor parameter, `$search`;
+  `RunStatistics` gains `$tables`, `$intersections`, `$domainSize`,
+  `$exhaustiveDeclined`, `$search`; `DistributionReport` the matching
+  fields; `CorpusFailed::$operation` may now be `recallTargets` or
+  `rememberTargets`. All appended with defaults.
+- The adapter contract suite pins the path version at `0.11.0`, which both
+  adapters accept; it sat at `0.10.0`.
 - A refusal over a docblock type no longer calls a generic the function or
   its class declares (`@template T`) an unknown class: `list<T>` is reported
   as unreadable, and only a name nothing declares as `unknown class "…"`.

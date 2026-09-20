@@ -46,8 +46,8 @@ final readonly class CompositeArbitrary implements ArbitraryInterface
     private const int MAX_DEPTH = 1000;
 
     /**
-     * @param Closure(Draw): T $body
-     * @param positive-int $maxDepth
+     * @param Closure(Draw): T $body Builds one value from the draws it takes through the seam.
+     * @param positive-int $maxDepth Accepted-step bound of one descent through the tape.
      */
     public function __construct(
         private Closure $body,
@@ -55,6 +55,8 @@ final readonly class CompositeArbitrary implements ArbitraryInterface
     ) {}
 
     /**
+     * @param Random $random The run's stream; one seed is taken from it for the whole subtree.
+     *
      * @return Shrinkable<T>
      */
     #[\Override]

@@ -28,6 +28,8 @@ final readonly class SearchReport
     ) {}
 
     /**
+     * Machine-readable form for telemetry.
+     *
      * @return array{evaluations: int, targets: array<string, array{direction: string, best: ?float, improvements: int, recalled: int}>}
      */
     public function toArray(): array

@@ -9,7 +9,7 @@ description: "Fluent builder mapping the engine's structured PropertyResult onto
 
 `Rasuvaeff\PropertyTesting\PhpUnit\PropertyCheck`
 
-**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/b21c4d63cbdf7b4113027e9471fc4bdf015cd10b/src/PhpUnit/PropertyCheck.php#L45) — **Version:** v0.8.0
+**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/8c638871bb4e5361d38c372dbc36ef80b6cb3a32/src/PhpUnit/PropertyCheck.php#L45) — **Version:** v0.9.1
 
 Fluent builder mapping the engine's structured PropertyResult onto PHPUnit:
 a pass counts one assertion, every failing outcome surfaces as one
@@ -31,7 +31,7 @@ __construct(
     PHPUnit\Framework\TestCase $testCase,
     string $id,
     string $name,
-    array<string,\ArbitraryInterface> $generators,
+    array<array-key,mixed> $generators,
     bool $idDerivedIndirectly,
 )
 ```
@@ -41,7 +41,7 @@ __construct(
 | `$testCase` | `PHPUnit\Framework\TestCase` | *required* |  |
 | `$id` | `string` | *required* |  |
 | `$name` | `string` | *required* |  |
-| `$generators` | `array<string,\ArbitraryInterface>` | *required* |  |
+| `$generators` | `array<array-key,mixed>` | *required* | The [`PhpUnit\PropertyTesting`](/api/classes/PhpUnit/PropertyTesting)::forAll() map as written; `PhpUnit\check`() rejects anything in it that is not an [`ArbitraryInterface`](/api/classes/ArbitraryInterface) keyed by a parameter name. |
 | `$idDerivedIndirectly` | `bool` | *required* |  |
 
 ## Methods
@@ -206,7 +206,8 @@ path(string $path): PhpUnit\PropertyCheck
 Replays the shrink descent of an earlier failure, as reported by
 `CounterExample::$path`, instead of searching for it again. It needs the
 seed of the run that produced it — the steps mean nothing against
-another one.
+another one — so check() refuses a path without a seed()
+or a `PROPERTY_SEED`.
 
 ### auto()
 

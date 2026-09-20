@@ -11,7 +11,7 @@ description: "Generates booleans."
 
 **Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/BoolArbitrary.php#L18) — **Version:** working tree
 
-**Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+**Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
 Generates booleans. false is the "smaller" boolean: true shrinks to false,
 false is terminal.
@@ -30,4 +30,31 @@ toward a zero/empty/identity element) and every branch of the tree must
 be finite, so shrinking terminates.
 
 *Documentation inherited from [`ArbitraryInterface`](/api/classes/ArbitraryInterface).*
+
+### domainSize()
+
+```php
+domainSize(): ?int
+```
+
+How many distinct values enumerate() walks, or null when the
+domain is not finite in this configuration. Saturates at
+`PHP_INT_MAX` rather than overflowing — a budget compares against it,
+nothing computes with it. An upper bound is acceptable where the exact
+count is not known without walking (a filter over a finite source).
+
+*Documentation inherited from [`Enumerable`](/api/classes/Enumerable).*
+
+### enumerate()
+
+```php
+enumerate(): iterable
+```
+
+Every value of the domain, once each, as a shrinkable node with the
+same tree generate() would give it, in a fixed order that does
+not depend on any seed. Only meaningful when domainSize() is not
+null; an implementation may throw otherwise.
+
+*Documentation inherited from [`Enumerable`](/api/classes/Enumerable).*
 

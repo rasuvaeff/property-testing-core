@@ -9,9 +9,9 @@ description: "Opt-in on-disk corpus of a property's past failures, replayed befo
 
 `Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/FilesystemCorpus.php#L30) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/FilesystemCorpus.php#L33) — **Version:** working tree
 
-**Implements:** [`Runner\Corpus`](/api/classes/Runner/Corpus)
+**Implements:** [`Runner\Corpus`](/api/classes/Runner/Corpus), [`Runner\SearchCorpus`](/api/classes/Runner/SearchCorpus)
 
 Opt-in on-disk corpus of a property's past failures, replayed before the random
 phase so a fixed bug stays fixed (fast regression replay).
@@ -108,4 +108,38 @@ regression is fixed and the entry has served its purpose.
 
 - `RuntimeException` — When the entry cannot be re-encoded to the key that identifies it,
 or when the document could not be written.
+
+### recallTargets()
+
+```php
+recallTargets(string $id, list<string> $parameterNames): array
+```
+
+The best inputs recorded for $id's targets — the search document,
+apart from the regression document, so neither reader mistakes the
+other's entries for its own.
+
+- `$id` — The property id.
+- `$parameterNames` — The property method's current parameters, in order.
+
+### rememberTargets()
+
+```php
+rememberTargets(
+    string $id,
+    \Runner\Targets $targets,
+    list<string> $parameterNames,
+): void
+```
+
+Replaces the search document of $id, under the same lock and with the
+same atomic write as the regression document; an empty pool removes it.
+
+- `$id` — The property id.
+- `$targets` — The pool, by label.
+- `$parameterNames` — The property method's current parameters, in order.
+
+**Throws:**
+
+- `RuntimeException` — When the document could not be written.
 

@@ -48,6 +48,8 @@ final readonly class NullableArbitrary implements Enumerable
 
     /**
      * Null first, then the inner domain in its own order.
+     *
+     * @throws \LogicException When the source has no finite domain ({@see domainSize()} is null).
      */
     #[\Override]
     public function enumerate(): iterable

@@ -27,7 +27,7 @@ final readonly class RuleMachine
     public array $invariants;
 
     /**
-     * @param class-string $class
+     * @param class-string $class The machine class to read.
      */
     public function __construct(string $class)
     {

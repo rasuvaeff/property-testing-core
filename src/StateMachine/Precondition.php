@@ -17,7 +17,7 @@ namespace Rasuvaeff\PropertyTesting\StateMachine;
 final readonly class Precondition
 {
     /**
-     * @param non-empty-string $method
+     * @param non-empty-string $method The public bool method of the machine that guards the rule.
      */
     public function __construct(
         public string $method,

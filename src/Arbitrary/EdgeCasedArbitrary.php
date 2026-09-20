@@ -39,8 +39,8 @@ final readonly class EdgeCasedArbitrary implements Enumerable
     private array $edgeCases;
 
     /**
-     * @param ArbitraryInterface<T> $inner
-     * @param list<T> $edgeCases
+     * @param ArbitraryInterface<T> $inner The delegate that generates everything but the edge draws.
+     * @param list<T> $edgeCases The boundary values, most-preferred minimum first; at least one.
      */
     public function __construct(
         private ArbitraryInterface $inner,
@@ -54,6 +54,8 @@ final readonly class EdgeCasedArbitrary implements Enumerable
     }
 
     /**
+     * @param Random $random The run's stream: one roll for edge-versus-delegate, then the delegate's draws.
+     *
      * @return Shrinkable<T>
      */
     #[\Override]
@@ -77,6 +79,9 @@ final readonly class EdgeCasedArbitrary implements Enumerable
         return Domain::sizeOf($this->inner);
     }
 
+    /**
+     * @throws \LogicException When the delegate has no finite domain ({@see domainSize()} is null).
+     */
     #[\Override]
     public function enumerate(): iterable
     {

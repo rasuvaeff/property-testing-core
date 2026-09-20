@@ -9,9 +9,9 @@ description: "Fixed-arity tuple: produces a list with one value per element arbi
 
 `Rasuvaeff\PropertyTesting\Arbitrary\TupleArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/TupleArbitrary.php#L22) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/TupleArbitrary.php#L24) — **Version:** working tree
 
-**Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+**Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
 Fixed-arity tuple: produces a list with one value per element arbitrary, in
 order. Useful for generating several correlated parameters as a single value
@@ -46,4 +46,20 @@ toward a zero/empty/identity element) and every branch of the tree must
 be finite, so shrinking terminates.
 
 *Documentation inherited from [`ArbitraryInterface`](/api/classes/ArbitraryInterface).*
+
+### domainSize()
+
+```php
+domainSize(): ?int
+```
+
+The product of the elements' domains, when every element has one.
+
+### enumerate()
+
+```php
+enumerate(): iterable
+```
+
+First element varying slowest.
 

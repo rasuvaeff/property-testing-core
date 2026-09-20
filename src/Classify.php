@@ -129,7 +129,8 @@ final class Classify
      * A tag recorded several times within one run counts once for that run,
      * like a label. An empty tag list records nothing.
      *
-     * @param string|list<string> $tags
+     * @param string $table The table the tags belong to.
+     * @param string|list<string> $tags One tag, or every tag the run hits at once.
      */
     public static function tabulate(string $table, string|array $tags): void
     {
@@ -138,6 +139,11 @@ final class Classify
         }
     }
 
+    /**
+     * Clear the labels and tables of the previous run.
+     *
+     * @internal Driven by the property runner.
+     */
     public static function beginRun(): void
     {
         self::$current = [];

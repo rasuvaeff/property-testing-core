@@ -17,6 +17,10 @@ use Rasuvaeff\PropertyTesting\Runner\TargetDirection;
 final readonly class TargetImproved implements PropertyEvent
 {
     /**
+     * @param string $propertyId The property whose target improved.
+     * @param string $label The target label, as reported to `Target::maximize()`/`minimize()`.
+     * @param TargetDirection $direction Which way the label is pushed.
+     * @param float $score The new best.
      * @param ?float $previous The best before this run; null for the first score of the label.
      * @param array<string, mixed> $arguments The input that scored, by parameter name.
      */

@@ -72,6 +72,11 @@ final class DrawContext
     /**
      * Attach a labelled value to the current run. Kept until {@see disarm()};
      * the runner reads it through {@see notes()} for the run it reports.
+     *
+     * @param string $label The note's name.
+     * @param mixed $value What to show beside it.
+     *
+     * @throws \RuntimeException Outside a property run.
      */
     public static function note(string $label, mixed $value): void
     {

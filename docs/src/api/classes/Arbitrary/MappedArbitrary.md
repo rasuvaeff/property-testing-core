@@ -9,9 +9,9 @@ description: "Transforms each value produced by a delegate arbitrary through a p
 
 `Rasuvaeff\PropertyTesting\Arbitrary\MappedArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/MappedArbitrary.php#L25) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/MappedArbitrary.php#L27) — **Version:** working tree
 
-**Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+**Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
 **Type parameters:**
 
@@ -53,4 +53,30 @@ toward a zero/empty/identity element) and every branch of the tree must
 be finite, so shrinking terminates.
 
 *Documentation inherited from [`ArbitraryInterface`](/api/classes/ArbitraryInterface).*
+
+### domainSize()
+
+```php
+domainSize(): ?int
+```
+
+The source's size: a map that sends two source values to one output
+walks both, so this is an upper bound on the distinct outputs.
+
+### enumerate()
+
+```php
+enumerate(): iterable
+```
+
+Every value of the domain, once each, as a shrinkable node with the
+same tree generate() would give it, in a fixed order that does
+not depend on any seed. Only meaningful when domainSize() is not
+null; an implementation may throw otherwise.
+
+*Documentation inherited from [`Enumerable`](/api/classes/Enumerable).*
+
+**Throws:**
+
+- `LogicException` — When the source has no finite domain (\Rasuvaeff\PropertyTesting\Arbitrary\domainSize() is null).
 

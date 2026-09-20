@@ -74,6 +74,9 @@ final readonly class FilteredArbitrary implements Enumerable
         return Domain::sizeOf($this->inner);
     }
 
+    /**
+     * @throws \LogicException When the source has no finite domain ({@see domainSize()} is null).
+     */
     #[\Override]
     public function enumerate(): iterable
     {

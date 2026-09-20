@@ -247,7 +247,7 @@ final class Gen
      * @template TElement
      *
      * @param ArbitraryInterface<TElement> $element
-     * @param null|Closure(TElement): (int|string) $by
+     * @param null|Closure(TElement): (int|string) $by The key each element is distinct by; null compares the values.
      *
      * @return ArbitraryInterface<list<TElement>>
      */
@@ -273,8 +273,8 @@ final class Gen
      *
      * @template T
      *
-     * @param ArbitraryInterface<T> $inner
-     * @param T ...$edgeCases
+     * @param ArbitraryInterface<T> $inner The generator to bias.
+     * @param T ...$edgeCases The boundary values, most-preferred minimum first; at least one.
      *
      * @return ArbitraryInterface<T>
      */
@@ -765,7 +765,7 @@ final class Gen
      *
      * @template T
      *
-     * @param Closure(Draw): T $body
+     * @param Closure(Draw): T $body Builds one value from the draws it takes through the seam.
      *
      * @return ArbitraryInterface<T>
      */
@@ -791,6 +791,9 @@ final class Gen
      *
      * A later note under the same label replaces the earlier one. Outside a
      * property run this throws, like {@see draw()}.
+     *
+     * @param string $label The note's name in the report.
+     * @param mixed $value What to show beside it, rendered like an argument.
      */
     public static function note(string $label, mixed $value): void
     {
@@ -1164,7 +1167,9 @@ final class Gen
      * stays the primitive for a machine whose model is a separate value;
      * this is the shape for the common case where the model is a few fields.
      *
-     * @param class-string $machine
+     * @param class-string $machine The machine class: its `#[Rule]` methods are the steps.
+     * @param int $minLength The fewest steps a sequence has.
+     * @param int $maxLength The most steps a sequence has.
      *
      * @return ArbitraryInterface<\Rasuvaeff\PropertyTesting\StateMachine\RuleSequence>
      */

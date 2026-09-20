@@ -34,7 +34,7 @@ use Rasuvaeff\PropertyTesting\Internal\Invoke;
 final readonly class RuleSequence implements \Stringable
 {
     /**
-     * @param list<RuleStep> $steps
+     * @param list<RuleStep> $steps The steps, in the order they were generated.
      * @param list<non-empty-string> $invariants The invariant methods, checked before the first step.
      */
     public function __construct(
@@ -58,6 +58,9 @@ final readonly class RuleSequence implements \Stringable
         StateMachine::check(new CommandSequence($machine, $this->steps), static fn(): object => $machine);
     }
 
+    /**
+     * The trace: every step as a call, in order.
+     */
     #[\Override]
     public function __toString(): string
     {

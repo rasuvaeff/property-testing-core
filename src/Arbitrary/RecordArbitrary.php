@@ -64,6 +64,8 @@ final readonly class RecordArbitrary implements Enumerable
 
     /**
      * First field varying slowest.
+     *
+     * @throws \LogicException When the source has no finite domain ({@see domainSize()} is null).
      */
     #[\Override]
     public function enumerate(): iterable
@@ -78,6 +80,7 @@ final readonly class RecordArbitrary implements Enumerable
             $shape[$key] = $field;
         }
 
+        /** @var array<string, Shrinkable> $fields */
         foreach (Domain::cartesian($shape) as $fields) {
             yield $this->tree($fields);
         }

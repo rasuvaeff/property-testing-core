@@ -24,6 +24,7 @@ interface SearchCorpus
      * currently has. An entry recorded under other parameter names, or a label
      * stored with the opposite direction, is not returned.
      *
+     * @param string $id The property id.
      * @param list<string> $parameterNames The property's current parameters, in order.
      *
      * @return Targets
@@ -34,7 +35,8 @@ interface SearchCorpus
      * Replace the stored best inputs of $id with $targets — the whole
      * document, since the pool it comes from already merged what was recalled.
      *
-     * @param Targets $targets
+     * @param string $id The property id.
+     * @param Targets $targets The pool, by label.
      * @param list<string> $parameterNames The property's current parameters, in order.
      */
     public function rememberTargets(string $id, array $targets, array $parameterNames): void;

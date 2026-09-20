@@ -25,6 +25,11 @@ final readonly class DrawnEngine implements \Random\Engine
     /** Bytes per draw: what a 64-bit {@see \Random\Randomizer} consumes at a time. */
     private const int BYTES = 8;
 
+    /**
+     * Eight bytes from the tape: one in-body draw of {@see Gen::bytes()}.
+     *
+     * @throws \RuntimeException Outside a property run, like {@see Gen::draw()}.
+     */
     #[\Override]
     public function generate(): string
     {

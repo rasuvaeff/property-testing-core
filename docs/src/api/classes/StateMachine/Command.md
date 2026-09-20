@@ -13,6 +13,8 @@ description: "A single operation in a stateful / model-based test."
 
 **Implements:** `Stringable`
 
+**Implemented by:** [`StateMachine\RuleStep`](/api/classes/StateMachine/RuleStep)
+
 A single operation in a stateful / model-based test.
 
 A command bundles the four responsibilities of model-based testing:

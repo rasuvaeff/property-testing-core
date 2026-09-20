@@ -22,6 +22,8 @@ final class Domain
     /**
      * The size of $arbitrary's domain, or null when it has none to count.
      *
+     * @param ArbitraryInterface $arbitrary Any generator; only an {@see Enumerable} answers.
+     *
      * @return ?int<1, max>
      */
     public static function sizeOf(ArbitraryInterface $arbitrary): ?int
@@ -33,7 +35,7 @@ final class Domain
      * The product of the domain sizes, saturating; null as soon as one
      * component has no finite domain.
      *
-     * @param iterable<ArbitraryInterface> $components
+     * @param iterable<ArbitraryInterface> $components The generators whose sizes multiply.
      *
      * @return ?int<1, max>
      */
@@ -55,8 +57,10 @@ final class Domain
     }
 
     /**
-     * @param int<1, max> $a
-     * @param int<1, max> $b
+     * `$a * $b`, saturating at `PHP_INT_MAX`.
+     *
+     * @param int<1, max> $a One factor.
+     * @param int<1, max> $b The other factor.
      *
      * @return int<1, max>
      */
@@ -66,8 +70,10 @@ final class Domain
     }
 
     /**
-     * @param int<1, max> $a
-     * @param int<0, max> $b
+     * `$a + $b`, saturating at `PHP_INT_MAX`.
+     *
+     * @param int<1, max> $a One term.
+     * @param int<0, max> $b The other term.
      *
      * @return int<1, max>
      */
@@ -82,11 +88,9 @@ final class Domain
      * combination of the keys before it, so an iterable that can only be
      * walked once must not be handed in — the enumerables re-create theirs.
      *
-     * @template TKey of array-key
+     * @param array<array-key, Enumerable> $components The domains to combine, keyed as the result is.
      *
-     * @param array<TKey, Enumerable> $components
-     *
-     * @return \Generator<int, array<TKey, Shrinkable>>
+     * @return \Generator<int, array<array-key, Shrinkable>>
      */
     public static function cartesian(array $components): \Generator
     {

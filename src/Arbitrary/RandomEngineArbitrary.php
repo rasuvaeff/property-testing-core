@@ -19,6 +19,8 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
 final readonly class RandomEngineArbitrary implements ArbitraryInterface
 {
     /**
+     * @param Random $random The run's stream; unused — the engine draws at body time, through the tape.
+     *
      * @return Shrinkable<\Random\Engine>
      */
     #[\Override]

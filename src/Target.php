@@ -57,6 +57,9 @@ final class Target
 
     /**
      * Push $label toward larger scores.
+     *
+     * @param string $label The score's name; one direction per label for the whole property.
+     * @param int|float $score This run's score; must be finite.
      */
     public static function maximize(string $label, int|float $score): void
     {
@@ -65,6 +68,9 @@ final class Target
 
     /**
      * Push $label toward smaller scores.
+     *
+     * @param string $label The score's name; one direction per label for the whole property.
+     * @param int|float $score This run's score; must be finite.
      */
     public static function minimize(string $label, int|float $score): void
     {

@@ -16,6 +16,9 @@ enum TargetDirection: string
 
     /**
      * Whether $candidate is an improvement on $best in this direction.
+     *
+     * @param float $candidate The score under consideration.
+     * @param float $best The best so far.
      */
     public function improves(float $candidate, float $best): bool
     {

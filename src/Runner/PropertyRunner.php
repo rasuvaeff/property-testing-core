@@ -414,6 +414,7 @@ final readonly class PropertyRunner
                 } else {
                     // Keyed by parameter name already — the cartesian walk
                     // keeps the keys it was given, in their order.
+                    /** @var array<string, Shrinkable> $trees */
                     $trees = $enumeration->current() ?? throw new \LogicException('The enumeration ended while still valid');
                     $enumeration->next();
                 }

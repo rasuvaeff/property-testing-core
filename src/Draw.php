@@ -35,6 +35,7 @@ final class Draw
 
     /**
      * @param int $seed The composite's captured seed; each position derives its own stream from it.
+     * @param EdgeCases $edgeCases The boundary-value mode of the run, carried into every position's stream.
      * @param list<Shrinkable> $tape Nodes to replay by position; draws past its end generate anew.
      *
      * @internal Constructed by {@see Arbitrary\CompositeArbitrary}.
@@ -55,7 +56,7 @@ final class Draw
      *
      * @template T
      *
-     * @param ArbitraryInterface<T> $arbitrary
+     * @param ArbitraryInterface<T> $arbitrary What to draw when the tape has no node for this position.
      *
      * @return T
      */

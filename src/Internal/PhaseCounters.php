@@ -33,6 +33,10 @@ final class PhaseCounters
     /** @var array<string, array<string, int>> */
     public array $intersections = [];
 
+    /**
+     * @param ?int $domainSize The enumerated domain's size, when the phase walks instead of samples.
+     * @param ?string $exhaustiveDeclined Why an exhaustive run samples after all; null otherwise.
+     */
     public function __construct(
         private readonly ?int $domainSize,
         private readonly ?string $exhaustiveDeclined,
@@ -41,8 +45,8 @@ final class PhaseCounters
     /**
      * Account for a passing run.
      *
-     * @param list<string> $labels
-     * @param array<string, list<string>> $tabulated
+     * @param list<string> $labels The labels the run recorded.
+     * @param array<string, list<string>> $tabulated The tables the run recorded, tags by table.
      */
     public function passed(array $labels, array $tabulated): void
     {
@@ -72,7 +76,10 @@ final class PhaseCounters
     }
 
     /**
-     * @param array<array-key, float> $requirements
+     * The counters as the statistics a result carries.
+     *
+     * @param array<array-key, float> $requirements The `cover()` thresholds, by label.
+     * @param ?SearchReport $search What the search phase amounted to, when one ran.
      */
     public function statistics(array $requirements, ?SearchReport $search = null): RunStatistics
     {

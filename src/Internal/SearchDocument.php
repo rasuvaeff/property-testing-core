@@ -24,8 +24,11 @@ final class SearchDocument
     private function __construct() {}
 
     /**
-     * @param Targets $targets
-     * @param list<string> $parameterNames
+     * The document for $targets, or null when nothing in it is representable.
+     *
+     * @param string $id The property id.
+     * @param Targets $targets The pool, by label.
+     * @param list<string> $parameterNames The property's parameters, in order.
      */
     public static function encode(string $id, array $targets, array $parameterNames): ?string
     {
@@ -62,7 +65,11 @@ final class SearchDocument
     }
 
     /**
-     * @param list<string> $parameterNames
+     * The targets a document holds; corrupt or foreign content, and entries
+     * that do not fit the property's parameters, decode to nothing.
+     *
+     * @param string $content The document.
+     * @param list<string> $parameterNames The property's parameters, in order.
      *
      * @return Targets
      */

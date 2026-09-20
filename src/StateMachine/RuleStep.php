@@ -38,6 +38,8 @@ final readonly class RuleStep implements Command
 
     /**
      * True before a machine exists (generation), the guard's answer once it does.
+     *
+     * @param mixed $model The machine, or null at generation time.
      */
     #[\Override]
     public function preCondition(mixed $model): bool
@@ -49,6 +51,11 @@ final readonly class RuleStep implements Command
         return (bool) Invoke::method($model, $this->precondition);
     }
 
+    /**
+     * The machine itself: its state is its own fields, advanced by {@see run()}.
+     *
+     * @param mixed $model The machine, or null at generation time.
+     */
     #[\Override]
     public function nextState(mixed $model): mixed
     {
@@ -57,6 +64,11 @@ final readonly class RuleStep implements Command
 
     /**
      * Runs the rule, then every invariant, against $system — the machine.
+     *
+     * @param mixed $model The machine, unused: the step acts on $system, which is the same object.
+     * @param mixed $system The machine.
+     *
+     * @throws \LogicException When $system is not an object.
      */
     #[\Override]
     public function run(mixed $model, mixed $system): mixed
@@ -74,12 +86,21 @@ final readonly class RuleStep implements Command
         return null;
     }
 
+    /**
+     * Always true: the rule's exception is the failed postcondition.
+     *
+     * @param mixed $model The machine.
+     * @param mixed $result What {@see run()} returned — null.
+     */
     #[\Override]
     public function postCondition(mixed $model, mixed $result): bool
     {
         return true;
     }
 
+    /**
+     * The step as a call: `rule(name: value, ...)`.
+     */
     #[\Override]
     public function __toString(): string
     {

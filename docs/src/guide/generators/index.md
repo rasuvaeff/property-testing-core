@@ -44,12 +44,15 @@ never treats a non-void-returning method as a test.
 | `Gen::bytes($minLength, $maxLength)` | raw byte strings (bytes 0..255) | toward `''`, then by length, then each byte toward `"\x00"` |
 | `Gen::arrayOf($element, $minSize, $maxSize)` | lists of `$element`, size 0..100 by default | toward `[]`, then by length, then each element |
 | `Gen::nonEmptyArrayOf($element, $maxSize)` | non-empty lists | by length (never below 1), then each element |
-| `Gen::uniqueArrayOf($element, $minSize, $maxSize)` | lists of pairwise-distinct elements | like `arrayOf`, but element candidates colliding with another element are skipped |
+| `Gen::uniqueArrayOf($element, $minSize, $maxSize, $by)` | lists of pairwise-distinct elements — by `===` on the values, or with `by: fn ($v) => $v->id` by the `int\|string` key the closure returns (any other key type is refused at generation time) | like `arrayOf`, but element candidates colliding with another element (or key) are skipped |
 | `Gen::dictOf($key, $value, $minSize, $maxSize)` | maps with distinct keys from `$key` (int/string) and values from `$value`, size 0..100 by default | toward `[]`, then by size, then each value (keys fixed) |
 | `Gen::record($shape)` | fixed-shape map `['field' => $arb, ...]` | each field via its arbitrary, key set fixed |
 | `Gen::elements($array)` | one **value** from an array (array form of `oneOf`); an `ArbitraryInterface` among them is refused | toward earlier-listed distinct values |
 | `Gen::enum(SomeEnum::class)` | `OneOfArbitrary` over the enum's cases | toward earlier-declared cases (declare simpler cases first) |
 | `Gen::constant($value)` | always `$value` | does not shrink |
+| `Gen::withEdgeCases($inner, ...$edgeCases)` | `$inner` with author-supplied [edge values](/guide/generators/boundary-bias#your-own-edge-values): one draw in five is one of them | through the edge values first, in the listed order, then the inner tree |
+| `Gen::composite($body)` | a value built by a body that draws dependent values through a `Draw` — [composite generators](/guide/generators/composite) | the draws, earliest first; later draws re-drawn through the new range |
+| `Gen::randomEngine()` / `Gen::randomizer()` | a `Random\Engine` (or the `Randomizer` over it) drawn from the tape — [shrinkable randomness](/guide/generators/randomness) | each engine call is a `draw#N` of eight bytes shrinking toward `"\0"` |
 | `Gen::char()` | a single printable ASCII character | toward `a` |
 | `Gen::uuid()` | RFC 4122 v4 UUID strings | does not shrink |
 | `Gen::datetime($min, $max)` | UTC `DateTimeImmutable`, timestamp in `[$min, $max]` | toward the Unix epoch, clamped |
@@ -72,6 +75,7 @@ never treats a non-void-returning method as a test.
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators). **Write the pattern without delimiters** — `[a-z]+`, not `/[a-z]+/`; a delimited one is refused rather than compiled with the delimiters as literals. `.` and a negated class draw from printable ASCII (`0x20`..`0x7E`, never a newline) | shorter/simpler matches (via the compiled trees) |
 | `Gen::subset($values, $minSize, $maxSize)` | subsets of a fixed ordered set — distinct members of `$values` in source order; duplicates in the source are rejected | size first (toward the empty set), then each kept element toward earlier source positions — the minimal subset is a short prefix |
 | `Gen::commands($initialModel, $commandGenerators, $minLength, $maxLength)` | valid command sequences for stateful testing — see [State machine](/guide/state-machine/concepts) | drops command blocks, then simplifies each command |
+| `Gen::rules($machine, $minLength, $maxLength)` | a `RuleSequence` over a rule-based machine class — see [Rule-based machines](/guide/state-machine/rules) | like `commands`: drops steps, then simplifies each step's arguments |
 | `Gen::swarm($arbitrary)` | swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants — see [Swarm testing](/guide/generators/swarm) | inside the subset the case came from, never widening back |
 | `Gen::forClass($class, $overrides, $skipInvalid, $maxDepth)` | instances built through a constructor, one generator per parameter: an override, then the `@param` psalm type (`int<0, 100>` beats a bare `int`), then the native type — see [Generating from a class](/guide/generators/from-a-class) | through each parameter's own tree |
 | `Gen::forParameters($reflectionFunction, $overrides)` | the same resolution over any function, method or closure, returned as `array<string, ArbitraryInterface>` in signature order; overrides may be partial | per parameter, as above |

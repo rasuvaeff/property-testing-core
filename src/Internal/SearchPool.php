@@ -41,7 +41,10 @@ final class SearchPool
     /**
      * Offer a passing input's score for $label; true when it is a new best.
      *
-     * @param array<string, Shrinkable> $trees
+     * @param string $label The target label.
+     * @param TargetDirection $direction Which way the label is pushed.
+     * @param float $score The input's score.
+     * @param array<string, Shrinkable> $trees The input, as the trees its shrink descent needs.
      */
     public function offer(string $label, TargetDirection $direction, float $score, array $trees): bool
     {
@@ -67,7 +70,9 @@ final class SearchPool
      * Seed the pool with stored inputs; they count as neither improvements
      * nor evaluations, and shrink only through what the search regenerates.
      *
-     * @param list<array{score: float, arguments: array<string, mixed>}> $entries
+     * @param string $label The target label.
+     * @param TargetDirection $direction Which way the label is pushed.
+     * @param list<array{score: float, arguments: array<string, mixed>}> $entries The stored inputs.
      */
     public function recall(string $label, TargetDirection $direction, array $entries): void
     {
@@ -93,6 +98,9 @@ final class SearchPool
      * An input to mutate for $label, biased toward the better ones: the
      * smaller of two uniform picks.
      *
+     * @param string $label A label with at least one entry.
+     * @param Random $random The run's stream.
+     *
      * @return array<string, Shrinkable>
      */
     public function pick(string $label, Random $random): array
@@ -104,21 +112,41 @@ final class SearchPool
         return $entries[$index]['trees'];
     }
 
+    /**
+     * The best score of $label, or null when none was offered.
+     *
+     * @param string $label The target label.
+     */
     public function best(string $label): ?float
     {
         return $this->entries[$label][0]['score'] ?? null;
     }
 
+    /**
+     * How many times the best of $label improved.
+     *
+     * @param string $label The target label.
+     */
     public function improvements(string $label): int
     {
         return $this->improvements[$label] ?? 0;
     }
 
+    /**
+     * How many stored inputs seeded $label.
+     *
+     * @param string $label The target label.
+     */
     public function recalledCount(string $label): int
     {
         return $this->recalled[$label] ?? 0;
     }
 
+    /**
+     * The direction $label was offered with, or null when it never was.
+     *
+     * @param string $label The target label.
+     */
     public function direction(string $label): ?TargetDirection
     {
         return $this->directions[$label] ?? null;

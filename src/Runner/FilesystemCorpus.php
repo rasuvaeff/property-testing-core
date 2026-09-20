@@ -232,6 +232,7 @@ final readonly class FilesystemCorpus implements Corpus, SearchCorpus
      * apart from the regression document, so neither reader mistakes the
      * other's entries for its own.
      *
+     * @param string $id The property id.
      * @param list<string> $parameterNames The property method's current parameters, in order.
      *
      * @return Targets
@@ -248,7 +249,8 @@ final readonly class FilesystemCorpus implements Corpus, SearchCorpus
      * Replaces the search document of $id, under the same lock and with the
      * same atomic write as the regression document; an empty pool removes it.
      *
-     * @param Targets $targets
+     * @param string $id The property id.
+     * @param Targets $targets The pool, by label.
      * @param list<string> $parameterNames The property method's current parameters, in order.
      *
      * @throws \RuntimeException When the document could not be written.

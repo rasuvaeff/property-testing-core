@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 — 2026-09-28
 
 - **Changed:** a shrink candidate is accepted only when it fails the same way
   the original run did — the same exception class **and** the same place in the

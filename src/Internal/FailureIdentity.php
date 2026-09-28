@@ -43,7 +43,7 @@ final readonly class FailureIdentity
         private ?string $class,
         private ?string $file,
         private string $boundary,
-        private ?string $site,
+        private ?int $site,
     ) {}
 
     /**
@@ -64,10 +64,10 @@ final readonly class FailureIdentity
         $file = self::propertyFile($propertyId);
 
         return new self(
-            class: $failure === null ? null : $failure::class,
+            class: $failure instanceof \Throwable ? $failure::class : null,
             file: $file,
             boundary: $boundary,
-            site: $failure === null ? null : self::site($failure, $file, $boundary),
+            site: $failure instanceof \Throwable ? self::site($failure, $file, $boundary) : null,
         );
     }
 
@@ -76,7 +76,7 @@ final readonly class FailureIdentity
      */
     public function matches(?\Throwable $candidate): bool
     {
-        if ($this->class === null || $candidate === null) {
+        if ($this->class === null || !$candidate instanceof \Throwable) {
             return true;
         }
 
@@ -94,29 +94,35 @@ final readonly class FailureIdentity
     }
 
     /**
-     * Where in $file the failure was raised: the throwable's own line when the
+     * Which line of $file raised the failure: the throwable's own line when the
      * body threw it, otherwise the line of the innermost frame that is still in
      * the body — an assertion helper is entered from the line the body wrote.
+     *
+     * A line is enough to tell two places apart because the file is fixed for
+     * the whole identity: the frame scan only ever matches $file, and a
+     * throwable from anywhere else has no place in the property at all.
      */
-    private static function site(\Throwable $failure, ?string $file, string $boundary): ?string
+    private static function site(\Throwable $failure, ?string $file, string $boundary): ?int
     {
-        if ($file === null) {
-            return null;
-        }
-
+        // An unknown file needs no guard of its own: it is neither the file the
+        // throwable names nor any frame's, so the search below finds nothing.
         if ($failure->getFile() === $file) {
-            return $file . ':' . $failure->getLine();
+            return $failure->getLine();
         }
 
         foreach ($failure->getTrace() as $frame) {
-            $frameFile = $frame['file'] ?? null;
+            if (!isset($frame['file'], $frame['line'])) {
+                // An internal call — a property method reached through
+                // `ReflectionMethod::invoke()` — has no place of its own.
+                continue;
+            }
 
-            if ($frameFile === $boundary) {
+            if ($frame['file'] === $boundary) {
                 return null;
             }
 
-            if ($frameFile === $file) {
-                return $file . ':' . ($frame['line'] ?? 0);
+            if ($frame['file'] === $file) {
+                return $frame['line'];
             }
         }
 
@@ -126,8 +132,10 @@ final readonly class FailureIdentity
     /**
      * The file of the class an id names, or null when the id does not name a
      * loaded one. Loading is deliberately not attempted: an id is an arbitrary
-     * string an adapter chose, and autoloading it would run a class map lookup
-     * — or an autoloader with side effects — for every property that fails.
+     * string an adapter chose, and autoloading it would put every failing
+     * property's id through the autoloader chain — a class map lookup at best,
+     * an autoloader with side effects at worst. A property that runs has its
+     * class loaded already; anything else is not a class.
      */
     private static function propertyFile(string $propertyId): ?string
     {

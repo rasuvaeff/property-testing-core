@@ -77,17 +77,84 @@ final class FailureIdentityTest
         Assert::false($identity->matches($anotherCall));
     }
 
+    public function aCallWithoutAPlaceOfItsOwnDoesNotEndTheSearch(): void
+    {
+        // `array_map` calls the helper from internal code, so the frame of that
+        // call has no file at all. The search steps over it and reaches the line
+        // of this file that called in — giving up there would place two calls
+        // nowhere and make them one failure.
+        $original = $this->caught(static fn(): array => array_map(FailingHelper::raise(...), ['a']));
+        $another = $this->caught(static fn(): array => array_map(FailingHelper::raise(...), ['b']));
+
+        Assert::false(FailureIdentity::of(self::class . '::property', $original, self::ELSEWHERE)->matches($another));
+    }
+
     public function anIdThatNamesNoLoadedClassLeavesTheClassAsTheWholeIdentity(): void
     {
         $original = new \RuntimeException('a');
         $candidate = new \RuntimeException('b');
+
+        $raisedElsewhere = $this->caught(static fn(): never => FailingHelper::raise('a'));
+        $raisedElsewhereToo = $this->caught(static fn(): never => FailingHelper::raise('b'));
 
         foreach (['property', 'Rasuvaeff\\PropertyTesting\\Tests\\Internal\\NoSuchTest::property'] as $id) {
             $identity = FailureIdentity::of($id, $original, self::ELSEWHERE);
 
             Assert::true($identity->matches($candidate));
             Assert::false($identity->matches(new \LogicException('b')));
+
+            // Not even a frame of this file is a place without a file to compare it to.
+            Assert::true(FailureIdentity::of($id, $raisedElsewhere, self::ELSEWHERE)->matches($raisedElsewhereToo));
         }
+    }
+
+    public function anIdIsNeverPutThroughTheAutoloader(): void
+    {
+        // A failing property's id reaches this code on every descent, and an id
+        // is an arbitrary string: resolving it must not run autoloaders.
+        /** @var list<string> $attempts */
+        $attempts = [];
+        $autoloader = static function (string $class) use (&$attempts): void {
+            $attempts[] = $class;
+        };
+
+        spl_autoload_register($autoloader);
+
+        try {
+            FailureIdentity::of(self::class . 'NoSuchClass::property', new \RuntimeException('a'), self::ELSEWHERE);
+        } finally {
+            spl_autoload_unregister($autoloader);
+        }
+
+        Assert::same($attempts, []);
+    }
+
+    public function anIdWhoseClassHasNoFileLeavesTheClassAsTheWholeIdentity(): void
+    {
+        // An internal class is loaded and has no file: a property cannot be
+        // written in one, and the place is unreadable rather than wrong.
+        $original = new \RuntimeException('a');
+        $candidate = new \RuntimeException('b');
+
+        $identity = FailureIdentity::of(\ArrayObject::class . '::property', $original, self::ELSEWHERE);
+
+        Assert::true($identity->matches($candidate));
+        Assert::false($identity->matches(new \LogicException('b')));
+    }
+
+    public function anOriginalWithoutAPlaceAcceptsACandidateThatHasOne(): void
+    {
+        // The identity is only as sharp as what it could read about the original:
+        // a failure the engine raised, or one whose stack reaches the engine
+        // before it reaches the property, is compared on its class alone — and a
+        // candidate whose place IS readable must not be refused for having one.
+        $original = $this->caught(static fn(): never => EngineStand::raise('a'));
+        $boundary = (string) (new \ReflectionClass(EngineStand::class))->getFileName();
+
+        $identity = FailureIdentity::of(self::class . '::property', $original, $boundary);
+
+        Assert::true($identity->matches(new \RuntimeException('b')));
+        Assert::false($identity->matches(new \LogicException('b')));
     }
 
     public function theEngineBoundaryEndsTheSearchForThePlace(): void

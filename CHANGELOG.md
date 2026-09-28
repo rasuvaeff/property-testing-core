@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- **Changed:** a shrink candidate is accepted only when it fails the same way
+  the original run did — the same exception class **and** the same place in the
+  property's own file. A body that can fail in more than one place (two
+  assertions, or an assertion beside a call that throws the same type) used to
+  offer the descent failures it could not tell apart, so the reported minimal
+  counterexample could belong to a bug the run never found, with nothing in the
+  output saying so. The place is the line of the property's own file in the
+  failure's stack, never the throw itself: an assertion library raises every
+  assertion of a body from one line of its own. Where the place cannot be read —
+  an id that names no loaded class, a body written in another file (a trait, an
+  included fixture), a failure the engine raised rather than the body — the
+  exception class stays the whole criterion. Minimised counterexamples may
+  therefore differ from 1.0.0 on such a body (compatibility policy §2: what a
+  descent minimises to is not under SemVer); a corpus recorded before this
+  release replays unchanged.
+
 ## 1.0.0 — 2026-09-20
 
 The stability release. The `@api` surface is that of 0.12.0, unchanged: no

@@ -137,6 +137,21 @@ make release-check
 - `Random` uses an object-scoped `\Random\Randomizer` (MT19937), NOT the
   global `mt_srand`/`mt_rand` — same seed, same sequence, regardless of
   intervening random calls.
+- **A shrink candidate is accepted on failure identity, not on failure.**
+  `FailureIdentity` (built once per descent, compared against the ORIGINAL
+  failure and never against the last accepted one) is the exception class plus
+  the place in the property's own file: the throwable's own line when the body
+  threw it, otherwise the innermost frame in that file, and the scan stops at
+  `PropertyRunner`'s own file so frames beyond the engine — an adapter's
+  `check()` call sits in the test file too — name no place. Never compare the
+  throwable's `getFile()`/`getLine()` alone: PHPUnit raises every constraint
+  failure from `Constraint::fail()` and Testo every comparison from `Assert`,
+  so that criterion tells two assertions of one body apart from nothing. Never
+  compare traces or frame counts either: a failure reached through recursion
+  arrives on a stack of a different height on every input, and a criterion that
+  noticed would refuse every smaller candidate and report the input it started
+  from. When the place is unknown on either side, the class is the whole
+  identity, deliberately — the pre-1.1 behaviour, not a stall.
 - In-body draw shrinking is replay-tape-based and intentionally does NOT
   re-validate replayed nodes (fast-check `gen()` model). A regrown tape breaks
   the finite-tree termination argument, so accepted steps are capped by

@@ -106,11 +106,19 @@ The `Changed:` line diffs the original against the shrunk counterexample —
 arguments the shrinker left untouched are omitted. `trial(s)` counts every
 candidate the shrinker ran (accepted and rejected); `shrink step(s)` counts
 only the accepted ones. A candidate is accepted only when it fails the same way
-the original run did — the same exception class — so the descent minimises the
-bug that was found instead of sliding into a different one (a smaller input that
-trips a `TypeError` in the body's setup is not a smaller counterexample of an
-assertion failure). Reproduce the exact run by pinning the reported seed in
-`PropertyConfig`.
+the original run did — the same exception class, raised at the same place in the
+property's own file — so the descent minimises the bug that was found instead of
+sliding into a different one (a smaller input that trips a `TypeError` in the
+body's setup is not a smaller counterexample of an assertion failure, and neither
+is one that trips the body's *other* assertion). The place is the line of the
+property's own file in the failure's stack, which is not where the exception was
+raised: an assertion library raises every assertion of a body from one line of
+its own, so that line would tell two assertions apart from nothing, while the
+line that called in is the assertion the body wrote. Where the place cannot be read —
+a property id that names no loaded class, a body written in another file (a
+trait, an included fixture), a failure the engine raised rather than the body —
+the exception class is the whole criterion, as it was before. Reproduce the exact
+run by pinning the reported seed in `PropertyConfig`.
 
 See [`examples/standalone_runner.php`](examples/standalone_runner.php) for the
 full runnable script.

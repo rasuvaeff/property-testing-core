@@ -30,6 +30,7 @@ use Rasuvaeff\PropertyTesting\GaveUpException;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
+use Rasuvaeff\PropertyTesting\Internal\FailureIdentity;
 use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Internal\ReplayVerdict;
 use Rasuvaeff\PropertyTesting\Internal\SearchPool;
@@ -1029,11 +1030,12 @@ final readonly class PropertyRunner
      *        {@see ShrinkMode::Bounded}.
      * @param list<PropertyListener> $listeners
      * @param ?\Throwable $failure What the original run failed with. A candidate is accepted only
-     *        when it fails the same way — the same exception class — so the descent minimises
-     *        the bug that was found rather than sliding into a different one (a smaller input
-     *        that trips a `TypeError` in the body's setup is not a smaller counterexample of an
-     *        assertion failure). Null, or a run that failed without an exception, accepts any
-     *        failure.
+     *        when it fails the same way — the same exception class, raised at the same place in
+     *        the property's own file ({@see FailureIdentity}) — so the descent minimises the bug
+     *        that was found rather than sliding into a different one (a smaller input that trips
+     *        a `TypeError` in the body's setup is not a smaller counterexample of an assertion
+     *        failure, and neither is one that trips the body's *other* assertion). Null, or a
+     *        run that failed without an exception, accepts any failure.
      * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string, 6: array<string, mixed>, 7: array<string, Shrinkable>, 8: list<Shrinkable>} The
      *         minimised arguments, the minimised draws (as `draw#N` pseudo-arguments), the number
      *         of accepted shrink steps, the failure of the last accepted candidate (null when
@@ -1060,6 +1062,11 @@ final readonly class PropertyRunner
         if ($mode === ShrinkMode::Off) {
             return [$this->values($trees), $this->drawArguments($tape), 0, null, 0, '', $notes, $trees, $tape];
         }
+
+        // Built once: it reads the original failure's throw site, and every
+        // candidate is measured against that one identity rather than against
+        // the last accepted failure, so a descent cannot drift a step at a time.
+        $identity = FailureIdentity::of($propertyId, $failure, __FILE__);
 
         $deadlineNs = $budgetMs === null ? null : $this->clock->nanoseconds() + $budgetMs * 1_000_000;
         $current = $trees;
@@ -1104,7 +1111,7 @@ final readonly class PropertyRunner
                     [$outcome, $recorded, $trialNotes] = $this->trial($executor, $trial, $currentTape, $random);
                     ++$trials;
 
-                    $accepted = $this->failsTheSameWay($outcome, $failure);
+                    $accepted = $this->failsTheSameWay($outcome, $identity);
                     $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, $accepted));
 
                     if ($accepted) {
@@ -1147,7 +1154,7 @@ final readonly class PropertyRunner
                     [$outcome, $recorded, $trialNotes] = $this->trial($executor, $current, $trialTape, $random);
                     ++$trials;
 
-                    $accepted = $this->failsTheSameWay($outcome, $failure);
+                    $accepted = $this->failsTheSameWay($outcome, $identity);
                     $this->emit($listeners, new ShrinkTried($propertyId, 'draw#' . ($position + 1), $candidate->value, $accepted));
 
                     if ($accepted) {
@@ -1199,20 +1206,14 @@ final readonly class PropertyRunner
     }
 
     /**
-     * Whether a shrink trial counts as a smaller counterexample: it failed,
-     * and with the same kind of failure the original run had (see
-     * {@see shrink()}). Without an original exception to compare against, or
-     * without one on the trial, any failure counts.
+     * Whether a shrink trial counts as a smaller counterexample: it failed, and
+     * with the same failure the original run had — the same exception class,
+     * raised at the same place in the property's own file. What "the same
+     * place" means, and when it is unknowable, is {@see FailureIdentity}.
      */
-    private function failsTheSameWay(TrialOutcome $outcome, ?\Throwable $original): bool
+    private function failsTheSameWay(TrialOutcome $outcome, FailureIdentity $identity): bool
     {
-        if (!$outcome->isFailed()) {
-            return false;
-        }
-
-        return !$original instanceof \Throwable
-            || !$outcome->failure instanceof \Throwable
-            || $outcome->failure::class === $original::class;
+        return $outcome->isFailed() && $identity->matches($outcome->failure);
     }
 
     /**

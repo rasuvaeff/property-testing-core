@@ -9,14 +9,18 @@
   offer the descent failures it could not tell apart, so the reported minimal
   counterexample could belong to a bug the run never found, with nothing in the
   output saying so. The place is the line of the property's own file in the
-  failure's stack, never the throw itself: an assertion library raises every
-  assertion of a body from one line of its own. Where the place cannot be read —
+  failure's stack, which is not where the exception was raised: an assertion
+  library raises every assertion of a body from one line of its own, while the
+  line that called in is the assertion the body wrote. Where the place cannot be read —
   an id that names no loaded class, a body written in another file (a trait, an
   included fixture), a failure the engine raised rather than the body — the
   exception class stays the whole criterion. Minimised counterexamples may
   therefore differ from 1.0.0 on such a body (compatibility policy §2: what a
   descent minimises to is not under SemVer); a corpus recorded before this
-  release replays unchanged.
+  release replays unchanged. Worth knowing for stateful properties: the
+  rule-based façade's `#[Rule]` methods live in the test file, so a command
+  sequence whose failure moves from one rule to another now stops the descent
+  rather than being minimised into the other rule's bug.
 
 ## 1.0.0 — 2026-09-20
 

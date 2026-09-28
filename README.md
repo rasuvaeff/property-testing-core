@@ -111,9 +111,10 @@ property's own file — so the descent minimises the bug that was found instead 
 sliding into a different one (a smaller input that trips a `TypeError` in the
 body's setup is not a smaller counterexample of an assertion failure, and neither
 is one that trips the body's *other* assertion). The place is the line of the
-property's file in the failure's stack, not the throw itself: an assertion
-library raises every assertion of a body from one line of its own, so that line
-would tell two assertions apart from nothing. Where the place cannot be read —
+property's own file in the failure's stack, which is not where the exception was
+raised: an assertion library raises every assertion of a body from one line of
+its own, so that line would tell two assertions apart from nothing, while the
+line that called in is the assertion the body wrote. Where the place cannot be read —
 a property id that names no loaded class, a body written in another file (a
 trait, an included fixture), a failure the engine raised rather than the body —
 the exception class is the whole criterion, as it was before. Reproduce the exact

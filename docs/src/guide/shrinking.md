@@ -50,6 +50,33 @@ step(s)` counts only the accepted descents. You can cap the descent with
 get the original counterexample unchanged — see
 [Bounding shrink work](/guide/controlling-runs/bounding-shrink).
 
+## What counts as still failing
+
+"Still fails" is stricter than *fails*. A candidate is accepted only when it
+fails **the same way** the original run did: the same exception class, raised at
+the same place in the property's own file. A body can fail in more than one place
+— two assertions, or an assertion beside a call that throws the same type — and
+without that the descent would leave the failure it was given and minimise
+another one, reporting a minimal counterexample for a bug the run never found.
+
+The place is the line of the property's own file in the failure's stack, which is
+not the same as where the exception was raised: an assertion library raises every
+assertion of a body from one line of its own (PHPUnit from `Constraint::fail()`,
+Testo from `Assert`), so that line tells two assertions apart from nothing, while
+the line that called in is exactly the assertion the body wrote.
+
+Where the place cannot be read, the exception class is the whole criterion — the
+engine never guesses one, because a criterion that refused candidates failing
+exactly as the original did would stall the descent on the input it started from.
+That is the case when the property id names no loaded class (an adapter-supplied
+id string), when the body is written in another file (a trait, an included
+fixture), and when the failure was raised by the engine rather than by the body.
+
+A stateful property is worth a note here: with the rule-based façade the
+`#[Rule]` methods live in the test file, so a command sequence whose failure
+moves from one rule to another is now a different failure, and the descent stops
+before it.
+
 ## The termination invariant
 
 A shrink tree is only useful if walking it is guaranteed to stop. Two rules,
@@ -77,3 +104,29 @@ list of candidates, and `map($fn)` to transform an entire existing tree.
 Building one from scratch — including the exact discipline the termination
 invariant requires — is covered with a worked example in
 [Custom arbitrary](/guide/generators/custom-arbitrary).
+
+## Notes on the counterexample
+
+A shrunk counterexample renders its arguments and its `draw#N` values. An
+intermediate value the body computed — the parsed form of a string, the delay
+a backoff chose, the index a search landed on — is invisible unless the
+assertion message carries it, and debugging then means re-running with a
+`var_dump` in the body. `Gen::note('encoded', $encoded)` attaches such a
+value to the current run; the counterexample keeps the notes of the original
+failing run and of the minimised one
+([`CounterExample::$originalNotes`](/api/classes/CounterExample) /
+`$shrunkNotes`), and the message renders the minimised run's after the
+arguments:
+
+```
+  Shrunk:   s="a" (2 shrink step(s), 5 trial(s))
+  Notes:    encoded="YQ=="
+  Failure:  mismatch
+```
+
+Notes are kept only for the run being reported — a passing run's are
+dropped, a rejected shrink candidate's are not adopted — so the cost is one
+array per run. They are not stored in the corpus: a replay recomputes them.
+And they are not labels: `Classify` aggregates over the whole run set, a note
+belongs to one run. Outside a run, `Gen::note()` throws like `Gen::draw()`.
+

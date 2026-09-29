@@ -41,6 +41,15 @@ final readonly class DistributionReport
      * @param int $skips Runs the environment refused. Counted inside `$attempts` like discards are,
      *        and apart from `$discards` for the same reason the engine separates the two budgets:
      *        a distribution that is mostly skips says nothing about the generators.
+     * @param array<string, list<LabelShare>> $tables The `Classify::tabulate()` tables, by name:
+     *        one share per tag, ordered like `$labels`. Never carries a requirement — a table is
+     *        observation, not a gate.
+     * @param array<string, list<LabelShare>> $intersections Per table, the share of checks that hit
+     *        each pair of its tags together, the pair rendered `tagA & tagB` in sorted order. Only
+     *        pairs that occurred at least once; a table whose runs never hit two tags at once has an
+     *        empty list here.
+     * @param ?int $domainSize The parameter domain enumerated instead of sampled; null when sampled.
+     * @param ?string $exhaustiveDeclined Why an exhaustive run sampled after all; null otherwise.
      */
     public function __construct(
         public int $attempts,
@@ -49,6 +58,10 @@ final readonly class DistributionReport
         public array $labels,
         public bool $coverageAssessed,
         public int $skips = 0,
+        public array $tables = [],
+        public array $intersections = [],
+        public ?int $domainSize = null,
+        public ?string $exhaustiveDeclined = null,
     ) {}
 
     /**
@@ -72,10 +85,15 @@ final readonly class DistributionReport
             );
         }
 
-        usort(
-            $labels,
-            static fn(LabelShare $a, LabelShare $b): int => [$b->count, $a->label] <=> [$a->count, $b->label],
-        );
+        usort($labels, self::byCountThenLabel(...));
+
+        $tables = [];
+        $intersections = [];
+
+        foreach ($statistics->tables as $table => $tags) {
+            $tables[$table] = self::shares($tags, $statistics->checks);
+            $intersections[$table] = self::shares($statistics->intersections[$table] ?? [], $statistics->checks);
+        }
 
         return new self(
             attempts: $statistics->attempts,
@@ -84,7 +102,36 @@ final readonly class DistributionReport
             labels: $labels,
             coverageAssessed: $coverageAssessed,
             skips: $statistics->skips,
+            tables: $tables,
+            intersections: $intersections,
+            domainSize: $statistics->domainSize,
+            exhaustiveDeclined: $statistics->exhaustiveDeclined,
         );
+    }
+
+    /**
+     * One share per counted key, ordered like the labels.
+     *
+     * @param array<array-key, int> $counts
+     *
+     * @return list<LabelShare>
+     */
+    private static function shares(array $counts, int $checks): array
+    {
+        $shares = [];
+
+        foreach ($counts as $tag => $count) {
+            $shares[] = new LabelShare(label: (string) $tag, count: $count, percent: self::percent($count, $checks));
+        }
+
+        usort($shares, self::byCountThenLabel(...));
+
+        return $shares;
+    }
+
+    private static function byCountThenLabel(LabelShare $a, LabelShare $b): int
+    {
+        return [$b->count, $a->label] <=> [$a->count, $b->label];
     }
 
     /**
@@ -137,7 +184,7 @@ final readonly class DistributionReport
      */
     public function toArray(): array
     {
-        return [
+        $data = [
             'attempts' => $this->attempts,
             'discards' => $this->discards,
             'discardPercent' => $this->discardPercent(),
@@ -155,6 +202,36 @@ final readonly class DistributionReport
                 $this->labels,
             ),
         ];
+
+        // Only a property that tabulates changes the shape: the frozen keys
+        // above are what every consumer sees, tables are a documented addition.
+        if ($this->tables !== []) {
+            $data['tables'] = [];
+
+            foreach ($this->tables as $table => $tags) {
+                $data['tables'][$table] = [
+                    'tags' => array_map($this->tagShare(...), $tags),
+                    'intersections' => array_map($this->tagShare(...), $this->intersections[$table] ?? []),
+                ];
+            }
+        }
+
+        // Likewise only for a run that asked to enumerate: what it got.
+        if ($this->domainSize !== null) {
+            $data['exhaustive'] = ['domainSize' => $this->domainSize];
+        } elseif ($this->exhaustiveDeclined !== null) {
+            $data['exhaustive'] = ['declined' => $this->exhaustiveDeclined];
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return array{label: string, count: int, percent: float}
+     */
+    private function tagShare(LabelShare $share): array
+    {
+        return ['label' => $share->label, 'count' => $share->count, 'percent' => $share->percent];
     }
 
     /**

@@ -25,6 +25,37 @@ final class EnvironmentOverridesTest
         Assert::null(EnvironmentOverrides::edgeCases($value));
         Assert::null(EnvironmentOverrides::flag($value));
         Assert::null(EnvironmentOverrides::string($value));
+        Assert::null(EnvironmentOverrides::count('PROPERTY_SEARCH_RUNS', $value));
+    }
+
+    public function countIsANonNegativeInteger(): void
+    {
+        Assert::same(EnvironmentOverrides::count('PROPERTY_SEARCH_RUNS', '0'), 0);
+        Assert::same(EnvironmentOverrides::count('PROPERTY_SEARCH_RUNS', '250'), 250);
+    }
+
+    #[DataProvider('badCounts')]
+    public function countRefusesAnythingButANonNegativeIntegerInRange(string $value): void
+    {
+        try {
+            EnvironmentOverrides::count('PROPERTY_SEARCH_RUNS', $value);
+
+            Assert::fail('expected the value to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), sprintf('PROPERTY_SEARCH_RUNS must be a non-negative integer, got "%s"', $value));
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function badCounts(): iterable
+    {
+        yield 'negative' => ['-1'];
+        yield 'word' => ['many'];
+        yield 'float' => ['1.5'];
+        yield 'past the range' => ['99999999999999999999'];
+        yield 'padded' => [' 1'];
     }
 
     /**

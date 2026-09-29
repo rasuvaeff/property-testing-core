@@ -1,7 +1,118 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 — 2026-09-28
 
+- **Changed:** a shrink candidate is accepted only when it fails the same way
+  the original run did — the same exception class **and** the same place in the
+  property's own file. A body that can fail in more than one place (two
+  assertions, or an assertion beside a call that throws the same type) used to
+  offer the descent failures it could not tell apart, so the reported minimal
+  counterexample could belong to a bug the run never found, with nothing in the
+  output saying so. The place is the line of the property's own file in the
+  failure's stack, which is not where the exception was raised: an assertion
+  library raises every assertion of a body from one line of its own, while the
+  line that called in is the assertion the body wrote. Where the place cannot be read —
+  an id that names no loaded class, a body written in another file (a trait, an
+  included fixture), a failure the engine raised rather than the body — the
+  exception class stays the whole criterion. Minimised counterexamples may
+  therefore differ from 1.0.0 on such a body (compatibility policy §2: what a
+  descent minimises to is not under SemVer); a corpus recorded before this
+  release replays unchanged. Worth knowing for stateful properties: the
+  rule-based façade's `#[Rule]` methods live in the test file, so a command
+  sequence whose failure moves from one rule to another now stops the descent
+  rather than being minimised into the other rule's bug.
+
+## 1.0.0 — 2026-09-20
+
+The stability release. The `@api` surface is that of 0.12.0, unchanged: no
+type, method or parameter was added, removed or renamed, and a project on
+`^0.12` upgrades by widening the constraint to `^1.0`. What the number
+promises from here on is written out in the compatibility policy
+(`README.md`, `docs/src/guide/compatibility.md`): the `@api` surface, the
+corpus format (`FilesystemCorpus::FORMAT_VERSION` does not change within
+1.x), the machine-readable keys of `CounterExample::toArray()` and
+`DistributionReport::toArray()`, event fields and order, append-only
+constructors — while seed → values stays outside SemVer, fenced by
+`FilesystemCorpus::SEQUENCE_EPOCH`. The `Gen::*` parameter names are frozen
+as they stand: `$minLength`/`$maxLength` for strings, bytes and sequences,
+`$minSize`/`$maxSize` for collections, `$min`/`$max` for ranges.
+
+- The adapters (`rasuvaeff/property-testing-testo`,
+  `rasuvaeff/property-testing-phpunit`) and `rasuvaeff/property-testing-names`
+  release their own `1.0.0` requiring this package as `^1.0`, in that order
+  (policy §8).
+- **Docs:** the version gates that dated each feature (`core ≥0.12`,
+  `-testo ≥0.6`, `-phpunit ≥0.5`, …) are gone from the skill, the guides and
+  the migration document — every 1.0 install has all of them. The migration
+  recipe requires `-testo:^1.0`.
+- `composer rector` is green again: the three seed-hunting loops in
+  `CompositeArbitraryTest` share one `firstGenerated()` helper instead of a
+  nullable sentinel that `FlipTypeControlToUseExclusiveTypeRector` rewrote.
+
+## 0.12.0 — 2026-09-20
+
+- **Added:** `Gen::uniqueArrayOf(..., by:)` — uniqueness by the `int|string`
+  key a closure returns per element, for value objects unique by one field;
+  a key of any other type is refused at generation time rather than compared
+  by identity. Value-based uniqueness is unchanged, sequence and all (#146).
+- **Added:** `Gen::withEdgeCases($inner, ...$edgeCases)` — per-generator
+  boundary values: one draw in five is one of them, they come first in the
+  shrink order, and the bias stays on under `EdgeCases::None`. The wrapper
+  rolls on the run's randomness and leaves the inner sequence untouched, so
+  the sequence epoch does not move (#144).
+- **Added:** `Gen::note($label, $value)` — a computed value attached to the
+  run, carried on the counterexample as `$originalNotes`/`$shrunkNotes` and
+  rendered as a `Notes:` line for the minimised run. `CounterExample::toArray()`
+  gains the two keys, always present (#142).
+- **Added:** `Classify::tabulate($table, $tags)` — per-run categories a run
+  may belong to several of, tallied per table with the pairwise intersections
+  of tags hit together, on `RunStatistics`/`DistributionReport::$tables` and
+  `$intersections`; `toArray()` carries a `tables` key only when a run
+  tabulated (#149).
+- **Added:** `Gen::randomEngine()` / `Gen::randomizer()` — a `Random\Engine`
+  (and the `Randomizer` over it) whose output is drawn from the property's
+  tape, so code that takes a randomizer has its random decisions recorded,
+  replayed and shrunk toward `"\0"`; `Gen::forParameters()` derives both from
+  the native parameter types (#141).
+- **Added:** `Gen::composite(Closure(Draw): T)` — several dependent draws in
+  one reusable generator, shrinking the draws earliest first with later draws
+  re-drawn through the new range from a stream of their own position; the
+  descent is capped like in-body draws (#148).
+- **Added:** exhaustive mode — `PropertyConfig::$exhaustive` /
+  `$exhaustiveBudget` walk the whole parameter product instead of sampling
+  when every generator implements the new `Enumerable` seam
+  (`domainSize()`/`enumerate()`: constant, bool, int, oneOf/elements/enum,
+  nullable, tuple, record, map, filter, withEdgeCases) and the product fits
+  the budget; the walk is seed-independent, and `RunStatistics`/
+  `DistributionReport` report `$domainSize` or `$exhaustiveDeclined` (#147).
+- **Added:** flaky detection — `PropertyConfig::$flakyReplays` (default 2)
+  re-executes the minimised counterexample; a replay that passes marks it
+  flaky (`CounterExample::isFlaky()`, `$replays`, `$passedOnReplay`, a
+  `Flaky:` line in the message). No new events; wall clock only (#145).
+- **Added:** rule-based stateful façade — `#[Rule]`, `#[Precondition]`,
+  `#[Invariant]` on one machine class, `Gen::rules($machine)` producing a
+  `RuleSequence` of `RuleStep`s over the existing command-sequence generation
+  and shrinking; `RuleSequence::run($factory)` builds a fresh machine per run
+  and keeps the factory out of the value (#143).
+- **Added:** targeted search — `Target::maximize()`/`minimize()` report a
+  score, `PropertyConfig::$searchRuns` opens a hill-climbing phase after the
+  random one (one parameter regenerated at a time over a pool of the best
+  inputs), `TargetImproved` announces every new best, `SearchReport` on
+  `PropertyFinished`/`RunStatistics` sums it up, and the new `SearchCorpus`
+  seam (implemented by `FilesystemCorpus` and `RedisCorpus`, in a separate
+  search document) keeps the pool between runs. Measured on a corner bug at
+  equal budget: 52 → 98 of 100 seeds; no gain, no loss where the score does
+  not lead to the bug (#150).
+- `PropertyFinished` gains a fourth constructor parameter, `$search`;
+  `RunStatistics` gains `$tables`, `$intersections`, `$domainSize`,
+  `$exhaustiveDeclined`, `$search`; `DistributionReport` the matching
+  fields; `CorpusFailed::$operation` may now be `recallTargets` or
+  `rememberTargets`. All appended with defaults.
+- **Added:** `EnvironmentOverrides::count($variable, $value)` — a
+  non-negative integer for count-shaped variables such as
+  `PROPERTY_SEARCH_RUNS`, where `0` is a valid "none".
+- The adapter contract suite pins the path version at `0.11.0`, which both
+  adapters accept; it sat at `0.10.0`.
 - A refusal over a docblock type no longer calls a generic the function or
   its class declares (`@template T`) an unknown class: `list<T>` is reported
   as unreadable, and only a name nothing declares as `unknown class "…"`.

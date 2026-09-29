@@ -94,6 +94,30 @@ appears with a count of zero rather than going missing.
 A phase that executed nothing (a run without `Phase::Random`) reports zeros,
 not a division by zero.
 
+### Categories that overlap
+
+`when()` and `label()` tag one label per call, and their shares are
+independent marginals: two labels say nothing about how many runs were
+*both*. `Classify::tabulate($table, $tags)` records the categories a run
+belongs to — several at once — under a named table:
+
+```php
+Classify::tabulate('payload', $size < 1024 ? 'small' : 'large');
+Classify::tabulate('features', array_keys(array_filter([
+    'compressed' => $compressed,
+    'retried' => $attempt > 1,
+    'deduped' => $deduped,
+])));
+```
+
+The report carries each table as one `LabelShare` per tag
+(`DistributionReport::$tables`) and, per table, the pairwise intersections of
+tags hit together (`$intersections`, keyed `compressed & retried` with the
+two tags in sorted order) — data, not console text. There is no gate:
+`cover()` remains the only enforcement tool, and a table is the observability
+half of that split. `toArray()` adds a `tables` key only when a run
+tabulated, so a property that never does keeps the frozen shape.
+
 ### What a report does not say
 
 `coverageAssessed` is false when the run ended before the check loop completed —

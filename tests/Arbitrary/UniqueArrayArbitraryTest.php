@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
+use Rasuvaeff\PropertyTesting\Arbitrary\MappedArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\UniqueArrayArbitrary;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
@@ -14,6 +15,7 @@ use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
 use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
 use Testo\Test;
 
 #[Test]
@@ -127,6 +129,96 @@ final class UniqueArrayArbitraryTest
 
         Assert::false(in_array([0, 0], $candidates, strict: true));
         Assert::true(in_array([4, 0], $candidates, strict: true));
+    }
+
+    public function keyClosureDeduplicatesByTheKeyItReturns(): void
+    {
+        // Elements are [id, payload] pairs; the payload varies freely, so
+        // without the key two pairs sharing an id would count as distinct.
+        $arbitrary = new UniqueArrayArbitrary(
+            new MappedArbitrary(new IntArbitrary(0, 5), static fn(int $id): array => [$id, $id * 10]),
+            0,
+            20,
+            static fn(array $pair): int => $pair[0],
+        );
+        $random = new Random(7);
+
+        for ($i = 0; $i < 100; ++$i) {
+            $ids = array_column($arbitrary->generate($random)->value, 0);
+
+            Assert::same(array_values(array_unique($ids)), $ids);
+        }
+    }
+
+    public function keyClosureMakesValuesDistinctThatIdentityWouldNot(): void
+    {
+        // Every generate() returns a fresh object, so by identity a list of
+        // ten is reachable; by the `id` key only three keys exist.
+        $objects = new MappedArbitrary(new IntArbitrary(0, 2), static fn(int $id): object => (object) ['id' => $id]);
+
+        $byIdentity = (new UniqueArrayArbitrary($objects, 10, 10))->generate(new Random(3))->value;
+        Assert::same(count($byIdentity), 10);
+
+        $byKey = (new UniqueArrayArbitrary($objects, 0, 10, static fn(object $o): int => $o->id))->generate(new Random(3))->value;
+        Assert::true(count($byKey) <= 3);
+        Assert::same(array_values(array_unique(array_map(static fn(object $o): int => $o->id, $byKey))), array_map(static fn(object $o): int => $o->id, $byKey));
+    }
+
+    public function keyClosureShrinkCandidatesNeverShareAKey(): void
+    {
+        $node = Trees::generateWhere(
+            new UniqueArrayArbitrary(
+                new MappedArbitrary(new IntArbitrary(0, 20), static fn(int $n): array => [$n % 7, $n]),
+                0,
+                8,
+                static fn(array $pair): int => $pair[0],
+            ),
+            static fn(mixed $v): bool => is_array($v) && count($v) >= 3,
+        );
+
+        foreach (Trees::valuesToDepth($node, 3) as $candidate) {
+            $keys = array_column($candidate, 0);
+
+            Assert::same(array_values(array_unique($keys)), $keys);
+        }
+    }
+
+    public function keyClosureShrinkSkipsACandidateCollidingOnKey(): void
+    {
+        // [8, x] shrinks its id toward 0 first; [0, y] is already present, so
+        // the colliding candidate is dropped while the rest of the ladder survives.
+        $node = Trees::generateWhere(
+            new UniqueArrayArbitrary(
+                new MappedArbitrary(new IntArbitrary(0, 10), static fn(int $n): array => [$n, 'p']),
+                2,
+                2,
+                static fn(array $pair): int => $pair[0],
+            ),
+            static fn(mixed $v): bool => $v === [[8, 'p'], [0, 'p']],
+        );
+        $candidates = Trees::childValues($node);
+
+        Assert::false(in_array([[0, 'p'], [0, 'p']], $candidates, strict: true));
+        Assert::true(in_array([[4, 'p'], [0, 'p']], $candidates, strict: true));
+    }
+
+    #[DataProvider('nonScalarKeyProvider')]
+    public function keyClosureReturningANonScalarKeyIsRefused(\Closure $by, string $type): void
+    {
+        try {
+            (new UniqueArrayArbitrary(new IntArbitrary(0, 10), 1, 3, $by))->generate(new Random(1));
+
+            Assert::fail('expected an InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Gen::uniqueArrayOf() key closure must return int|string, got ' . $type);
+        }
+    }
+
+    public static function nonScalarKeyProvider(): iterable
+    {
+        yield 'float' => [static fn(int $n): float => $n / 2, 'float'];
+        yield 'object' => [static fn(int $n): object => (object) ['n' => $n], 'stdClass'];
+        yield 'null' => [static fn(int $n): mixed => null, 'null'];
     }
 
     public function acceptsMaximumSizeOfOne(): void

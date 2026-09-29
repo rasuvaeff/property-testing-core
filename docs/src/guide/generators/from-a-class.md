@@ -135,14 +135,14 @@ descent rather than thrown from it.
 
 ## The same rules for a whole property
 
-`Gen::forParameters()` (core 0.4) applies the same resolution — an override,
+`Gen::forParameters()` applies the same resolution — an override,
 the `@param` psalm type, then the native type, with the same supported subset
 and the same refusals — to the parameters of any function, method, or closure,
 and returns the map a property needs: `array<string, ArbitraryInterface>` by
 parameter name, in signature order.
 
 Both adapters expose it as an opt-in `auto` mode, so a fully typed property
-needs no provider at all. Under Testo (0.6):
+needs no provider at all. Under Testo:
 
 ```php
 /**
@@ -153,7 +153,7 @@ needs no provider at all. Under Testo (0.6):
 public function delayStaysWithinCap(int $base, int $cap): void { /* … */ }
 ```
 
-Under PHPUnit (0.5), where the docblock sits on the closure itself:
+Under PHPUnit, where the docblock sits on the closure itself:
 
 ```php
 $this->forAll()

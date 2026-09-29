@@ -77,13 +77,36 @@ The threshold belongs to the label, not to the call: covering the same
 label twice in one run with different percentages leaves the last one
 standing.
 
+### tabulate()
+
+```php
+static tabulate(string $table, string|list<string> $tags): void
+```
+
+Record one or more tags of $table for the current run: the categories
+a run belongs to at once, aggregated into a per-table tally with the
+pairwise intersections of tags that were hit together. Observability
+only — no minimum share, no verdict; cover() stays the one
+enforcement tool:
+
+- `$table` — The table the tags belong to.
+- `$tags` — One tag, or every tag the run hits at once.
+
+Classify::tabulate('payload', $size < 1024 ? 'small' : 'large');
+    Classify::tabulate('features', array_keys(array_filter([
+        'compressed' => $compressed, 'retried' => $attempt > 1,
+    ])));
+
+A tag recorded several times within one run counts once for that run,
+like a label. An empty tag list records nothing.
+
 ### beginRun()
 
 ```php
 static beginRun(): void
 ```
 
-Clear the labels buffered for the current run.
+Clear the labels and tables of the previous run.
 
 ### flushRun()
 
@@ -92,6 +115,15 @@ static flushRun(): array
 ```
 
 Return the labels recorded during the current run and clear the buffer.
+
+### flushTables()
+
+```php
+static flushTables(): array
+```
+
+Return the tables recorded during the current run — table name to the
+tags hit, as the strings the body recorded — and clear them.
 
 ### flushRequirements()
 

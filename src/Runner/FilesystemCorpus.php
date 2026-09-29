@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Runner;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
 use Rasuvaeff\PropertyTesting\Internal\CorpusDocument;
+use Rasuvaeff\PropertyTesting\Internal\SearchDocument;
 use Rasuvaeff\PropertyTesting\Internal\ValueCodec;
 
 /**
@@ -25,9 +26,11 @@ use Rasuvaeff\PropertyTesting\Internal\ValueCodec;
  * by the value's scheme. One file per property (`<sha1(id)>.json`) keeps the
  * directory gitignore-friendly.
  *
+ * @psalm-import-type Targets from SearchCorpus
+ *
  * @api
  */
-final readonly class FilesystemCorpus implements Corpus
+final readonly class FilesystemCorpus implements Corpus, SearchCorpus
 {
     /**
      * On-disk layout version. A file written by a different version is ignored
@@ -201,10 +204,18 @@ final readonly class FilesystemCorpus implements Corpus
      */
     private function read(string $id): array
     {
-        $file = $this->path($id);
+        $content = $this->readFile($this->path($id));
 
+        return $content === null ? [] : CorpusDocument::decode($content, self::FORMAT_VERSION);
+    }
+
+    /**
+     * The content of $file, or null when there is no readable file there.
+     */
+    private function readFile(string $file): ?string
+    {
         if (!is_file($file)) {
-            return [];
+            return null;
         }
 
         // Suppressed like every other filesystem call here: the file can be
@@ -213,11 +224,46 @@ final readonly class FilesystemCorpus implements Corpus
         // of the suite's output.
         $content = @file_get_contents($file);
 
-        if ($content === false) {
-            return [];
-        }
+        return $content === false ? null : $content;
+    }
 
-        return CorpusDocument::decode($content, self::FORMAT_VERSION);
+    /**
+     * The best inputs recorded for $id's targets — the search document,
+     * apart from the regression document, so neither reader mistakes the
+     * other's entries for its own.
+     *
+     * @param string $id The property id.
+     * @param list<string> $parameterNames The property method's current parameters, in order.
+     *
+     * @return Targets
+     */
+    #[\Override]
+    public function recallTargets(string $id, array $parameterNames): array
+    {
+        $content = $this->readFile($this->searchPath($id));
+
+        return $content === null ? [] : SearchDocument::decode($content, $parameterNames);
+    }
+
+    /**
+     * Replaces the search document of $id, under the same lock and with the
+     * same atomic write as the regression document; an empty pool removes it.
+     *
+     * @param string $id The property id.
+     * @param Targets $targets The pool, by label.
+     * @param list<string> $parameterNames The property method's current parameters, in order.
+     *
+     * @throws \RuntimeException When the document could not be written.
+     */
+    #[\Override]
+    public function rememberTargets(string $id, array $targets, array $parameterNames): void
+    {
+        $this->withLock(
+            $id,
+            function () use ($id, $targets, $parameterNames): void {
+                $this->writeFile($id, $this->searchPath($id), SearchDocument::encode($id, $targets, $parameterNames));
+            },
+        );
     }
 
     /**
@@ -227,9 +273,22 @@ final readonly class FilesystemCorpus implements Corpus
      */
     private function write(string $id, array $entries): void
     {
-        $file = $this->path($id);
+        $this->writeFile(
+            $id,
+            $this->path($id),
+            $entries === [] ? null : CorpusDocument::encode($id, $entries, self::FORMAT_VERSION),
+        );
+    }
 
-        if ($entries === []) {
+    /**
+     * Put $payload at $file through a temp file and an atomic rename, or
+     * remove the file when there is no payload.
+     *
+     * @throws \RuntimeException When the document did not reach its path.
+     */
+    private function writeFile(string $id, string $file, ?string $payload): void
+    {
+        if ($payload === null) {
             if (is_file($file)) {
                 // @ suppresses the benign "no such file" warning when a
                 // concurrent prune already removed it.
@@ -238,8 +297,6 @@ final readonly class FilesystemCorpus implements Corpus
 
             return;
         }
-
-        $payload = CorpusDocument::encode($id, $entries, self::FORMAT_VERSION);
 
         // Temp file + atomic rename: a reader sees either the previous or the
         // new document, never a partial one; a process killed mid-write (OOM,
@@ -402,5 +459,10 @@ final readonly class FilesystemCorpus implements Corpus
     private function path(string $id): string
     {
         return rtrim($this->directory, '/') . '/' . sha1($id) . '.json';
+    }
+
+    private function searchPath(string $id): string
+    {
+        return rtrim($this->directory, '/') . '/' . sha1($id) . '.search.json';
     }
 }

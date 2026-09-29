@@ -152,3 +152,13 @@ production value space), the corpus directory can too. Don't make it
 world-readable, and don't commit it alongside a property like that. See
 [Security](/guide/security).
 :::
+
+## The search document
+
+Both backends also implement [`SearchCorpus`](/api/classes/Runner/SearchCorpus),
+the adaptive example database of [targeted search](/guide/targeted-search): a
+separate document per property (`<sha1(id)>.search.json`, the `:search` key)
+holding the best-scoring inputs per `Target` label, replaced whole after each
+search phase. It never mixes with the regression entries above, and none of
+their recall and prune rules apply to it.
+

@@ -9,9 +9,9 @@ description: "Wraps another arbitrary and additionally yields `null` with roughl
 
 `Rasuvaeff\PropertyTesting\Arbitrary\NullableArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/NullableArbitrary.php#L19) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/NullableArbitrary.php#L21) — **Version:** working tree
 
-**Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+**Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
 Wraps another arbitrary and additionally yields `null` with roughly even odds.
 
@@ -43,4 +43,24 @@ toward a zero/empty/identity element) and every branch of the tree must
 be finite, so shrinking terminates.
 
 *Documentation inherited from [`ArbitraryInterface`](/api/classes/ArbitraryInterface).*
+
+### domainSize()
+
+```php
+domainSize(): ?int
+```
+
+One more than the inner domain, when there is one to count.
+
+### enumerate()
+
+```php
+enumerate(): iterable
+```
+
+Null first, then the inner domain in its own order.
+
+**Throws:**
+
+- `LogicException` — When the source has no finite domain (\Rasuvaeff\PropertyTesting\Arbitrary\domainSize() is null).
 

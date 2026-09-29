@@ -11,7 +11,7 @@ description: "Generates integers within an inclusive range and shrinks them towa
 
 **Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/IntArbitrary.php#L29) — **Version:** working tree
 
-**Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+**Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
 Generates integers within an inclusive range and shrinks them toward zero
 (clamped into the range, so the target of a zero-free range is its nearest
@@ -54,4 +54,21 @@ toward a zero/empty/identity element) and every branch of the tree must
 be finite, so shrinking terminates.
 
 *Documentation inherited from [`ArbitraryInterface`](/api/classes/ArbitraryInterface).*
+
+### domainSize()
+
+```php
+domainSize(): ?int
+```
+
+Saturates: a range wider than `PHP_INT_MAX` values (the full int range
+above all) reports `PHP_INT_MAX`, which no budget accepts.
+
+### enumerate()
+
+```php
+enumerate(): iterable
+```
+
+Ascending from the minimum.
 

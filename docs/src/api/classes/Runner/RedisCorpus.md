@@ -9,9 +9,9 @@ description: "A Corpus in Redis, so one falsification is replayed everywhere."
 
 `Rasuvaeff\PropertyTesting\Runner\RedisCorpus`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/RedisCorpus.php#L43) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/RedisCorpus.php#L46) — **Version:** working tree
 
-**Implements:** [`Runner\Corpus`](/api/classes/Runner/Corpus)
+**Implements:** [`Runner\Corpus`](/api/classes/Runner/Corpus), [`Runner\SearchCorpus`](/api/classes/Runner/SearchCorpus)
 
 A Corpus in Redis, so one falsification is replayed everywhere.
 
@@ -120,4 +120,33 @@ and the entry has served its purpose.
 **Throws:**
 
 - `RuntimeException` — When the entry cannot be re-encoded to the key that identifies it.
+
+### recallTargets()
+
+```php
+recallTargets(string $id, list<string> $parameterNames): array
+```
+
+The search document of $id, from its own key beside the regression
+document's.
+
+- `$id` — The property id.
+- `$parameterNames` — The property method's current parameters, in order.
+
+### rememberTargets()
+
+```php
+rememberTargets(
+    string $id,
+    \Runner\Targets $targets,
+    list<string> $parameterNames,
+): void
+```
+
+Replaces the search document of $id — the pool is the whole truth, so
+no compare-and-set is needed; an empty pool removes the key.
+
+- `$id` — The property id.
+- `$targets` — The pool, by label.
+- `$parameterNames` — The property method's current parameters, in order.
 

@@ -38,6 +38,17 @@ final readonly class CounterExample
      * @param int $skips Number of runs the environment refused (a skipped hook or body) before the
      *        failure. Counted apart from `$discards`: a discard says the generated input left the
      *        property's domain, a skip says nothing about the input at all.
+     * @param array<string, mixed> $originalNotes What {@see Gen::note()} attached during the run
+     *        that first failed, by label.
+     * @param array<string, mixed> $shrunkNotes What {@see Gen::note()} attached during the run of
+     *        the minimised arguments — the original notes when nothing shrank.
+     * @param int $replays How many times the minimised input was re-executed after the descent
+     *        ({@see Runner\PropertyConfig::$flakyReplays}) to tell a counterexample from
+     *        nondeterminism — up to the configured count, stopping at the first replay that passed.
+     * @param ?int $passedOnReplay The one-based replay that did not fail, when one did: the
+     *        counterexample is flaky — the body or the code under test is nondeterministic, and the
+     *        input is not by itself what falsifies the property. Null when every replay failed again
+     *        (or none ran).
      */
     public function __construct(
         public int $seed,
@@ -51,7 +62,20 @@ final readonly class CounterExample
         public string $path = '',
         public EdgeCases $edgeCases = EdgeCases::Mixin,
         public int $skips = 0,
+        public array $originalNotes = [],
+        public array $shrunkNotes = [],
+        public int $replays = 0,
+        public ?int $passedOnReplay = null,
     ) {}
+
+    /**
+     * Whether a replay of the minimised input passed: the failure is not a
+     * function of the input alone.
+     */
+    public function isFlaky(): bool
+    {
+        return $this->passedOnReplay !== null;
+    }
 
     /**
      * Machine-readable representation suitable for reporters and serialization.
@@ -74,6 +98,10 @@ final readonly class CounterExample
             'discards' => $this->discards,
             'skips' => $this->skips,
             'edgeCases' => $this->edgeCases->name,
+            'originalNotes' => \Rasuvaeff\PropertyTesting\ValueRenderer::normalize($this->originalNotes),
+            'shrunkNotes' => \Rasuvaeff\PropertyTesting\ValueRenderer::normalize($this->shrunkNotes),
+            'replays' => $this->replays,
+            'passedOnReplay' => $this->passedOnReplay,
         ];
     }
 

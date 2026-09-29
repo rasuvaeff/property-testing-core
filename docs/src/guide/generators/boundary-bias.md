@@ -58,6 +58,31 @@ is deliberately absent: this engine already runs
 [regression corpus](/guide/regression-corpus) before the random phase, which is
 the same idea with the values chosen rather than guessed.
 
+## Your own edge values
+
+The built-in bias knows the numeric edges. A property author often knows
+better ones — the largest allowed payload, `$n - 1`, an empty string beside
+a one-character one — and until now could only pin them as
+[explicit examples](/guide/explicit-examples) (not shared between properties)
+or filter for them (which spends the discard budget).
+`Gen::withEdgeCases()` puts them on the generator:
+
+```php
+Gen::withEdgeCases(Gen::intBetween(0, $n), 0, $n, $n - 1);
+Gen::withEdgeCases(Gen::stringOf(), '', 'a');
+```
+
+One draw in five is one of the listed values instead of a generated one, and
+a generated value shrinks *through* the listed values first, in the order
+given — so list the preferred minimum first — before its own tree; an edge
+value drawn outright shrinks to the ones listed before it. The bias is
+explicit and scoped to that generator, so it stays on under
+`EdgeCases::None`, which turns off only the built-in one. The wrapper rolls
+on the run's randomness and leaves the inner generator's sequence for a seed
+untouched. Edge values are taken as members of the inner domain; nothing
+checks that they are. Over an [enumerable](/guide/controlling-runs/exhaustive)
+source the wrapper stays enumerable and walks the inner domain.
+
 ## Shrinking is unaffected
 
 Boundary bias only changes what generation *returns*; it says nothing about

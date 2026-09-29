@@ -105,6 +105,34 @@ what follows is the shape of it.
   `10 * runs`; `PROPERTY_DB_PASSWORD` reaches an authenticated Redis; and
   `false`/`off`/`no` turn a `PROPERTY_*` flag off.
 
+## Shipped in 0.12
+
+The ten items of the 2026-09-19 issue wave, before the 1.0 freeze so that
+none of them has to wait for a major:
+
+- **Targeted property testing** — `Target::maximize()` / `minimize()`, an
+  opt-in search phase (`searchRuns`) that climbs the score over a pool of
+  the best inputs by regenerating one parameter at a time, a
+  `TargetImproved` event, a `SearchReport` on `PropertyFinished`, and the
+  `SearchCorpus` seam with a separate search document in both backends. It
+  passed its go/no-go on a corner bug — 52 to 98 of 100 seeds at equal
+  budget — and the [measurement](/guide/targeted-search#what-the-measurement-said)
+  also records what parameter-level mutation cannot do: close a gap between
+  two parameters. That is what the search tape below is for.
+- **Exhaustive mode** — `PropertyConfig::$exhaustive` walks the parameter
+  product through the `Enumerable` seam when it fits the budget.
+- **Flaky detection** — the minimised counterexample is replayed
+  (`flakyReplays`), and a replay that passes says so on the counterexample.
+- **A rule-based stateful façade** — `#[Rule]`, `#[Precondition]`,
+  `#[Invariant]` on one class, `Gen::rules()` over the existing sequence
+  generation and shrinking.
+- **Generators** — `Gen::composite()` with its `Draw` seam,
+  `Gen::withEdgeCases()`, `Gen::randomEngine()` / `randomizer()`,
+  `Gen::uniqueArrayOf(by:)`.
+- **Reporting** — `Gen::note()` on the counterexample,
+  `Classify::tabulate()` with pairwise intersections on the distribution
+  report.
+
 ## Compatibility commitments
 
 Written out in full on [Compatibility policy](/guide/compatibility): what
@@ -125,31 +153,16 @@ names, signatures, field semantics, and the documentation that is part of the
 contract. The engine ships first, then the two adapters, then `-names`, each
 requiring `^1.0`.
 
-## Next: targeted property testing and an adaptive example database
+## Next: a search tape
 
-The next core minor is planned around search: the property body reports a
-numeric score — a delay, a recursion depth, a distance from a boundary — and
-the engine spends part of the run maximising or minimising it instead of
-sampling blindly. The design under review:
-
-- a `Target::maximize()` / `Target::minimize()` facade, process-local like
-  `Classify`, with a fixed direction per label and an immediate configuration
-  error for non-finite scores;
-- an opt-in search phase after the random phase: hill climbing over a pool of
-  the best-scoring inputs, mutating at parameter granularity — regenerate one
-  parameter, keep the others — because ordinary generator decisions are not
-  recorded on any replay tape;
-- an adaptive example database: today's corpus stores falsifications only.
-  Bounded top-K `target` entries per label will be kept in a **separate
-  search document**, so an older reader never mistakes them for regressions
-  and never prunes them;
-- a `TargetImproved` event and a `SearchReport` on `PropertyFinished`, under
-  the same guarantee as the distribution report: zero overhead when the
-  feature is unused;
-- the work starts with a go/no-go prototype against real extremum bugs. If
-  parameter-level mutation shows no measurable gain over random search, the
-  phase is not shipped, and a search tape — replay and mutation of generator
-  decisions — becomes the prerequisite instead.
+Targeted search mutates at parameter granularity because ordinary generator
+decisions are not recorded on any replay tape: regenerating one parameter is
+a global move. A bug that needs one parameter tuned to within a few units of
+another needs a local move — mutate one generator decision, keep the rest —
+and that needs the decisions recorded. A search tape (replay and mutation of
+generator decisions, the way in-body draws already replay) is the
+prerequisite for the next step of targeted search, and the item this
+roadmap commits to designing before any coverage-guided work.
 
 ## Later: coverage-guided search, as a separate optional package
 

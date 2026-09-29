@@ -203,6 +203,16 @@ final class ParameterGenerators
                 return Gen::datetime();
             }
 
+            // The native random API: an engine (or a randomizer over one)
+            // whose decisions ride the draw tape, so they shrink.
+            if ($type === \Random\Engine::class) {
+                return Gen::randomEngine();
+            }
+
+            if ($type === \Random\Randomizer::class) {
+                return Gen::randomizer();
+            }
+
             if (is_a($type, \DateTimeInterface::class, allow_string: true)) {
                 // Only the exact class has a generator. Anything else that
                 // implements the interface — a subclass, DateTime — inherits a

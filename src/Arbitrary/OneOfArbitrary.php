@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Enumerable;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\Swarmable;
@@ -21,9 +22,10 @@ use Rasuvaeff\PropertyTesting\Swarmable;
  *
  * @template TValue
  * @implements Swarmable<TValue>
+ * @implements Enumerable<TValue>
  * @api
  */
-final readonly class OneOfArbitrary implements Swarmable
+final readonly class OneOfArbitrary implements Swarmable, Enumerable
 {
     /** @var non-empty-list<TValue> */
     private array $values;
@@ -75,6 +77,23 @@ final readonly class OneOfArbitrary implements Swarmable
     public function variantCount(): int
     {
         return count($this->values);
+    }
+
+    #[\Override]
+    public function domainSize(): int
+    {
+        return count($this->values);
+    }
+
+    /**
+     * In the listed order; a value listed twice is walked twice.
+     */
+    #[\Override]
+    public function enumerate(): iterable
+    {
+        foreach (array_keys($this->values) as $index) {
+            yield $this->tree($index);
+        }
     }
 
     /**

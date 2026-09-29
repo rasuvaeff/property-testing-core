@@ -26,6 +26,11 @@ __construct(
     array<array-key,int> $classifications,
     array<array-key,float> $requirements = [],
     int $skips = 0,
+    array<string,array<array-key,int>> $tables = [],
+    array<string,array<string,int>> $intersections = [],
+    ?int $domainSize = NULL,
+    ?string $exhaustiveDeclined = NULL,
+    ?\Runner\SearchReport $search = NULL,
 )
 ```
 
@@ -37,4 +42,9 @@ __construct(
 | `$classifications` | `array<array-key,int>` | *required* | Per-label counts from `Classify` over the passing runs. Keyed by label — as `array-key` rather than `string` because PHP stores a numeric label such as `'42'` under an integer key, and a type that denied it would be a lie the readers of this array pay for. |
 | `$requirements` | `array<array-key,float>` | `[]` | Minimum percentages `Classify::cover()` registered, by label — carried alongside the counts they are compared against, including at the exits that never reached the assessment, so a report can say what was demanded as well as what happened. |
 | `$skips` | `int` | `0` | Runs the environment refused (a missing dependency, a skipped lifecycle hook). Counted apart from the discards because they say nothing about the generators, and a report that folded them in would advise narrowing generators that are not at fault. |
+| `$tables` | `array<string,array<array-key,int>>` | `[]` | Per-table, per-tag counts from `Classify::tabulate()` over the passing runs; `array-key` for the reason `$classifications` gives. |
+| `$intersections` | `array<string,array<string,int>>` | `[]` | Per table, how many passing runs hit each pair of its tags together, keyed `tagA & tagB` with the two tags in sorted order. |
+| `$domainSize` | `?int` | `NULL` | The size of the parameter domain the phase enumerated instead of sampling ([`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$exhaustive); null when it sampled. |
+| `$exhaustiveDeclined` | `?string` | `NULL` | Why an exhaustive run sampled after all — a parameter without a finite domain, or a domain above the budget; null when it enumerated or was never asked to. |
+| `$search` | `?\Runner\SearchReport` | `NULL` | What the targeted search amounted to; null when the property targeted nothing. |
 

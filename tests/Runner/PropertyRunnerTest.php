@@ -301,6 +301,19 @@ final class PropertyRunnerTest
         Assert::same($result->exception->maxDiscards, 3);
     }
 
+    public function metCoverageLeavesThePropertyPassed(): void
+    {
+        $result = (new PropertyRunner())->run(
+            $this->definition(runs: 50),
+            new CallableTrialExecutor(static function (int $value): void {
+                Classify::cover($value >= 0, 'non-negative', 50.0);
+            }),
+        );
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($result->statistics->requirements, ['non-negative' => 50.0]);
+    }
+
     public function unmetCoverageFailsThePassingProperty(): void
     {
         $result = (new PropertyRunner())->run(

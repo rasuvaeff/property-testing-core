@@ -18,7 +18,7 @@ final readonly class CorpusFailed implements PropertyEvent
 {
     /**
      * @param string $propertyId The property whose corpus operation failed.
-     * @param 'recall'|'remember'|'prune' $operation Which operation threw.
+     * @param 'recall'|'remember'|'prune'|'recallTargets'|'rememberTargets' $operation Which operation threw.
      * @param \Throwable $failure What the corpus threw.
      */
     public function __construct(

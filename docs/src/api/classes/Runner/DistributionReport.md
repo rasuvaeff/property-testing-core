@@ -41,6 +41,10 @@ __construct(
     list<\Runner\LabelShare> $labels,
     bool $coverageAssessed,
     int $skips = 0,
+    array<string,list<\Runner\LabelShare>> $tables = [],
+    array<string,list<\Runner\LabelShare>> $intersections = [],
+    ?int $domainSize = NULL,
+    ?string $exhaustiveDeclined = NULL,
 )
 ```
 
@@ -52,6 +56,10 @@ __construct(
 | `$labels` | `list<\Runner\LabelShare>` | *required* | Every label recorded or required, most frequent first and alphabetical within a count, so two runs of the same property compare line by line. |
 | `$coverageAssessed` | `bool` | *required* | Whether the engine judged the `cover()` requirements. False when the run ended before the check loop completed (it gave up on discards, or ran out of its time budget): the shares below are still what happened, but nothing enforced them. |
 | `$skips` | `int` | `0` | Runs the environment refused. Counted inside `$attempts` like discards are, and apart from `$discards` for the same reason the engine separates the two budgets: a distribution that is mostly skips says nothing about the generators. |
+| `$tables` | `array<string,list<\Runner\LabelShare>>` | `[]` | The `Classify::tabulate()` tables, by name: one share per tag, ordered like `$labels`. Never carries a requirement — a table is observation, not a gate. |
+| `$intersections` | `array<string,list<\Runner\LabelShare>>` | `[]` | Per table, the share of checks that hit each pair of its tags together, the pair rendered `tagA & tagB` in sorted order. Only pairs that occurred at least once; a table whose runs never hit two tags at once has an empty list here. |
+| `$domainSize` | `?int` | `NULL` | The parameter domain enumerated instead of sampled; null when sampled. |
+| `$exhaustiveDeclined` | `?string` | `NULL` | Why an exhaustive run sampled after all; null otherwise. |
 
 ## Methods
 

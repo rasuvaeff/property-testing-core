@@ -62,6 +62,33 @@ final class DrawContextTest
         Assert::same($recorded[1]->value, $extra);
     }
 
+    public function notesAreKeptByLabelUntilDisarmed(): void
+    {
+        DrawContext::arm(new Random(1));
+        DrawContext::note('a', 1);
+        DrawContext::note('b', 'two');
+        DrawContext::note('a', 3);
+
+        Assert::same(DrawContext::notes(), ['a' => 3, 'b' => 'two']);
+
+        DrawContext::disarm();
+        DrawContext::arm(new Random(1));
+
+        Assert::same(DrawContext::notes(), []);
+        DrawContext::disarm();
+    }
+
+    public function noteThrowsWhenUnarmed(): void
+    {
+        try {
+            DrawContext::note('label', 1);
+
+            Assert::fail('expected a RuntimeException');
+        } catch (\RuntimeException $e) {
+            Assert::same($e->getMessage(), 'Gen::note() may only be called inside a property run');
+        }
+    }
+
     #[ExpectException(\RuntimeException::class)]
     public function throwsWhenUnarmed(): void
     {

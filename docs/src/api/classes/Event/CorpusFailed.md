@@ -25,7 +25,7 @@ event is how a listener (the adapter's verbose trace) makes it visible.
 ```php
 __construct(
     string $propertyId,
-    "recall"|"remember"|"prune" $operation,
+    "recall"|"remember"|"prune"|"recallTargets"|"rememberTargets" $operation,
     \Throwable $failure,
 )
 ```
@@ -33,6 +33,6 @@ __construct(
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `$propertyId` | `string` | *required* | The property whose corpus operation failed. |
-| `$operation` | `"recall"|"remember"|"prune"` | *required* | Which operation threw. |
+| `$operation` | `"recall"|"remember"|"prune"|"recallTargets"|"rememberTargets"` | *required* | Which operation threw. |
 | `$failure` | `Throwable` | *required* | What the corpus threw. |
 

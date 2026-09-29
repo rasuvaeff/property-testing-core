@@ -9,7 +9,7 @@ description: "Facade with static factories for the built-in ArbitraryInterfaces.
 
 `Rasuvaeff\PropertyTesting\Gen`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L50) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L58) — **Version:** working tree
 
 Facade with static factories for the built-in ArbitraryInterfaces.
 
@@ -158,16 +158,54 @@ static uniqueArrayOf(
     \ArbitraryInterface<\TElement> $element,
     int $minSize = 0,
     int $maxSize = 100,
+    null|callable $by = NULL,
 ): ArbitraryInterface
 ```
 
-Lists of pairwise-distinct elements (strict comparison) drawn from
-$element. Element shrinking keeps the list distinct; the result may be
-smaller than the drawn size when the element space runs out of fresh
-values, but never below $minSize — an unreachable minimum throws
-GenerationExhaustedException. Distinct means `!==`, and `NAN` is
-never identical to itself, so a list over floatSpecial() can
-hold several of them.
+Lists of pairwise-distinct elements drawn from $element. Element
+shrinking keeps the list distinct; the result may be smaller than the
+drawn size when the element space runs out of fresh values, but never
+below $minSize — an unreachable minimum throws
+GenerationExhaustedException.
+
+- `$by` — The key each element is distinct by; null compares the values.
+
+Without $by, distinct means `!==` on the values: `NAN` is never
+identical to itself, so a list over `floatSpecial`() can hold
+several of them, and objects are distinct unless they are the same
+instance. With $by, distinct means `===` on the `int|string` key the
+closure returns for each value — uniqueness by one field of a value
+object, with shrinking that still never produces two elements sharing
+a key:
+
+Gen::uniqueArrayOf($userGen, 3, 10, by: static fn (User $u): string => $u->id)
+
+A key of any other type is refused with \InvalidArgumentException
+at generation time; identity comparison of key objects would make every
+element unique and void the guarantee without a failure.
+
+### withEdgeCases()
+
+```php
+static withEdgeCases(\ArbitraryInterface<\T> $inner, \T $edgeCases): ArbitraryInterface
+```
+
+$inner with author-supplied boundary values: one draw in five is one of
+$edgeCases instead of a generated value, and a generated value shrinks
+through the edge values first — in the order listed, so put the
+most-preferred minimum first — before its own tree:
+
+- `$inner` — The generator to bias.
+- `$edgeCases` — The boundary values, most-preferred minimum first; at least one.
+
+Gen::withEdgeCases(Gen::intBetween(0, $n), 0, $n, $n - 1)
+    Gen::withEdgeCases(Gen::stringOf(), '', 'a')
+
+The bias is explicit and scoped to this generator, so it stays on
+under [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::None, which turns off only the built-in
+boundary bias. The wrapper rolls on the run's randomness and leaves
+$inner's own sequence for a seed untouched. Edge values are taken as
+members of $inner's domain — nothing checks that they are.
 
 ### subset()
 
@@ -484,6 +522,63 @@ as `draw#1`, `draw#2`, ... alongside the named parameters.
 Only valid while the property runner executes the body; anywhere else
 it throws.
 
+### composite()
+
+```php
+static composite(callable $body): ArbitraryInterface
+```
+
+A generator whose body draws several dependent values through a
+Draw and returns what it built — a reusable
+ArbitraryInterface where nested flatMap() calls would nest
+further right with every dependency:
+
+- `$body` — Builds one value from the draws it takes through the seam.
+
+$interval = Gen::composite(static fn (Draw $d): Interval => new Interval(
+        $min = $d->draw(Gen::datetime()),
+        $d->draw(Gen::datetime(min: $min)),   // sees the prior draw
+    ));
+
+Shrinking works on the draws, earliest first: a candidate re-executes
+the body with one draw replaced by a smaller one and the rest replayed,
+so a shrunk interval is still an interval the body would have built.
+A body that throws an `Exception` for a smaller draw refuses that
+candidate (skipped with its subtree, like `map`()). The body sees
+no other randomness — it must draw everything it needs — and the
+result composes like any generator: with `map`(), `arrayOf`(),
+a provider. Contrast in-body `draw`(), which exists only inside a
+property body and cannot be reused as a value.
+
+The descent through a composite's draws is bounded at the same depth
+the runner applies to in-body draws (1000 accepted steps).
+
+### note()
+
+```php
+static note(string $label, mixed $value): void
+```
+
+Attach a computed value to the counterexample report: the parsed form
+of a string, the delay a backoff chose, the index a search landed on —
+whatever the body derived and the assertion message does not carry.
+
+- `$label` — The note's name in the report.
+- `$value` — What to show beside it, rendered like an argument.
+
+$encoded = encode($s);
+    Gen::note('encoded', $encoded);
+    Assert::same(decode($encoded), $s);
+
+Notes belong to one run and surface only when that run is reported:
+the counterexample carries the notes of the original failing run and of
+the shrunk one, rendered after the arguments. A passing run's notes are
+dropped, so the cost is one array per run. Not a replacement for
+[`Classify`](/api/classes/Classify)::label(), which aggregates over the whole run set.
+
+A later note under the same label replaces the earlier one. Outside a
+property run this throws, like `draw`().
+
 ### tuple()
 
 ```php
@@ -515,6 +610,47 @@ static uuid(): ArbitraryInterface
 ```
 
 Canonical RFC 4122 version 4 UUID strings. Does not shrink.
+
+### randomEngine()
+
+```php
+static randomEngine(): ArbitraryInterface
+```
+
+A `Random\Engine` whose randomness comes from the property's own
+draw tape, for code under test that takes a ``Random\Randomizer`` (or an
+engine): jittered backoff, shuffles, weighted picks, replica selection.
+
+A fixed seed reproduces such a failure but cannot shrink it; this engine
+records each `generate()` as an in-body `draw`() of eight bytes,
+so the failing sequence of random decisions is replayed by position and
+shrunk through the bytes' own tree:
+
+#[Property]
+    public function backoffStaysUnderCap(int $attempt, `Random\Engine` $engine): void
+    {
+        $delay = (new JitteredBackoff(new `Random\Randomizer`($engine)))->delayMs($attempt);
+
+Assert::true($delay <= 60_000);
+    }
+
+The bytes shrink toward `"\0"`, which `Randomizer::getInt($min, $max)`
+maps to `$min` and `shuffleArray()` to a near-identity permutation — the
+natural minimum for most code. Each engine call is one tape position
+(`draw#N` in the counterexample) and the descent is bounded like every
+in-body draw, so a body that consumes thousands of random values per
+run shrinks only as far as that cap allows. Valid only inside a run.
+`forParameters`() derives it for a ``Random\Engine`` parameter, and
+a ``Random\Randomizer`` parameter wraps it.
+
+### randomizer()
+
+```php
+static randomizer(): ArbitraryInterface
+```
+
+A `Random\Randomizer` over randomEngine(): the native API
+the code under test already accepts, with shrinkable randomness behind it.
 
 ### datetime()
 
@@ -657,6 +793,72 @@ command reached it) throws GenerationExhaustedException.
 Feed the generated [`StateMachine\CommandSequence`](/api/classes/StateMachine/CommandSequence)
 to [`StateMachine\StateMachine`](/api/classes/StateMachine/StateMachine)::check() in the
 property body, passing a factory that builds a fresh system under test.
+
+### rules()
+
+```php
+static rules(
+    class-string $machine,
+    int $minLength = 0,
+    int $maxLength = 100,
+): ArbitraryInterface
+```
+
+A sequence of steps over a rule-based machine: one class whose
+`#[Rule]` methods are the steps, whose `#[Invariant]` methods hold
+after every step, and whose own fields are the model —
+commands() without a class per command:
+
+- `$machine` — The machine class: its `#[Rule]` methods are the steps.
+- `$minLength` — The fewest steps a sequence has.
+- `$maxLength` — The most steps a sequence has.
+
+final class QueueMachine
+    {
+        private array $model = [];
+
+public function __construct(private readonly Queue $sut) }
+
+#[Rule]
+        public function enqueue(int $value): void          // drawn like a property's parameters
+        {
+            $this->sut->push($value);
+            $this->model[] = $value;
+        }
+
+#[Rule]
+        #[Precondition('notEmpty')]
+        public function dequeue(): void
+        {
+            Assert::same($this->sut->pop(), array_shift($this->model));
+        }
+
+public function notEmpty(): bool { return $this->model !== []; }
+
+#[Invariant]
+        public function sizeMatches(): void
+        {
+            Assert::same($this->sut->size(), count($this->model));
+        }
+    }
+
+Gen::rules(QueueMachine::class)
+
+The body calls [`StateMachine\RuleSequence`](/api/classes/StateMachine/RuleSequence)::run()
+with a factory for a fresh machine, which checks the invariants and
+walks the steps — skipping one whose precondition is false in the
+machine's current state, running the rule and then every invariant for
+the others. An exception is the failed postcondition. Sequences are
+generated and shrunk exactly as `commands`() sequences are: steps
+dropped, arguments simplified. Rule parameters are drawn as
+`forParameters`() draws them, with overrides from a
+`public static function <rule>Generators(): array` or the method the
+attribute names. A machine with no rule, a rule that is not a public
+instance method, or a guard that does not exist is refused here, by name.
+
+The [`StateMachine\Command`](/api/classes/StateMachine/Command) interface
+stays the primitive for a machine whose model is a separate value;
+this is the shape for the common case where the model is a few fields.
 
 ### sample()
 

@@ -31,6 +31,10 @@ final class PropertyConfigTest
         Assert::same($config->shrink, ShrinkMode::Full);
         Assert::same($config->phases, Phase::all());
         Assert::false($config->derandomize);
+        Assert::false($config->exhaustive);
+        Assert::same($config->exhaustiveBudget, 10_000);
+        Assert::same($config->flakyReplays, 2);
+        Assert::same($config->searchRuns, 0);
     }
 
     public function everyPhaseRunsByDefault(): void
@@ -112,6 +116,14 @@ final class PropertyConfigTest
         Assert::same($config->shrink, ShrinkMode::Bounded);
     }
 
+    public function acceptsTheSmallestExhaustiveBudgetAndNoFlakyReplays(): void
+    {
+        $config = new PropertyConfig(exhaustiveBudget: 1, flakyReplays: 0, searchRuns: 0);
+
+        Assert::same($config->exhaustiveBudget, 1);
+        Assert::same($config->flakyReplays, 0);
+    }
+
     #[DataProvider('invalidProvider')]
     public function rejectsOutOfRangeValues(\Closure $construct, string $message): void
     {
@@ -162,6 +174,21 @@ final class PropertyConfigTest
         yield 'bounded shrinking without a budget' => [
             static fn(): PropertyConfig => new PropertyConfig(shrink: ShrinkMode::Bounded),
             'Bounded shrinking requires a shrink budget',
+        ];
+
+        yield 'zero exhaustive budget' => [
+            static fn(): PropertyConfig => new PropertyConfig(exhaustiveBudget: 0),
+            'Exhaustive budget must be greater than or equal to 1',
+        ];
+
+        yield 'negative flaky replays' => [
+            static fn(): PropertyConfig => new PropertyConfig(flakyReplays: -1),
+            'Flaky replays must be greater than or equal to 0',
+        ];
+
+        yield 'negative search runs' => [
+            static fn(): PropertyConfig => new PropertyConfig(searchRuns: -1),
+            'Search runs must be greater than or equal to 0',
         ];
 
         yield 'empty phase set' => [

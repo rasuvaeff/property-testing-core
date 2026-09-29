@@ -67,6 +67,33 @@ final class EnvironmentOverrides
     }
 
     /**
+     * A count variable such as `PROPERTY_SEARCH_RUNS`: a non-negative
+     * integer, where `0` means "none" and is a valid way to switch a phase
+     * off from the environment.
+     *
+     * @param string $variable The variable's name, for the message.
+     * @param string|false $value The variable's value as `getenv()` reports it; `false` when unset.
+     *
+     * @return ?int<0, max>
+     *
+     * @throws \InvalidArgumentException When the value is not a non-negative integer within range.
+     */
+    public static function count(string $variable, string|false $value): ?int
+    {
+        if ($value === false || $value === '') {
+            return null;
+        }
+
+        $count = self::integer($value);
+
+        if ($count === null || $count < 0) {
+            throw new \InvalidArgumentException(sprintf('%s must be a non-negative integer, got "%s"', $variable, $value));
+        }
+
+        return $count;
+    }
+
+    /**
      * `PROPERTY_SEED`: an integer. A value past the integer range would
      * saturate to PHP_INT_MAX under a cast, and a replay under "the same"
      * seed would then be a different run.

@@ -23,6 +23,8 @@ final class PropertyMethods
 
     public function withEnumAndDate(Currency $currency, \DateTimeImmutable $at): void {}
 
+    public function withRandomApi(\Random\Engine $engine, \Random\Randomizer $randomizer): void {}
+
     public function nullableNative(?int $maybe): void {}
 
     public function withDateSubclass(CustomDate $at): void {}

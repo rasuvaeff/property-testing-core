@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Classify;
 use Rasuvaeff\PropertyTesting\CounterExample;
 use Rasuvaeff\PropertyTesting\Event\ShrinkAccepted;
 use Rasuvaeff\PropertyTesting\Event\ShrinkTried;
@@ -72,6 +73,22 @@ final class PropertyRunnerPathTest
         Assert::same($example->shrinkTrials, 9);
         // Reported back unchanged, so a replay's own message is replayable too.
         Assert::same($example->path, self::INT_PATH);
+    }
+
+    public function aReplayCarriesTheNotesOfTheLastStepItFollowed(): void
+    {
+        $noting = static function (int $value): void {
+            Gen::note('value', $value);
+
+            if ($value >= 100) {
+                throw new \RuntimeException(sprintf('%d is not below 100', $value));
+            }
+        };
+
+        $example = $this->falsify($noting, path: self::INT_PATH);
+
+        Assert::same($example->shrunkNotes, ['value' => 100]);
+        Assert::same($example->originalNotes, ['value' => $example->originalArguments['value']]);
     }
 
     public function inBodyDrawsReplayUnderTheirPseudoNames(): void
@@ -234,6 +251,8 @@ final class PropertyRunnerPathTest
         $result = $this->run($body, path: $path, generator: $generator);
 
         Assert::instanceOf($result, PathFailed::class);
+        // Drained like every other exit: nothing armed survives into the next run().
+        Assert::same(Classify::flushRequirements(), []);
         Assert::same($result->exception->getPath(), $path);
         Assert::same($result->exception->getStep(), $step);
         Assert::same($result->exception->getSegment(), $segment);
@@ -246,6 +265,10 @@ final class PropertyRunnerPathTest
     public static function stalePathProvider(): iterable
     {
         $belowHundred = static function (int $value): void {
+            // A requirement armed on every run, so the drain on the
+            // path-broken exit has something to drain.
+            Classify::cover($value < 50, 'small', 1.0);
+
             if ($value >= 100) {
                 throw new \RuntimeException(sprintf('%d is not below 100', $value));
             }

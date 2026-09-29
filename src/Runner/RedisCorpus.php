@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Runner;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
 use Rasuvaeff\PropertyTesting\Internal\CorpusDocument;
+use Rasuvaeff\PropertyTesting\Internal\SearchDocument;
 use Rasuvaeff\PropertyTesting\Runner\Redis\CorpusClient;
 
 /**
@@ -38,9 +39,11 @@ use Rasuvaeff\PropertyTesting\Runner\Redis\CorpusClient;
  *   concurrent writers costs a replay, while throwing would fail a test run
  *   that had already passed.
  *
+ * @psalm-import-type Targets from SearchCorpus
+ *
  * @api
  */
-final readonly class RedisCorpus implements Corpus
+final readonly class RedisCorpus implements Corpus, SearchCorpus
 {
     /**
      * How many times a write re-reads and retries before giving up. Contention
@@ -175,6 +178,44 @@ final readonly class RedisCorpus implements Corpus
     }
 
     /**
+     * The search document of $id, from its own key beside the regression
+     * document's.
+     *
+     * @param string $id The property id.
+     * @param list<string> $parameterNames The property method's current parameters, in order.
+     *
+     * @return Targets
+     */
+    #[\Override]
+    public function recallTargets(string $id, array $parameterNames): array
+    {
+        $document = $this->client->get($this->searchKey($id));
+
+        return $document === null ? [] : SearchDocument::decode($document, $parameterNames);
+    }
+
+    /**
+     * Replaces the search document of $id — the pool is the whole truth, so
+     * no compare-and-set is needed; an empty pool removes the key.
+     *
+     * @param string $id The property id.
+     * @param Targets $targets The pool, by label.
+     * @param list<string> $parameterNames The property method's current parameters, in order.
+     */
+    #[\Override]
+    public function rememberTargets(string $id, array $targets, array $parameterNames): void
+    {
+        $key = $this->searchKey($id);
+        $document = SearchDocument::encode($id, $targets, $parameterNames);
+
+        for ($attempt = 0; $attempt < self::MAX_ATTEMPTS; ++$attempt) {
+            if ($this->client->compareAndSet($key, $this->client->get($key), $document)) {
+                return;
+            }
+        }
+    }
+
+    /**
      * Read, transform, write — retried while another writer wins the race.
      *
      * @param \Closure(list<array<string, mixed>>): list<array<string, mixed>> $change
@@ -216,5 +257,10 @@ final readonly class RedisCorpus implements Corpus
     private function key(string $id): string
     {
         return $this->prefix . sha1($id);
+    }
+
+    private function searchKey(string $id): string
+    {
+        return $this->prefix . sha1($id) . ':search';
     }
 }

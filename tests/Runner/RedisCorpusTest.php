@@ -8,6 +8,7 @@ use Rasuvaeff\PropertyTesting\CounterExample;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
 use Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus;
 use Rasuvaeff\PropertyTesting\Runner\RedisCorpus;
+use Rasuvaeff\PropertyTesting\Runner\TargetDirection;
 use Rasuvaeff\PropertyTesting\Tests\Support\InMemoryCorpusClient;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -78,6 +79,62 @@ final class RedisCorpusTest
 
         Assert::same($client->get('property-testing:corpus:' . sha1('P::p')), $foreign);
         Assert::same($corpus->recall('P::p', ['x']), []);
+    }
+
+    public function targetsLiveUnderTheirOwnKeyAndReadLikeTheFilesystemDocument(): void
+    {
+        $client = new InMemoryCorpusClient();
+        $corpus = $this->corpus($client);
+        $targets = ['sum' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 9.5, 'arguments' => ['x' => 9]]]]];
+
+        Assert::same($corpus->recallTargets(self::ID, ['x']), []);
+
+        $corpus->rememberTargets(self::ID, $targets, ['x']);
+
+        Assert::same(array_keys($client->documents), ['property-testing:corpus:' . sha1(self::ID) . ':search']);
+        Assert::same($corpus->recallTargets(self::ID, ['x']), $targets);
+        Assert::same($corpus->recall(self::ID, ['x']), []);
+
+        $dir = sys_get_temp_dir() . '/property-testing-search-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        (new FilesystemCorpus($dir))->rememberTargets(self::ID, $targets, ['x']);
+        Assert::same($client->documents['property-testing:corpus:' . sha1(self::ID) . ':search'], file_get_contents($dir . '/' . sha1(self::ID) . '.search.json'));
+        // The filesystem backend leaves its lock file beside the document.
+        foreach (glob($dir . '/{,.}*', GLOB_BRACE) ?: [] as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+        rmdir($dir);
+    }
+
+    public function rememberingTargetsReplacesTheDocumentAndAnEmptyPoolRemovesTheKey(): void
+    {
+        $client = new InMemoryCorpusClient();
+        $corpus = $this->corpus($client);
+        $corpus->rememberTargets(self::ID, ['sum' => ['direction' => TargetDirection::Minimize, 'entries' => [['score' => 1.0, 'arguments' => ['x' => 1]]]]], ['x']);
+        $corpus->rememberTargets(self::ID, ['sum' => ['direction' => TargetDirection::Minimize, 'entries' => [['score' => 0.5, 'arguments' => ['x' => 0]]]]], ['x']);
+
+        Assert::same($corpus->recallTargets(self::ID, ['x'])['sum']['entries'], [['score' => 0.5, 'arguments' => ['x' => 0]]]);
+
+        $corpus->rememberTargets(self::ID, [], ['x']);
+
+        Assert::same($client->documents, []);
+    }
+
+    public function rememberingTargetsRetriesALostRace(): void
+    {
+        $client = new InMemoryCorpusClient(failNextWrites: 2);
+        $corpus = $this->corpus($client);
+        $corpus->rememberTargets(self::ID, ['sum' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 1.0, 'arguments' => ['x' => 1]]]]], ['x']);
+
+        Assert::same($client->writes, 3);
+        Assert::same(count($corpus->recallTargets(self::ID, ['x'])), 1);
+
+        $exhausted = new InMemoryCorpusClient(failNextWrites: RedisCorpus::MAX_ATTEMPTS);
+        $this->corpus($exhausted)->rememberTargets(self::ID, ['sum' => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 1.0, 'arguments' => ['x' => 1]]]]], ['x']);
+        Assert::same($exhausted->writes, RedisCorpus::MAX_ATTEMPTS);
+        Assert::same($exhausted->documents, []);
     }
 
     public function anEmptyCorpusIsAnAbsentKey(): void

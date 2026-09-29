@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Tests;
 
+use Rasuvaeff\PropertyTesting\Arbitrary\DrawnEngine;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Random;
@@ -129,6 +130,17 @@ final class GenForParametersTest
         }
 
         Assert::same(count($currencies), count(Currency::cases()));
+    }
+
+    public function theNativeRandomApiIsGeneratedFromTheDrawTape(): void
+    {
+        $generators = Gen::forParameters(new \ReflectionMethod(PropertyMethods::class, 'withRandomApi'));
+        $random = new Random(9);
+
+        Assert::instanceOf($generators['engine']->generate($random)->value, DrawnEngine::class);
+        $randomizer = $generators['randomizer']->generate($random)->value;
+        Assert::instanceOf($randomizer, \Random\Randomizer::class);
+        Assert::instanceOf($randomizer->engine, DrawnEngine::class);
     }
 
     public function aNullableNativeTypeReachesBothSides(): void

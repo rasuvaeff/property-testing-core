@@ -19,6 +19,7 @@ use Rasuvaeff\PropertyTesting\Runner\TrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\TrialOutcome;
 use Rasuvaeff\PropertyTesting\Tests\Support\ChainArbitrary;
 use Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener;
+use Rasuvaeff\PropertyTesting\Tests\Support\FailingHelper;
 use Rasuvaeff\PropertyTesting\Tests\Support\ThrowingShrinkArbitrary;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -456,6 +457,112 @@ final class PropertyRunnerShrinkTest
      * @param array<string, ArbitraryInterface> $generators
      * @param list<string> $parameterNames
      */
+    public function shrinkingKeepsToTheLineThatFailed(): void
+    {
+        // Both throws are RuntimeExceptions, so the class alone cannot tell
+        // them apart: a candidate below 100 fails at the second line, which is
+        // a different bug. The descent stops at 100 instead of reporting 0 as
+        // the minimal counterexample of a failure 0 never produced.
+        $result = (new PropertyRunner())->run(
+            $this->ownDefinition('shrinkingKeepsToTheLineThatFailed', ['value' => Gen::intBetween(0, 10_000)]),
+            new CallableTrialExecutor(static function (int $value): void {
+                if ($value >= 100) {
+                    throw new \RuntimeException('at or above 100');
+                }
+
+                throw new \RuntimeException('below 100');
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->originalArguments, ['value' => 3989]);
+        Assert::same($example->shrunkArguments, ['value' => 100]);
+        Assert::same($example->failure?->getMessage(), 'at or above 100');
+    }
+
+    public function shrinkingKeepsToTheCallThatFailed(): void
+    {
+        // Both failures are raised from the same line of another file — what an
+        // assertion library does to every assertion in a body. The line that
+        // tells them apart is the one in the property's own file that called in.
+        $result = (new PropertyRunner())->run(
+            $this->ownDefinition('shrinkingKeepsToTheCallThatFailed', ['value' => Gen::intBetween(0, 10_000)]),
+            new CallableTrialExecutor(static function (int $value): void {
+                if ($value >= 100) {
+                    FailingHelper::raise('at or above 100');
+                }
+
+                FailingHelper::raise('below 100');
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->shrunkArguments, ['value' => 100]);
+        Assert::same($example->failure?->getMessage(), 'at or above 100');
+    }
+
+    public function anIdThatNamesNoClassLeavesTheClassAsTheWholeIdentity(): void
+    {
+        // The place a failure came from is only readable when the id names a
+        // loaded class. Without it the criterion is what it always was, and the
+        // descent slides into the second line: that is the cost of an
+        // adapter-supplied id string, not a silent stall.
+        $result = (new PropertyRunner())->run(
+            $this->definition(['value' => Gen::intBetween(0, 10_000)], ['value']),
+            new CallableTrialExecutor(static function (int $value): void {
+                if ($value >= 100) {
+                    throw new \RuntimeException('at or above 100');
+                }
+
+                throw new \RuntimeException('below 100');
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->shrunkArguments, ['value' => 0]);
+        Assert::same($example->failure?->getMessage(), 'below 100');
+    }
+
+    public function aFailureReachedThroughStacksOfDifferentHeightStillShrinks(): void
+    {
+        // The identity is one place, not a stack: the helper recurses as deep as
+        // the input is large, and every trial arrives at the same body line. A
+        // criterion that compared traces would refuse every smaller candidate
+        // and report the input it started from.
+        $result = (new PropertyRunner())->run(
+            $this->ownDefinition('aFailureReachedThroughStacksOfDifferentHeightStillShrinks', ['value' => Gen::intBetween(0, 10_000)]),
+            new CallableTrialExecutor(static function (int $value): void {
+                if ($value >= 100) {
+                    FailingHelper::raiseFromDepth('at or above 100', intdiv($value, 250));
+                }
+            }),
+        );
+
+        Assert::instanceOf($result, Falsified::class);
+        $example = $result->counterExample();
+        Assert::same($example->shrunkArguments, ['value' => 100]);
+    }
+
+    /**
+     * A definition whose id names this very class, so the engine can read the
+     * file the property bodies above are written in.
+     *
+     * @param array<string, ArbitraryInterface> $generators
+     */
+    private function ownDefinition(string $method, array $generators): PropertyDefinition
+    {
+        return new PropertyDefinition(
+            id: self::class . '::' . $method,
+            name: $method,
+            generators: $generators,
+            parameterNames: array_keys($generators),
+            config: new PropertyConfig(runs: 200, seed: 42),
+        );
+    }
+
     private function definition(
         array $generators,
         array $parameterNames,

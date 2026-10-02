@@ -140,8 +140,8 @@ it, and on PHP 8.3 and 8.4 neither can a closure, so `Gen::map()`,
 through a factory reference.
 
 The attribute is exact. It wins over a docblock it disagrees with, stands in
-for one that cannot be read, and a nullable parameter is not made nullable on
-top of it. Anything wrong with it — constructor arguments the arbitrary
+for one that cannot be read, and on a `?T` parameter it is not wrapped in
+`Gen::nullable()` on top. Anything wrong with it — constructor arguments the arbitrary
 rejects, a method that is not static, a factory returning something other
 than an arbitrary — is an exception naming the parameter.
 

@@ -189,8 +189,9 @@ rejected at construction.
 | SUT takes a `Random\Randomizer` (jitter, shuffle) | `Gen::randomizer()` / `Gen::randomEngine()` — or just type the parameter `\Random\Randomizer` under `auto` | The SUT's random decisions ride the draw tape and SHRINK toward `"\0"` (`getInt` → `$min`); a fixed seed only reproduces |
 | Constant (for commands) | `Gen::constant($value)` | |
 | Stateful without a class per command | `Gen::rules(Machine::class, maxLength: 50)` | See Stateful below |
-| VO/config from its constructor | `Gen::forClass(Money::class, $overrides)` | Per parameter: override → `@param` psalm type (`int<0, 100>` beats `int`) → native type; unreadable types THROW naming the parameter, never a widened guess; `skipInvalid: true` discards constructor-rejected values |
+| VO/config from its constructor | `Gen::forClass(Money::class, $overrides)` | Per parameter: override → `#[Generate]` → `@param` psalm type (`int<0, 100>` beats `int`; also `numeric-string`, `lowercase-string`, `non-falsy-string`, `array{a: T, b?: U}` with optional keys sometimes absent) → native type; unreadable types THROW naming the parameter, never a widened guess; `skipInvalid: true` discards constructor-rejected values |
 | Generators from any signature | `Gen::forParameters($reflectionFn, $overrides)` | The forClass rules for a method/closure's parameters, returned as `array<string, ArbitraryInterface>` in signature order; overrides may be PARTIAL — named params taken as given, rest derived |
+| A parameter whose generator a type cannot say | `#[Generate(new IntArbitrary(0, 100))]` on the parameter, or `#[Generate([Generators::class, 'email'])]` for anything built with a closure | Read by `forParameters`/`forClass` after an override, before the docblock; exact (no extra nullable); `derive: false` makes override-or-attribute mandatory per parameter. Test code only |
 
 Numeric generators are **boundary-biased**: ~1 in 5 draws returns an in-range
 edge value. Sized generators never go below their minimum. If the body

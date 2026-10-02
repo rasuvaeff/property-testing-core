@@ -328,7 +328,7 @@ final class ClassArbitraryTest
         } catch (\InvalidArgumentException $e) {
             Assert::same(
                 $e->getMessage(),
-                'Cannot generate ' . NarrowedFloat::class . ': parameter $ratio is documented as float<0.0, 1.0>, which this cannot read; pass an override',
+                'Cannot generate ' . NarrowedFloat::class . ': parameter $ratio is documented as float<0.0, 1.0>, which this cannot read; pass an override or #[Generate]',
             );
         }
     }

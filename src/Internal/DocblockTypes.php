@@ -47,11 +47,20 @@ final class DocblockTypes
         $docblock = $function->getDocComment();
 
         if ($docblock !== false) {
+            // One line, without the comment's frame: a shape is as often
+            // written across lines (`array{\n *     a: int,\n * }`) as on one.
+            $flat = str_replace(["\r\n", "\n", "\r"], ' ', (string) preg_replace(
+                ['~^\s*/\*\*~', '~\*/\s*\z~', '~^\s*\*~m'],
+                '',
+                $docblock,
+            ));
+
             foreach (self::PARAM_TAGS as $tag) {
                 // `@param <type> $name` — the type is everything between the tag
                 // and the variable, which is what keeps `array<string, int>` in
-                // one piece.
-                if (preg_match_all('/@' . $tag . '\s+(?<type>.+?)\s+\$(?<name>[A-Za-z_][A-Za-z0-9_]*)/', $docblock, $matches, PREG_SET_ORDER) === false) {
+                // one piece. It never holds an `@`, so a tag without a
+                // variable cannot swallow the tag after it.
+                if (preg_match_all('/@' . $tag . '\s+(?<type>[^@]+?)\s+\$(?<name>[A-Za-z_][A-Za-z0-9_]*)/', $flat, $matches, PREG_SET_ORDER) === false) {
                     continue;
                 }
 

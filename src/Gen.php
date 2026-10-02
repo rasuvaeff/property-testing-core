@@ -374,7 +374,8 @@ final class Gen
      * Gen::forClass(Money::class, ['amount' => Gen::intPositive()]);
      * ```
      *
-     * Per parameter, in order: an override, then the docblock (psalm subset;
+     * Per parameter, in order: an override, then a {@see Generate} attribute
+     * on the parameter, then the docblock (psalm subset;
      * `@psalm-param`/`@phpstan-param` over `@param`, and the promoted
      * property's own `@var` when the constructor docblock is silent), then
      * the native type. The docblock wins over the native type because it says
@@ -430,7 +431,14 @@ final class Gen
      * @param \ReflectionFunctionAbstract $function The function, method or closure whose parameters to read.
      * @param array<string, ArbitraryInterface> $overrides Generators by parameter name, winning over
      *        anything the parameter declares.
+     * With `$derive: false` nothing is read from the declared types: every
+     * parameter needs an override or a {@see Generate} attribute, and one
+     * without either is refused. That is an adapter's mode without `auto` —
+     * generators stated explicitly, some in a provider, some on the parameters.
+     *
      * @param int $maxDepth How deep to follow class-typed parameters before refusing.
+     * @param bool $derive Whether a parameter with neither an override nor
+     *        a {@see Generate} attribute is derived from its declared type.
      *
      * @return array<string, ArbitraryInterface> By parameter name, in signature order.
      */
@@ -438,6 +446,7 @@ final class Gen
         \ReflectionFunctionAbstract $function,
         array $overrides = [],
         int $maxDepth = 3,
+        bool $derive = true,
     ): array {
         $name = $function instanceof \ReflectionMethod
             ? $function->getDeclaringClass()->getName() . '::' . $function->getName()
@@ -449,6 +458,7 @@ final class Gen
             $overrides,
             $maxDepth,
             [],
+            $derive,
         );
     }
 

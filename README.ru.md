@@ -258,8 +258,48 @@ harness может написать `catch (PropertyTestingException $e)` для
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | строки, соответствующие подмножеству regex (компилируется в комбинаторы), паттерн — **без разделителей**: `Gen::regex('[a-z]{3,6}')`, а не `'/[a-z]{3,6}/'`; `.` и отрицающий класс берут символы из printable ASCII (`0x20`..`0x7E`, без перевода строки) | более короткие/простые совпадения (через скомпилированные деревья) |
 | `Gen::commands($initialModel, $commandGenerators, $minLength, $maxLength)` | `CommandSequenceArbitrary`, валидные последовательности команд для stateful-тестирования | сбрасывает блоки команд, затем упрощает каждую |
 | `Gen::rules($machine, $minLength, $maxLength)` | `RuleSequence` над классом rule-машины (методы `#[Rule]`/`#[Precondition]`/`#[Invariant]`) — см. [Rule-машины](#rule-машины-genrules) | как `commands`: сбрасывает шаги, затем упрощает аргументы каждого || `Gen::swarm($arbitrary)` | `SwarmArbitrary`, swarm-тестирование: каждый случай видит лишь непустое подмножество вариантов обёрнутого генератора выбора (`oneOf`, `elements`, `frequency`, `commands`) | внутри подмножества, из которого случай получился, — обратно до полного алфавита не расширяется |
-| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор: psalm-тип из докблока, если он есть (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; имена классов резолвятся через namespace и `use`-импорты файла), иначе нативный. Читаются три написания: `@psalm-param`/`@phpstan-param` берут верх над `@param`, а `@var` (`@psalm-var`) на самом promoted-свойстве читается, когда докблок конструктора о нём молчит. Нативный `float` означает `floatBetween(-1e6, 1e6)`. Всё, что прочитать нельзя — голый `array`, `mixed`, нативный union, докблок-тип вне подмножества, неизвестное имя класса (называется в сообщении), — исключение, а не догадка, как и override с именем несуществующего параметра | через сгенерированные аргументы, пересобирая экземпляр |
-| `Gen::forParameters($function, $overrides)` | не arbitrary, а карта: `array<string, ArbitraryInterface>` для параметров `ReflectionFunctionAbstract` (метода или кложуры), по именам в порядке сигнатуры — правила `forClass`, применённые к любой сигнатуре; overrides могут быть частичными, остальное достраивается; всё нечитаемое — исключение с именем функции и параметра | каждая запись shrink'ается через свой генератор |
+| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор: атрибут [`#[Generate]`](#генераторы-на-параметре-generate) на параметре, затем psalm-тип из докблока, если он есть (`int<0, 100>`, `non-empty-string`, `numeric-string`, `lowercase-string`, `non-falsy-string`, `list<LineItem>`, `array{id: int, name?: string}`, `Status\|null`, `'a'\|'b'`; имена классов резолвятся через namespace и `use`-импорты файла), иначе нативный. Читаются три написания: `@psalm-param`/`@phpstan-param` берут верх над `@param`, а `@var` (`@psalm-var`) на самом promoted-свойстве читается, когда докблок конструктора о нём молчит. Нативный `float` означает `floatBetween(-1e6, 1e6)`. Всё, что прочитать нельзя — голый `array`, `mixed`, нативный union, докблок-тип вне подмножества, неизвестное имя класса (называется в сообщении), — исключение, а не догадка, как и override с именем несуществующего параметра | через сгенерированные аргументы, пересобирая экземпляр |
+| `Gen::forParameters($function, $overrides, derive: true)` | не arbitrary, а карта: `array<string, ArbitraryInterface>` для параметров `ReflectionFunctionAbstract` (метода или кложуры), по именам в порядке сигнатуры — правила `forClass`, применённые к любой сигнатуре; overrides могут быть частичными, остальное достраивается; всё нечитаемое — исключение с именем функции и параметра. `derive: false` читает только overrides и `#[Generate]` и отказывает параметру без того и другого | каждая запись shrink'ается через свой генератор |
+
+### Генераторы на параметре: `#[Generate]`
+
+Параметр может нести генератор сам. `Gen::forParameters()` и `Gen::forClass()`
+читают его после override и до докблока и нативного типа, поэтому он доходит
+до режима «из сигнатуры» в каждом адаптере:
+
+```php
+use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
+use Rasuvaeff\PropertyTesting\Generate;
+
+public function delayStaysWithinCap(
+    #[Generate(new IntArbitrary(0, 10_000))]
+    int $base,
+    #[Generate([Generators::class, 'email'])]
+    string $to,
+): void {}
+```
+
+Аргумент — либо arbitrary, построенный через `new`, либо ссылка на статическую
+фабрику, которая его возвращает: имя метода объявляющего класса,
+`'Class::method'`, `[Class::class, 'method']` или invokable-объект. Аргумент
+атрибута — константное выражение, поэтому вызов `Gen::*` в нём невозможен, а на
+PHP 8.3/8.4 — и замыкание:
+
+| Выражается через `new` | Нужна ссылка на фабрику |
+|---|---|
+| `IntArbitrary`, `FloatArbitrary`, `BoolArbitrary`, `StringArbitrary`, `CharsetStringArbitrary`, `BytesArbitrary`, `UuidArbitrary`, `DateTimeArbitrary` | `Gen::map()`, `filter()`, `flatMap()`, `composite()` — принимают замыкание |
+| `ArrayArbitrary`, `DictionaryArbitrary`, `TupleArbitrary`, `RecordArbitrary`, `SubsetArbitrary`, `NullableArbitrary`, вложенно: `new ArrayArbitrary(new IntArbitrary(0, 9), 1, 10)` | `Gen::email()`, `url()`, `json()`, `jsonString()`, `intRange()`, `randomizer()` — построены на `map()` |
+| `OneOfArbitrary` (`Gen::elements()`, `oneOf()`, `enum()` — `new OneOfArbitrary(Status::A, Status::B)`), `ConstantArbitrary`, `FrequencyArbitrary` | `Gen::regex()`, `stringMatching()`, `recursive()` |
+| `ClassArbitrary` (`Gen::forClass()`) | зависимые параметры — атрибут видит один параметр |
+
+Атрибут точен: он побеждает несогласный с ним докблок (и заменяет тот, который
+прочитать нельзя), а nullable-параметр не делается nullable поверх него. На
+variadic он считается override. Всё, что с ним может быть не так, — аргументы,
+которые arbitrary отвергает, ссылка не на статическую фабрику, фабрика,
+вернувшая не то, — исключение с именем параметра.
+
+`Generate` — для тестового кода. `Gen::forClass()` читает его на любом
+конструкторе, но production-класс с ним зависел бы от этого пакета в рантайме.
 
 Числовые генераторы (`int*`, `float*`) **boundary-biased**: примерно каждый
 пятый draw возвращает краевое значение диапазона (`0`, `±1`, `min`, `max` для

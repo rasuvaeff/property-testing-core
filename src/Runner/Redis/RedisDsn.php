@@ -184,7 +184,7 @@ final readonly class RedisDsn
 
         $query = [];
 
-        if (is_array($parts) && isset($parts['query'])) {
+        if (isset($parts['query'])) {
             parse_str($parts['query'], $query);
         }
 

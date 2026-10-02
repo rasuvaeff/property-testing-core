@@ -303,7 +303,8 @@ Gen::forClass(Money::class);
 Gen::forClass(Money::class, ['amount' => Gen::intPositive()]);
 ```
 
-Per parameter, in order: an override, then the docblock (psalm subset;
+Per parameter, in order: an override, then a [`Generate`](/api/classes/Generate) attribute
+on the parameter, then the docblock (psalm subset;
 `@psalm-param`/`@phpstan-param` over `@param`, and the promoted
 property's own `@var` when the constructor docblock is silent), then
 the native type. The docblock wins over the native type because it says
@@ -320,6 +321,7 @@ static forParameters(
     \ReflectionFunctionAbstract $function,
     array<string,\ArbitraryInterface> $overrides = [],
     int $maxDepth = 3,
+    bool $derive = true,
 ): array
 ```
 
@@ -330,8 +332,9 @@ mode: a property method whose parameters are fully typed needs no
 provider at all.
 
 - `$function` — The function, method or closure whose parameters to read.
-- `$overrides` — Generators by parameter name, winning over anything the parameter declares.
+- `$overrides` — Generators by parameter name, winning over        anything the parameter declares. With `$derive: false` nothing is read from the declared types: every parameter needs an override or a [`Generate`](/api/classes/Generate) attribute, and one without either is refused. That is an adapter's mode without `auto` — generators stated explicitly, some in a provider, some on the parameters.
 - `$maxDepth` — How deep to follow class-typed parameters before refusing.
+- `$derive` — Whether a parameter with neither an override nor a [`Generate`](/api/classes/Generate) attribute is derived from its declared type.
 
 ```php
 Gen::forParameters(new \ReflectionMethod(BackoffTest::class, 'delayStaysWithinCap'));

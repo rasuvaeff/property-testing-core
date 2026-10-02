@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.2.0 — 2026-10-02
+
+- **Added:** `#[Generate]` — a parameter attribute holding its generator, read by
+  `Gen::forParameters()` and `Gen::forClass()` after an override and before the
+  docblock and the native type (#160). It takes an arbitrary built with `new`, or
+  a reference to a static factory returning one (`'method'`, `'Class::method'`,
+  `[Class::class, 'method']`, an invokable) — the reference is how a generator
+  built with a closure (`map`, `email`, `regex`) reaches a parameter on PHP 8.3
+  and 8.4. A broken attribute is an exception naming the parameter.
+- **Added:** `Gen::forParameters(derive: false)` reads only overrides and
+  `#[Generate]` and refuses a parameter with neither — the engine half of an
+  adapter's mode without `auto`.
+- **Added:** the docblock reader understands `numeric-string`,
+  `non-falsy-string`/`truthy-string`, `lowercase-string`,
+  `non-empty-lowercase-string` and array shapes — `array{a: T, b?: U}`,
+  quoted and integer keys, positional `array{T, U}` and `list{T, U}`, `array{}`,
+  shapes nested in collections and unions (#156). An optional key is sometimes
+  absent and shrinks towards absent. Unsealed shapes and double-quoted keys stay
+  refused. A `@param` type written across several lines is now read.
+- **Changed:** refusals about a parameter now end with
+  `pass an override or #[Generate]`.
+
 ## 1.1.0 — 2026-09-28
 
 - **Changed:** a shrink candidate is accepted only when it fails the same way

@@ -352,17 +352,21 @@ Gen::swarm(ArbitraryInterface $arbitrary)  // <T>: swarm testing. Wraps a CHOICE
 // (upper bound), EdgeCased — the wrappers answer null over an unbounded source and their enumerate()
 // throws LogicException. Order: ints ascending, oneOf as listed, null first, first component slowest.
 Gen::forClass(string $class, array $overrides = [], bool $skipInvalid = false, int $maxDepth = 3)
-// <T>: instances from the constructor. Per parameter, in order: override, docblock psalm
-// type, native type. Docblock spellings: @psalm-param / @phpstan-param win over @param; a
+// <T>: instances from the constructor. Per parameter, in order: override, #[Generate] on the
+// parameter, docblock psalm type, native type. Docblock spellings: @psalm-param / @phpstan-param win over @param; a
 // @var (@psalm-var, @phpstan-var) on the PROMOTED PROPERTY is read when the constructor
 // docblock says nothing about that parameter. Reads int<0,100> | positive-int |
-// non-negative-int | non-empty-string | list<T> | non-empty-list<T> | T[] | array<K,V> |
+// non-negative-int | non-empty-string | numeric-string | non-falsy-string (truthy-string) |
+// lowercase-string | non-empty-lowercase-string | list<T> | non-empty-list<T> | T[] | array<K,V> |
+// non-empty-array<K,V> | array{a: T, b?: U, 'quoted key': V, 3: W} (optional key: SOMETIMES ABSENT,
+// shrinks towards absent; absent is not null) | array{T, U} | list{T, U} | array{} |
 // 'a'|'b' | 1|2|3 | 'a'|null | A|B | ?T | enum | DateTimeImmutable | another class (recursive,
 // maxDepth, cycles refused by name). Native float -> floatBetween(-1e6, 1e6). Class names
 // inside docblock types (list<LineItem>, Status|null, \DateTimeImmutable) resolve through the
 // declaring file's namespace and `use` imports, like the code beneath the docblock. ANYTHING ELSE
 // (bare array, mixed, callable, an untyped parameter, a NATIVE UNION such as int|string, a
-// variadic, a docblock type outside this subset such as float<0.0, 1.0> or array{a: int}, an
+// variadic, a docblock type outside this subset such as float<0.0, 1.0> or an unsealed
+// array{a: int, ...} / a "double-quoted" shape key / list{a: int}, an
 // unknown class name — the message says `unknown class "Nope"`) THROWS naming the parameter and
 // the type — never a widened guess; the one fallback is a native CLASS type whose docblock only
 // adds generics (Collection<Item>). An override key naming no parameter THROWS; an enum without
@@ -370,13 +374,27 @@ Gen::forClass(string $class, array $overrides = [], bool $skipInvalid = false, i
 // A constructor that rejects a value throws by default (the generator does not match the domain);
 // skipInvalid: true discards and redraws through Gen::filter (100 attempts -> GenerationExhaustedException),
 // discarding Exceptions only, never Errors. Shrinks through the arguments, rebuilding the instance.
-Gen::forParameters(\ReflectionFunctionAbstract $function, array $overrides = [], int $maxDepth = 3)
+Gen::forParameters(\ReflectionFunctionAbstract $function, array $overrides = [], int $maxDepth = 3, bool $derive = true)
 // NOT an arbitrary — returns array<string, ArbitraryInterface> for the function's parameters, by
 // name in signature order. The forClass rules applied to any method or closure: per parameter,
-// override -> docblock psalm type (@psalm-param/@phpstan-param over @param) -> native type; same
+// override -> #[Generate] -> docblock psalm type (@psalm-param/@phpstan-param over @param) -> native type; same
 // supported subset, same refusals (naming the function and the parameter, never a widened guess). Overrides may be PARTIAL: named parameters
 // are taken as given, the rest derived from the signature. No skipInvalid (nothing is executed);
 // pure function of reflection, Random not involved. Engine half of the adapters' auto mode.
+// derive: false -> only overrides and #[Generate]; a parameter with neither THROWS
+// ("has no generator; pass an override or #[Generate]") — the adapters' mode without auto.
+
+#[Generate(ArbitraryInterface|string|array|object $generator)]   // on a PARAMETER (Rasuvaeff\PropertyTesting\Generate)
+// Read by forParameters()/forClass() after an override, before docblock and native type.
+// Argument: an arbitrary built with `new` (constant expression — no Gen::* calls, no closures on
+// 8.3/8.4: `new IntArbitrary(0, 100)`, `new OneOfArbitrary('a', 'b')`,
+// `new ArrayArbitrary(new IntArbitrary(0, 9), 1, 10)`), OR a static factory returning one:
+// 'method' (declaring class first), 'Class::method', [Class::class, 'method'], invokable object.
+// Use the reference for map/filter/flatMap/composite/email/url/json/regex/recursive.
+// Exact: wins over the docblock (even an unreadable one), never made nullable on ?T; counts as
+// the override on a variadic. Not repeatable. A broken one (rejected constructor arguments,
+// non-static method, non-callable, factory returning a non-arbitrary or throwing) THROWS naming
+// the parameter. Test code only — on a production constructor it is a runtime dependency.
 Gen::ipv4()  Gen::ipv6()  Gen::email()  Gen::url()  // ipv6: canonical RFC 5952 text, shrinks to "::"
 Gen::json(int $maxDepth = 3)  Gen::jsonString(int $maxDepth = 3)
 Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compiled to combinators;

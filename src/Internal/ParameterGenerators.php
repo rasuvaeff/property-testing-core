@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Internal;
 use Closure;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Generate;
 
 /**
  * The parameters of one signature, as generators.
@@ -15,7 +16,8 @@ use Rasuvaeff\PropertyTesting\Gen;
  * constructor's parameters, instantiated) and
  * {@see \Rasuvaeff\PropertyTesting\Gen::forParameters()} (any function's
  * parameters, handed back as a map). The resolution rules are one thing —
- * an explicit override, then the docblock ({@see DocblockTypes}), then the native type —
+ * an explicit override, then a {@see Generate} attribute on the parameter, then
+ * the docblock ({@see DocblockTypes}), then the native type —
  * and $subject is the only difference between the callers: it names whose
  * parameter a refusal is about.
  *
@@ -72,6 +74,8 @@ final class ParameterGenerators
      * @param string $subject Whose parameters these are, for the refusal messages.
      * @param array<string, ArbitraryInterface> $overrides
      * @param list<class-string> $chain
+     * @param bool $derive Whether a parameter with neither an override nor a
+     *        {@see Generate} attribute is derived from its declared type, or refused.
      *
      * @return array<string, ArbitraryInterface>
      */
@@ -81,6 +85,7 @@ final class ParameterGenerators
         array $overrides,
         int $maxDepth,
         array $chain,
+        bool $derive = true,
     ): array {
         $documented = DocblockTypes::of($function);
         $resolveClass = self::classResolver($function);
@@ -108,9 +113,25 @@ final class ParameterGenerators
                 continue;
             }
 
+            $attributed = self::fromAttribute($subject, $parameter);
+
+            if ($attributed instanceof ArbitraryInterface) {
+                $shape[$name] = $attributed;
+
+                continue;
+            }
+
             if ($parameter->isVariadic()) {
                 throw new \InvalidArgumentException(sprintf(
-                    'Cannot generate %s: parameter $%s is variadic; pass an override',
+                    'Cannot generate %s: parameter $%s is variadic; pass an override or #[Generate]',
+                    $subject,
+                    $name,
+                ));
+            }
+
+            if (!$derive) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Cannot generate %s: parameter $%s has no generator; pass an override or #[Generate]',
                     $subject,
                     $name,
                 ));
@@ -120,6 +141,100 @@ final class ParameterGenerators
         }
 
         return $shape;
+    }
+
+    /**
+     * The generator a {@see Generate} attribute on $parameter names, or null
+     * when it carries none. Every way the attribute can be wrong — arguments
+     * its constructor or PHP rejects, a reference that is not a static
+     * factory, a factory returning something else — is a refusal naming the
+     * parameter: the throw happens when the attribute is read, far from where
+     * it was written.
+     */
+    private static function fromAttribute(string $subject, \ReflectionParameter $parameter): ?ArbitraryInterface
+    {
+        $attributes = $parameter->getAttributes(Generate::class);
+
+        if ($attributes === []) {
+            return null;
+        }
+
+        try {
+            $generator = $attributes[0]->newInstance()->generator;
+        } catch (\Throwable $failure) {
+            throw new \InvalidArgumentException(sprintf(
+                'Cannot generate %s: #[Generate] on parameter $%s cannot be built: %s',
+                $subject,
+                $parameter->getName(),
+                $failure->getMessage(),
+            ), 0, $failure);
+        }
+
+        if ($generator instanceof ArbitraryInterface) {
+            return $generator;
+        }
+
+        $factory = self::factory($subject, $parameter, $generator);
+
+        try {
+            /** @var mixed $built */
+            $built = $factory();
+        } catch (\Throwable $failure) {
+            throw new \InvalidArgumentException(sprintf(
+                'Cannot generate %s: #[Generate] on parameter $%s names a factory that threw: %s',
+                $subject,
+                $parameter->getName(),
+                $failure->getMessage(),
+            ), 0, $failure);
+        }
+
+        if (!$built instanceof ArbitraryInterface) {
+            throw new \InvalidArgumentException(sprintf(
+                'Cannot generate %s: #[Generate] on parameter $%s names a factory that returned %s, not an ArbitraryInterface',
+                $subject,
+                $parameter->getName(),
+                get_debug_type($built),
+            ));
+        }
+
+        return $built;
+    }
+
+    /**
+     * The static factory a {@see Generate} reference denotes. A bare method
+     * name is looked up on the declaring class first, the way a provider name
+     * is, so a local factory wins over a global function of the same name.
+     */
+    private static function factory(string $subject, \ReflectionParameter $parameter, array|object|string $reference): Closure
+    {
+        $class = $parameter->getDeclaringClass();
+
+        if (is_string($reference) && $class instanceof \ReflectionClass && $class->hasMethod($reference)) {
+            $method = $class->getMethod($reference);
+
+            if (!$method->isStatic()) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Cannot generate %s: #[Generate] on parameter $%s names %s::%s(), which is not static',
+                    $subject,
+                    $parameter->getName(),
+                    $class->getName(),
+                    $reference,
+                ));
+            }
+
+            return $method->getClosure();
+        }
+
+        if (is_callable($reference)) {
+            return Closure::fromCallable($reference);
+        }
+
+        throw new \InvalidArgumentException(sprintf(
+            'Cannot generate %s: #[Generate] on parameter $%s takes an ArbitraryInterface or a static factory returning one, got %s',
+            $subject,
+            $parameter->getName(),
+            is_string($reference) ? sprintf('"%s"', $reference) : get_debug_type($reference),
+        ));
     }
 
     /**
@@ -254,7 +369,7 @@ final class ParameterGenerators
             // narrow its generics (`Collection<Item>`), never its values.
             if (!$native instanceof \ReflectionNamedType || $native->isBuiltin()) {
                 throw new \InvalidArgumentException(sprintf(
-                    'Cannot generate %s: parameter $%s is documented as %s, which this cannot read%s; pass an override',
+                    'Cannot generate %s: parameter $%s is documented as %s, which this cannot read%s; pass an override or #[Generate]',
                     $subject,
                     $parameter->getName(),
                     $documented,
@@ -274,7 +389,7 @@ final class ParameterGenerators
         }
 
         throw new \InvalidArgumentException(sprintf(
-            'Cannot generate %s: parameter $%s is %s, which this cannot read; pass an override',
+            'Cannot generate %s: parameter $%s is %s, which this cannot read; pass an override or #[Generate]',
             $subject,
             $parameter->getName(),
             match (true) {

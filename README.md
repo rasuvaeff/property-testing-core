@@ -259,8 +259,49 @@ through their source domain.
 | `Gen::commands($initialModel, $commandGenerators, $minLength, $maxLength)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
 | `Gen::rules($machine, $minLength, $maxLength)` | `RuleSequence` over a rule-based machine class (`#[Rule]`/`#[Precondition]`/`#[Invariant]` methods) — see [Rule-based machines](#rule-based-machines-genrules) | like `commands`: drops steps, then simplifies each step's arguments |
 | `Gen::swarm($arbitrary)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |
-| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — the docblock psalm type when there is one (`int<0, 100>`, `non-empty-string`, `list<LineItem>`, `Status\|null`, `'a'\|'b'`; class names resolve through the file's namespace and `use` imports), the native type otherwise. Three spellings are read: `@psalm-param`/`@phpstan-param` win over `@param`, and a `@var` (`@psalm-var`) on the promoted property itself is read when the constructor docblock says nothing about it. A native `float` means `floatBetween(-1e6, 1e6)`. Anything unreadable — a bare `array`, `mixed`, a native union, a docblock type outside the subset, an unknown class name (named in the message) — throws instead of guessing, an override naming no parameter too | through the generated arguments, rebuilding the instance |
-| `Gen::forParameters($function, $overrides)` | not an arbitrary but a map: `array<string, ArbitraryInterface>` for the parameters of a `ReflectionFunctionAbstract` (method or closure), by name in signature order — the `forClass` rules applied to any signature; overrides may be partial, the rest is derived; anything unreadable throws naming the function and the parameter | each entry shrinks through its own generator |
+| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — a [`#[Generate]`](#generators-on-the-parameter-generate) attribute on the parameter, then the docblock psalm type when there is one (`int<0, 100>`, `non-empty-string`, `numeric-string`, `lowercase-string`, `non-falsy-string`, `list<LineItem>`, `array{id: int, name?: string}`, `Status\|null`, `'a'\|'b'`; class names resolve through the file's namespace and `use` imports), the native type otherwise. Three spellings are read: `@psalm-param`/`@phpstan-param` win over `@param`, and a `@var` (`@psalm-var`) on the promoted property itself is read when the constructor docblock says nothing about it. A native `float` means `floatBetween(-1e6, 1e6)`. Anything unreadable — a bare `array`, `mixed`, a native union, a docblock type outside the subset, an unknown class name (named in the message) — throws instead of guessing, an override naming no parameter too | through the generated arguments, rebuilding the instance |
+| `Gen::forParameters($function, $overrides, derive: true)` | not an arbitrary but a map: `array<string, ArbitraryInterface>` for the parameters of a `ReflectionFunctionAbstract` (method or closure), by name in signature order — the `forClass` rules applied to any signature; overrides may be partial, the rest is derived; anything unreadable throws naming the function and the parameter. `derive: false` reads only overrides and `#[Generate]` and refuses a parameter with neither | each entry shrinks through its own generator |
+
+### Generators on the parameter: `#[Generate]`
+
+A parameter can carry its generator itself. `Gen::forParameters()` and
+`Gen::forClass()` read it after an override and before the docblock and the
+native type, so it reaches every adapter's signature-driven mode:
+
+```php
+use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
+use Rasuvaeff\PropertyTesting\Generate;
+
+public function delayStaysWithinCap(
+    #[Generate(new IntArbitrary(0, 10_000))]
+    int $base,
+    #[Generate([Generators::class, 'email'])]
+    string $to,
+): void {}
+```
+
+The argument is either an arbitrary built with `new` or a reference to a static
+factory that returns one: a method name of the declaring class,
+`'Class::method'`, `[Class::class, 'method']`, or an invokable object. An
+attribute argument is a constant expression, so `Gen::*` calls cannot appear in
+it, and on PHP 8.3/8.4 neither can a closure:
+
+| Expressible with `new` | Needs a factory reference |
+|---|---|
+| `IntArbitrary`, `FloatArbitrary`, `BoolArbitrary`, `StringArbitrary`, `CharsetStringArbitrary`, `BytesArbitrary`, `UuidArbitrary`, `DateTimeArbitrary` | `Gen::map()`, `filter()`, `flatMap()`, `composite()` — they take a closure |
+| `ArrayArbitrary`, `DictionaryArbitrary`, `TupleArbitrary`, `RecordArbitrary`, `SubsetArbitrary`, `NullableArbitrary`, nested: `new ArrayArbitrary(new IntArbitrary(0, 9), 1, 10)` | `Gen::email()`, `url()`, `json()`, `jsonString()`, `intRange()`, `randomizer()` — built on `map()` |
+| `OneOfArbitrary` (`Gen::elements()`, `oneOf()`, `enum()` — `new OneOfArbitrary(Status::A, Status::B)`), `ConstantArbitrary`, `FrequencyArbitrary` | `Gen::regex()`, `stringMatching()`, `recursive()` |
+| `ClassArbitrary` (`Gen::forClass()`) | dependent parameters — one attribute sees one parameter |
+
+The attribute is exact: it wins over a docblock it disagrees with (and stands in
+for one this cannot read), and a nullable parameter is not made nullable on top
+of it. On a variadic it counts as the override. Everything that can be wrong
+with it — constructor arguments the arbitrary rejects, a reference that is not
+a static factory, a factory returning something else — is an exception naming
+the parameter.
+
+`Generate` belongs to test code. `Gen::forClass()` reads it on any constructor,
+but a production class carrying it would depend on this package at runtime.
 
 Numeric generators (`int*`, `float*`) are **boundary-biased**: roughly one draw in
 five returns an in-range edge value (`0`, `±1`, `min`, `max` for ints; `0.0` or

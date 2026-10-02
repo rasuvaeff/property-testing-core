@@ -14,7 +14,7 @@
             "url": "../..",
             "options": {
                 "versions": {
-                    "rasuvaeff/property-testing-core": "1.0.0"
+                    "rasuvaeff/property-testing-core": "1.2.0"
                 }
             }
         }

@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Internal;
 
 use Closure;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Draw;
 use Rasuvaeff\PropertyTesting\Gen;
 
 /**
@@ -83,13 +84,19 @@ final class TypeGenerators
             return $union;
         }
 
+        $shape = self::shape($type, $forClass, $resolveClass);
+
+        if ($shape instanceof ArbitraryInterface) {
+            return $shape;
+        }
+
         return self::classType($type, $forClass, $resolveClass);
     }
 
     /**
      * A class, interface or enum named the way the docblock's file names it
      * (`LineItem`, `Order\LineItem`, `\App\LineItem`). What is not a name at
-     * all (`array{a: int}`, `numeric-string`) or names nothing the resolver
+     * all (`float<0.0, 1.0>`, `callable-string`) or names nothing the resolver
      * knows stays unread.
      *
      * @param Closure(string): ArbitraryInterface $forClass
@@ -142,12 +149,156 @@ final class TypeGenerators
             'float' => Gen::floatBetween(-1_000_000.0, 1_000_000.0),
             'string' => Gen::string(),
             'non-empty-string' => Gen::stringOf(1, 100),
+            // Non-empty and not "0" — the one string PHP casts to false
+            // besides "", and the reason the type exists.
+            'non-falsy-string', 'truthy-string' => Gen::filter(
+                Gen::stringOf(1, 100),
+                static fn(string $value): bool => $value !== '0',
+            ),
+            'lowercase-string' => Gen::map(Gen::string(), mb_strtolower(...)),
+            'non-empty-lowercase-string' => Gen::map(Gen::stringOf(1, 100), mb_strtolower(...)),
+            'numeric-string' => self::numericString(),
             'bool' => Gen::bool(),
             'true' => Gen::constant(value: true),
             'false' => Gen::constant(value: false),
             'null' => Gen::constant(null),
             default => null,
         };
+    }
+
+    /**
+     * Strings `is_numeric()` accepts, weighted towards the forms that surprise
+     * code written for `"42"`: a sign, an exponent, a bare or trailing dot,
+     * and the whitespace PHP 8 tolerates on either side.
+     *
+     * @return ArbitraryInterface<string>
+     */
+    private static function numericString(): ArbitraryInterface
+    {
+        return Gen::composite(static function (Draw $draw): string {
+            $form = $draw->draw(Gen::frequency([
+                [4, Gen::constant('integer')],
+                [2, Gen::constant('float')],
+                [2, Gen::constant('exponent')],
+                [1, Gen::constant('dot')],
+                [2, Gen::constant('whitespace')],
+            ]));
+
+            return match ($form) {
+                'integer' => (string) $draw->draw(Gen::int()),
+                'float' => (string) $draw->draw(Gen::floatBetween(-1_000_000.0, 1_000_000.0)),
+                'exponent' => sprintf(
+                    '%de%d',
+                    $draw->draw(Gen::intBetween(-999, 999)),
+                    $draw->draw(Gen::intBetween(-20, 20)),
+                ),
+                'dot' => sprintf(
+                    $draw->draw(Gen::bool()) ? '%s.%d' : '%s%d.',
+                    $draw->draw(Gen::elements(['', '+', '-'])),
+                    $draw->draw(Gen::intBetween(0, 999)),
+                ),
+                default => self::padded(
+                    (string) $draw->draw(Gen::intBetween(-999, 999)),
+                    $draw->draw(Gen::elements([' ', "\t", "\n", "\r", "\v", "\f"])),
+                    $draw->draw(Gen::bool()),
+                ),
+            };
+        });
+    }
+
+    private static function padded(string $number, string $whitespace, bool $leading): string
+    {
+        return $leading ? $whitespace . $number : $number . $whitespace;
+    }
+
+    /**
+     * `array{a: int, b?: string}`, `array{int, string}`, `list{int, string}`,
+     * `array{'quoted key': int}`. An optional key is left out of some values,
+     * and shrinks towards being left out — absent is not null, so a nullable
+     * value type keeps its own null. An unsealed shape (`...`) and a key form
+     * outside identifiers, integers and single-quoted strings stay unread.
+     *
+     * @param Closure(string): ArbitraryInterface $forClass
+     * @param Closure(string): ?string $resolveClass
+     */
+    private static function shape(string $type, Closure $forClass, Closure $resolveClass): ?ArbitraryInterface
+    {
+        if (preg_match('/^(array|list)\{(.*)\}\z/s', $type, $matches) !== 1) {
+            return null;
+        }
+
+        $isList = $matches[1] === 'list';
+        $elements = self::splitArguments($matches[2]);
+
+        if (end($elements) === '') {
+            // A trailing comma, or the empty shape.
+            array_pop($elements);
+        }
+
+        $keys = [];
+        $values = [];
+        $optional = [];
+        $position = 0;
+
+        foreach ($elements as $element) {
+            if (preg_match("/^(?<key>[A-Za-z_][A-Za-z0-9_]*|-?\d+|'(?:[^'\\\\]|\\\\.)*')(?<optional>\?)?\s*:\s*(?<type>.+)\z/s", $element, $field) === 1) {
+                if ($isList) {
+                    return null;
+                }
+
+                $key = self::shapeKey($field['key']);
+                $elementType = $field['type'];
+                $isOptional = $field['optional'] === '?';
+            } else {
+                $key = $position++;
+                $elementType = $element;
+                $isOptional = false;
+            }
+
+            $value = self::fromDocblock($elementType, $forClass, $resolveClass);
+
+            if (!$value instanceof ArbitraryInterface) {
+                return null;
+            }
+
+            $keys[] = $key;
+            $values[] = $value;
+            $optional[] = $isOptional;
+        }
+
+        if ($values === []) {
+            return Gen::constant([]);
+        }
+
+        return Gen::composite(static function (Draw $draw) use ($keys, $values, $optional): array {
+            $drawn = array_map($draw->draw(...), $values);
+            // Drawn after every value, so a candidate that drops a key replays
+            // the value draws unchanged.
+            $present = array_filter(array_map(
+                static fn(bool $isOptional): bool => !$isOptional || $draw->draw(Gen::bool()),
+                $optional,
+            ));
+
+            return array_combine(
+                array_values(array_intersect_key($keys, $present)),
+                array_values(array_intersect_key($drawn, $present)),
+            );
+        });
+    }
+
+    /**
+     * A shape key as PHP stores it: an integer literal or a numeric quoted
+     * key becomes an integer key, as it would in an array literal.
+     */
+    private static function shapeKey(string $written): int|string
+    {
+        if (str_starts_with($written, "'")) {
+            $written = (string) preg_replace('/\\\\(.)/', '$1', substr($written, 1, -1));
+        }
+
+        $integer = (int) $written;
+
+        return (string) $integer === $written ? $integer : $written;
     }
 
     /**
@@ -285,7 +436,8 @@ final class TypeGenerators
     }
 
     /**
-     * Splits `K, V` without cutting inside a nested `<…>` or a quoted literal.
+     * Splits `K, V` without cutting inside a nested `<…>`, a shape's `{…}`
+     * or a quoted literal.
      *
      * @return list<string>
      */
@@ -337,9 +489,9 @@ final class TypeGenerators
                 continue;
             }
 
-            if ($character === '<') {
+            if ($character === '<' || $character === '{') {
                 ++$depth;
-            } elseif ($character === '>') {
+            } elseif ($character === '>' || $character === '}') {
                 --$depth;
             }
 

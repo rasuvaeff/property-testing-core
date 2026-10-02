@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 — 2026-10-02
 
 - **Added:** `#[Generate]` — a parameter attribute holding its generator, read by
   `Gen::forParameters()` and `Gen::forClass()` after an override and before the

@@ -67,8 +67,11 @@ generator that matches the domain and a demo.
 
 ## What it reads, in order
 
-Per parameter: an **override**, then the **`@param` docblock**, then the
-**native type**. The docblock wins over the native type because it says more.
+Per parameter: an **override**, then a [**`#[Generate]`
+attribute**](#a-generator-on-the-parameter), then the **`@param` docblock**,
+then the **native type**. The docblock wins over the native type because it
+says more; a docblock written across several lines is read like one on a
+single line.
 
 | Written | Generated |
 |---|---|
@@ -76,8 +79,13 @@ Per parameter: an **override**, then the **`@param` docblock**, then the
 | `int<0, 100>`, `int<min, 10>`, `int<0, max>` | `Gen::intBetween()` with those bounds |
 | `positive-int`, `negative-int`, `non-negative-int`, `non-positive-int` | the matching range |
 | `non-empty-string` | `Gen::stringOf(1, 100)` |
+| `non-falsy-string`, `truthy-string` | non-empty and never `"0"` |
+| `lowercase-string`, `non-empty-lowercase-string` | strings `mb_strtolower()` leaves unchanged |
+| `numeric-string` | strings `is_numeric()` accepts, weighted towards signs, exponents, bare dots and surrounding whitespace |
 | `list<T>`, `non-empty-list<T>`, `T[]` | `Gen::arrayOf()` |
 | `array<K, V>`, `non-empty-array<K, V>` | `Gen::dictOf()` |
+| `array{id: int, name?: string}`, `array{'quoted key': T, 3: U}` | a shape; an optional key is sometimes absent and shrinks towards absent — absent is not `null` |
+| `array{int, string}`, `list{int, string}`, `array{}` | positional shapes and the empty array |
 | `'draft'\|'published'`, `1\|2\|3` | `Gen::elements()` — a domain spelled out in the type |
 | `A\|B` | `Gen::frequency()` over both |
 | `?T` | `Gen::nullable()` |
@@ -85,13 +93,13 @@ Per parameter: an **override**, then the **`@param` docblock**, then the
 | `DateTimeImmutable` | `Gen::datetime()` |
 | another class | followed recursively, to `maxDepth` |
 
-Anything else — a bare `array`, `mixed`, `callable`, an intersection, a
-variadic constructor — is an **exception naming the parameter**, never a
-widened guess:
+Anything else — a bare `array`, `mixed`, `callable`, an intersection, an
+unsealed shape (`array{a: int, ...}`), a variadic constructor — is an
+**exception naming the parameter**, never a widened guess:
 
 ```
 Cannot generate …\Unreadable: parameter $anything is typed array, which this
-cannot read; pass an override
+cannot read; pass an override or #[Generate]
 ```
 
 A class it cannot instantiate — a value object with a private constructor and
@@ -105,6 +113,40 @@ Cannot generate …\Duration: it is not instantiable (reached through
 
 That refusal is the design. A guessed generator does not fail here; it fails
 later, in somebody's test, as a value their code was never meant to see.
+
+## A generator on the parameter
+
+When no type says what a parameter needs, the parameter can carry its
+generator itself:
+
+```php
+use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
+use Rasuvaeff\PropertyTesting\Generate;
+
+public function __construct(
+    #[Generate(new IntArbitrary(0, 10_000))]
+    public int $base,
+    #[Generate([Generators::class, 'email'])]
+    public string $owner,
+) {}
+```
+
+The argument is either an arbitrary built with `new` or a reference to a static
+factory that returns one — a method name of the declaring class,
+`'Class::method'`, `[Class::class, 'method']`, an invokable object. An
+attribute argument is a constant expression: `Gen::*` calls cannot appear in
+it, and on PHP 8.3 and 8.4 neither can a closure, so `Gen::map()`,
+`Gen::email()`, `Gen::regex()` and the rest of the closure-built generators go
+through a factory reference.
+
+The attribute is exact. It wins over a docblock it disagrees with, stands in
+for one that cannot be read, and a nullable parameter is not made nullable on
+top of it. Anything wrong with it — constructor arguments the arbitrary
+rejects, a method that is not static, a factory returning something other
+than an arbitrary — is an exception naming the parameter.
+
+`Generate` belongs to test code: on a production constructor it would make
+this package a runtime dependency.
 
 ## A validating constructor
 
@@ -136,7 +178,7 @@ descent rather than thrown from it.
 ## The same rules for a whole property
 
 `Gen::forParameters()` applies the same resolution — an override,
-the `@param` psalm type, then the native type, with the same supported subset
+`#[Generate]`, the `@param` psalm type, then the native type, with the same supported subset
 and the same refusals — to the parameters of any function, method, or closure,
 and returns the map a property needs: `array<string, ArbitraryInterface>` by
 parameter name, in signature order.
@@ -190,6 +232,21 @@ derives its full native domain, and only the property's author knows whether
 that is the one they meant. And under auto, a provider key that is not a
 parameter of the property is an error — merge semantics would otherwise
 silently replace a mistyped entry with a signature-derived generator.
+
+Without auto, the adapters still read `#[Generate]`: through
+`Gen::forParameters(derive: false)`, which takes only overrides and attributes
+and refuses a parameter with neither. A property whose parameters all carry
+the attribute needs no provider and no `auto`:
+
+```php
+#[Property]
+public function delayStaysWithinCap(
+    #[Generate(new IntArbitrary(1, 300))]
+    int $base,
+    #[Generate(new IntArbitrary(1, 86_400))]
+    int $cap,
+): void { /* … */ }
+```
 
 There is no `skipInvalid` here: nothing is executed at derivation time, and a
 property body filters untrusted input through

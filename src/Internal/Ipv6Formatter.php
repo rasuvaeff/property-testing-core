@@ -30,6 +30,10 @@ final class Ipv6Formatter
     {
         \assert(count($groups) === self::GROUPS);
 
+        // Psalm 6.20 no longer preserves `non-empty-list` through
+        // `array_map(dechex(...), ...)`, so the non-empty shape is restated
+        // here: $groups is exactly `self::GROUPS` groups, so is $hex.
+        /** @var non-empty-list<non-empty-string> $hex */
         $hex = array_map(dechex(...), $groups);
         $run = self::compressibleRun($groups);
 

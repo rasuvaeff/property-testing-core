@@ -42,7 +42,7 @@ roll they return one of:
 - **Printable ASCII**: `''`, `' '`, `'0'`.
 - **Unicode**: those three, then `"\n"`, `"a\n"` — `/^[a-z]+$/` accepts it,
   because PCRE `$` matches before a final newline — and `"e\u{0301}"`, a
-  decomposed `é` that compares unequal to the precomposed one.
+  decomposed `é` that compares unequal to the single-codepoint `é`.
 
 Only candidates whose length in characters fits `[$minLength, $maxLength]`
 are kept; when none fits (`stringOf(3, 10)`), that draw falls back to the

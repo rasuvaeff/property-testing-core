@@ -99,10 +99,11 @@ final class RedisCorpusTest
         mkdir($dir);
         (new FilesystemCorpus($dir))->rememberTargets(self::ID, $targets, ['x']);
         Assert::same($client->documents['property-testing:corpus:' . sha1(self::ID) . ':search'], file_get_contents($dir . '/' . sha1(self::ID) . '.search.json'));
-        // The filesystem backend leaves its lock file beside the document.
-        foreach (glob($dir . '/{,.}*', GLOB_BRACE) ?: [] as $file) {
-            if (is_file($file)) {
-                unlink($file);
+        // The filesystem backend leaves its lock file beside the document. Not
+        // glob() with GLOB_BRACE: musl builds of PHP do not define it.
+        foreach (scandir($dir) ?: [] as $entry) {
+            if (is_file($dir . '/' . $entry)) {
+                unlink($dir . '/' . $entry);
             }
         }
         rmdir($dir);

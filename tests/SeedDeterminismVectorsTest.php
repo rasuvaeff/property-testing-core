@@ -9,6 +9,7 @@ use DateTimeImmutable;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Random;
+use Rasuvaeff\PropertyTesting\ValueRenderer;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -255,6 +256,18 @@ final class SeedDeterminismVectorsTest
             static fn(): ArbitraryInterface => Gen::regex('[a-c]{1,3}-[0-9]'),
             125,
             ['c-0', 'bc-2', 'baa-5', 'cb-6', 'a-0'],
+        ];
+
+        yield 'mixed (rendered, hex-normalised)' => [
+            static fn(): ArbitraryInterface => Gen::map(Gen::mixed(), ValueRenderer::render(...)),
+            140,
+            [
+                'null',
+                'hex:5b3731203d3e20747275652c203938203d3e20737464436c617373207b756c767072656a773a20302c206774627773653a206e756c6c7d2c203335203d3e202d313030303030302c203136203d3e205b3735203d3e2022222c202d31203d3e20227679f18eb98c222c203932203d3e20747275655d5d',
+                'INF',
+                'hex:22f18dbfb3f1989ca2f3aea8b744212543f38faf8922',
+                'hex:5b22616f63637622203d3e2041727261794f626a656374207b7d2c20226b6c666e73756522203d3e205b22647a78786822203d3e206e756c6c2c20226c22203d3e20313937302d30312d30312030303a30303a30302e3030303030302b30303a30302c2022696b74746522203d3e20227b2b33c38544c5bc43f2b8b68c54e280a8efaea1f2879bb2f3a081815ef489a29b222c2022726a22203d3e20322e32323530373338353835303732452d3330385d2c202269756576776e636b22203d3e205b2d36203d3e20313937302d30312d30312030303a30303a30302e3030303030302b30303a30302c203836203d3e202d3238313630372e38393835383730382c2030203d3e2066616c73655d5d',
+            ],
         ];
 
         yield 'json' => [

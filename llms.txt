@@ -291,6 +291,10 @@ Gen::naughtyString()                    // <string>, curated adversarial values:
                                         // "\0", '0'/'1e309'/PHP_INT_MAX+1, 'null'/'true', quotes, SQL/XSS/template/format/
                                         // shell/header injection, ../ traversal, Unicode traps, invalid UTF-8, long strings;
                                         // finite + Enumerable (exhaustive: true walks all); shrinks to earlier entries
+Gen::mixed(int $maxDepth = 2)           // <mixed>, any PHP type: null/bool/int/float(+NAN,±INF,-0.0)/string/DateTimeImmutable,
+                                        // nested list/string-keyed/int-keyed arrays, stdClass, ArrayObject; no closures,
+                                        // anonymous classes, resources, enums; shrinks to null,false,0,'',[] first; objects
+                                        // make the corpus store a seed entry; forParameters() still refuses `mixed`
 Gen::arrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100)  // <list<T>>
 Gen::nonEmptyArrayOf(ArbitraryInterface $element, int $maxSize = 100)            // <list<T>>, >= 1
 Gen::uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100, ?Closure $by = null)

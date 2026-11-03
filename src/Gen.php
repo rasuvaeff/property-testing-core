@@ -1073,10 +1073,7 @@ final class Gen
                 [1, new StringArbitrary(0, 20, unicode: true)],
                 [1, self::datetime()],
             ]),
-            null,
-            false,
-            0,
-            '',
+            ...[null, false, 0, ''],
         );
 
         return self::withEdgeCases(
@@ -1106,11 +1103,7 @@ final class Gen
                 ]),
                 $maxDepth,
             ),
-            null,
-            false,
-            0,
-            '',
-            [],
+            ...[null, false, 0, '', []],
         );
     }
 

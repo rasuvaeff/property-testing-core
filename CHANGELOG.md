@@ -12,6 +12,15 @@
   UTF-8, and lengths past common limits. A failing value shrinks through the
   entries listed before it; the generator is `Enumerable`, so `exhaustive: true`
   checks every entry.
+- **Added:** `Gen::mixed()` — a value of any PHP type, for properties about
+  code that takes `mixed` and must narrow it without a `TypeError` (#173, after
+  BlackBox's `Set::type()`): `null`, booleans, ints, floats including `NAN`,
+  `±INF` and `-0.0`, Unicode strings, `DateTimeImmutable`, and lists, string-
+  and int-keyed arrays, `stdClass` and `ArrayObject` nested up to `$maxDepth`.
+  A value shrinks to `null`, `false`, `0`, `''` and `[]` first. Closures,
+  anonymous classes, resources and enums are left out; a counterexample holding
+  an object is stored in the corpus as a seed entry. `Gen::forParameters()`
+  keeps refusing a `mixed` parameter.
 - **Changed:** `Gen::string()`, `Gen::stringAscii()`, `Gen::stringOf()` and
   `Gen::char()` are boundary-biased like the numeric generators: about one draw
   in ten is `''`, `' '`, `'0'`, and for the Unicode generators `"\n"`, `"a\n"` or

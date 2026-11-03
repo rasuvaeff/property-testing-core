@@ -102,6 +102,10 @@ Cannot generate …\Unreadable: parameter $anything is typed array, which this
 cannot read; pass an override or #[Generate]
 ```
 
+A parameter that really accepts anything is still refused rather than filled
+with arbitrary values: pass `Gen::mixed()` as its override when the property is
+about narrowing untrusted input.
+
 A class it cannot instantiate — a value object with a private constructor and
 named factories, say — names the chain that reached it, because such a class is
 usually three levels down from the one you asked for:

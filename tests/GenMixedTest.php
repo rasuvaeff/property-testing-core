@@ -86,6 +86,21 @@ final class GenMixedTest
         }
     }
 
+    public function containersHoldAtMostFourElements(): void
+    {
+        $fullList = false;
+
+        foreach (Gen::sample(Gen::mixed(maxDepth: 1), 3_000, 7) as $value) {
+            if (is_array($value) || $value instanceof \ArrayObject || $value instanceof \stdClass) {
+                Assert::true(count((array) $value) <= 4);
+            }
+
+            $fullList = $fullList || (is_array($value) && array_is_list($value) && count($value) === 4);
+        }
+
+        Assert::true($fullList);
+    }
+
     #[ExpectException(\InvalidArgumentException::class)]
     public function refusesADepthBelowOne(): void
     {
@@ -116,7 +131,7 @@ final class GenMixedTest
     {
         $result = $this->run(static function (mixed $input): void {
             if (!is_array($input)) {
-                (string) $input;
+                Assert::true(is_string((string) $input));
             }
         });
 

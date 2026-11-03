@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
+use Rasuvaeff\PropertyTesting\Internal\CorpusDocument;
 use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus;
 use Rasuvaeff\PropertyTesting\Tests\Support\Priority;
@@ -30,6 +31,7 @@ use Testo\Test;
  */
 #[Test]
 #[Covers(FilesystemCorpus::class)]
+#[Covers(CorpusDocument::class)]
 final class CorpusFormatGoldenTest
 {
     private const string FIXTURES = __DIR__ . '/../fixtures/corpus';

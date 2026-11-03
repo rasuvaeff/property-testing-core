@@ -15,6 +15,14 @@
     "minMsi": 97,
     "mutators": {
         "@default": true,
+        // Thin adapters over ext-redis: they need the extension and a live server, which the
+        // mutation job has neither of. The Integration suite (the `Integration (Redis)` job)
+        // runs them against a real server; RedisCorpus itself is unit-tested through an
+        // in-memory CorpusClient and stays mutated. Measured 2026-11-03: 31 mutants.
+        "global-ignore": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\PhpRedisCorpusClient",
+            "Rasuvaeff\\PropertyTesting\\Runner\\Redis\\LazyPhpRedisCorpusClient"
+        ],
         // Constructor/method parameter declarations with a default value
         // (`private int $x = 100,`, `bool $strict = false,`): the mutant sits on a
         // signature line with no executable opcode under pcov, so it is reported Not
@@ -25,7 +33,15 @@
         // bulkhead 6, circuit-breaker 13, json-ld 19 mutants removed, all of them
         // such signature lines; Escaped and Timed Out unchanged.
         "global-ignoreSourceCodeByRegex": [
-            "(?:(?:private|protected|public|readonly)\\s+)*\\??[A-Za-z_\\\\][\\w\\\\|]*\\s+\\$\\w+\\s*=\\s*[^,;]+,"
+            "(?:(?:private|protected|public|readonly)\\s+)*\\??[A-Za-z_\\\\][\\w\\\\|]*\\s+\\$\\w+\\s*=\\s*[^,;]+,",
+            // The same signature-line defaults when the whole signature fits on one line
+            // (`public static function stringOf(int $minLength = 0, int $maxLength = 100): ...`).
+            // Measured 2026-11-03: 53 mutants, all Not Covered, all on Gen.php signatures.
+            "(?:(?:public|private|protected)\\s+)?(?:static\\s+)?function\\s+\\w+\\(.*\\$\\w+\\s*=.*\\)(?:\\s*:\\s*[^{;]+)?",
+            // `\assert()` narrows types for psalm. CI runs with zend.assertions=-1, so the call
+            // is never compiled and its mutants are Not Covered whatever the tests do.
+            // Measured 2026-11-03: 23 mutants.
+            "\\\\assert\\(.+\\);"
         ],
         // Off: with --with-uncovered a PublicVisibility mutant sits on a parameterless
         // method's signature line, which has no executable opcode under pcov/xdebug,

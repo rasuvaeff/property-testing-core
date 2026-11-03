@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 use Rasuvaeff\PropertyTesting\Assume;
 use Rasuvaeff\PropertyTesting\Event\PropertyEvent;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
@@ -25,6 +26,7 @@ use Testo\Test;
  */
 #[Test]
 #[Covers(PropertyRunner::class)]
+#[Covers(PhaseCounters::class)]
 final class PropertyRunnerFlakyTest
 {
     public function aDeterministicFailureReproducesOnEveryReplay(): void

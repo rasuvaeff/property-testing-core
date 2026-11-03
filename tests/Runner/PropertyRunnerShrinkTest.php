@@ -9,6 +9,7 @@ use Rasuvaeff\PropertyTesting\Event\RunFailed;
 use Rasuvaeff\PropertyTesting\Event\ShrinkAccepted;
 use Rasuvaeff\PropertyTesting\Event\ShrinkTried;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
@@ -33,6 +34,7 @@ use Testo\Test;
  */
 #[Test]
 #[Covers(PropertyRunner::class)]
+#[Covers(PhaseCounters::class)]
 final class PropertyRunnerShrinkTest
 {
     public function shrinkLifecycleIsFullyReported(): void

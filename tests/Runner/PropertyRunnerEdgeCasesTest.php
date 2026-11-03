@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 
 use Rasuvaeff\PropertyTesting\Event\RunStarted;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
@@ -23,6 +24,7 @@ use Testo\Test;
  */
 #[Test]
 #[Covers(PropertyRunner::class)]
+#[Covers(PhaseCounters::class)]
 final class PropertyRunnerEdgeCasesTest
 {
     private const array EDGES = [0, 1, -1, -1_000_000, 1_000_000];

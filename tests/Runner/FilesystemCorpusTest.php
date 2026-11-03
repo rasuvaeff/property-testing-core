@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
+use Rasuvaeff\PropertyTesting\Internal\CorpusDocument;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
 use Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus;
 use Rasuvaeff\PropertyTesting\Runner\TargetDirection;
@@ -17,6 +18,7 @@ use Testo\Test;
 
 #[Test]
 #[Covers(FilesystemCorpus::class)]
+#[Covers(CorpusDocument::class)]
 final class FilesystemCorpusTest
 {
     private const string ID = 'X::y';

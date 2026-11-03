@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 
 use Rasuvaeff\PropertyTesting\CounterExample;
+use Rasuvaeff\PropertyTesting\Internal\CorpusDocument;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
 use Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus;
 use Rasuvaeff\PropertyTesting\Runner\RedisCorpus;
@@ -25,6 +26,7 @@ use Testo\Test;
  */
 #[Test]
 #[Covers(RedisCorpus::class)]
+#[Covers(CorpusDocument::class)]
 final class RedisCorpusTest
 {
     private const string ID = 'X::y';

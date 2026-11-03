@@ -6,7 +6,9 @@ namespace Rasuvaeff\PropertyTesting\Tests;
 
 use Rasuvaeff\PropertyTesting\Arbitrary\DrawnEngine;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Internal\DocblockTypes;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
+use Rasuvaeff\PropertyTesting\Internal\TypeGenerators;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\AnnotatedTypes;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\Currency;
@@ -31,6 +33,8 @@ use Testo\Test;
 #[Test]
 #[Covers(Gen::class)]
 #[Covers(ParameterGenerators::class)]
+#[Covers(TypeGenerators::class)]
+#[Covers(DocblockTypes::class)]
 final class GenForParametersTest
 {
     public function readsNativeTypesInSignatureOrder(): void

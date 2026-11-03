@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Internal;
 
 use Rasuvaeff\PropertyTesting\Internal\SearchDocument;
 use Rasuvaeff\PropertyTesting\Runner\TargetDirection;
+use Rasuvaeff\PropertyTesting\Tests\Support\NoDiagnostics;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -145,5 +146,11 @@ final class SearchDocumentTest
         yield 'entry without args' => ['{"id":"p","format":1,"targets":{"n":{"direction":"maximize","entries":[{"score":1}]}}}'];
         yield 'entry with undecodable args' => ['{"id":"p","format":1,"targets":{"n":{"direction":"maximize","entries":[{"score":1,"args":{"a":{"~":"nope"}}}]}}}'];
         yield 'numeric label' => ['{"id":"p","format":1,"targets":{"7":{"direction":"maximize","entries":[{"score":1,"args":{"a":1}}]}}}'];
+    }
+
+    #[DataProvider('corruptProvider')]
+    public function corruptOrForeignContentDecodesWithoutDiagnostics(string $content): void
+    {
+        Assert::same(NoDiagnostics::run(static fn(): array => SearchDocument::decode($content, ['a'])), []);
     }
 }

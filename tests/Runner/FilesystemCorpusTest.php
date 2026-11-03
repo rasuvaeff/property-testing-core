@@ -9,6 +9,7 @@ use Rasuvaeff\PropertyTesting\Internal\CorpusDocument;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
 use Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus;
 use Rasuvaeff\PropertyTesting\Runner\TargetDirection;
+use Rasuvaeff\PropertyTesting\Tests\Support\NoDiagnostics;
 use Rasuvaeff\PropertyTesting\Tests\Support\Priority;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -970,5 +971,62 @@ final class FilesystemCorpusTest
         }
 
         @rmdir($path);
+    }
+
+    public function aLockPathThatCannotBeOpenedIsReported(): void
+    {
+        mkdir($this->dir . '/.corpus.lock');
+
+        try {
+            Assert::same($this->rememberFails(['x' => 1]), 'Could not open the corpus lock file for property "X::y"');
+            Assert::false(is_file($this->file()));
+        } finally {
+            rmdir($this->dir . '/.corpus.lock');
+        }
+    }
+
+    public function theRefusedLockPathIsNamedWithoutADoubledSlash(): void
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            return;
+        }
+
+        $victim = $this->dir . '/victim.txt';
+        file_put_contents($victim, 'original');
+        symlink($victim, $this->dir . '/.corpus.lock');
+
+        try {
+            (new FilesystemCorpus($this->dir . '/'))->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
+
+            Assert::fail('expected the symlinked lock path to be refused');
+        } catch (\RuntimeException $e) {
+            Assert::same($e->getMessage(), sprintf(
+                'Could not lock the corpus for property "X::y": "%s/.corpus.lock" is a symbolic link',
+                $this->dir,
+            ));
+        } finally {
+            unlink($this->dir . '/.corpus.lock');
+        }
+    }
+
+    public function aMissingDocumentIsNotEvenOpened(): void
+    {
+        // Even an @-suppressed warning reaches a custom error handler, and a
+        // suite's handler may turn it into a failure.
+        $storage = $this->storage();
+
+        Assert::same(NoDiagnostics::run(static fn(): array => $storage->recall(self::ID, ['x'])), []);
+        Assert::same(NoDiagnostics::run(static fn(): array => $storage->recallTargets(self::ID, ['x'])), []);
+    }
+
+    public function aFirstRecordOpensNoMissingDocument(): void
+    {
+        $storage = $this->storage();
+
+        NoDiagnostics::run(function () use ($storage): void {
+            $storage->remember(self::ID, $this->counterExample(['x' => 1], 1), ['x']);
+        });
+
+        Assert::same(count($storage->recall(self::ID, ['x'])), 1);
     }
 }

@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 use Rasuvaeff\PropertyTesting\Runner\CorpusFactory;
 use Rasuvaeff\PropertyTesting\Runner\FilesystemCorpus;
 use Rasuvaeff\PropertyTesting\Runner\Redis\LazyPhpRedisCorpusClient;
+use Rasuvaeff\PropertyTesting\Runner\Redis\PredisCorpusClient;
 use Rasuvaeff\PropertyTesting\Runner\RedisCorpus;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -129,5 +130,23 @@ final class CorpusFactoryTest
         $unauthenticated = CorpusFactory::fromDsn($directory);
         Assert::false($unauthenticated === CorpusFactory::fromDsn($directory, 'one'));
         Assert::false(CorpusFactory::fromDsn($directory, 'one') === CorpusFactory::fromDsn($directory, 'two'));
+    }
+
+    public function thePasswordIsNotGluedOntoTheDsnInTheCacheIdentity(): void
+    {
+        $directory = sys_get_temp_dir() . '/corpus-glue-' . bin2hex(random_bytes(6));
+
+        Assert::false(CorpusFactory::fromDsn($directory, 'x') === CorpusFactory::fromDsn($directory . 'x'));
+    }
+
+    public function aRedisDsnIsServedByTheExtensionWhenItIsLoadedAndByPredisOtherwise(): void
+    {
+        $corpus = CorpusFactory::fromDsn('redis://127.0.0.1:6399/5?prefix=client-choice:');
+
+        Assert::instanceOf($corpus, RedisCorpus::class);
+        Assert::instanceOf(
+            (new \ReflectionProperty(RedisCorpus::class, 'client'))->getValue($corpus),
+            extension_loaded('redis') ? LazyPhpRedisCorpusClient::class : PredisCorpusClient::class,
+        );
     }
 }

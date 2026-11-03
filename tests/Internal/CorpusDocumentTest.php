@@ -205,4 +205,32 @@ final class CorpusDocumentTest
             self::EPOCH,
         ));
     }
+
+    public function decodeAcceptsADocumentNestedToTheDepthLimit(): void
+    {
+        Assert::same(count(CorpusDocument::decode($this->nestedDocument(508), 1)), 1);
+    }
+
+    public function decodeRefusesADocumentNestedBeyondTheDepthLimit(): void
+    {
+        Assert::same(CorpusDocument::decode($this->nestedDocument(509), 1), []);
+    }
+
+    public function valuesEntryRefusesArgumentsThatMissAParameter(): void
+    {
+        Assert::null(CorpusDocument::valuesEntry(['a' => 1, 'c' => 2], ['a', 'b'], 1, self::EPOCH));
+    }
+
+    public function keyOfFallsBackToTheKindWhenTheArgumentsAreNotJson(): void
+    {
+        Assert::same(CorpusDocument::keyOf(['kind' => 'values', 'seed' => 1, 'args' => ['a' => "\xB1"]]), 'x:s:6:"values";');
+    }
+
+    /**
+     * A document whose deepest value sits $arrays arrays below the entry.
+     */
+    private function nestedDocument(int $arrays): string
+    {
+        return '{"format":1,"entries":[{"seed":' . str_repeat('[', $arrays) . '1' . str_repeat(']', $arrays) . '}]}';
+    }
 }

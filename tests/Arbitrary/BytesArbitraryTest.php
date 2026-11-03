@@ -95,6 +95,7 @@ final class BytesArbitraryTest
         Assert::same($candidates[1], substr($value, 4));
         Assert::same($candidates[2], substr($value, 0, 4));
         Assert::same($candidates[3], substr($value, 2));
+        Assert::same($candidates[4], substr($value, 0, 2) . substr($value, 4));
         Assert::same($candidates[14], substr($value, 0, 7));
     }
 

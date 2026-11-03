@@ -181,6 +181,23 @@ final class CorpusFormatGoldenTest
         Assert::same($entries[0]->edgeCases, EdgeCases::Mixin);
     }
 
+    /**
+     * Epoch 3 (core 1.3.0) changed what a seed generates for the string
+     * generators, so a seed entry recorded under epoch 2 would replay a
+     * different input: it is dropped. The values entry beside it carries its
+     * input and keeps recalling.
+     */
+    public function aCommittedEpochTwoDocumentKeepsItsValuesAndDropsItsSeed(): void
+    {
+        copy(self::FIXTURES . '/epoch-2-entries.json', $this->path('E::two'));
+
+        $entries = $this->storage()->recall('E::two', ['x']);
+
+        Assert::same(count($entries), 1);
+        Assert::true($entries[0]->isValues());
+        Assert::same($entries[0]->arguments, ['x' => 51]);
+    }
+
     #[BeforeTest]
     public function setUpDirectory(): void
     {

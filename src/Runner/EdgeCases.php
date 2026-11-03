@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Runner;
 
 /**
- * Whether the numeric generators keep biasing toward their boundary values.
+ * Whether the numeric and string generators keep biasing toward their boundary
+ * values.
  *
  * The bias is normally what you want: bugs cluster at `0`, `±1` and a range's
  * own ends far more than in the uniform interior, so roughly one draw in five

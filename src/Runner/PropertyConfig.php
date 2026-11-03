@@ -64,7 +64,7 @@ final readonly class PropertyConfig
      *        configuration that would leave it a silent no-op: a descent switched off, capped below
      *        the path's own length, or bounded by a wall clock — the last one because a path exists
      *        to be deterministic and a budget exists not to be.
-     * @param EdgeCases $edgeCases Whether the numeric generators keep biasing toward their boundary
+     * @param EdgeCases $edgeCases Whether the numeric and string generators keep biasing toward their boundary
      *        values ({@see EdgeCases::Mixin}, the default) or generate uniformly
      *        ({@see EdgeCases::None}). Turn them off when the edges are what the property cannot
      *        use — a body discarding `0`, a range end that violates a precondition — so the discard

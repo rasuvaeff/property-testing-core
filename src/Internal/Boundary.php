@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Internal;
 
 /**
- * Computes the in-range boundary values that numeric arbitraries bias toward,
- * because bugs cluster at edges (0, ±1, the range ends) far more than in the
- * uniform interior.
+ * Computes the in-range boundary values that numeric and string arbitraries
+ * bias toward, because bugs cluster at edges (0, ±1, the range ends, the empty
+ * string, a trailing newline) far more than in the uniform interior.
  *
  * @internal
  */
@@ -52,5 +52,32 @@ final class Boundary
         }
 
         return $result;
+    }
+
+    /**
+     * Strings every text-handling bug list starts with, in interest order:
+     * the empty string, a lone space, `"0"`, then — for the Unicode alphabet
+     * only, since printable ASCII has none of these characters — a lone line
+     * feed, a trailing line feed (`"a\n"` passes `/^[a-z]+$/`) and a
+     * decomposed `é` (`e` + combining acute accent). Only those whose length
+     * in characters lies within `[$minLength, $maxLength]` are kept, so the
+     * list is empty when no candidate fits.
+     *
+     * @return list<string>
+     */
+    public static function strings(int $minLength, int $maxLength, bool $unicode): array
+    {
+        $candidates = $unicode
+            ? ['', ' ', '0', "\n", "a\n", "e\u{0301}"]
+            : ['', ' ', '0'];
+
+        return array_values(array_filter(
+            $candidates,
+            static function (string $candidate) use ($minLength, $maxLength): bool {
+                $length = mb_strlen($candidate, 'UTF-8');
+
+                return $length >= $minLength && $length <= $maxLength;
+            },
+        ));
     }
 }

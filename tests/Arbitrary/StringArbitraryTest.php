@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\Arbitrary\StringArbitrary;
 use Rasuvaeff\PropertyTesting\Random;
+use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
 use Testo\Assert\ExpectException;
@@ -251,7 +252,7 @@ final class StringArbitraryTest
         // moved bound relabels the draws and every generated character moves.
         $value = (new StringArbitrary(5, 5, unicode: true))->generate(new Random(1))->value;
 
-        Assert::same($value, "\u{F3A65}\u{77F00}I[d");
+        Assert::same(bin2hex($value), '285a58f0a59d8ff3a599ba');
     }
 
     public function aLongUnicodeStringIsByteExactForAFixedSeed(): void
@@ -262,19 +263,19 @@ final class StringArbitraryTest
 
         Assert::same(
             bin2hex($value),
-            '514b2f78f3af859a26f0a3adbef2bfab8821635df281a9b2265e61f289adbbe783a6c3b56ccc81e8a086e3ad957fe8ab863d2cf190b786c8b8c98f2ef39487963372c59220e1b1a776e9889b36c8b8e99f985b242827f3908392f38cafbd6c736369e2bc82432c3773f09f9880e2808b5354eb8abb393c7556c3a40d315178f485b2bf222e316d68c6baf1a18690c6aae280ae43c598c39b2073223e7e5ae5afa4e8a5afc48c3e7368c68be78cb6637cf3aaa2947e79e59cb17a0953e4b684c5a6f1bab18ec7b631e3bd98f0aba3967e27c3bcf48396a3f298a6ba27f3b186a5',
+            '52704974e58dac50325734ed89b7c387f2bcae9538e99c97647c583e5cf1bba38822f48c83a1093bf2a38fb0285367ed8faa4231f1b8b1bbe7b590e28f80f09f9880eb9cb6c6a5e5aa80e5bbb6e2808f5af098b98045f2ba8da6e1b1a1f38cafbd6c736369e2bc82432c3773f09f9880e2808b5354eb8abb393c7556c3a40d315178f485b2bf222e316d68c6baf1a18690c6aae280ae43c598c39b2073223e7e5ae5afa4e8a5afc48c3e7368c68be78cb6637cf3aaa2947e79e59cb17a0953e4b684c5a6f1bab18ec7b631e3bd98f0aba3967e27c3bcf48396a3f298a6ba27f3b186a5e2808d',
         );
     }
 
     public function theBmpBranchRedrawsBothSurrogateEndpoints(): void
     {
-        // Found by replaying the Randomizer (length draw, category roll, then
-        // the codepoint): seed 81904 rolls the BMP branch and draws exactly
-        // U+DFFF first; seed 946435 draws exactly U+D800. Both must be redrawn
+        // Found by replaying the Randomizer (edge-case roll, length draw,
+        // category roll, then the codepoint): seed 2290372 rolls the BMP branch
+        // and draws exactly U+DFFF first; seed 32778 draws exactly U+D800. Both must be redrawn
         // — accepting either makes mb_chr() fail and collapses the character
         // to ''.
-        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(81904))->value, "\u{F5CD}");
-        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(946435))->value, "\u{2B35}");
+        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(2290372))->value, "\u{7AB8}");
+        Assert::same((new StringArbitrary(1, 1, unicode: true))->generate(new Random(32778))->value, "\u{81C4}");
     }
 
     public function unicodeNeverProducesASurrogateOrAnUnencodableCharacter(): void
@@ -324,6 +325,71 @@ final class StringArbitraryTest
         }
     }
 
+    public function aboutOneDrawInTenIsABoundaryString(): void
+    {
+        // A uniform draw of length 0..100 meets "a\n" or a lone "\n" almost
+        // never; the boundary roll returns each of the six candidates about
+        // one draw in sixty.
+        $counts = self::boundaryCounts(new StringArbitrary(0, 100, unicode: true), EdgeCases::Mixin);
+
+        foreach (['', ' ', '0', "\n", "a\n", "e\u{0301}"] as $boundary) {
+            Assert::true($counts[$boundary] > 20 && $counts[$boundary] < 90);
+        }
+    }
+
+    public function asciiBoundaryStringsStayPrintable(): void
+    {
+        $counts = self::boundaryCounts(new StringArbitrary(0, 100, unicode: false), EdgeCases::Mixin);
+
+        Assert::true($counts[' '] > 50 && $counts['0'] > 50);
+        Assert::same($counts["\n"] + $counts["a\n"] + $counts["e\u{0301}"], 0);
+    }
+
+    public function edgeCasesNoneDrawsNoBoundaryString(): void
+    {
+        // Lengths 1..100, so even the uniform draw almost never produces a
+        // one- or two-character string, let alone one of these.
+        $counts = self::boundaryCounts(new StringArbitrary(1, 100, unicode: true), EdgeCases::None);
+
+        Assert::same(array_sum($counts), 0);
+    }
+
+    public function aBoundaryStringOutsideTheLengthRangeIsNeverDrawn(): void
+    {
+        $arbitrary = new StringArbitrary(2, 2, unicode: true);
+        $random = new Random(11);
+        $seen = [];
+
+        for ($i = 0; $i < 2_000; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+            Assert::same(mb_strlen($value, 'UTF-8'), 2);
+            $seen[$value] = true;
+        }
+
+        Assert::true(isset($seen["a\n"], $seen["e\u{0301}"]));
+    }
+
+    public function aRangeNoBoundaryFitsStillGenerates(): void
+    {
+        $arbitrary = new StringArbitrary(3, 3, unicode: false);
+        $random = new Random(5);
+
+        for ($i = 0; $i < 500; ++$i) {
+            Assert::same(strlen($arbitrary->generate($random)->value), 3);
+        }
+    }
+
+    public function aBoundaryStringShrinksLikeAnyOther(): void
+    {
+        // "a\n" drops a character first, then turns the line feed into 'a'.
+        $node = Trees::generateWhere(
+            new StringArbitrary(0, 100, unicode: true),
+            static fn(mixed $value): bool => $value === "a\n",
+        );
+
+        Assert::same(Trees::childValues($node), ['', "\n", 'a', 'aa']);
+    }
+
     #[ExpectException(\InvalidArgumentException::class)]
     public function rejectsNegativeMinimumLength(): void
     {
@@ -340,5 +406,24 @@ final class StringArbitraryTest
     public function rejectsInvertedLength(): void
     {
         new StringArbitrary(10, 2);
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private static function boundaryCounts(StringArbitrary $arbitrary, EdgeCases $mode): array
+    {
+        $counts = ['' => 0, ' ' => 0, '0' => 0, "\n" => 0, "a\n" => 0, "e\u{0301}" => 0];
+        $random = new Random(42, $mode);
+
+        for ($i = 0; $i < 3_000; ++$i) {
+            $value = $arbitrary->generate($random)->value;
+
+            if (array_key_exists($value, $counts)) {
+                ++$counts[$value];
+            }
+        }
+
+        return $counts;
     }
 }

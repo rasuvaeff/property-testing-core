@@ -92,9 +92,9 @@ final class SeedDeterminismVectorsTest
             Gen::string(...),
             107,
             [
-                'hex:7dc7be76ecb5b63bc4b3f2b394b64271c392f288839726674d27f18681aef3bf9aaae0bb8621f09f91a82a4ff0beaabef184bf9658f48ea08ef28791bbf094bebfc68430e6a5a8f1be879f52373b7a70c2adf09f91a85637f1bc82802a',
-                'hex:c2b5e7929df3a584a5265c36c389f2ae879a40213020f0b9a5916ec881e5a288eb9b92f3849d8a65c381f181a795eb80a5c384ee91a3c98b7279eca6b644f1a39e8af2b58682674d22243ac583e2808fe3ba99f092ba8bc3ade9a9b52846ea8680c4b3f2b2b889e88a8cf29c978947f289829c33ecb5a6f3b7b08976f3a081817924efbfbdefbfbdf1a3988a387bcc81726a356b40e5a387c580f486b395f39d838f7ce6b3a3f380ab96f3818f82f19081bb5ec3a3f2b98f84567c3fe583a9f3a985a16fe9bdb4367325f1b6b8ac',
-                '',
+                'hex:35c385c2aaf290aebcec9180f199b496ed8d9cf188b297c4a8ec8788c591c89378e2808d3232f2929a9a387a525c5ac4a47f78ef8da528f18e93b8f0b798947724454ff295baa7d5bf50e2808be2bd875ff48c8bbd79f28a81aa6fc2b5e7929df3a584a5265c36c389f2ae879a40213020f0b9a5916ec881e5a288eb9b92f3849d8a65c381f181a795eb80a5c384ee91a3c98b7279eca6b6',
+                'hex:f1a39e8af2b58682674d22243ac583e2808fe3ba99f092ba8bc3ade9a9b52846ea8680c4b3f2b2b889e88a8cf29c978947f289829c33ecb5a6f3b7b08976f3a081817924efbfbdefbfbdf1a3988a387bcc81726a356b40e5a387c580f486b395f39d838f7ce6b3a3f380ab96f3818f82f19081bb5ec3a3f2b98f84567c3fe583a9f3a985a16fe9bdb4',
+                'hex:7325f1b6b8ace9beb93958597f38ef85bc76e1bab2395b6c322de3b29927f384ada271f1aa839ef097a4acf480bd8538c58335e1bba8f0928a8a415a24c9843bf2afa2bdcc8878f09f91a8f0a0a7a722f295a982692d4ef3b9828520c5b965f0a9868e6b676e20c3a9f28e9685f1b597b334eba49d32f19b9a92f0a681bff097a1a9212d7b7e35213ac2a0ed95b8e2a493c79148eca09021',
             ],
         ];
 
@@ -102,11 +102,11 @@ final class SeedDeterminismVectorsTest
             Gen::stringAscii(...),
             108,
             [
-                'v_vTbR4?.atzK3n1E[&X;..Sz#$!T 8]l R q}qP7b+0FWm>4[y6eX+Z|~4h~:\']YN1r.Aa^abi5\'Q<2:PSh',
-                '$=OE7Lb:r.<A@PAoLuy}Nlky4|eX*$s.\\Uz_IXj)AYm#q-d~i<R\'^GBhDx@zICaEK`[+5~fq#m.4WEX*(',
-                'YkZMyw1\'Sc+=L5x"pBO?GR)B}fA(?N*&^oEM}3/jY~&d}1FDK,7@Ln3PKMk0>cv)P.geTT\'yY7?81Xi-R',
-                '+(Sd(K/YR\\GnH%DAY)T#EfQpC',
-                'N)1<Pz`q5,ad,k@j<CeS)D',
+                '_vTbR4?.atzK3n1E[&X;..Sz#$!T 8]l R q}',
+                '7b+0FWm>4[y6eX+Z|~4h~:\']YN1r.Aa^abi5\'Q<2:PSh`$=OE7Lb:r.<A@PAoLuy}Nlky4|eX*$s.\\Uz',
+                'Xj)AYm#q-d~i<R\'^GBhDx@zICaEK`[+5~fq#m.4WEX*(/YkZMyw1\'Sc+=L5x"pBO?GR)B}fA(?N*&^oEM}3/jY~&d}1FDK,7@L',
+                'PKMk0>cv)P.geTT\'yY7?81',
+                '-RB+(Sd(K/YR\\GnH%DAY)T#EfQpCZN)1<P',
             ],
         ];
 

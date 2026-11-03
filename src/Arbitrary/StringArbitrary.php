@@ -18,10 +18,11 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * full Unicode space via {@see mb_chr()}. Length is chosen uniformly within an
  * inclusive range.
  *
- * About one draw in ten is a boundary string instead ({@see Boundary::strings()}:
- * `''`, `' '`, `'0'`, and for the Unicode alphabet `"\n"`, `"a\n"` and a
- * decomposed `é`) when it fits the length range, unless the run turned edge
- * cases off ({@see \Rasuvaeff\PropertyTesting\Runner\EdgeCases::None}).
+ * About one draw in ten is a boundary string instead ({@see Boundary::strings()}):
+ * the empty string, a space, `'0'`, and for the Unicode alphabet a lone line
+ * feed, an `a` followed by a line feed, and a decomposed `é` — those that fit
+ * the length range — unless the run turned edge cases off
+ * ({@see \Rasuvaeff\PropertyTesting\Runner\EdgeCases::None}).
  *
  * @implements ArbitraryInterface<string>
  * @api

@@ -99,7 +99,7 @@ $definition = new PropertyDefinition(
                                 // the ns conversion overflows, so the value is REJECTED
         phases: null,           // list<Phase>; null -> Phase::all(); [] throws
         derandomize: false,     // true -> an unset seed is derived from the property id
-        edgeCases: EdgeCases::Mixin, // None -> no numeric boundary bias; the roll is still consumed,
+        edgeCases: EdgeCases::Mixin, // None -> no numeric/string boundary bias; the roll is still consumed,
                                      // so the two modes stay aligned on the same seed
                                 // (explicit seed still wins; seed->values mapping unchanged)
         exhaustive: false,      // true -> walk the WHOLE parameter product when every generator is
@@ -287,6 +287,10 @@ Gen::stringAscii()                      // <string>, printable ASCII
 Gen::stringOf(int $minLength = 0, int $maxLength = 100) // <string>, bounded length
 Gen::stringFrom(string $alphabet, int $minLength = 0, int $maxLength = 100) // <string>
 Gen::bytes(int $minLength = 0, int $maxLength = 100)  // <string>, raw bytes
+Gen::naughtyString()                    // <string>, curated adversarial values: '', whitespace, "a\n" (passes /^[a-z]+$/),
+                                        // "\0", '0'/'1e309'/PHP_INT_MAX+1, 'null'/'true', quotes, SQL/XSS/template/format/
+                                        // shell/header injection, ../ traversal, Unicode traps, invalid UTF-8, long strings;
+                                        // finite + Enumerable (exhaustive: true walks all); shrinks to earlier entries
 Gen::arrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100)  // <list<T>>
 Gen::nonEmptyArrayOf(ArbitraryInterface $element, int $maxSize = 100)            // <list<T>>, >= 1
 Gen::uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100, ?Closure $by = null)
@@ -411,7 +415,9 @@ Gen::sampleShrinks(ArbitraryInterface $arbitrary, int $seed = 0, int $limit = 10
 ```
 
 Numeric generators are boundary-biased (~1 in 5 draws returns an in-range edge
-value). Sized generators never go below their minimum.
+value). String generators (string/stringAscii/stringOf/char) are too, ~1 in 10:
+'', ' ', '0', and for Unicode "\n", "a\n", decomposed é, when they fit the length
+range; stringFrom/bytes are not. Sized generators never go below their minimum.
 
 ### Shrink trees: `Shrinkable`
 

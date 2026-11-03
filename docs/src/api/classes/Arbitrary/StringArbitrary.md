@@ -9,7 +9,7 @@ description: "Generates random strings and shrinks them by length toward the emp
 
 `Rasuvaeff\PropertyTesting\Arbitrary\StringArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/StringArbitrary.php#L23) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/StringArbitrary.php#L30) — **Version:** working tree
 
 **Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 
@@ -19,6 +19,12 @@ then character-by-character toward 'a'.
 Two alphabets are available: an ASCII printable subset (32..126) and the
 full Unicode space via `Arbitrary\mb_chr`(). Length is chosen uniformly within an
 inclusive range.
+
+About one draw in ten is a boundary string instead (`Internal\Boundary`::strings()):
+the empty string, a space, `'0'`, and for the Unicode alphabet a lone line
+feed, an `a` followed by a line feed, and a decomposed `é` — those that fit
+the length range — unless the run turned edge cases off
+([`Runner\EdgeCases`](/api/classes/Runner/EdgeCases)::None).
 
 ## Constructor
 

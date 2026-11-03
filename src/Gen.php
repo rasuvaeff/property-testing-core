@@ -198,8 +198,8 @@ final class Gen
 
     /**
      * Whole string values known to break code that handles text: empty and
-     * whitespace-only strings, a trailing newline (`"a\n"` passes
-     * `/^[a-z]+$/`), NUL and control bytes, numeric-looking text (`"0"`,
+     * whitespace-only strings, a trailing newline (`a` plus a line feed
+     * passes `/^[a-z]+$/`), NUL and control bytes, numeric-looking text (`"0"`,
      * `"1e309"`, one past `PHP_INT_MAX`), `"null"`/`"true"`, quotes and
      * escapes, SQL/markup/template/format-string/shell/header injection
      * shapes, path traversal, Unicode normalisation, case-mapping, direction

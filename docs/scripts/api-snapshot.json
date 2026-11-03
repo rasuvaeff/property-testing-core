@@ -2254,7 +2254,7 @@
         "isAbstract": false,
         "isThrowable": false,
         "summary": "Generates random strings and shrinks them by length toward the empty string,\nthen character-by-character toward 'a'.",
-        "description": "Two alphabets are available: an ASCII printable subset (32..126) and the\nfull Unicode space via \\Rasuvaeff\\PropertyTesting\\Arbitrary\\mb_chr(). Length is chosen uniformly within an\ninclusive range.",
+        "description": "Two alphabets are available: an ASCII printable subset (32..126) and the\nfull Unicode space via \\Rasuvaeff\\PropertyTesting\\Arbitrary\\mb_chr(). Length is chosen uniformly within an\ninclusive range.\n\nAbout one draw in ten is a boundary string instead (\\Rasuvaeff\\PropertyTesting\\Internal\\Boundary::strings()):\nthe empty string, a space, `'0'`, and for the Unicode alphabet a lone line\nfeed, an `a` followed by a line feed, and a decomposed `é` — those that fit\nthe length range — unless the run turned edge cases off\n(\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::None).",
         "deprecated": null,
         "see": [],
         "extensionTags": {
@@ -2321,12 +2321,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 89
+                "startLine": 97
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/StringArbitrary.php#L23",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/StringArbitrary.php#L30",
         "implementedBy": []
     },
     {
@@ -4769,7 +4769,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 73
+                "startLine": 74
             },
             {
                 "name": "intBetween",
@@ -4799,7 +4799,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 84
+                "startLine": 85
             },
             {
                 "name": "intPositive",
@@ -4814,7 +4814,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 94
+                "startLine": 95
             },
             {
                 "name": "float",
@@ -4829,7 +4829,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 104
+                "startLine": 105
             },
             {
                 "name": "floatBetween",
@@ -4859,7 +4859,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 118
+                "startLine": 119
             },
             {
                 "name": "bool",
@@ -4874,7 +4874,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 126
+                "startLine": 127
             },
             {
                 "name": "string",
@@ -4889,7 +4889,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 136
+                "startLine": 137
             },
             {
                 "name": "stringAscii",
@@ -4904,7 +4904,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 146
+                "startLine": 147
             },
             {
                 "name": "stringOf",
@@ -4934,7 +4934,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 160
+                "startLine": 161
             },
             {
                 "name": "char",
@@ -4949,7 +4949,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 170
+                "startLine": 171
             },
             {
                 "name": "stringFrom",
@@ -4986,7 +4986,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 182
+                "startLine": 183
             },
             {
                 "name": "bytes",
@@ -5016,7 +5016,22 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 193
+                "startLine": 194
+            },
+            {
+                "name": "naughtyString",
+                "static": true,
+                "params": [],
+                "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "summary": "Whole string values known to break code that handles text: empty and\nwhitespace-only strings, a trailing newline (`a` plus a line feed\npasses `/^[a-z]+$/`), NUL and control bytes, numeric-looking text (`\"0\"`,\n`\"1e309\"`, one past `PHP_INT_MAX`), `\"null\"`/`\"true\"`, quotes and\nescapes, SQL/markup/template/format-string/shell/header injection\nshapes, path traversal, Unicode normalisation, case-mapping, direction\nand homoglyph traps, invalid UTF-8, and lengths past common limits.",
+                "description": "A curated list rather than a random draw: these are single values a\nuniform generator meets once in millions of runs. A failing value shrinks\nthrough the entries listed before it, simplest first. The list is finite,\nso `exhaustive: true` walks every entry instead of sampling.",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 215
             },
             {
                 "name": "arrayOf",
@@ -5053,7 +5068,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 207
+                "startLine": 229
             },
             {
                 "name": "nonEmptyArrayOf",
@@ -5083,7 +5098,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 221
+                "startLine": 243
             },
             {
                 "name": "uniqueArrayOf",
@@ -5127,7 +5142,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 254
+                "startLine": 276
             },
             {
                 "name": "withEdgeCases",
@@ -5157,7 +5172,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 281
+                "startLine": 303
             },
             {
                 "name": "subset",
@@ -5194,7 +5209,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 302
+                "startLine": 324
             },
             {
                 "name": "dictOf",
@@ -5238,7 +5253,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 325
+                "startLine": 347
             },
             {
                 "name": "record",
@@ -5261,7 +5276,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 340
+                "startLine": 362
             },
             {
                 "name": "oneOf",
@@ -5289,7 +5304,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 361
+                "startLine": 383
             },
             {
                 "name": "forClass",
@@ -5333,7 +5348,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 398
+                "startLine": 420
             },
             {
                 "name": "forParameters",
@@ -5377,7 +5392,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 445
+                "startLine": 467
             },
             {
                 "name": "swarm",
@@ -5400,7 +5415,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 487
+                "startLine": 509
             },
             {
                 "name": "elements",
@@ -5428,7 +5443,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 506
+                "startLine": 528
             },
             {
                 "name": "constant",
@@ -5451,7 +5466,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 524
+                "startLine": 546
             },
             {
                 "name": "enum",
@@ -5474,7 +5489,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 539
+                "startLine": 561
             },
             {
                 "name": "floatSpecial",
@@ -5489,7 +5504,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 565
+                "startLine": 587
             },
             {
                 "name": "intRange",
@@ -5519,7 +5534,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 587
+                "startLine": 609
             },
             {
                 "name": "recursive",
@@ -5556,7 +5571,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 624
+                "startLine": 646
             },
             {
                 "name": "nullable",
@@ -5579,7 +5594,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 654
+                "startLine": 676
             },
             {
                 "name": "map",
@@ -5609,7 +5624,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 672
+                "startLine": 694
             },
             {
                 "name": "flatMap",
@@ -5639,7 +5654,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 692
+                "startLine": 714
             },
             {
                 "name": "filter",
@@ -5669,7 +5684,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 707
+                "startLine": 729
             },
             {
                 "name": "draw",
@@ -5692,7 +5707,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 744
+                "startLine": 766
             },
             {
                 "name": "composite",
@@ -5715,7 +5730,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 782
+                "startLine": 804
             },
             {
                 "name": "note",
@@ -5745,7 +5760,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 808
+                "startLine": 830
             },
             {
                 "name": "tuple",
@@ -5768,7 +5783,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 820
+                "startLine": 842
             },
             {
                 "name": "frequency",
@@ -5791,7 +5806,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 836
+                "startLine": 858
             },
             {
                 "name": "uuid",
@@ -5806,7 +5821,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 849
+                "startLine": 871
             },
             {
                 "name": "randomEngine",
@@ -5821,7 +5836,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 882
+                "startLine": 904
             },
             {
                 "name": "randomizer",
@@ -5836,7 +5851,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 893
+                "startLine": 915
             },
             {
                 "name": "datetime",
@@ -5866,7 +5881,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 905
+                "startLine": 927
             },
             {
                 "name": "ipv4",
@@ -5881,7 +5896,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 916
+                "startLine": 938
             },
             {
                 "name": "ipv6",
@@ -5896,7 +5911,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 945
+                "startLine": 967
             },
             {
                 "name": "email",
@@ -5911,7 +5926,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 969
+                "startLine": 991
             },
             {
                 "name": "url",
@@ -5926,7 +5941,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 993
+                "startLine": 1015
             },
             {
                 "name": "json",
@@ -5949,7 +5964,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1021
+                "startLine": 1043
             },
             {
                 "name": "jsonString",
@@ -5972,7 +5987,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1047
+                "startLine": 1069
             },
             {
                 "name": "regex",
@@ -6002,7 +6017,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1083
+                "startLine": 1105
             },
             {
                 "name": "stringMatching",
@@ -6032,7 +6047,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1096
+                "startLine": 1118
             },
             {
                 "name": "commands",
@@ -6076,7 +6091,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1118
+                "startLine": 1140
             },
             {
                 "name": "rules",
@@ -6113,7 +6128,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1186
+                "startLine": 1208
             },
             {
                 "name": "sample",
@@ -6150,7 +6165,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1210
+                "startLine": 1232
             },
             {
                 "name": "sampleShrinks",
@@ -6187,12 +6202,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1239
+                "startLine": 1261
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L58",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L59",
         "implementedBy": []
     },
     {
@@ -6358,7 +6373,7 @@
         "isApi": false,
         "isAbstract": false,
         "isThrowable": false,
-        "summary": "Computes the in-range boundary values that numeric arbitraries bias toward,\nbecause bugs cluster at edges (0, ±1, the range ends) far more than in the\nuniform interior.",
+        "summary": "Computes the in-range boundary values that numeric and string arbitraries\nbias toward, because bugs cluster at edges (0, ±1, the range ends, the empty\nstring, a trailing newline) far more than in the uniform interior.",
         "description": "",
         "deprecated": null,
         "see": [],
@@ -6432,6 +6447,43 @@
                 "deprecated": null,
                 "attributes": [],
                 "startLine": 43
+            },
+            {
+                "name": "strings",
+                "static": true,
+                "params": [
+                    {
+                        "name": "minLength",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxLength",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "unicode",
+                        "type": "bool",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "Strings every text-handling bug list starts with, in interest order:\nthe empty string, a lone space, `\"0\"`, then — for the Unicode alphabet\nonly, since printable ASCII has none of these characters — a lone line\nfeed, a trailing line feed (`\"a\\n\"` passes `/^[a-z]+$/`) and a\ndecomposed `é` (`e` + combining acute accent). Only those whose length\nin characters lies within `[$minLength, $maxLength]` are kept, so the\nlist is empty when no candidate fits.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 68
             }
         ],
         "constants": [],
@@ -7548,6 +7600,51 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/LeafFallbackArbitrary.php#L28",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\NaughtyStrings",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The curated list behind \\Rasuvaeff\\PropertyTesting\\Gen::naughtyString():\nwhole string values that break parsers, validators, renderers and storage,\nin the spirit of big-list-of-naughty-strings and BlackBox's\n`Set::strings()->unsafe()`.",
+        "description": "Ordered simplest first, because a failing entry shrinks through the entries\nlisted before it: the reported minimum is the first entry on this list that\nstill fails. Short entries and whole categories that are cheap to reason\nabout come before long or exotic ones.\n\nEntries are stored as data, not compared against anything: a value that is\nnot valid UTF-8 is on the list on purpose (`json_encode()`, `preg_*()` with\n`/u` and `mb_*()` all treat it differently), and the corpus stores it as\nbytes.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "all",
+                "static": true,
+                "params": [],
+                "returnType": "array",
+                "summary": "",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 30
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/NaughtyStrings.php#L25",
         "implementedBy": []
     },
     {
@@ -10065,7 +10162,7 @@
             {
                 "name": "edgeCases",
                 "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
-                "description": "Whether the numeric generators keep biasing toward boundary values.",
+                "description": "Whether the numeric and string generators keep biasing toward boundary values.",
                 "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -11040,7 +11137,7 @@
         "isApi": true,
         "isAbstract": false,
         "isThrowable": false,
-        "summary": "Whether the numeric generators keep biasing toward their boundary values.",
+        "summary": "Whether the numeric and string generators keep biasing toward their boundary\nvalues.",
         "description": "The bias is normally what you want: bugs cluster at `0`, `±1` and a range's\nown ends far more than in the uniform interior, so roughly one draw in five\nreturns an edge value rather than a uniform one.\n\nIt stops being what you want when the edges are exactly what the property\ncannot use — a body that discards `0` through `Assume::that()`, or a\ngenerator whose range ends violate a precondition. Then one run in five is\nspent producing a value the property throws away, and the discard budget\ncarries the cost.",
         "deprecated": null,
         "see": [],
@@ -11077,7 +11174,7 @@
                 "backingValue": null
             }
         ],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/EdgeCases.php#L22",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/EdgeCases.php#L23",
         "implementedBy": []
     },
     {
@@ -11662,7 +11759,7 @@
                 "name": "SEQUENCE_EPOCH",
                 "type": "int",
                 "summary": "Generation-sequence epoch. Seed entries reproduce a failure only while the\nseed→values mapping holds, so bump this in any release that shifts the\ngenerated sequence (new boundary bias, changed draw order, a rewritten\narbitrary) — older seed entries are then dropped instead of replaying a\ndifferent input under the guise of a regression. Values entries carry the\ninput itself and are unaffected.",
-                "value": 2
+                "value": 3
             }
         ],
         "enumCases": [],
@@ -12226,7 +12323,7 @@
             {
                 "name": "edgeCases",
                 "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
-                "description": "Whether the numeric generators keep biasing toward their boundary\nvalues (\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin, the default) or generate uniformly\n(\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::None). Turn them off when the edges are what the property cannot\nuse — a body discarding `0`, a range end that violates a precondition — so the discard\nbudget stops paying for one run in five.\nA parameter added anywhere before this one moves the ones after it, and every caller\npassing $path positionally would silently mean something else — later parameters are\nappended after it.",
+                "description": "Whether the numeric and string generators keep biasing toward their boundary\nvalues (\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin, the default) or generate uniformly\n(\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::None). Turn them off when the edges are what the property cannot\nuse — a body discarding `0`, a range end that violates a precondition — so the discard\nbudget stops paying for one run in five.\nA parameter added anywhere before this one moves the ones after it, and every caller\npassing $path positionally would silently mean something else — later parameters are\nappended after it.",
                 "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
                 "promoted": true,
                 "promotedVisibility": "public",

@@ -21,8 +21,8 @@ final class GenJsonTest
     {
         $lengths = array_map(strlen(...), $this->stringLeaves());
 
-        Assert::true(in_array(0, $lengths, true));
-        Assert::true(in_array(12, $lengths, true));
+        Assert::true(in_array(0, $lengths, strict: true));
+        Assert::true(in_array(12, $lengths, strict: true));
         Assert::same(max($lengths), 12);
     }
 
@@ -54,8 +54,8 @@ final class GenJsonTest
             $this->collect($value, $strings, $sizes);
         }
 
-        Assert::true(in_array(0, $sizes, true));
-        Assert::true(in_array(4, $sizes, true));
+        Assert::true(in_array(0, $sizes, strict: true));
+        Assert::true(in_array(4, $sizes, strict: true));
         Assert::same(max($sizes), 4);
     }
 
@@ -63,7 +63,7 @@ final class GenJsonTest
     {
         $values = Gen::sample(Gen::withEdgeCases(new ConstantArbitrary(0), ...['edge' => 7]), 300, 5);
 
-        Assert::true(in_array(7, $values, true));
+        Assert::true(in_array(7, $values, strict: true));
         Assert::same(array_values(array_unique(array_merge([0, 7], $values))), [0, 7]);
     }
 

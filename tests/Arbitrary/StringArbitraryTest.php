@@ -330,7 +330,7 @@ final class StringArbitraryTest
         // A uniform draw of length 0..100 meets "a\n" or a lone "\n" almost
         // never; the boundary roll returns each of the six candidates about
         // one draw in sixty.
-        $counts = self::boundaryCounts(new StringArbitrary(0, 100, unicode: true), EdgeCases::Mixin);
+        $counts = $this->boundaryCounts(new StringArbitrary(0, 100, unicode: true), EdgeCases::Mixin);
 
         foreach (['', ' ', '0', "\n", "a\n", "e\u{0301}"] as $boundary) {
             Assert::true($counts[$boundary] > 20 && $counts[$boundary] < 90);
@@ -339,7 +339,7 @@ final class StringArbitraryTest
 
     public function asciiBoundaryStringsStayPrintable(): void
     {
-        $counts = self::boundaryCounts(new StringArbitrary(0, 100, unicode: false), EdgeCases::Mixin);
+        $counts = $this->boundaryCounts(new StringArbitrary(0, 100, unicode: false), EdgeCases::Mixin);
 
         Assert::true($counts[' '] > 50 && $counts['0'] > 50);
         Assert::same($counts["\n"] + $counts["a\n"] + $counts["e\u{0301}"], 0);
@@ -349,7 +349,7 @@ final class StringArbitraryTest
     {
         // Lengths 1..100, so even the uniform draw almost never produces a
         // one- or two-character string, let alone one of these.
-        $counts = self::boundaryCounts(new StringArbitrary(1, 100, unicode: true), EdgeCases::None);
+        $counts = $this->boundaryCounts(new StringArbitrary(1, 100, unicode: true), EdgeCases::None);
 
         Assert::same(array_sum($counts), 0);
     }
@@ -411,7 +411,7 @@ final class StringArbitraryTest
     /**
      * @return array<string, int>
      */
-    private static function boundaryCounts(StringArbitrary $arbitrary, EdgeCases $mode): array
+    private function boundaryCounts(StringArbitrary $arbitrary, EdgeCases $mode): array
     {
         $counts = ['' => 0, ' ' => 0, '0' => 0, "\n" => 0, "a\n" => 0, "e\u{0301}" => 0];
         $random = new Random(42, $mode);

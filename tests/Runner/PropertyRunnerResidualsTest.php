@@ -193,7 +193,7 @@ final class PropertyRunnerResidualsTest
                 config: new PropertyConfig(runs: 2, seed: 42, searchRuns: 10),
             ),
             new CallableTrialExecutor(static function (int $x): void {
-                Classify::cover(true, 'any', 10.0);
+                Classify::cover(condition: true, label: 'any', minPercent: 10.0);
                 Target::maximize('x', $x);
             }),
         );
@@ -264,7 +264,7 @@ final class PropertyRunnerResidualsTest
                 examples: [[-1]],
             ),
             new CallableTrialExecutor($body),
-            $listener === null ? [] : [$listener],
+            $listener instanceof \Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener ? [$listener] : [],
         );
     }
 

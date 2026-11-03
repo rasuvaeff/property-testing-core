@@ -33,7 +33,7 @@ final class TypeGeneratorsTest
     #[DataProvider('refinedIntegers')]
     public function aRefinedIntegerSpansExactlyItsDomain(string $type, int $min, int $max): void
     {
-        $values = $this->draws(self::read($type));
+        $values = $this->draws($this->read($type));
 
         Assert::same(min($values), $min);
         Assert::same(max($values), $max);
@@ -52,7 +52,7 @@ final class TypeGeneratorsTest
     #[DataProvider('constants')]
     public function aBooleanLiteralTypeIsThatValueOnly(string $type, bool $value): void
     {
-        Assert::same(array_values(array_unique($this->draws(self::read($type)))), [$value]);
+        Assert::same(array_values(array_unique($this->draws($this->read($type)))), [$value]);
     }
 
     /**
@@ -66,7 +66,7 @@ final class TypeGeneratorsTest
 
     public function anIntegerLiteralUnionYieldsExactlyItsIntegers(): void
     {
-        $values = array_values(array_unique($this->draws(self::read('1|2|-3'))));
+        $values = array_values(array_unique($this->draws($this->read('1|2|-3'))));
         sort($values);
 
         Assert::same($values, [-3, 1, 2]);
@@ -76,8 +76,8 @@ final class TypeGeneratorsTest
     {
         $seen = [];
 
-        foreach ($this->draws(self::read("'a'|true|false|null")) as $value) {
-            $seen[var_export($value, true)] = true;
+        foreach ($this->draws($this->read("'a'|true|false|null")) as $value) {
+            $seen[var_export($value, return: true)] = true;
         }
 
         ksort($seen);
@@ -89,7 +89,7 @@ final class TypeGeneratorsTest
     {
         $sizes = [];
 
-        foreach ($this->draws(self::read('int<0, 9>[]')) as $value) {
+        foreach ($this->draws($this->read('int<0, 9>[]')) as $value) {
             Assert::true(is_array($value) && array_is_list($value));
 
             foreach ($value as $element) {
@@ -107,7 +107,7 @@ final class TypeGeneratorsTest
     #[DataProvider('unreadable')]
     public function aTypeOutsideTheSubsetIsNotRead(string $type): void
     {
-        Assert::null(self::read($type));
+        Assert::null($this->read($type));
     }
 
     /**
@@ -132,7 +132,7 @@ final class TypeGeneratorsTest
 
     public function aFileGoneBeforeItsImportsAreReadResolvesGlobalNames(): void
     {
-        $function = self::closureFromFile(<<<'PHP'
+        $function = $this->closureFromFile(<<<'PHP'
             <?php
 
             namespace Gone;
@@ -158,7 +158,7 @@ final class TypeGeneratorsTest
      */
     public function functionImportsNeverShadowAClassImport(): void
     {
-        $function = self::closureFromFile(<<<'PHP'
+        $function = $this->closureFromFile(<<<'PHP'
             <?php
 
             namespace Mixed;
@@ -197,7 +197,7 @@ final class TypeGeneratorsTest
         }
     }
 
-    private static function closureFromFile(string $source, bool $unlink): \ReflectionFunction
+    private function closureFromFile(string $source, bool $unlink): \ReflectionFunction
     {
         $path = sprintf('%s/type-generators-%s.php', sys_get_temp_dir(), bin2hex(random_bytes(8)));
         file_put_contents($path, $source);
@@ -214,7 +214,7 @@ final class TypeGeneratorsTest
         return new \ReflectionFunction($closure);
     }
 
-    private static function read(string $type): ?ArbitraryInterface
+    private function read(string $type): ?ArbitraryInterface
     {
         return TypeGenerators::fromDocblock(
             $type,

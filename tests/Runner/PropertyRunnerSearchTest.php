@@ -10,6 +10,7 @@ use Rasuvaeff\PropertyTesting\Event\PropertyFinished;
 use Rasuvaeff\PropertyTesting\Event\RunStarted;
 use Rasuvaeff\PropertyTesting\Event\TargetImproved;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\GaveUp;
@@ -35,6 +36,8 @@ use Testo\Test;
  */
 #[Test]
 #[Covers(PropertyRunner::class)]
+#[Covers(PhaseCounters::class)]
+#[Covers(SearchReport::class)]
 final class PropertyRunnerSearchTest
 {
     /**

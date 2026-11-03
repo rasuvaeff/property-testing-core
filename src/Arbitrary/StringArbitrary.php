@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
+use Rasuvaeff\PropertyTesting\Internal\Boundary;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -17,6 +18,12 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  * full Unicode space via {@see mb_chr()}. Length is chosen uniformly within an
  * inclusive range.
  *
+ * About one draw in ten is a boundary string instead ({@see Boundary::strings()}):
+ * the empty string, a space, `'0'`, and for the Unicode alphabet a lone line
+ * feed, an `a` followed by a line feed, and a decomposed `é` — those that fit
+ * the length range — unless the run turned edge cases off
+ * ({@see \Rasuvaeff\PropertyTesting\Runner\EdgeCases::None}).
+ *
  * @implements ArbitraryInterface<string>
  * @api
  */
@@ -24,6 +31,7 @@ final readonly class StringArbitrary implements ArbitraryInterface
 {
     private const int ASCII_MIN = 32;
     private const int ASCII_MAX = 126;
+    private const int BIAS_DENOMINATOR = 10;
 
     /**
      * Characters parsers and renderers trip over, drawn deliberately rather
@@ -88,6 +96,14 @@ final readonly class StringArbitrary implements ArbitraryInterface
     #[\Override]
     public function generate(Random $random): Shrinkable
     {
+        if ($random->drawsEdgeCase(self::BIAS_DENOMINATOR)) {
+            $boundaries = Boundary::strings($this->minLength, $this->maxLength, $this->unicode);
+
+            if ($boundaries !== []) {
+                return $this->tree($boundaries[$random->int(0, count($boundaries) - 1)]);
+            }
+        }
+
         $length = $random->int($this->minLength, $this->maxLength);
         $string = '';
 

@@ -291,4 +291,40 @@ final class RedisDsnTest
             );
         }
     }
+
+    #[DataProvider('halfBracketedHosts')]
+    public function onlyAFullyBracketedHostLosesItsBrackets(string $dsn, string $host): void
+    {
+        Assert::same(RedisDsn::parse($dsn)->host, $host);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function halfBracketedHosts(): iterable
+    {
+        yield 'closing bracket only' => ['redis://ab]:6379', 'ab]'];
+        yield 'opening bracket only' => ['redis://[ab:6379', '[ab'];
+    }
+
+    #[DataProvider('timeoutsWithANumericTail')]
+    public function aTimeoutMustBeANumberFromItsFirstCharacter(string $dsn): void
+    {
+        try {
+            RedisDsn::parse($dsn);
+
+            Assert::fail('expected the timeout to be refused');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), sprintf('PROPERTY_DB="%s" has an invalid timeout; expected a positive number of seconds', $dsn));
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function timeoutsWithANumericTail(): iterable
+    {
+        yield 'exponent' => ['redis://redis?timeout=1e5'];
+        yield 'leading garbage' => ['redis://redis?timeout=x5'];
+    }
 }

@@ -9,6 +9,7 @@ use Rasuvaeff\PropertyTesting\Classify;
 use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\CoverageFailed;
 use Rasuvaeff\PropertyTesting\Runner\ExampleFailed;
@@ -42,6 +43,7 @@ use Testo\Test;
 #[Covers(GenerationFailed::class)]
 #[Covers(ExampleFailed::class)]
 #[Covers(RunStatistics::class)]
+#[Covers(PhaseCounters::class)]
 final class PropertyRunnerTest
 {
     public function passedCarriesTheRunStatistics(): void

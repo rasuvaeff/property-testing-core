@@ -1,6 +1,6 @@
 ---
 title: Boundary bias
-description: "Why the numeric generators skew a 1-in-5 draw toward 0, ±1 and the range's own bounds instead of sampling uniformly — bugs cluster at the edges."
+description: "Why the numeric generators skew a 1-in-5 draw toward 0, ±1 and the range's own bounds, and the string generators a 1-in-10 draw toward '', '0' and a trailing newline, instead of sampling uniformly — bugs cluster at the edges."
 ---
 
 # Boundary bias
@@ -8,7 +8,8 @@ description: "Why the numeric generators skew a 1-in-5 draw toward 0, ±1 and th
 Uniform random sampling wastes most of its draws on the uninteresting middle
 of a range. Bugs cluster at the edges — `0`, `±1`, the exact bounds — so the
 numeric generators deliberately skew toward them instead of sampling
-uniformly.
+uniformly. The string generators do the same for the strings every
+text-handling bug list starts with.
 
 ## How it works
 
@@ -33,6 +34,22 @@ helper:
 The other 4 draws in 5 sample uniformly across the full range, so the
 generator still explores the interior — bias shifts the odds, it doesn't
 replace coverage.
+
+`Gen::string()`, `Gen::stringAscii()`, `Gen::stringOf()` and `Gen::char()`
+roll a 1-in-10 chance (`StringArbitrary`'s `BIAS_DENOMINATOR = 10`). On that
+roll they return one of:
+
+- **Printable ASCII**: `''`, `' '`, `'0'`.
+- **Unicode**: those three, then `"\n"`, `"a\n"` — `/^[a-z]+$/` accepts it,
+  because PCRE `$` matches before a final newline — and `"e\u{0301}"`, a
+  decomposed `é` that compares unequal to the single-codepoint `é`.
+
+Only candidates whose length in characters fits `[$minLength, $maxLength]`
+are kept; when none fits (`stringOf(3, 10)`), that draw falls back to the
+uniform one. `Gen::stringFrom()` and `Gen::bytes()` are not biased: their
+alphabet is the caller's choice, and a boundary string outside it would leave
+the domain. For a whole list of adversarial strings rather than a handful of
+edges, use `Gen::naughtyString()`.
 
 ## Turning it off
 
@@ -60,7 +77,7 @@ the same idea with the values chosen rather than guessed.
 
 ## Your own edge values
 
-The built-in bias knows the numeric edges. A property author often knows
+The built-in bias knows the numeric edges and a few string ones. A property author often knows
 better ones — the largest allowed payload, `$n - 1`, an empty string beside
 a one-character one — and until now could only pin them as
 [explicit examples](/guide/explicit-examples) (not shared between properties)

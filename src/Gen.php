@@ -36,6 +36,7 @@ use Rasuvaeff\PropertyTesting\Arbitrary\UuidArbitrary;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
 use Rasuvaeff\PropertyTesting\Internal\Ipv6Formatter;
 use Rasuvaeff\PropertyTesting\Internal\LeafFallbackArbitrary;
+use Rasuvaeff\PropertyTesting\Internal\NaughtyStrings;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
 use Rasuvaeff\PropertyTesting\Internal\RegexCompiler;
 use Rasuvaeff\PropertyTesting\Internal\RuleMachine;
@@ -193,6 +194,27 @@ final class Gen
     public static function bytes(int $minLength = 0, int $maxLength = 100): ArbitraryInterface
     {
         return new BytesArbitrary($minLength, $maxLength);
+    }
+
+    /**
+     * Whole string values known to break code that handles text: empty and
+     * whitespace-only strings, a trailing newline (`a` plus a line feed
+     * passes `/^[a-z]+$/`), NUL and control bytes, numeric-looking text (`"0"`,
+     * `"1e309"`, one past `PHP_INT_MAX`), `"null"`/`"true"`, quotes and
+     * escapes, SQL/markup/template/format-string/shell/header injection
+     * shapes, path traversal, Unicode normalisation, case-mapping, direction
+     * and homoglyph traps, invalid UTF-8, and lengths past common limits.
+     *
+     * A curated list rather than a random draw: these are single values a
+     * uniform generator meets once in millions of runs. A failing value shrinks
+     * through the entries listed before it, simplest first. The list is finite,
+     * so `exhaustive: true` walks every entry instead of sampling.
+     *
+     * @return ArbitraryInterface<string>
+     */
+    public static function naughtyString(): ArbitraryInterface
+    {
+        return new OneOfArbitrary(...NaughtyStrings::all());
     }
 
     /**

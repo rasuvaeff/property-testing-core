@@ -36,7 +36,7 @@ __construct(
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `$seed` | `int` | *required* | The seed; two instances with the same one produce the same sequence. |
-| `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | Whether the numeric generators keep biasing toward boundary values. |
+| `$edgeCases` | [`Runner\EdgeCases`](/api/classes/Runner/EdgeCases) | `Rasuvaeff\PropertyTesting\Runner\EdgeCases::Mixin` | Whether the numeric and string generators keep biasing toward boundary values. |
 
 ## Methods
 

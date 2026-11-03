@@ -423,11 +423,18 @@ jobs:
             echo "CHANGELOG declares $NEXT - an intentional compatibility boundary over $LATEST; BC breaks are expected, treating as pass."
             exit 0
           fi
+          # The value of FilesystemCorpus::SEQUENCE_EPOCH is not under SemVer
+          # either: compatibility policy section 2 (docs/src/guide/compatibility.md)
+          # lets a minor shift the seed->values mapping provided the epoch is
+          # bumped in the same release, and the bump is what roave reports. That
+          # one exact line is tolerated like a SKIPPED entry; any other finding
+          # still fails.
           if [ "$CODE" -eq 3 ]; then
             TOTAL="$(printf '%s\n' "$OUTPUT" | { grep -cE '^\[BC\] ' || true; })"
             SKIPPED="$(printf '%s\n' "$OUTPUT" | { grep -cE '^\[BC\] SKIPPED:' || true; })"
-            if [ "$TOTAL" -gt 0 ] && [ "$TOTAL" -eq "$SKIPPED" ]; then
-              echo "All $TOTAL finding(s) are roave/better-reflection SKIPPED entries (a static-analysis limitation, not a detected break); treating as pass."
+            EPOCH="$(printf '%s\n' "$OUTPUT" | { grep -cE '^\[BC\] CHANGED: Value of constant Rasuvaeff\\PropertyTesting\\Runner\\FilesystemCorpus::SEQUENCE_EPOCH changed from [0-9]+ to [0-9]+$' || true; })"
+            if [ "$TOTAL" -gt 0 ] && [ "$TOTAL" -eq "$((SKIPPED + EPOCH))" ]; then
+              echo "All $TOTAL finding(s) are roave/better-reflection SKIPPED entries (a static-analysis limitation, not a detected break) or the SEQUENCE_EPOCH bump compatibility policy section 2 allows in a minor; treating as pass."
               exit 0
             fi
           fi

@@ -101,3 +101,12 @@ newline.
 
 Root `AGENTS.md`'s security table already codifies this: identifier
 whitelists are anchored with `\z`, never a bare `$`.
+
+## Without building the alphabet
+
+The alphabet above is constructed so the newline is reachable. Two
+generators reach it without that step: `Gen::string()` returns `"a\n"` as one
+of its boundary strings about one draw in sixty, and `Gen::naughtyString()`
+lists it next to the other whole values that break validators — run it with
+`exhaustive: true` and every entry is checked once, in order, with no seed
+involved.

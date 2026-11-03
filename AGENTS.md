@@ -126,7 +126,12 @@ make release-check
   sequence untouched**, so `SeedDeterminismVectorsTest` did not move and
   the epoch stayed at 2 through 0.12. It ignores `EdgeCases::None` on
   purpose (explicit opt-in beats a global opt-out), and skips the index
-  roll when there is exactly one edge value.
+  roll when there is exactly one edge value. The built-in string bias of 1.3
+  (`Boundary::strings()`, one roll per `StringArbitrary` draw) is the
+  opposite case: it rolls inside the generator, obeys `EdgeCases::None`,
+  shifted the vectors, and took the epoch to 3. A boundary string must stay
+  inside the generator's own domain — that is why `stringFrom()`/`bytes()`
+  have none and the ASCII alphabet gets only `''`, `' '`, `'0'`.
 - **Event model.** Events carry engine data only — property id, seed,
   attempts, arguments, labels, elapsed time, failures, counterexamples;
   framework types never appear in an event. A listener exception aborts the

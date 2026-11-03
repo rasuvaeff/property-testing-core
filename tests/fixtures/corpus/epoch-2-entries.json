@@ -1,0 +1,21 @@
+{
+    "format": 1,
+    "property": "E::two",
+    "entries": [
+        {
+            "kind": "values",
+            "seed": 4242,
+            "epoch": 2,
+            "args": {
+                "x": 51
+            }
+        },
+        {
+            "kind": "seed",
+            "seed": 99,
+            "epoch": 2,
+            "runsBeforeFailure": 3,
+            "edgeCases": "mixin"
+        }
+    ]
+}

@@ -224,6 +224,7 @@ through their source domain.
 | `Gen::stringOf($minLength, $maxLength)` | `StringArbitrary`, Unicode, bounded length (`0..100` by default, like `stringFrom` and `bytes`) | toward `''`, then by removing blocks of characters from any position (down to single ones), then each character toward `a` |
 | `Gen::stringFrom($alphabet, $minLength, $maxLength)` | `CharsetStringArbitrary`, characters from a fixed alphabet (multibyte OK) | toward `''`, then by length, then each character toward the first alphabet character |
 | `Gen::bytes($minLength, $maxLength)` | `BytesArbitrary`, raw byte strings (bytes 0..255) | toward `''`, then by length, then each byte toward `"\x00"` |
+| `Gen::naughtyString()` | `OneOfArbitrary` over a curated list of whole string values that break text-handling code: empty and whitespace-only, a trailing newline (`"a\n"` passes `/^[a-z]+$/`), NUL and control bytes, numeric-looking text (`"0"`, `"1e309"`, one past `PHP_INT_MAX`), `"null"`/`"true"`, quotes and escapes, SQL/markup/template/format-string/shell/header injection shapes, path traversal, Unicode normalisation/case/direction/homoglyph traps, invalid UTF-8, lengths past 256/1024/65535. Finite, so `exhaustive: true` walks every entry | through the entries listed before it, simplest first |
 | `Gen::arrayOf($element, $minSize, $maxSize)` | `ArrayArbitrary`, lists of `$element`, size 0..100 by default | toward `[]`, then by removing blocks of elements from any position (down to single ones), then each element |
 | `Gen::nonEmptyArrayOf($element, $maxSize)` | `ArrayArbitrary`, non-empty lists | by length (never below 1), then each element |
 | `Gen::uniqueArrayOf($element, $minSize, $maxSize, $by)` | `UniqueArrayArbitrary`, lists of pairwise-distinct elements — strict `===` on the values (so `NAN` is never equal to itself and may appear more than once, and objects are distinct unless the same instance), or, with `by: fn ($v) => $v->id`, on the `int\|string` key the closure returns; a key of any other type is refused at generation time | like `arrayOf`, but element candidates colliding with another element (or key) are skipped |
@@ -305,7 +306,11 @@ but a production class carrying it would depend on this package at runtime.
 
 Numeric generators (`int*`, `float*`) are **boundary-biased**: roughly one draw in
 five returns an in-range edge value (`0`, `±1`, `min`, `max` for ints; `0.0` or
-`min` for floats), where bugs cluster, instead of a uniform one. Shrinking is
+`min` for floats), where bugs cluster, instead of a uniform one. The string
+generators (`string`, `stringAscii`, `stringOf`, `char`) do the same about one
+draw in ten: `''`, `' '`, `'0'`, and for the Unicode ones `"\n"`, `"a\n"` and a
+decomposed `é` — only those that fit the length range. `stringFrom` and `bytes`
+are not biased: their alphabet is the caller's. Shrinking is
 unaffected. When the edges are exactly what a property cannot use — a body that
 discards `0`, a range end that violates a precondition — `edgeCases:
 EdgeCases::None` generates uniformly instead of spending one run in five on a
@@ -508,7 +513,7 @@ no environment:
 | `shrinkBudgetMs` | `null` | Wall-clock budget for the shrink descent; implies `ShrinkMode::Bounded` |
 | `phases` | `null` | Stages to perform (`Phase::Examples`/`Corpus`/`Random`/`Shrink`); null runs all of them |
 | `derandomize` | `false` | Derive an unset seed from the property id instead of drawing one |
-| `edgeCases` | `EdgeCases::Mixin` | `None` turns off the numeric boundary bias, for properties the edges only cost runs |
+| `edgeCases` | `EdgeCases::Mixin` | `None` turns off the numeric and string boundary bias, for properties the edges only cost runs |
 | `path` | `null` | Replay a recorded shrink descent instead of searching for it; needs an explicit `seed` |
 | `exhaustive` | `false` | Enumerate the whole parameter domain instead of sampling it, when every generator is `Enumerable` and the product fits `exhaustiveBudget` — see [Exhaustive mode](#exhaustive-mode) |
 | `exhaustiveBudget` | `10_000` | The largest domain `exhaustive` walks; above it the phase samples and the report says why |
@@ -959,8 +964,9 @@ without reading a diff.
 | 9 | **PHP** | `8.3 - 8.5`. Support for a newer PHP minor is a patch that widens the constraint; dropping a PHP version is a major. |
 
 Point 2 is the one that has already bitten: 0.6.0 changed the distribution of
-`Gen::string()` and bumped `SEQUENCE_EPOCH` to 2, and 0.5.0 changed the order
-of list shrink candidates. Both were minors, and both were correct — a
+`Gen::string()` and bumped `SEQUENCE_EPOCH` to 2, 0.5.0 changed the order
+of list shrink candidates, and 1.3.0 gave the string generators a boundary bias
+and bumped `SEQUENCE_EPOCH` to 3. All three were minors, and both were correct — a
 property-based engine that could never improve a generator's distribution
 would be frozen at its first mistake. The corpus is what carries a regression
 across such a change, which is why values entries are exempt and seed entries

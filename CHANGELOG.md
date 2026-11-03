@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+- **Added:** `Gen::naughtyString()` — whole string values known to break
+  text-handling code, drawn from a curated list kept in the package (#172, after
+  BlackBox's `Set::strings()->unsafe()`): empty and whitespace-only strings, a
+  trailing newline (`"a\n"` passes `/^[a-z]+$/`), NUL and control bytes,
+  numeric-looking text, `"null"`/`"true"`, quotes and escapes, SQL, markup,
+  template, format-string, shell and header injection shapes, path traversal,
+  Unicode normalisation, case-mapping, direction and homoglyph traps, invalid
+  UTF-8, and lengths past common limits. A failing value shrinks through the
+  entries listed before it; the generator is `Enumerable`, so `exhaustive: true`
+  checks every entry.
+- **Changed:** `Gen::string()`, `Gen::stringAscii()`, `Gen::stringOf()` and
+  `Gen::char()` are boundary-biased like the numeric generators: about one draw
+  in ten is `''`, `' '`, `'0'`, and for the Unicode generators `"\n"`, `"a\n"` or
+  a decomposed `é`, whichever fit the length range. `EdgeCases::None` turns it
+  off. `Gen::stringFrom()` and `Gen::bytes()` are unchanged.
+- **Changed:** what a given seed generates through the string generators —
+  and every generator built on them, `Gen::forClass()`/`forParameters()` string
+  parameters included — has shifted (compatibility policy §2).
+  `FilesystemCorpus::SEQUENCE_EPOCH` is now 3: seed entries recorded under
+  epoch 2 are dropped on recall, values entries keep replaying.
+
 ## 1.2.0 — 2026-10-02
 
 - **Added:** `#[Generate]` — a parameter attribute holding its generator, read by

@@ -46,7 +46,7 @@ final readonly class FilesystemCorpus implements Corpus, SearchCorpus
      * different input under the guise of a regression. Values entries carry the
      * input itself and are unaffected.
      */
-    public const int SEQUENCE_EPOCH = 2;
+    public const int SEQUENCE_EPOCH = 3;
 
     /**
      * A values entry costs one run; a seed entry costs a whole random phase

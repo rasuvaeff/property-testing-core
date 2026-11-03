@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Internal;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Internal\ValueCodec;
 use Rasuvaeff\PropertyTesting\Tests\Support\Check;
+use Rasuvaeff\PropertyTesting\Tests\Support\NoDiagnostics;
 use Rasuvaeff\PropertyTesting\Tests\Support\Priority;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -410,5 +411,11 @@ final class ValueCodecTest
         \assert($decoded !== null);
 
         return $decoded[0];
+    }
+
+    #[DataProvider('corruptProvider')]
+    public function decodeRefusesCorruptPayloadsWithoutDiagnostics(mixed $payload): void
+    {
+        Assert::null(NoDiagnostics::run(static fn(): ?array => ValueCodec::decode($payload)));
     }
 }

@@ -6,7 +6,9 @@ namespace Rasuvaeff\PropertyTesting\Tests;
 
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\Generate;
+use Rasuvaeff\PropertyTesting\Internal\DocblockTypes;
 use Rasuvaeff\PropertyTesting\Internal\ParameterGenerators;
+use Rasuvaeff\PropertyTesting\Internal\TypeGenerators;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\AttributedValue;
 use Rasuvaeff\PropertyTesting\Tests\Support\Fixtures\GenerateMethods;
@@ -25,6 +27,8 @@ use Testo\Test;
 #[Covers(Generate::class)]
 #[Covers(Gen::class)]
 #[Covers(ParameterGenerators::class)]
+#[Covers(TypeGenerators::class)]
+#[Covers(DocblockTypes::class)]
 final class GenerateAttributeTest
 {
     public function anAttributedArbitraryIsUsedAsIs(): void

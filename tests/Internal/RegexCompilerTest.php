@@ -437,6 +437,9 @@ final class RegexCompilerTest
         yield 'bare group modifier at end' => ['(?', 'group modifiers'];
         yield 'dash at end of unterminated class' => ['[a-', 'Unterminated regex character class'];
         yield 'reversed range in unterminated class' => ['[z-a', 'out of order'];
+        yield 'unbalanced closing parenthesis' => ['a)', 'Unexpected ")" in regex pattern at position 1'];
+        yield 'negated class of every printable character' => ['[^ -~]', 'Regex character class matches no characters'];
+        yield 'escape cut off inside a class' => ['[\\', 'Unexpected end of regex pattern'];
 
         foreach (['B', 'A', 'Z', 'z', 'G'] as $assertion) {
             yield 'assertion \\' . $assertion => ['\\' . $assertion, 'assertion'];
@@ -629,6 +632,11 @@ final class RegexCompilerTest
         yield 'nested unbounded quantifiers' => ['((((((a*)*)*)*)*)*)*', 8, 'can generate up to 32768 characters'];
         yield 'concatenation of bounded quantifiers' => ['a{5000}b{5000}c{5000}', 8, 'can generate up to 15000 characters'];
         yield 'maxRepeat above the bound' => ['a*', 10_001, 'maxRepeat 10001 exceeds the maximum bounded repeat of 10000'];
+        yield 'empty group adds no width' => ['a{10000}(){10000}a', 8, 'can generate up to 10001 characters'];
+        yield 'zero quantifier adds no width' => ['a{10000}(a{0}){10000}a', 8, 'can generate up to 10001 characters'];
+        yield 'class counts one character' => ['[a]{10000}b', 8, 'can generate up to 10001 characters'];
+        yield 'shorthand counts one character' => ['\\d{10000}b', 8, 'can generate up to 10001 characters'];
+        yield 'dot counts one character' => ['.{10000}b', 8, 'can generate up to 10001 characters'];
     }
 
     #[DataProvider('patternsAtTheCeiling')]
@@ -651,6 +659,24 @@ final class RegexCompilerTest
         yield 'alternation takes the widest branch' => ['a{10000}|b', 8];
         yield 'zero quantifier contributes nothing' => ['(a{10000}){0}b{10000}', 8];
         yield 'maxRepeat at the bound' => ['a?', 10_000];
+        yield 'class at the bound' => ['[a]{10000}', 8];
+        yield 'shorthand at the bound' => ['\\d{10000}', 8];
+        yield 'dot at the bound' => ['.{10000}', 8];
+    }
+
+    #[DataProvider('widthlessRepeats')]
+    public function aRepeatedWidthlessAtomLeavesRoomForTheRest(string $pattern): void
+    {
+        Assert::same(RegexCompiler::compile($pattern)->generate(new Random(1))->value, 'a');
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function widthlessRepeats(): iterable
+    {
+        yield 'repeated empty group' => ['(){10000}a'];
+        yield 'repeated zero quantifier' => ['(b{0}){10000}a'];
     }
 
     public function maxRepeatMustBePositive(): void

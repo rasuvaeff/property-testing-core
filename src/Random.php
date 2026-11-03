@@ -31,7 +31,7 @@ final readonly class Random
 
     /**
      * @param int $seed The seed; two instances with the same one produce the same sequence.
-     * @param EdgeCases $edgeCases Whether the numeric generators keep biasing toward boundary values.
+     * @param EdgeCases $edgeCases Whether the numeric and string generators keep biasing toward boundary values.
      */
     public function __construct(
         int $seed,

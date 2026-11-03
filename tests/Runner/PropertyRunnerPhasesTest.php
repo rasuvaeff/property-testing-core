@@ -11,6 +11,7 @@ use Rasuvaeff\PropertyTesting\Event\RunStarted;
 use Rasuvaeff\PropertyTesting\Event\ShrinkAccepted;
 use Rasuvaeff\PropertyTesting\Event\ShrinkTried;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
 use Rasuvaeff\PropertyTesting\Runner\CoverageFailed;
@@ -37,6 +38,7 @@ use Testo\Test;
  */
 #[Test]
 #[Covers(PropertyRunner::class)]
+#[Covers(PhaseCounters::class)]
 final class PropertyRunnerPhasesTest
 {
     public function shrinkModeOffReportsTheCounterexampleAsGenerated(): void

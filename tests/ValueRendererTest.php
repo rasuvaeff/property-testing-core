@@ -223,6 +223,18 @@ final class ValueRendererTest
         Assert::same(ValueRenderer::render($stringable), $value);
     }
 
+    public function rendersAStringableReturningInvalidUtf8AsBytes(): void
+    {
+        $value = new class implements \Stringable {
+            public function __toString(): string
+            {
+                return "\xFF\x00";
+            }
+        };
+
+        Assert::same(ValueRenderer::render($value), 'b"0xff00" (2 byte(s))');
+    }
+
     public function countsStringableCharactersNotBytes(): void
     {
         // 40 two-byte chars = 80 bytes but only 40 characters — under the limit,

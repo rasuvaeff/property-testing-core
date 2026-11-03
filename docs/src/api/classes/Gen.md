@@ -9,7 +9,7 @@ description: "Facade with static factories for the built-in ArbitraryInterfaces.
 
 `Rasuvaeff\PropertyTesting\Gen`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L58) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Gen.php#L59) — **Version:** working tree
 
 Facade with static factories for the built-in ArbitraryInterfaces.
 
@@ -127,6 +127,25 @@ static bytes(int $minLength = 0, int $maxLength = 100): ArbitraryInterface
 
 Raw byte strings (every byte 0..255). Shrinks by length toward '', then
 each byte toward "\x00".
+
+### naughtyString()
+
+```php
+static naughtyString(): ArbitraryInterface
+```
+
+Whole string values known to break code that handles text: empty and
+whitespace-only strings, a trailing newline (`a` plus a line feed
+passes `/^[a-z]+$/`), NUL and control bytes, numeric-looking text (`"0"`,
+`"1e309"`, one past `PHP_INT_MAX`), `"null"`/`"true"`, quotes and
+escapes, SQL/markup/template/format-string/shell/header injection
+shapes, path traversal, Unicode normalisation, case-mapping, direction
+and homoglyph traps, invalid UTF-8, and lengths past common limits.
+
+A curated list rather than a random draw: these are single values a
+uniform generator meets once in millions of runs. A failing value shrinks
+through the entries listed before it, simplest first. The list is finite,
+so `exhaustive: true` walks every entry instead of sampling.
 
 ### arrayOf()
 

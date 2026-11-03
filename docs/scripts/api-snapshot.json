@@ -5944,6 +5944,34 @@
                 "startLine": 1015
             },
             {
+                "name": "mixed",
+                "static": true,
+                "params": [
+                    {
+                        "name": "maxDepth",
+                        "type": "int<1, max>",
+                        "description": "How deep containers nest; at least 1.",
+                        "default": "2",
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "summary": "A value of any PHP type, for properties about code that takes `mixed`\nand must narrow it — a decoder, a validator, a `fromArray()` — without a\n`TypeError`, a `ValueError` or a warning, whatever it is handed.",
+                "description": "Leaves are `null`, booleans, the whole int range, floats (finite ones\nand \\Rasuvaeff\\PropertyTesting\\floatSpecial(): `NAN`, `±INF`, `-0.0`), Unicode strings\nwith their boundary strings, and `DateTimeImmutable`. Containers nest up\nto $maxDepth levels: lists, string-keyed and int-keyed arrays,\n`stdClass` with mixed properties, and `ArrayObject`. A value shrinks to\n`null`, `false`, `0`, `''` and `[]` first, then through its own tree, and\na nested value to the plain value it wraps.\n\nLeft out on purpose: closures and anonymous classes (a falsified result\nholding one no longer serializes), resources (nothing can replay one),\nand enums (they are the caller's types — add them with\n\\Rasuvaeff\\PropertyTesting\\frequency() and \\Rasuvaeff\\PropertyTesting\\enum()). A counterexample holding an\nobject is stored in the regression corpus as a seed entry, since only\nscalars, arrays and enum cases have a stored form.",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When $maxDepth is below 1."
+                    }
+                ],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 1064
+            },
+            {
                 "name": "json",
                 "static": true,
                 "params": [
@@ -5964,7 +5992,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1043
+                "startLine": 1115
             },
             {
                 "name": "jsonString",
@@ -5987,7 +6015,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1069
+                "startLine": 1141
             },
             {
                 "name": "regex",
@@ -6017,7 +6045,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1105
+                "startLine": 1177
             },
             {
                 "name": "stringMatching",
@@ -6047,7 +6075,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1118
+                "startLine": 1190
             },
             {
                 "name": "commands",
@@ -6091,7 +6119,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1140
+                "startLine": 1212
             },
             {
                 "name": "rules",
@@ -6128,7 +6156,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1208
+                "startLine": 1280
             },
             {
                 "name": "sample",
@@ -6165,7 +6193,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1232
+                "startLine": 1304
             },
             {
                 "name": "sampleShrinks",
@@ -6202,7 +6230,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1261
+                "startLine": 1333
             }
         ],
         "constants": [],

@@ -168,6 +168,7 @@ rejected at construction.
 | From alphabet | `Gen::stringFrom($alphabet, $min, $max)` | **Preferred for parser inputs** — the alphabet is the caller's responsibility: pick one that excludes the parser's delimiter chars (`,`, `=`, `&`, ...) so the value cannot break out of its field, but DOES include the chars you want the parser to handle |
 | Bytes (HMAC, raw) | `Gen::bytes($min, $max)` | |
 | Adversarial string values (validators, sanitizers, parsers, storage) | `Gen::naughtyString()` | Whole values a random draw almost never meets: `"a\n"` (passes a `$`-anchored regex), `"\0"`, `"1e309"`, `"null"`, injection shapes, `../`, Unicode traps, invalid UTF-8. Finite — pair with `exhaustive: true` to check every entry. `Gen::string()` already mixes in `''`, `' '`, `'0'`, `"\n"`, `"a\n"` about one draw in ten |
+| Untrusted `mixed` input (decoders, validators, `fromArray()`) | `Gen::mixed()` | Any PHP type, nested up to `$maxDepth` (default 2), objects included. The property is "accepted, or rejected with the documented exception — never a `TypeError`/`ValueError`/warning". Shrinks to `null` first. Derivation still refuses a `mixed` parameter: pass `Gen::mixed()` as an override or `#[Generate]` |
 | Array | `Gen::arrayOf($element, $min, $max)` | |
 | Unique array (ids, keys) | `Gen::uniqueArrayOf($element, $min, $max)` | Distinct by `===`; for VOs unique by one field add `by: fn ($u) => $u->id` (key must be `int\|string`) |
 | Map / dictionary | `Gen::dictOf($keyArb, $valueArb, $min, $max)` | |

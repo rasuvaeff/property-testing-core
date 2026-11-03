@@ -733,6 +733,37 @@ static url(): ArbitraryInterface
 HTTP/HTTPS URLs `scheme://host.tld[/segment...]` over a lowercase
 alphanumeric alphabet. Shrinks toward `http://a.com` (no path).
 
+### mixed()
+
+```php
+static mixed(int<1, max> $maxDepth = 2): ArbitraryInterface
+```
+
+A value of any PHP type, for properties about code that takes `mixed`
+and must narrow it — a decoder, a validator, a `fromArray()` — without a
+`TypeError`, a `ValueError` or a warning, whatever it is handed.
+
+- `$maxDepth` — How deep containers nest; at least 1.
+
+**Throws:**
+
+- `InvalidArgumentException` — When $maxDepth is below 1.
+
+Leaves are `null`, booleans, the whole int range, floats (finite ones
+and `floatSpecial`(): `NAN`, `±INF`, `-0.0`), Unicode strings
+with their boundary strings, and `DateTimeImmutable`. Containers nest up
+to $maxDepth levels: lists, string-keyed and int-keyed arrays,
+`stdClass` with mixed properties, and `ArrayObject`. A value shrinks to
+`null`, `false`, `0`, `''` and `[]` first, then through its own tree, and
+a nested value to the plain value it wraps.
+
+Left out on purpose: closures and anonymous classes (a falsified result
+holding one no longer serializes), resources (nothing can replay one),
+and enums (they are the caller's types — add them with
+`frequency`() and `enum`()). A counterexample holding an
+object is stored in the regression corpus as a seed entry, since only
+scalars, arrays and enum cases have a stored form.
+
 ### json()
 
 ```php

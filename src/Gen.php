@@ -1036,6 +1036,78 @@ final class Gen
     }
 
     /**
+     * A value of any PHP type, for properties about code that takes `mixed`
+     * and must narrow it — a decoder, a validator, a `fromArray()` — without a
+     * `TypeError`, a `ValueError` or a warning, whatever it is handed.
+     *
+     * Leaves are `null`, booleans, the whole int range, floats (finite ones
+     * and {@see floatSpecial()}: `NAN`, `±INF`, `-0.0`), Unicode strings
+     * with their boundary strings, and `DateTimeImmutable`. Containers nest up
+     * to $maxDepth levels: lists, string-keyed and int-keyed arrays,
+     * `stdClass` with mixed properties, and `ArrayObject`. A value shrinks to
+     * `null`, `false`, `0`, `''` and `[]` first, then through its own tree, and
+     * a nested value to the plain value it wraps.
+     *
+     * Left out on purpose: closures and anonymous classes (a falsified result
+     * holding one no longer serializes), resources (nothing can replay one),
+     * and enums (they are the caller's types — add them with
+     * {@see frequency()} and {@see enum()}). A counterexample holding an
+     * object is stored in the regression corpus as a seed entry, since only
+     * scalars, arrays and enum cases have a stored form.
+     *
+     * @param int<1, max> $maxDepth How deep containers nest; at least 1.
+     *
+     * @throws \InvalidArgumentException When $maxDepth is below 1.
+     *
+     * @return ArbitraryInterface<mixed>
+     */
+    public static function mixed(int $maxDepth = 2): ArbitraryInterface
+    {
+        $leaf = self::withEdgeCases(
+            new FrequencyArbitrary([
+                [1, new ConstantArbitrary(null)],
+                [1, new BoolArbitrary()],
+                [1, new IntArbitrary()],
+                [1, new FloatArbitrary(-1_000_000.0, 1_000_000.0)],
+                [1, self::floatSpecial()],
+                [1, new StringArbitrary(0, 20, unicode: true)],
+                [1, self::datetime()],
+            ]),
+            ...[null, false, 0, ''],
+        );
+
+        return self::withEdgeCases(
+            self::recursive(
+                $leaf,
+                static fn(ArbitraryInterface $inner): ArbitraryInterface => new FrequencyArbitrary([
+                    [1, new ArrayArbitrary($inner, 0, 4)],
+                    [1, new DictionaryArbitrary(new CharsetStringArbitrary(self::ALPHA, 1, 8), $inner, 0, 4)],
+                    [1, new DictionaryArbitrary(new IntArbitrary(-10, 100), $inner, 1, 4)],
+                    [1, new MappedArbitrary(
+                        new DictionaryArbitrary(new CharsetStringArbitrary(self::ALPHA, 1, 8), $inner, 0, 4),
+                        static function (array $properties): \stdClass {
+                            $object = new \stdClass();
+
+                            /** @var mixed $value */
+                            foreach ($properties as $name => $value) {
+                                $object->{$name} = $value;
+                            }
+
+                            return $object;
+                        },
+                    )],
+                    [1, new MappedArbitrary(
+                        new ArrayArbitrary($inner, 0, 4),
+                        static fn(array $elements): \ArrayObject => new \ArrayObject($elements),
+                    )],
+                ]),
+                $maxDepth,
+            ),
+            ...[null, false, 0, '', []],
+        );
+    }
+
+    /**
      * A JSON-encodable value — null, bool, int, float, string, or nested
      * lists/objects thereof — bounded to $maxDepth levels of nesting. Produces
      * the decoded PHP value; use {@see jsonString()} for the encoded text.

@@ -224,10 +224,9 @@ make release-check
   reorders an event or reflows a message goes green locally and red there.
   The job asserts the path install took effect (`composer show` prints a
   `path :` line) precisely so it cannot silently pass against the released
-  core from Packagist. Its path-repository `versions` override is pinned at
-  `1.2.0`, the version that brings `Gen::forParameters(derive:)` both adapters
-  call; it was raised ahead of the adapters, whose `^1.0` already accepts it,
-  so the job stays green on both sides of their move to `^1.2`. When core moves to a version
+  core from Packagist. Its path-repository `versions` override follows the
+  current core release (`1.3.0`); both adapters require `^1.2`, so it is
+  accepted without touching them. When core moves to a version
   they do not accept, this job is *supposed* to fail until the adapters are
   updated — do not paper over it by widening the override. Keeping it in step
   is part of a core release, not an afterthought: the pin sat at `0.7.0` while
@@ -253,7 +252,7 @@ make release-check
         set -e
         cleanup() { composer config --unset repositories.core; rm -f composer.lock; }
         trap cleanup EXIT
-        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"1.2.0\"}}}"
+        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"1.3.0\"}}}"
         composer update
         composer test
     ' || failed="$failed $adapter"

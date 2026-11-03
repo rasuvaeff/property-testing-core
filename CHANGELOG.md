@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 — 2026-11-03
 
 - **Added:** `Gen::naughtyString()` — whole string values known to break
   text-handling code, drawn from a curated list kept in the package (#172, after

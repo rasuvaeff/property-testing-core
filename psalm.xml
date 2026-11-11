@@ -15,4 +15,17 @@
     <enableExtensions>
         <extension name="redis"/>
     </enableExtensions>
+    <issueHandlers>
+        <!-- \Random\Engine::generate carries the narrow stub contract
+             read-props|write-this-props|io, but DrawnEngine is honest about
+             doing more: the draw tape is static state (read/write globals)
+             and shrinking goes through exception construction (write-refs).
+             The implementation cannot fit the interface contract without
+             losing the tape; downgraded to info for this file only. -->
+        <ImmutableDependency>
+            <errorLevel type="info">
+                <file name="src/Arbitrary/DrawnEngine.php"/>
+            </errorLevel>
+        </ImmutableDependency>
+    </issueHandlers>
 </psalm>

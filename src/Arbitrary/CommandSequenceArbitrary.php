@@ -174,15 +174,7 @@ final readonly class CommandSequenceArbitrary implements Swarmable
 
         for ($attempt = 0; $attempt < self::MAX_PICK_ATTEMPTS; ++$attempt) {
             $candidate = $this->commandGenerators[$random->int(0, $lastIndex)]->generate($random);
-            $command = $candidate->value;
-
-            if (!$command instanceof Command) {
-                throw new \InvalidArgumentException(sprintf(
-                    'Command generators must produce %s instances, got %s',
-                    Command::class,
-                    get_debug_type($command),
-                ));
-            }
+            $command = $this->expectCommand($candidate->value);
 
             if ($command->preCondition($model)) {
                 return $candidate;
@@ -190,6 +182,23 @@ final readonly class CommandSequenceArbitrary implements Swarmable
         }
 
         return null;
+    }
+
+    /**
+     * Generators are supplied by the caller and their template type is erased at
+     * runtime, so the drawn value is checked here rather than trusted.
+     */
+    private function expectCommand(mixed $value): Command
+    {
+        if (!$value instanceof Command) {
+            throw new \InvalidArgumentException(sprintf(
+                'Command generators must produce %s instances, got %s',
+                Command::class,
+                get_debug_type($value),
+            ));
+        }
+
+        return $value;
     }
 
     /**

@@ -27,5 +27,24 @@
                 <file name="src/Arbitrary/DrawnEngine.php"/>
             </errorLevel>
         </ImmutableDependency>
+        <!-- A seeded Mersenne Twister is the contract of Random: the same seed must
+             replay the same values. The README states it is a PRNG, not a CSPRNG,
+             and that generated values must never be used as secrets. -->
+        <WeakRandom>
+            <errorLevel type="info">
+                <file name="src/Random.php"/>
+            </errorLevel>
+        </WeakRandom>
+        <!-- sha1 names corpus entries and is not a security boundary. The on-disk
+             and Redis layouts are byte-compatible across releases, so another digest
+             would orphan every recorded corpus. CorpusScript::sha() must be sha1:
+             Redis identifies scripts for EVALSHA by their SHA-1. -->
+        <WeakHash>
+            <errorLevel type="info">
+                <file name="src/Runner/FilesystemCorpus.php"/>
+                <file name="src/Runner/RedisCorpus.php"/>
+                <file name="src/Runner/Redis/CorpusScript.php"/>
+            </errorLevel>
+        </WeakHash>
     </issueHandlers>
 </psalm>

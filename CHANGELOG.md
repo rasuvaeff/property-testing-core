@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Build:** passes Psalm 7.11, now the minimum in `require-dev` (`^7.11`: older 7.x releases reject the `WeakRandom`/`WeakHash` handlers in `psalm.xml`). The runtime check that a command generator produced a `Command` moved into a helper (behaviour unchanged); `WeakRandom` on the seeded `Random` and `WeakHash` on the sha1 corpus keys and Redis script digest are downgraded to info for those files, with the reasons in `psalm.xml`.
+- **Docs:** the README sample failure output is now the real output of the sample property; the old one started from `value=54`, which passes (#179).
+
 ## 1.3.0 — 2026-11-03
 
 - **Added:** `Gen::naughtyString()` — whole string values known to break

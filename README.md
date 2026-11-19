@@ -96,10 +96,11 @@ The failure message renders the counterexample:
 
 ```text
 Property falsified after 0 successful run(s); seed=42
-  Original: value=54
-  Shrunk:   value=100 (3 shrink step(s), 11 trial(s))
-  Changed:  value=54 -> 100
+  Original: value=3989
+  Shrunk:   value=100 (9 shrink step(s), 39 trial(s))
+  Changed:  value=3989 -> 100
   Failure:  100 is not below 100
+  Path:     value:1/value:1/value:1/value:1/value:1/value:3/value:4/value:5/value:6
 ```
 
 The `Changed:` line diffs the original against the shrunk counterexample —

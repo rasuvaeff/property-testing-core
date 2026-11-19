@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Docs:** the README sample failure output is now the real output of the sample property; the old one started from `value=54`, which passes (#179).
+
 ## 1.3.0 — 2026-11-03
 
 - **Added:** `Gen::naughtyString()` — whole string values known to break

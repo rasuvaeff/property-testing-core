@@ -16,6 +16,7 @@ Every `@api` type across all three packages that implements `Throwable`.
 | [`DeadlineExceededException`](/api/classes/DeadlineExceededException) | core | `RuntimeException` | Thrown (as the failure of a property) when a single run's body takes longer than the… |
 | [`ExampleViolationException`](/api/classes/ExampleViolationException) | core | `RuntimeException` | Reported when an explicit example (a fixed input declared via the property's `Examples` method)… |
 | [`GaveUpException`](/api/classes/GaveUpException) | core | `RuntimeException` | Thrown (as the failure of a property) when discarded inputs — or runs the environment refused —… |
+| [`GenerationErrorException`](/api/classes/GenerationErrorException) | core | `RuntimeException` | Thrown out of [`Runner\PropertyRunner`](/api/classes/Runner/PropertyRunner)::run() when a generator itself… |
 | [`GenerationExhaustedException`](/api/classes/GenerationExhaustedException) | core | `RuntimeException` | Thrown when a bounded-attempt generator cannot produce a value that satisfies its constraint… |
 | [`PathViolationException`](/api/classes/PathViolationException) | core | `RuntimeException` | Reported when a run pinned to a shrink path cannot follow it: the candidate a step names is gone,… |
 | [`PropertyTestingException`](/api/classes/PropertyTestingException) | core | — | Marker for every exception this engine reports, so a caller can catch the package as a whole… |

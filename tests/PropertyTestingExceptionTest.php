@@ -10,6 +10,7 @@ use Rasuvaeff\PropertyTesting\CoverageViolationException;
 use Rasuvaeff\PropertyTesting\DeadlineExceededException;
 use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
+use Rasuvaeff\PropertyTesting\GenerationErrorException;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\PathViolationException;
 use Rasuvaeff\PropertyTesting\PropertyTestingException;
@@ -48,6 +49,7 @@ final class PropertyTestingExceptionTest
             DeadlineExceededException::class,
             ExampleViolationException::class,
             GaveUpException::class,
+            GenerationErrorException::class,
             GenerationExhaustedException::class,
             PathViolationException::class,
             PropertyViolationException::class,
@@ -59,7 +61,7 @@ final class PropertyTestingExceptionTest
         }
     }
 
-    public function theTenAreEveryExceptionClassInSrc(): void
+    public function theListedOnesAreEveryExceptionClassInSrc(): void
     {
         $found = [];
 

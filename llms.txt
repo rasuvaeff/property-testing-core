@@ -167,6 +167,9 @@ Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
 - `DeadlineExceeded` — `DeadlineExceededException` (one run overran timeoutMs).
 - `TimeBudgetExceeded` — `TimeBudgetExceededException` + `RunStatistics`.
 - `GenerationFailed` — `GenerationExhaustedException`.
+- Not a result: a generator that THROWS while drawing an input (bug in a map/flatMap
+  closure) makes `run()` throw `GenerationErrorException` (`$propertyName`, `$seed`,
+  1-based `$attempt`; the generator's exception is `getPrevious()`).
 - `ExampleFailed` — `ExampleViolationException` (explicit example failed).
 - `RegressionFailed` — `RegressionViolationException` (`getArguments()`,
   `getSeed()`) — a corpus values entry still fails.
@@ -188,14 +191,16 @@ Marker: every exception the engine reports implements `PropertyTestingException`
 (empty interface extending \Throwable): PropertyViolationException,
 ExampleViolationException, RegressionViolationException, PathViolationException,
 CoverageViolationException, DeadlineExceededException, TimeBudgetExceededException,
-GaveUpException, GenerationExhaustedException, StateMachine\PostconditionViolationException.
+GaveUpException, GenerationExhaustedException, GenerationErrorException,
+StateMachine\PostconditionViolationException.
 Each still extends \RuntimeException. `AssumptionSkipped` is NOT one (a discard is
 control flow, not a failure — `catch (PropertyTestingException)` in a body must not
 swallow it).
 
 Frozen keys (compatibility policy point 4) — add at the end only, never rename:
 `CounterExample::toArray()`: seed, runsBeforeFailure, originalArguments, shrunkArguments,
-shrinkSteps, shrinkTrials, path, failure ({type, message} | null), discards, skips, edgeCases.
+shrinkSteps, shrinkTrials, path, failure ({type, message} | null), discards, skips, edgeCases,
+originalNotes, shrunkNotes, replays, passedOnReplay.
 `DistributionReport::toArray()`: attempts, discards, discardPercent, skips, checks,
 coverageAssessed, labels (each: label, count, percent, required, met).
 
@@ -407,6 +412,8 @@ Gen::ipv4()  Gen::ipv6()  Gen::email()  Gen::url()  // ipv6: canonical RFC 5952 
 Gen::json(int $maxDepth = 3)  Gen::jsonString(int $maxDepth = 3)
 Gen::regex(string $pattern, int $maxRepeat = 8)          // regex SUBSET compiled to combinators;
                                                         // `.` / negated class = printable ASCII 0x20..0x7E
+                                                        // POSIX classes inside [...]: [[:alpha:]], [[:^digit:]] (ASCII;
+                                                        // unknown name throws)
                                                         // NO DELIMITERS: Gen::regex('[a-z]{3,6}'), not '/[a-z]{3,6}/'.
                                                         // A delimited pattern throws (the delimiters would otherwise
                                                         // become literals in every generated string).

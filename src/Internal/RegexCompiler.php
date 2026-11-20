@@ -55,6 +55,9 @@ final class RegexCompiler
     /** Pattern modifiers PCRE allows after the closing delimiter. */
     private const string MODIFIERS = 'imsxuADSUXJn';
 
+    /** The class names PCRE accepts inside `[: :]`. */
+    private const array POSIX_CLASSES = ['alnum', 'alpha', 'ascii', 'blank', 'cntrl', 'digit', 'graph', 'lower', 'print', 'punct', 'space', 'upper', 'word', 'xdigit'];
+
     /** @var list<string> */
     private array $chars;
 
@@ -420,6 +423,14 @@ final class RegexCompiler
                 continue;
             }
 
+            $posix = $this->posixClass();
+
+            if ($posix !== null) {
+                $members = [...$members, ...$posix];
+
+                continue;
+            }
+
             $char = $this->consume();
 
             // A range a-z: '-' not first/last in the class.
@@ -470,6 +481,42 @@ final class RegexCompiler
             ),
             default => new ConstantArbitrary($this->literalEscape($char)),
         };
+    }
+
+    /**
+     * A POSIX class inside a bracket expression (`[[:alpha:]]`, `[[:^digit:]]`)
+     * at the cursor, consumed, as the ASCII characters PCRE matches for it; a
+     * negated name draws from printable ASCII, like a negated class. Null when
+     * the cursor is not on one: PCRE reads `[:` without a `name:]` after it as
+     * literal characters, and so does this compiler.
+     *
+     * @return ?list<string>
+     */
+    private function posixClass(): ?array
+    {
+        $rest = implode('', array_slice($this->chars, $this->pos));
+
+        if (preg_match('/\A\[:(\^?)([a-z]+):\]/', $rest, $matches) !== 1) {
+            return null;
+        }
+
+        [$whole, $negated, $name] = $matches;
+
+        if (!in_array($name, self::POSIX_CLASSES, strict: true)) {
+            throw new \InvalidArgumentException(sprintf('Unknown POSIX class "[:%s:]" in regex character class', $name));
+        }
+
+        $this->pos += strlen($whole);
+        $pattern = sprintf('/\A[[:%s:]]\z/', $name);
+        $members = [];
+
+        foreach ($this->range("\0", "\x7F") as $char) {
+            if (preg_match($pattern, $char) === 1) {
+                $members[] = $char;
+            }
+        }
+
+        return $negated === '^' ? $this->without($this->printable(), $members) : $members;
     }
 
     /**

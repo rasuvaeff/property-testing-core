@@ -91,7 +91,8 @@ final class SearchPool
      */
     public function labels(): array
     {
-        return array_keys($this->entries);
+        // A numeric label is stored under an int key; hand it back as written.
+        return array_map(strval(...), array_keys($this->entries));
     }
 
     /**

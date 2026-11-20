@@ -33,7 +33,9 @@ a generator orphans it.
 This is the clause that has already been exercised. Core 0.6.0 changed the
 distribution of `Gen::string()` and bumped the epoch to 2; 0.5.0 changed the
 order of list shrink candidates; 1.3.0 gave the string generators a boundary
-bias and bumped the epoch to 3. All three were minors, and all were correct — an
+bias and bumped the epoch to 3; 1.4.0 fixed how a docblock union with a
+collection member is read and bumped the epoch to 4. All four were minors, and
+all were correct — an
 engine that could never improve a generator's distribution would be frozen at
 its first mistake.
 

@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Tests\Runner;
 
+use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Assume;
 use Rasuvaeff\PropertyTesting\Classify;
 use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\GenerationErrorException;
 use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
+use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
 use Rasuvaeff\PropertyTesting\Runner\CoverageFailed;
 use Rasuvaeff\PropertyTesting\Runner\ExampleFailed;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
@@ -23,6 +26,7 @@ use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
 use Rasuvaeff\PropertyTesting\Runner\RunStatistics;
 use Rasuvaeff\PropertyTesting\Runner\TrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\TrialOutcome;
+use Rasuvaeff\PropertyTesting\Tests\Support\RecordingCorpus;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
@@ -331,6 +335,73 @@ final class PropertyRunnerTest
         Assert::same($result->statistics->checks, 10);
     }
 
+    public function aThrowingGeneratorEndsTheRunWithItsSeedAndAttempt(): void
+    {
+        // A bug in a map closure is not a property outcome: the body never
+        // ran on the input. The run ends with an exception that names what
+        // reproduces it, the original kept as previous (#185).
+        $failure = new \LogicException('map bug');
+        $draws = 0;
+        $error = $this->generationError(
+            new PropertyConfig(runs: 10, seed: 4242),
+            Gen::map(Gen::intBetween(0, 100), static function (int $value) use ($failure, &$draws): int {
+                return ++$draws === 4 ? throw $failure : $value;
+            }),
+            static function (int $value): void {
+                Classify::cover(condition: true, label: 'any', minPercent: 1.0);
+            },
+        );
+
+        Assert::same($error->seed, 4242);
+        Assert::same($error->attempt, 4);
+        Assert::same($error->propertyName, 'throwingGenerator');
+        Assert::same($error->getPrevious(), $failure);
+        Assert::same(
+            $error->getMessage(),
+            "Property \"throwingGenerator\": a generator threw while drawing the input of attempt 4; seed=4242\n  Error:    LogicException: map bug",
+        );
+        // The per-run statics are drained, as on every other exit.
+        Assert::same(Classify::flushRequirements(), []);
+    }
+
+    public function aThrowingGeneratorInAnExhaustiveWalkIsReportedTheSameWay(): void
+    {
+        $error = $this->generationError(
+            new PropertyConfig(runs: 10, seed: 9, exhaustive: true),
+            Gen::map(Gen::elements([1, 2, 3]), static fn(int $value): int => $value === 2 ? throw new \DomainException('two') : $value),
+            static function (int $value): void {},
+        );
+
+        // The walk materialises a parameter's whole axis before the first
+        // input, so the error surfaces on the first attempt.
+        Assert::same($error->attempt, 1);
+        Assert::same($error->seed, 9);
+        Assert::instanceOf($error->getPrevious(), \DomainException::class);
+    }
+
+    public function aThrowingGeneratorInASeedReplayNamesTheRecordedSeed(): void
+    {
+        $definition = new PropertyDefinition(
+            id: 'standalone::throwingReplay',
+            name: 'throwingReplay',
+            generators: ['value' => Gen::map(Gen::intBetween(0, 100), static fn(int $value): int => throw new \LogicException('always'))],
+            parameterNames: ['value'],
+            config: new PropertyConfig(runs: 3, seed: 1),
+            replayRegressions: true,
+        );
+
+        try {
+            (new PropertyRunner())->run($definition, new CallableTrialExecutor(static function (int $value): void {}), [], new RecordingCorpus([CorpusEntry::seed(555)]));
+        } catch (GenerationErrorException $error) {
+            Assert::same($error->seed, 555);
+            Assert::same($error->attempt, 1);
+
+            return;
+        }
+
+        Assert::fail('the generator error escaped unwrapped or not at all');
+    }
+
     public function exhaustedGeneratorReportsGenerationFailed(): void
     {
         $definition = new PropertyDefinition(
@@ -424,5 +495,27 @@ final class PropertyRunnerTest
             parameterNames: ['value'],
             config: new PropertyConfig(runs: $runs, seed: 42, maxDiscards: $maxDiscards),
         );
+    }
+
+    /**
+     * @param \Closure(int): void $body
+     */
+    private function generationError(PropertyConfig $config, ArbitraryInterface $generator, \Closure $body): GenerationErrorException
+    {
+        $definition = new PropertyDefinition(
+            id: 'standalone::throwingGenerator',
+            name: 'throwingGenerator',
+            generators: ['value' => $generator],
+            parameterNames: ['value'],
+            config: $config,
+        );
+
+        try {
+            (new PropertyRunner())->run($definition, new CallableTrialExecutor($body));
+        } catch (GenerationErrorException $error) {
+            return $error;
+        }
+
+        Assert::fail('the generator error escaped unwrapped or not at all');
     }
 }

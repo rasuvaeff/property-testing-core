@@ -270,6 +270,17 @@ final class SeedDeterminismVectorsTest
             ],
         ];
 
+        // Epoch 4: a top-level union is read member by member, so the
+        // collection member does not swallow the scalar one (#184).
+        yield 'docblock union with a collection member' => [
+            static fn(): ArbitraryInterface => Gen::forParameters(new \ReflectionFunction(
+                /** @param bool|int<0, 9>[] $x */
+                static function (bool|array $x): void {},
+            ))['x'],
+            141,
+            [true, [8, 4, 0, 1, 0], [7, 3, 5], true, [2, 1, 9, 1, 2, 9]],
+        ];
+
         yield 'json' => [
             static fn(): ArbitraryInterface => Gen::json(2),
             126,

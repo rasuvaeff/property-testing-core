@@ -172,6 +172,9 @@ rejected at construction.
 | Array | `Gen::arrayOf($element, $min, $max)` | |
 | Unique array (ids, keys) | `Gen::uniqueArrayOf($element, $min, $max)` | Distinct by `===`; for VOs unique by one field add `by: fn ($u) => $u->id` (key must be `int\|string`) |
 | Map / dictionary | `Gen::dictOf($keyArb, $valueArb, $min, $max)` | |
+| Fixed-arity tuple | `Gen::tuple($a, $b, $c)` | One value per element, arity fixed; each position shrinks via its own generator |
+| Ordered pair / interval `[lo, hi]` | `Gen::intRange($min, $max)` | `lo <= hi` always holds, both bounds shrink — no `Assume` discard |
+| Subset of a fixed set (feature flags, permissions) | `Gen::subset($values, $minSize, $maxSize)` | Distinct members in source order; duplicates in `$values` throw; shrinks toward a short prefix |
 | Fixed-shape object/VO | `Gen::record(['id' => Gen::uuid(), 'age' => Gen::intBetween(0, 120)])` | |
 | One of N | `Gen::oneOf($a, $b, $c)` or `Gen::elements([$a, $b, $c])` | **VALUES, not generators.** Passing an `ArbitraryInterface` is rejected since core 0.9 — it used to make the generator object itself the generated value. To pick between generators use `Gen::frequency()` |
 | Enum cases | `Gen::enum(MyEnum::class)` | |
@@ -181,7 +184,7 @@ rejected at construction.
 | Date/time | `Gen::datetime($min, $max)` | UTC `DateTimeImmutable` |
 | URL / email / IP | `Gen::url()`, `Gen::email()`, `Gen::ipv4()`, `Gen::ipv6()` | Domain-shaped, shrink meaningfully; `ipv6()` is canonical RFC 5952 text and shrinks to `::` |
 | JSON value | `Gen::json($maxDepth)` / `Gen::jsonString($maxDepth)` | |
-| String matching a regex | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | **NO DELIMITERS**: `[a-z]+`, not `/[a-z]+/` — a delimited pattern is refused since core 0.9. PCRE subset: literals, `.`, classes `[...]` (ranges, negation, `\d\w\s` and negations), escapes `\d\w\s\D\W\S\t\n\r` and `\`-escaped punctuation, quantifiers `* + ? {n} {n,} {n,m}`, alternation `\|`, groups `(...)`/`(?:...)`, a leading `^` and trailing `$` as no-ops. Anchors elsewhere, backreferences, lookaround, flags, lazy/possessive quantifiers throw |
+| String matching a regex | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | **NO DELIMITERS**: `[a-z]+`, not `/[a-z]+/` — a delimited pattern is refused since core 0.9. PCRE subset: literals, `.`, classes `[...]` (ranges, negation, `\d\w\s` and negations, POSIX `[:alpha:]`/`[:^digit:]` inside a class), escapes `\d\w\s\D\W\S\t\n\r` and `\`-escaped punctuation, quantifiers `* + ? {n} {n,} {n,m}`, alternation `\|`, groups `(...)`/`(?:...)`, a leading `^` and trailing `$` as no-ops. Anchors elsewhere, backreferences, lookaround, flags, lazy/possessive quantifiers throw |
 | Recursive structure (tree) | `Gen::recursive($leaf, $wrap, $maxDepth)` | |
 | Nullable | `Gen::nullable($inner)` | |
 | Dependent on previous value | `Gen::flatMap($inner, fn($x) => $dependent)` | Integrated shrinking preserved |
@@ -215,6 +218,7 @@ after the first draw.
 | Need "every branch hit at least N%" | `Classify::cover($condition, $label, $minPercent)` — fails with `CoverageFailed` even if every run passed |
 | Just want distribution in the report | `Classify::when($condition, $label)` / `Classify::label($label)` — tags only, no gate |
 | A run belongs to several categories at once, want the cross-table | `Classify::tabulate('features', ['compressed', 'retried'])` — per-table tallies + pairwise intersections (`'compressed & retried'`) on `DistributionReport::$tables`/`$intersections`; no gate |
+| Writing a custom `ArbitraryInterface`, unsure what it shrinks to | `Gen::sampleShrinks($arbitrary, seed: 0, limit: 10)` — one generated value and its first direct shrink candidates, to eyeball before wiring it into a property; a debugging aid, not an assertion |
 | Counterexample lacks the value the body computed | `Gen::note('encoded', $encoded)` — rendered as a `Notes:` line for the shrunk run, on `CounterExample::$shrunkNotes`; NOT a label |
 | Small domain, want a PROOF over the parameters, not a sample | `#[Property(exhaustive: true)]` (`exhaustiveBudget: 10_000`) — walks the whole product when every parameter's generator is `Enumerable` (`constant`/`bool`/`intBetween`/`elements`/`enum`/`nullable`/`tuple`/`record`/`map`/`filter`/`withEdgeCases` over those); otherwise samples and `DistributionReport::$exhaustiveDeclined` says why. In-body draws stay random. `runs` is ignored when it walks |
 | Suite oscillates red/green on the same counterexample | Already on by default: `flakyReplays: 2` re-executes the minimised input; a replay that passes gives `CounterExample::isFlaky()` and a `Flaky:` line → suspect nondeterminism (clock, `mt_rand`, unordered map), not the input. `flakyReplays: 0` to disable |

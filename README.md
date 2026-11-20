@@ -179,9 +179,18 @@ Configuration errors (`runs < 1`, a missing generator, mismatched parameter
 names) remain exceptions — they are programmer errors, not verdicts about the
 property.
 
+A generator that throws while drawing an input (a bug in a `Gen::map()` or
+`flatMap()` closure, a constructor rejecting a drawn value) is not a verdict
+either: the body never ran on that input. `run()` throws
+`GenerationErrorException` — `$propertyName`, `$seed` and the 1-based
+`$attempt` that reproduce it, the generator's own exception as
+`getPrevious()`. Running again with that seed draws the same inputs.
+`GenerationExhaustedException` keeps its `GenerationFailed` result.
+
 Every exception the engine reports — the ten carried by the results above,
 plus `GenerationExhaustedException` and
-`StateMachine\PostconditionViolationException` when they surface from a body —
+`StateMachine\PostconditionViolationException` when they surface from a body,
+and `GenerationErrorException` —
 implements the empty marker `PropertyTestingException` (a `\Throwable`), so a
 harness can `catch (PropertyTestingException $e)` for "anything this package
 said" without enumerating the types. Each still extends `\RuntimeException`.
@@ -258,7 +267,7 @@ through their source domain.
 | `Gen::url()` | `http(s)://host.tld[/path]` URLs | toward `http://a.com` |
 | `Gen::json($maxDepth)` | a JSON-encodable value (null/bool/int/float/string/list/object) | within the generated structure |
 | `Gen::jsonString($maxDepth)` | the `json_encode` text of `Gen::json()` | through the value's tree |
-| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators), written **without delimiters** — `Gen::regex('[a-z]{3,6}')`, not `'/[a-z]{3,6}/'`; `.` and a negated class draw from printable ASCII (`0x20`..`0x7E`, never a newline) | shorter/simpler matches (via the compiled trees) |
+| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | strings matching a regex subset (compiled to combinators), written **without delimiters** — `Gen::regex('[a-z]{3,6}')`, not `'/[a-z]{3,6}/'`; `.` and a negated class draw from printable ASCII (`0x20`..`0x7E`, never a newline); POSIX classes inside a class (`[[:alpha:]_]`, `[[:^digit:]]`) are the ASCII characters PCRE matches for them, an unknown name throws | shorter/simpler matches (via the compiled trees) |
 | `Gen::commands($initialModel, $commandGenerators, $minLength, $maxLength)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
 | `Gen::rules($machine, $minLength, $maxLength)` | `RuleSequence` over a rule-based machine class (`#[Rule]`/`#[Precondition]`/`#[Invariant]` methods) — see [Rule-based machines](#rule-based-machines-genrules) | like `commands`: drops steps, then simplifies each step's arguments |
 | `Gen::swarm($arbitrary)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |

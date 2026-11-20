@@ -6279,6 +6279,72 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\GenerationErrorException",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": true,
+        "summary": "Thrown out of \\Rasuvaeff\\PropertyTesting\\Runner\\PropertyRunner::run()\nwhen a generator itself throws while producing an input — a bug in a\n`Gen::map()`/`flatMap()` closure, a class constructor rejecting a drawn\nvalue — so the failure still names the seed and the attempt that reproduce it.",
+        "description": "It is not a property outcome: the body never ran on that input, so there is\nnothing to shrink and no \\Rasuvaeff\\PropertyTesting\\Runner\\PropertyResult\nto return. The generator's own exception is \\Rasuvaeff\\PropertyTesting\\GenerationErrorException::getPrevious().\n\\Rasuvaeff\\PropertyTesting\\GenerationExhaustedException keeps its own clean result\n(\\Rasuvaeff\\PropertyTesting\\Runner\\GenerationFailed) and never ends up here.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": "RuntimeException",
+        "implements": [
+            "Throwable",
+            "Stringable",
+            "Rasuvaeff\\PropertyTesting\\PropertyTestingException"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "propertyName",
+                "type": "string",
+                "description": "The property whose input could not be generated.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "seed",
+                "type": "int",
+                "description": "The seed of the phase that drew the input; replaying it reproduces the error.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "attempt",
+                "type": "int",
+                "description": "The 1-based attempt the input was drawn for.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "previous",
+                "type": "\\Throwable",
+                "description": "What the generator threw.",
+                "default": null,
+                "promoted": false,
+                "promotedVisibility": "private",
+                "readonly": false
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/GenerationErrorException.php#L23",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\GenerationExhaustedException",
         "kind": "class",
         "isApi": true,
@@ -8030,7 +8096,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 70
+                "startLine": 73
             }
         ],
         "constants": [],
@@ -8398,7 +8464,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 106
+                "startLine": 107
             },
             {
                 "name": "best",
@@ -8421,7 +8487,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 120
+                "startLine": 121
             },
             {
                 "name": "improvements",
@@ -8444,7 +8510,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 130
+                "startLine": 131
             },
             {
                 "name": "recalledCount",
@@ -8467,7 +8533,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 140
+                "startLine": 141
             },
             {
                 "name": "direction",
@@ -8490,7 +8556,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 150
+                "startLine": 151
             },
             {
                 "name": "export",
@@ -8505,7 +8571,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 160
+                "startLine": 161
             }
         ],
         "constants": [
@@ -10075,7 +10141,7 @@
         "isApi": true,
         "isAbstract": false,
         "isThrowable": true,
-        "summary": "Marker for every exception this engine reports, so a caller can catch the\npackage as a whole (`catch (PropertyTestingException $e)`) without\nenumerating the ten concrete types.",
+        "summary": "Marker for every exception this engine reports, so a caller can catch the\npackage as a whole (`catch (PropertyTestingException $e)`) without\nenumerating the eleven concrete types.",
         "description": "It is deliberately empty: the concrete classes keep their own fields and\nmessage formats, and each still extends `\\RuntimeException`.\n\n\\Rasuvaeff\\PropertyTesting\\AssumptionSkipped does not implement it. That exception is a\ncontrol-flow signal — a discarded run, not a failure — and a property body\ncatching the marker must not swallow its own discards.",
         "deprecated": null,
         "see": [],
@@ -10097,6 +10163,7 @@
             "Rasuvaeff\\PropertyTesting\\DeadlineExceededException",
             "Rasuvaeff\\PropertyTesting\\ExampleViolationException",
             "Rasuvaeff\\PropertyTesting\\GaveUpException",
+            "Rasuvaeff\\PropertyTesting\\GenerationErrorException",
             "Rasuvaeff\\PropertyTesting\\GenerationExhaustedException",
             "Rasuvaeff\\PropertyTesting\\PathViolationException",
             "Rasuvaeff\\PropertyTesting\\PropertyViolationException",
@@ -11787,7 +11854,7 @@
                 "name": "SEQUENCE_EPOCH",
                 "type": "int",
                 "summary": "Generation-sequence epoch. Seed entries reproduce a failure only while the\nseed→values mapping holds, so bump this in any release that shifts the\ngenerated sequence (new boundary bias, changed draw order, a rewritten\narbitrary) — older seed entries are then dropped instead of replaying a\ndifferent input under the guise of a regression. Values entries carry the\ninput itself and are unaffected.",
-                "value": 3
+                "value": 4
             }
         ],
         "enumCases": [],
@@ -12651,12 +12718,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 85
+                "startLine": 86
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L63",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L64",
         "implementedBy": []
     },
     {
@@ -15409,7 +15476,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 64
+                "startLine": 66
             },
             {
                 "name": "minimize",
@@ -15439,7 +15506,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 75
+                "startLine": 77
             },
             {
                 "name": "beginRun",
@@ -15454,7 +15521,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 108
+                "startLine": 110
             },
             {
                 "name": "flushRun",
@@ -15469,7 +15536,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 120
+                "startLine": 122
             },
             {
                 "name": "directions",
@@ -15484,7 +15551,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 135
+                "startLine": 137
             },
             {
                 "name": "flushDirections",
@@ -15499,7 +15566,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 147
+                "startLine": 149
             }
         ],
         "constants": [],

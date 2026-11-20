@@ -10,7 +10,9 @@ use Rasuvaeff\PropertyTesting\Event\PropertyFinished;
 use Rasuvaeff\PropertyTesting\Event\RunStarted;
 use Rasuvaeff\PropertyTesting\Event\TargetImproved;
 use Rasuvaeff\PropertyTesting\Gen;
+use Rasuvaeff\PropertyTesting\GenerationErrorException;
 use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
+use Rasuvaeff\PropertyTesting\Internal\SearchPool;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\GaveUp;
@@ -38,6 +40,7 @@ use Testo\Test;
 #[Covers(PropertyRunner::class)]
 #[Covers(PhaseCounters::class)]
 #[Covers(SearchReport::class)]
+#[Covers(SearchPool::class)]
 final class PropertyRunnerSearchTest
 {
     /**
@@ -236,6 +239,109 @@ final class PropertyRunnerSearchTest
         Assert::instanceOf($result, Passed::class);
         Assert::same($result->statistics->search?->evaluations, 30);
         Assert::same($result->statistics->checks, 50);
+    }
+
+    public function aNumericLabelIsScoredWithoutASearchPhase(): void
+    {
+        // PHP stores the label '42' under an int key; the random phase reads
+        // it back from the score array (#181).
+        $listener = new CollectingListener();
+        $result = $this->run(static function (int $a, int $b, int $c): void {
+            Target::maximize('42', $a);
+        }, runs: 10, searchRuns: 0, listener: $listener);
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($listener->ofType(TargetImproved::class)[0]->label, '42');
+    }
+
+    public function aNumericLabelIsSearchedAndReportedUnderItsName(): void
+    {
+        $corpus = new RecordingSearchCorpus([
+            // What a JSON document's "7" key decodes to.
+            7 => ['direction' => TargetDirection::Maximize, 'entries' => [['score' => 990.0, 'arguments' => ['a' => 990, 'b' => 0, 'c' => 0]]]],
+        ]);
+        $listener = new CollectingListener();
+
+        $result = $this->run(static function (int $a, int $b, int $c): void {
+            Target::maximize('42', $a + $b);
+            Target::maximize('7', $a);
+        }, runs: 10, searchRuns: 20, corpus: $corpus, listener: $listener);
+
+        Assert::instanceOf($result, Passed::class);
+        $report = $result->statistics->search;
+        Assert::instanceOf($report, SearchReport::class);
+        Assert::same($report->evaluations, 20);
+        Assert::same($report->targets[42]->label, '42');
+        Assert::same($report->targets[7]->label, '7');
+        Assert::same($report->targets[7]->recalled, 1);
+        Assert::true($report->targets[7]->best >= 990.0);
+
+        foreach ($listener->ofType(TargetImproved::class) as $event) {
+            Assert::true($event->label === '42' || $event->label === '7', var_export($event->label, return: true));
+        }
+
+        Assert::same(count($corpus->rememberedTargets), 1);
+    }
+
+    public function aPropertyWithoutParametersSkipsTheSearch(): void
+    {
+        // Only in-body draws: there is no parameter to mutate (#182).
+        $listener = new CollectingListener();
+        $result = (new PropertyRunner())->run(
+            new PropertyDefinition(
+                id: 'search::no-parameters',
+                name: 'noParameters',
+                generators: [],
+                parameterNames: [],
+                config: new PropertyConfig(runs: 10, seed: 5, searchRuns: 30),
+            ),
+            new CallableTrialExecutor(static function (): void {
+                Target::maximize('n', Gen::draw(Gen::intBetween(0, 100)));
+            }),
+            [$listener],
+        );
+
+        Assert::instanceOf($result, Passed::class);
+        $report = $result->statistics->search;
+        Assert::instanceOf($report, SearchReport::class);
+        Assert::same($report->evaluations, 0);
+        Assert::same(array_keys($report->targets), ['n']);
+        Assert::same($result->statistics->checks, 10);
+        Assert::same(count($listener->ofType(RunStarted::class)), 10);
+    }
+
+    public function aGeneratorThrowingInTheSearchPhaseNamesTheSeedAndTheAttempt(): void
+    {
+        $failure = new \LogicException('map bug');
+        $draws = 0;
+
+        try {
+            (new PropertyRunner())->run(
+                new PropertyDefinition(
+                    id: 'search::throwing',
+                    name: 'throwing',
+                    generators: ['n' => Gen::map(Gen::intBetween(0, 1000), static function (int $n) use ($failure, &$draws): int {
+                        // The random phase draws 5 inputs; the search's first redraw throws.
+                        return ++$draws > 5 ? throw $failure : $n;
+                    })],
+                    parameterNames: ['n'],
+                    config: new PropertyConfig(runs: 5, seed: 77, searchRuns: 10),
+                ),
+                new CallableTrialExecutor(static function (int $n): void {
+                    Target::maximize('n', $n);
+                }),
+            );
+        } catch (GenerationErrorException $error) {
+            Assert::same($error->seed, 77);
+            Assert::same($error->attempt, 6);
+            Assert::same($error->propertyName, 'throwing');
+            Assert::same($error->getPrevious(), $failure);
+            Assert::same(Target::directions(), []);
+
+            return;
+        }
+
+        Assert::fail('the generator error escaped unwrapped or not at all');
     }
 
     public function aDirectionLeftOverByAnAbortedPropertyIsFlushedBeforeTheRun(): void

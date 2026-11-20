@@ -1,7 +1,43 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 — 2026-11-20
 
+- **Added:** `GenerationErrorException` (implements `PropertyTestingException`).
+  A generator that throws while drawing an input — a bug in a `Gen::map()` or
+  `flatMap()` closure, a constructor rejecting a drawn value — no longer leaves
+  `PropertyRunner::run()` as the bare exception with no seed: `run()` throws
+  `GenerationErrorException` with `$propertyName`, `$seed` and the 1-based
+  `$attempt`, the original reachable through `getPrevious()` (#185). The class a
+  caller sees for this case changes; `GenerationExhaustedException` still ends
+  the run as the `GenerationFailed` result, and `PropertyResult` gains no member.
+- **Fixed:** a docblock union with a collection member was read as a collection
+  of the whole union: `int|string[]` generated only arrays (of ints and
+  strings), never an `int`; `null|int[]` generated arrays containing `null`,
+  never `null` itself; `list<int>|list<bool>` generated lists mixing both. A
+  top-level `|` now binds looser than `[]` and `list<>`/`array<>` (#184).
+- **Changed:** what a given seed generates for exactly those signatures —
+  `Gen::forClass()`/`forParameters()`/`auto` parameters whose `@param`/`@var`
+  type is a top-level union with a `T[]`, `list<T>` or `array<…>` member.
+  `?int[]`, `int[]` and unions without a collection member are unchanged.
+  `FilesystemCorpus::SEQUENCE_EPOCH` is now 4 (compatibility policy §2): seed
+  entries recorded under epoch 3 are dropped on recall, values entries keep
+  replaying.
+- **Fixed:** `Gen::regex()` read a POSIX class inside a bracket expression
+  (`[[:alpha:]]`) as the characters `[ : a l p h` followed by a literal `]`,
+  so no generated string matched. POSIX classes (`alnum`, `alpha`, `ascii`,
+  `blank`, `cntrl`, `digit`, `graph`, `lower`, `print`, `punct`, `space`,
+  `upper`, `word`, `xdigit`, and `[:^name:]`) are now the ASCII characters PCRE
+  matches for them; an unknown name throws `InvalidArgumentException`. `[:`
+  without a `name:]` after it stays literal, as in PCRE (#183).
+- **Fixed:** a property without parameters (only `Gen::draw()`) that reported a
+  `Target` score with `searchRuns > 0` crashed with a `ValueError`; the search
+  now evaluates nothing and reports `evaluations: 0` (#182).
+- **Fixed:** a numeric `Target` label (`Target::maximize('42', …)`) crashed the
+  run with a `TypeError`, with or without a search phase, and when recalled
+  from a search corpus; it is reported under its name (#181).
+- **Docs:** the frozen `CounterExample::toArray()` keys in `llms.txt` list
+  `originalNotes`, `shrunkNotes`, `replays` and `passedOnReplay`; the agent skill
+  mentions `Gen::tuple()`, `intRange()`, `subset()` and `sampleShrinks()` (#198).
 - **Build:** passes Psalm 7.11, now the minimum in `require-dev` (`^7.11`: older 7.x releases reject the `WeakRandom`/`WeakHash` handlers in `psalm.xml`). The runtime check that a command generator produced a `Command` moved into a helper (behaviour unchanged); `WeakRandom` on the seeded `Random` and `WeakHash` on the sha1 corpus keys and Redis script digest are downgraded to info for those files, with the reasons in `psalm.xml`.
 - **Docs:** the README sample failure output is now the real output of the sample property; the old one started from `value=54`, which passes (#179).
 

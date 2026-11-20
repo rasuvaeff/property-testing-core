@@ -40,16 +40,18 @@ use Rasuvaeff\PropertyTesting\Runner\TargetDirection;
 final class Target
 {
     /**
-     * Scores recorded during the current run, by label.
+     * Scores recorded during the current run, by label. Keyed `array-key`,
+     * not `string`: PHP stores a numeric label (`'42'`) under an int key.
      *
-     * @var array<string, float>
+     * @var array<array-key, float>
      */
     private static array $current = [];
 
     /**
      * The direction each label was first reported with, for the whole property.
+     * Keyed `array-key` for the same reason as {@see self::$current}.
      *
-     * @var array<string, TargetDirection>
+     * @var array<array-key, TargetDirection>
      */
     private static array $directions = [];
 
@@ -113,7 +115,7 @@ final class Target
     /**
      * Return the scores of the current run and clear them.
      *
-     * @return array<string, float>
+     * @return array<array-key, float>
      *
      * @internal Driven by the property runner.
      */
@@ -128,7 +130,7 @@ final class Target
     /**
      * The directions registered so far, by label, in first-reported order.
      *
-     * @return array<string, TargetDirection>
+     * @return array<array-key, TargetDirection>
      *
      * @internal Driven by the property runner.
      */
@@ -140,7 +142,7 @@ final class Target
     /**
      * Return the directions registered during the property and clear them.
      *
-     * @return array<string, TargetDirection>
+     * @return array<array-key, TargetDirection>
      *
      * @internal Driven by the property runner.
      */

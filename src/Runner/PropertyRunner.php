@@ -27,6 +27,7 @@ use Rasuvaeff\PropertyTesting\Event\ShrinkTried;
 use Rasuvaeff\PropertyTesting\Event\TargetImproved;
 use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
+use Rasuvaeff\PropertyTesting\GenerationErrorException;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
@@ -427,6 +428,8 @@ final readonly class PropertyRunner
                 Classify::flushRequirements();
 
                 return new GenerationFailed($exhausted);
+            } catch (\Throwable $error) {
+                throw $this->generationError($property, $seed, $counters, $error);
             }
 
             $verdict = $this->attempt($property, $executor, $random, $seed, $trees, $counters, $pool, $listeners, $path, $runs, $maxDiscards, $maxSkips);
@@ -653,6 +656,8 @@ final readonly class PropertyRunner
         $counters->passed($labels, $tabulated);
 
         foreach ($scores as $label => $score) {
+            // A numeric label comes back from the array as an int.
+            $label = (string) $label;
             $direction = Target::directions()[$label];
             $previous = $pool->best($label);
 
@@ -701,6 +706,9 @@ final readonly class PropertyRunner
             }
 
             foreach ($recalled as $label => $target) {
+                // A stored numeric label decodes to an int key, whatever the
+                // corpus declares.
+                $label = strval($label);
                 // A label the body now pushes the other way, or never
                 // reported this run, has nothing to resume from.
                 if ((Target::directions()[$label] ?? null) === $target['direction']) {
@@ -712,7 +720,11 @@ final readonly class PropertyRunner
         $evaluations = 0;
         $parameters = $property->parameterNames;
 
-        for ($run = 0; $run < $property->config->searchRuns; ++$run) {
+        // A property without parameters (only in-body draws) has nothing to
+        // mutate: the search evaluates nothing and reports so.
+        $searchRuns = $parameters === [] ? 0 : $property->config->searchRuns;
+
+        for ($run = 0; $run < $searchRuns; ++$run) {
             $labels = $pool->labels();
 
             if ($labels === []) {
@@ -735,6 +747,8 @@ final readonly class PropertyRunner
                 Classify::flushRequirements();
 
                 return new GenerationFailed($exhausted);
+            } catch (\Throwable $error) {
+                throw $this->generationError($property, $seed, $counters, $error);
             }
 
             ++$evaluations;
@@ -754,6 +768,7 @@ final readonly class PropertyRunner
         $targets = [];
 
         foreach (Target::directions() as $label => $direction) {
+            $label = (string) $label;
             $targets[$label] = new TargetOutcome($label, $direction, $pool->best($label), $pool->improvements($label), $pool->recalledCount($label));
         }
 
@@ -829,6 +844,27 @@ final readonly class PropertyRunner
         }
 
         return $enumerables;
+    }
+
+    /**
+     * A generator that threw is a bug in the generator, not an outcome of the
+     * property: the body never ran, there is nothing to shrink. The run ends
+     * with an exception that names the seed and the attempt, so the failure
+     * stays reproducible; the per-run statics are drained first, as on every
+     * other exit.
+     */
+    private function generationError(PropertyDefinition $property, int $seed, PhaseCounters $counters, \Throwable $error): GenerationErrorException
+    {
+        Classify::flushRun();
+        Classify::flushRequirements();
+        Target::flushDirections();
+
+        return new GenerationErrorException(
+            propertyName: $property->name,
+            seed: $seed,
+            attempt: $counters->attempts + 1,
+            previous: $error,
+        );
     }
 
     /**

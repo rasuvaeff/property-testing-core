@@ -104,6 +104,67 @@ final class TypeGeneratorsTest
         Assert::same(array_keys($sizes), range(0, 10));
     }
 
+    /**
+     * A top-level `|` binds looser than `[]` and `list<>`: each member is read
+     * on its own, so both sides of the union are drawn and no array carries
+     * the other member as an element.
+     *
+     * @param \Closure(mixed): bool $scalar
+     * @param \Closure(mixed): bool $element
+     */
+    #[DataProvider('unionsWithACollection')]
+    public function aUnionWithACollectionMemberDrawsEachMemberWhole(string $type, \Closure $scalar, \Closure $element): void
+    {
+        $scalars = 0;
+        $arrays = 0;
+
+        foreach ($this->draws($this->read($type)) as $value) {
+            if (!is_array($value)) {
+                Assert::true($scalar($value), var_export($value, return: true));
+                ++$scalars;
+
+                continue;
+            }
+
+            Assert::true(array_is_list($value));
+
+            foreach ($value as $item) {
+                Assert::true($element($item), var_export($item, return: true));
+            }
+
+            ++$arrays;
+        }
+
+        Assert::true($scalars > 0, 'the scalar member was never drawn');
+        Assert::true($arrays > 0, 'the collection member was never drawn');
+    }
+
+    /**
+     * @return iterable<string, array{string, \Closure(mixed): bool, \Closure(mixed): bool}>
+     */
+    public static function unionsWithACollection(): iterable
+    {
+        yield 'int|string[]' => ['int|string[]', is_int(...), is_string(...)];
+        yield 'null|int[]' => ['null|int[]', is_null(...), is_int(...)];
+        yield 'int[]|bool' => ['int[]|bool', is_bool(...), is_int(...)];
+    }
+
+    public function aUnionOfTwoListsDrawsListsOfOneElementTypeEach(): void
+    {
+        $kinds = [];
+
+        foreach ($this->draws($this->read('list<int>|list<bool>')) as $value) {
+            Assert::true(is_array($value) && array_is_list($value));
+            $types = array_values(array_unique(array_map(get_debug_type(...), $value)));
+            Assert::true(count($types) <= 1, implode(',', $types));
+            $kinds[$types[0] ?? 'empty'] = true;
+        }
+
+        ksort($kinds);
+
+        Assert::same(array_keys($kinds), ['bool', 'empty', 'int']);
+    }
+
     #[DataProvider('unreadable')]
     public function aTypeOutsideTheSubsetIsNotRead(string $type): void
     {

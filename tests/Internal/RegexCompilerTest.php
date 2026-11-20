@@ -853,4 +853,95 @@ final class RegexCompilerTest
             Assert::same($value, "\0");
         }
     }
+
+    #[DataProvider('posixClasses')]
+    public function aPosixClassIsExactlyTheAsciiCharactersPcreMatches(string $name): void
+    {
+        $expected = array_values(array_filter(
+            array_map(chr(...), range(0, 0x7F)),
+            static fn(string $char): bool => preg_match(sprintf('/\A[[:%s:]]\z/', $name), $char) === 1,
+        ));
+
+        Assert::same($this->domain(sprintf('[[:%s:]]', $name)), $expected);
+    }
+
+    #[DataProvider('negatablePosixClasses')]
+    public function aNegatedPosixClassIsThePrintableRest(string $name): void
+    {
+        $expected = array_values(array_filter(
+            array_map(chr(...), range(0x20, 0x7E)),
+            static fn(string $char): bool => preg_match(sprintf('/\A[[:^%s:]]\z/', $name), $char) === 1,
+        ));
+
+        Assert::same($this->domain(sprintf('[[:^%s:]]', $name)), $expected);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function posixClasses(): iterable
+    {
+        foreach (['alnum', 'alpha', 'ascii', 'blank', 'cntrl', 'digit', 'graph', 'lower', 'print', 'punct', 'space', 'upper', 'word', 'xdigit'] as $name) {
+            yield $name => [$name];
+        }
+    }
+
+    /**
+     * Every printable character is ASCII and printable, so these two leave
+     * nothing to draw from when negated.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function negatablePosixClasses(): iterable
+    {
+        foreach (self::posixClasses() as $name => $case) {
+            if ($name !== 'ascii' && $name !== 'print') {
+                yield $name => $case;
+            }
+        }
+    }
+
+    #[ExpectException(\InvalidArgumentException::class)]
+    public function aNegatedPosixClassWithNothingPrintableLeftThrows(): void
+    {
+        RegexCompiler::compile('[[:^print:]]');
+    }
+
+    public function aPosixClassJoinsTheOtherMembersOfItsClass(): void
+    {
+        Assert::same($this->domain('[[:digit:]x-]'), ['-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'x']);
+        Assert::same($this->domain('[^[:alnum:][:space:]]'), $this->domain('[[:punct:]]'));
+    }
+
+    public function anOpeningBracketWithoutAPosixNameIsLiteral(): void
+    {
+        // PCRE reads `[:` without `name:]` after it as two characters.
+        Assert::same($this->domain('[[:]'), [':', '[']);
+        Assert::same($this->domain('[[:a]'), [':', '[', 'a']);
+    }
+
+    #[ExpectException(\InvalidArgumentException::class)]
+    public function anUnknownPosixClassThrows(): void
+    {
+        RegexCompiler::compile('[[:alpah:]]');
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function domain(string $pattern): array
+    {
+        $arbitrary = RegexCompiler::compile($pattern);
+        Assert::instanceOf($arbitrary, OneOfArbitrary::class);
+
+        $values = [];
+
+        foreach ($arbitrary->enumerate() as $tree) {
+            $value = $tree->value;
+            Assert::true(is_string($value));
+            $values[] = $value;
+        }
+
+        return $values;
+    }
 }

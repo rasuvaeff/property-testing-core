@@ -200,6 +200,22 @@ final class CorpusFormatGoldenTest
         Assert::same($entries[0]->arguments, ['x' => 51]);
     }
 
+    /**
+     * 1.4 bumped the epoch to 4: a union whose member is a collection
+     * (`int|string[]`) is read member by member, so a 1.3 seed entry of such a
+     * property names a different input now. The same rule as for epoch 2.
+     */
+    public function aCommittedEpochThreeDocumentKeepsItsValuesAndDropsItsSeed(): void
+    {
+        copy(self::FIXTURES . '/epoch-3-entries.json', $this->path('E::three'));
+
+        $entries = $this->storage()->recall('E::three', ['x']);
+
+        Assert::same(count($entries), 1);
+        Assert::true($entries[0]->isValues());
+        Assert::same($entries[0]->arguments, ['x' => 51]);
+    }
+
     #[BeforeTest]
     public function setUpDirectory(): void
     {

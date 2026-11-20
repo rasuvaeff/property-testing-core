@@ -7,7 +7,7 @@ namespace Rasuvaeff\PropertyTesting;
 /**
  * Marker for every exception this engine reports, so a caller can catch the
  * package as a whole (`catch (PropertyTestingException $e)`) without
- * enumerating the ten concrete types.
+ * enumerating the eleven concrete types.
  *
  * It is deliberately empty: the concrete classes keep their own fields and
  * message formats, and each still extends `\RuntimeException`.

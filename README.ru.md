@@ -179,9 +179,18 @@ shrinker'а (принятые и отвергнутые); `shrink step(s)` — �
 параметров) остаются исключениями — это ошибки программиста, а не вердикт о
 property.
 
+Генератор, бросивший исключение при построении входа (ошибка в замыкании
+`Gen::map()` или `flatMap()`, конструктор, отвергший сгенерированное значение),
+— тоже не вердикт: тело на этом входе не запускалось. `run()` бросает
+`GenerationErrorException` — `$propertyName`, `$seed` и `$attempt` (с единицы),
+по которым ошибка воспроизводится, а исключение самого генератора доступно
+через `getPrevious()`. Повторный запуск с этим seed строит те же входы.
+`GenerationExhaustedException` по-прежнему даёт результат `GenerationFailed`.
+
 Каждое исключение, о котором сообщает движок, — десять из таблицы результатов
 выше плюс `GenerationExhaustedException` и
-`StateMachine\PostconditionViolationException`, когда они всплывают из тела, —
+`StateMachine\PostconditionViolationException`, когда они всплывают из тела, и
+`GenerationErrorException` —
 реализует пустой маркер `PropertyTestingException` (`\Throwable`), так что
 harness может написать `catch (PropertyTestingException $e)` для «всего, что
 сказал этот пакет», не перечисляя типы. Каждое по-прежнему расширяет
@@ -258,7 +267,7 @@ harness может написать `catch (PropertyTestingException $e)` для
 | `Gen::url()` | URL `http(s)://host.tld[/path]` | к `http://a.com` |
 | `Gen::json($maxDepth)` | JSON-кодируемое значение (null/bool/int/float/string/list/object) | внутри порождённой структуры |
 | `Gen::jsonString($maxDepth)` | `json_encode`-текст `Gen::json()` | через дерево значения |
-| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | строки, соответствующие подмножеству regex (компилируется в комбинаторы), паттерн — **без разделителей**: `Gen::regex('[a-z]{3,6}')`, а не `'/[a-z]{3,6}/'`; `.` и отрицающий класс берут символы из printable ASCII (`0x20`..`0x7E`, без перевода строки) | более короткие/простые совпадения (через скомпилированные деревья) |
+| `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | строки, соответствующие подмножеству regex (компилируется в комбинаторы), паттерн — **без разделителей**: `Gen::regex('[a-z]{3,6}')`, а не `'/[a-z]{3,6}/'`; `.` и отрицающий класс берут символы из printable ASCII (`0x20`..`0x7E`, без перевода строки); POSIX-классы внутри класса (`[[:alpha:]_]`, `[[:^digit:]]`) — те ASCII-символы, которые им сопоставляет PCRE, неизвестное имя бросает исключение | более короткие/простые совпадения (через скомпилированные деревья) |
 | `Gen::commands($initialModel, $commandGenerators, $minLength, $maxLength)` | `CommandSequenceArbitrary`, валидные последовательности команд для stateful-тестирования | сбрасывает блоки команд, затем упрощает каждую |
 | `Gen::rules($machine, $minLength, $maxLength)` | `RuleSequence` над классом rule-машины (методы `#[Rule]`/`#[Precondition]`/`#[Invariant]`) — см. [Rule-машины](#rule-машины-genrules) | как `commands`: сбрасывает шаги, затем упрощает аргументы каждого || `Gen::swarm($arbitrary)` | `SwarmArbitrary`, swarm-тестирование: каждый случай видит лишь непустое подмножество вариантов обёрнутого генератора выбора (`oneOf`, `elements`, `frequency`, `commands`) | внутри подмножества, из которого случай получился, — обратно до полного алфавита не расширяется |
 | `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор: атрибут [`#[Generate]`](#генераторы-на-параметре-generate) на параметре, затем psalm-тип из докблока, если он есть (`int<0, 100>`, `non-empty-string`, `numeric-string`, `lowercase-string`, `non-falsy-string`, `list<LineItem>`, `array{id: int, name?: string}`, `Status\|null`, `'a'\|'b'`; имена классов резолвятся через namespace и `use`-импорты файла), иначе нативный. Читаются три написания: `@psalm-param`/`@phpstan-param` берут верх над `@param`, а `@var` (`@psalm-var`) на самом promoted-свойстве читается, когда докблок конструктора о нём молчит. Нативный `float` означает `floatBetween(-1e6, 1e6)`. Всё, что прочитать нельзя — голый `array`, `mixed`, нативный union, докблок-тип вне подмножества, неизвестное имя класса (называется в сообщении), — исключение, а не догадка, как и override с именем несуществующего параметра | через сгенерированные аргументы, пересобирая экземпляр |

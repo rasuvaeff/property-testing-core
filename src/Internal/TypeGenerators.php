@@ -324,6 +324,12 @@ final class TypeGenerators
      */
     private static function collection(string $type, Closure $forClass, Closure $resolveClass): ?ArbitraryInterface
     {
+        // `int|string[]` is `int|(string[])` and `list<int>|null` a union too:
+        // a top-level `|` binds looser than any collection syntax.
+        if (count(self::splitUnion($type)) > 1) {
+            return null;
+        }
+
         if (str_ends_with($type, '[]')) {
             $element = self::fromDocblock(substr($type, 0, -2), $forClass, $resolveClass);
 

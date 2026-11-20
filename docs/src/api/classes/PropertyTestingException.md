@@ -13,11 +13,11 @@ description: "Marker for every exception this engine reports, so a caller can ca
 
 **Implements:** `Throwable`, `Stringable`
 
-**Implemented by:** [`CoverageViolationException`](/api/classes/CoverageViolationException), [`DeadlineExceededException`](/api/classes/DeadlineExceededException), [`ExampleViolationException`](/api/classes/ExampleViolationException), [`GaveUpException`](/api/classes/GaveUpException), [`GenerationExhaustedException`](/api/classes/GenerationExhaustedException), [`PathViolationException`](/api/classes/PathViolationException), [`PropertyViolationException`](/api/classes/PropertyViolationException), [`RegressionViolationException`](/api/classes/RegressionViolationException), [`StateMachine\PostconditionViolationException`](/api/classes/StateMachine/PostconditionViolationException), [`TimeBudgetExceededException`](/api/classes/TimeBudgetExceededException)
+**Implemented by:** [`CoverageViolationException`](/api/classes/CoverageViolationException), [`DeadlineExceededException`](/api/classes/DeadlineExceededException), [`ExampleViolationException`](/api/classes/ExampleViolationException), [`GaveUpException`](/api/classes/GaveUpException), [`GenerationErrorException`](/api/classes/GenerationErrorException), [`GenerationExhaustedException`](/api/classes/GenerationExhaustedException), [`PathViolationException`](/api/classes/PathViolationException), [`PropertyViolationException`](/api/classes/PropertyViolationException), [`RegressionViolationException`](/api/classes/RegressionViolationException), [`StateMachine\PostconditionViolationException`](/api/classes/StateMachine/PostconditionViolationException), [`TimeBudgetExceededException`](/api/classes/TimeBudgetExceededException)
 
 Marker for every exception this engine reports, so a caller can catch the
 package as a whole (`catch (PropertyTestingException $e)`) without
-enumerating the ten concrete types.
+enumerating the eleven concrete types.
 
 It is deliberately empty: the concrete classes keep their own fields and
 message formats, and each still extends `\RuntimeException`.

@@ -129,7 +129,10 @@ make release-check
   roll when there is exactly one edge value. The built-in string bias of 1.3
   (`Boundary::strings()`, one roll per `StringArbitrary` draw) is the
   opposite case: it rolls inside the generator, obeys `EdgeCases::None`,
-  shifted the vectors, and took the epoch to 3. A boundary string must stay
+  shifted the vectors, and took the epoch to 3. 1.4 took it to 4: a docblock
+  union with a collection member (`int|string[]`, `list<int>|list<bool>`) is
+  read member by member now, where `[]`/`list<>` used to swallow the whole
+  union. A boundary string must stay
   inside the generator's own domain — that is why `stringFrom()`/`bytes()`
   have none and the ASCII alphabet gets only `''`, `' '`, `'0'`.
 - **Event model.** Events carry engine data only — property id, seed,
@@ -191,6 +194,14 @@ make release-check
   reason.
 - `Gen::filter()` retries up to 100 times then throws `GenerationExhaustedException`;
   the runner catches it at the generation step and reports `GenerationFailed`.
+  **Any other throwable at the generation step** (a buggy `map`/`flatMap`
+  closure, a constructor rejecting a drawn value) ends `run()` with a thrown
+  `GenerationErrorException` carrying the phase's seed and the 1-based attempt,
+  the original as `previous` (#185). It is deliberately not a `PropertyResult`:
+  the closed hierarchy stays closed, and the body never ran on that input.
+  Both catches sit in `runPhase()` and `search()`; a new generation site needs
+  both. A throw inside a shrink candidate's map is not this case — the
+  candidate is simply not accepted.
   Sized collections (`uniqueArrayOf`, `dictOf`, `commands`) guarantee their
   minimum or throw — never return a too-small value.
 - `yield from` inside a generator that already `yield`ed causes integer-key
@@ -225,7 +236,7 @@ make release-check
   The job asserts the path install took effect (`composer show` prints a
   `path :` line) precisely so it cannot silently pass against the released
   core from Packagist. Its path-repository `versions` override follows the
-  current core release (`1.3.0`); both adapters require `^1.2`, so it is
+  current core release (`1.4.0`); both adapters require `^1.2`, so it is
   accepted without touching them. When core moves to a version
   they do not accept, this job is *supposed* to fail until the adapters are
   updated — do not paper over it by widening the override. Keeping it in step
@@ -252,7 +263,7 @@ make release-check
         set -e
         cleanup() { composer config --unset repositories.core; rm -f composer.lock; }
         trap cleanup EXIT
-        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"1.3.0\"}}}"
+        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"1.4.0\"}}}"
         composer update
         composer test
     ' || failed="$failed $adapter"

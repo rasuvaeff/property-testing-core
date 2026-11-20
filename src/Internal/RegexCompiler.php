@@ -494,7 +494,7 @@ final class RegexCompiler
      */
     private function posixClass(): ?array
     {
-        $rest = implode('', array_slice($this->chars, $this->pos, 16));
+        $rest = implode('', array_slice($this->chars, $this->pos));
 
         if (preg_match('/\A\[:(\^?)([a-z]+):\]/', $rest, $matches) !== 1) {
             return null;
@@ -508,10 +508,13 @@ final class RegexCompiler
 
         $this->pos += strlen($whole);
         $pattern = sprintf('/\A[[:%s:]]\z/', $name);
-        $members = array_values(array_filter(
-            $this->range("\0", "\x7F"),
-            static fn(string $char): bool => preg_match($pattern, $char) === 1,
-        ));
+        $members = [];
+
+        foreach ($this->range("\0", "\x7F") as $char) {
+            if (preg_match($pattern, $char) === 1) {
+                $members[] = $char;
+            }
+        }
 
         return $negated === '^' ? $this->without($this->printable(), $members) : $members;
     }

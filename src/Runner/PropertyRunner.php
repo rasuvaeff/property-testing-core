@@ -722,9 +722,7 @@ final readonly class PropertyRunner
 
         // A property without parameters (only in-body draws) has nothing to
         // mutate: the search evaluates nothing and reports so.
-        $searchRuns = $parameters === [] ? 0 : $property->config->searchRuns;
-
-        for ($run = 0; $run < $searchRuns; ++$run) {
+        for ($run = 0; $parameters !== [] && $run < $property->config->searchRuns; ++$run) {
             $labels = $pool->labels();
 
             if ($labels === []) {
@@ -855,7 +853,6 @@ final readonly class PropertyRunner
      */
     private function generationError(PropertyDefinition $property, int $seed, PhaseCounters $counters, \Throwable $error): GenerationErrorException
     {
-        Classify::flushRun();
         Classify::flushRequirements();
         Target::flushDirections();
 

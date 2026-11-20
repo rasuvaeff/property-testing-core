@@ -920,10 +920,17 @@ final class RegexCompilerTest
         Assert::same($this->domain('[[:a]'), [':', '[', 'a']);
     }
 
-    #[ExpectException(\InvalidArgumentException::class)]
     public function anUnknownPosixClassThrows(): void
     {
-        RegexCompiler::compile('[[:alpah:]]');
+        try {
+            RegexCompiler::compile('[[:alpah:]]');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Unknown POSIX class "[:alpah:]" in regex character class');
+
+            return;
+        }
+
+        Assert::fail('An unknown POSIX class compiled');
     }
 
     /**

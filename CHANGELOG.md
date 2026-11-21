@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.5.1 — 2026-11-21
 
 - **Changed:** PHP 8.6 is supported: the `php` constraint is widened to
   `8.3 - 8.6` (#203). CI runs PHP 8.6 as a regular matrix entry; the

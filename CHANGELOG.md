@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Changed:** PHP 8.6 is supported: the `php` constraint is widened to
+  `8.3 - 8.6` (#203). CI runs PHP 8.6 as a regular matrix entry; the
+  backward-compatibility job runs on PHP 8.5.
 - **Docs:** a docblock union of enum case literals (`@param St::A|St::B`) is not
   read by `Gen::forClass()` / `Gen::forParameters()` — every case is drawn;
   narrow it with an override (#186).

@@ -40,7 +40,7 @@ Framework-agnostic **движок** property-based тестирования дл
 
 ## Требования
 
-- PHP 8.3+
+- PHP 8.3 – 8.6
 - `ext-mbstring`
 - `ext-random`
 - `ext-tokenizer`

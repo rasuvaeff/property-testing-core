@@ -11,7 +11,7 @@ description: "Executes the property body once with the given arguments."
 
 **Interface** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/TrialExecutor.php#L23) — **Version:** working tree
 
-**Implemented by:** [`Runner\CallableTrialExecutor`](/api/classes/Runner/CallableTrialExecutor), `Testo\TestoTrialExecutor`, `PhpUnit\PhpUnitTrialExecutor`
+**Implemented by:** [`Runner\CallableTrialExecutor`](/api/classes/Runner/CallableTrialExecutor), [`Runner\FailOnTrialExecutor`](/api/classes/Runner/FailOnTrialExecutor), `Testo\TestoTrialExecutor`, `PhpUnit\PhpUnitTrialExecutor`
 
 Executes the property body once with the given arguments.
 

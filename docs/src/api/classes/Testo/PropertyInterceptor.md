@@ -9,7 +9,7 @@ description: "The Testo adapter for a Property: resolves the test framework's co
 
 `Rasuvaeff\PropertyTesting\Testo\PropertyInterceptor`
 
-**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Testo/PropertyInterceptor.php#L61) — **Version:** v1.0.0
+**Class** — **Package:** [property-testing-testo](https://github.com/rasuvaeff/property-testing-testo) — [Source](https://github.com/rasuvaeff/property-testing-testo/blob/8cb3fc903a037355e9c2ec144ffbf9ab483a1186/src/Testo/PropertyInterceptor.php#L66) — **Version:** v1.2.1
 
 **Implements:** `Testo\Pipeline\Middleware\TestRunInterceptor`, `Testo\Pipeline\Interceptor`
 
@@ -23,8 +23,9 @@ The interceptor self-registers via the [`Property`](/api/classes/Property) attri
 `Testo\Pipeline\Attribute\FallbackInterceptor`, so simply requiring the
 package is enough — no plugin registration in testo.php is needed.
 
-It sits close to the test function in the pipeline (after data providers,
-repeat and retry policies) so it owns argument generation for property tests.
+It wraps Testo's assertion interceptors so they run once per generated input,
+while remaining inside data-provider, repeat and retry policies so it owns
+argument generation for property tests.
 
 ## Constructor
 

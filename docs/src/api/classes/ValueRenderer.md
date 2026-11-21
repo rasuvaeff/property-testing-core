@@ -26,6 +26,19 @@ is guarded against cycles.
 static render(mixed $value): string
 ```
 
+### renderArguments()
+
+```php
+static renderArguments(array<array-key,mixed> $arguments): string
+```
+
+Named values as `name=value, name=value`, each value through render(),
+in the given order — the form every counterexample message and the adapters'
+verbose trace print arguments, draws and notes in. An empty map renders as
+the empty string.
+
+- `$arguments` — Values keyed by name.
+
 ### normalize()
 
 ```php

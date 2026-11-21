@@ -42,6 +42,10 @@ final readonly class RunStatistics
      *        was never asked to.
      * @param ?SearchReport $search What the targeted search amounted to; null when the property
      *        targeted nothing.
+     * @param int $discardedExamples Explicit examples (`<method>Examples()`) the body discarded with
+     *        `Assume::that()`. Such an example counts as passed — the run's verdict does not change —
+     *        but it checked nothing: after a precondition moves, a pinned case can silently stop
+     *        pinning anything, and this is the number the adapters warn about.
      */
     public function __construct(
         public int $attempts,
@@ -55,5 +59,27 @@ final readonly class RunStatistics
         public ?int $domainSize = null,
         public ?string $exhaustiveDeclined = null,
         public ?SearchReport $search = null,
+        public int $discardedExamples = 0,
     ) {}
+
+    /**
+     * The statistics a result carries, for the outcomes that carry them —
+     * {@see Passed}, {@see GaveUp}, {@see CoverageFailed} and
+     * {@see TimeBudgetExceeded} — and null for every other one. The adapters'
+     * diagnostics are built from these; a result type that gains statistics is
+     * added here, not to the {@see PropertyResult} interface, which outside
+     * implementations would have to follow.
+     *
+     * @param PropertyResult $result Any outcome of a run.
+     */
+    public static function of(PropertyResult $result): ?self
+    {
+        return match (true) {
+            $result instanceof Passed,
+            $result instanceof GaveUp,
+            $result instanceof CoverageFailed,
+            $result instanceof TimeBudgetExceeded => $result->statistics,
+            default => null,
+        };
+    }
 }

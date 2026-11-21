@@ -66,7 +66,7 @@ final class TypeGenerators
             return $simple;
         }
 
-        $ranged = self::rangedInt($type);
+        $ranged = self::rangedInt($type) ?? self::rangedFloat($type);
 
         if ($ranged instanceof ArbitraryInterface) {
             return $ranged;
@@ -96,7 +96,7 @@ final class TypeGenerators
     /**
      * A class, interface or enum named the way the docblock's file names it
      * (`LineItem`, `Order\LineItem`, `\App\LineItem`). What is not a name at
-     * all (`float<0.0, 1.0>`, `callable-string`) or names nothing the resolver
+     * all (`float<min, 1.0>`, `callable-string`) or names nothing the resolver
      * knows stays unread.
      *
      * @param Closure(string): ArbitraryInterface $forClass
@@ -162,6 +162,10 @@ final class TypeGenerators
             'true' => Gen::constant(value: true),
             'false' => Gen::constant(value: false),
             'null' => Gen::constant(null),
+            // The unions psalm names: generated as the spelled-out union
+            // `int|string` / `int|float|string|bool` would be.
+            'array-key' => Gen::anyOf(Gen::int(), Gen::string()),
+            'scalar' => Gen::anyOf(Gen::int(), Gen::floatBetween(-1_000_000.0, 1_000_000.0), Gen::string(), Gen::bool()),
             default => null,
         };
     }
@@ -314,6 +318,20 @@ final class TypeGenerators
             $matches[1] === 'min' ? PHP_INT_MIN : (int) $matches[1],
             $matches[2] === 'max' ? PHP_INT_MAX : (int) $matches[2],
         );
+    }
+
+    /**
+     * `float<0.0, 1.0>`, `float<-5, 5>`: both ends written as decimal numbers.
+     * There is no `min`/`max` for a float — the native float domain has no
+     * finite ends a generator could sample between.
+     */
+    private static function rangedFloat(string $type): ?ArbitraryInterface
+    {
+        if (preg_match('/^float<\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*>\z/', $type, $matches) !== 1) {
+            return null;
+        }
+
+        return Gen::floatBetween((float) $matches[1], (float) $matches[2]);
     }
 
     /**

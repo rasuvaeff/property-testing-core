@@ -156,6 +156,53 @@ narrow generators that were never at fault. Report an environmental skip as
 `skipped()`, or one machine without the dependency deletes the counterexample
 for every machine that has it.
 
+`FailOnTrialExecutor` decorates any executor so that PHP diagnostics of the
+given levels raised by the body become an `\ErrorException` at the place they
+were raised — a failing run that shrinks like any other:
+`new FailOnTrialExecutor($executor, E_WARNING | E_DEPRECATED)`. A level it does
+not claim goes on to the previously installed handler, a diagnostic silenced
+with `@` stays silent, and `FailOnTrialExecutor::guard($levels, $call)` runs a
+single call under the same handler. Both adapters expose it (`failOn`).
+
+### Adapter building blocks
+
+The engine never reads the environment and never prints. What an adapter does
+around it — the same in every adapter, so two adapters writing into one log
+agree — is in the core:
+
+| Piece | Does |
+|---|---|
+| `Environment::fromVariables($variables)` | Parses the `PROPERTY_*` values an adapter read with `getenv()` (`Environment::VARIABLES` lists them, in parse order) and refuses an invalid one naming the variable. `->config(...)` takes the property's own settings, with `PropertyConfig`'s parameters and defaults, and applies the precedence: the environment dials the suite (`runs`, `phases`, `derandomize`, `edgeCases`, `exhaustive`, `searchRuns`), the code pins the property (`seed`, `path`). `->verbose` and `->db` are the trace switch and the corpus DSN |
+| `RunStatistics::of($result)` | The statistics a result carries (`Passed`, `GaveUp`, `CoverageFailed`, `TimeBudgetExceeded`), or null |
+| `DiagnosticLines::of($name, $statistics)` | The lines to print after a run, in a fixed order, each with a `DiagnosticLevel` (`Info` or `Warning`): the excessive-discard warning, the discarded-examples warning, the distribution, one line per `tabulate()` table, what exhaustive mode did, the search report |
+| `TraceListener($sink)` | The `PROPERTY_VERBOSE` trace as a listener: one line per attempt's arguments, per attempt's draws, per target improvement and per accepted shrink step, handed to a `Closure(string): void`; it swallows its own errors and the sink's |
+| `FailOnTrialExecutor` | PHP diagnostics as failing runs (see above) |
+| `ValueRenderer::renderArguments($arguments)` | `name=value, name=value`, the form every message prints arguments in |
+
+```php
+$variables = [];
+
+foreach (Environment::VARIABLES as $name) {
+    $variables[$name] = getenv($name);
+}
+
+$environment = Environment::fromVariables($variables);
+$result = $runner->run(
+    new PropertyDefinition('Suite::prop', 'prop', $generators, ['x'], $environment->config(runs: 200)),
+    new FailOnTrialExecutor($executor, E_WARNING),
+    $environment->verbose ? [new TraceListener(static fn (string $line) => fwrite(STDERR, $line . "\n"))] : [],
+);
+
+$statistics = RunStatistics::of($result);
+
+foreach ($statistics === null ? [] : DiagnosticLines::of('prop', $statistics) as $line) {
+    fwrite($line->level === DiagnosticLevel::Warning ? STDERR : STDOUT, $line->text . "\n");
+}
+```
+
+A share in those lines is rounded half up on the exact ratio (`23/40` reads
+58%).
+
 ### Structured results
 
 `PropertyRunner::run()` returns one of a closed `PropertyResult` hierarchy —
@@ -197,7 +244,8 @@ said" without enumerating the types. Each still extends `\RuntimeException`.
 
 `RunStatistics` exposes the raw phase counters (attempts, discards, skips,
 checks, per-label classification counts, `tabulate()` tables, the enumerated
-domain size or why enumeration declined, the `SearchReport`) so a reporter can
+domain size or why enumeration declined, the `SearchReport`, the explicit
+examples `Assume` discarded) so a reporter can
 print a distribution table or a discard warning — the engine itself never
 formats framework output.
 
@@ -207,7 +255,13 @@ machine format is `CounterExample::toArray()` / `toJson()`. Its keys are
 frozen (compatibility policy, point 4): `seed`, `runsBeforeFailure`,
 `originalArguments`, `shrunkArguments`, `shrinkSteps`, `shrinkTrials`, `path`,
 `failure` (`{type, message}` or null), `discards`, `skips`, `edgeCases`,
-`originalNotes`, `shrunkNotes`, `replays`, `passedOnReplay`. So
+`originalNotes`, `shrunkNotes`, `replays`, `passedOnReplay`.
+`CounterExample::$shrinkErrors` — why some node's shrink candidates ran out
+early, as `Class: message`, each distinct one once, at most ten — is a property
+only, outside the frozen array and the message: a user-written `Shrinkable` (or
+a `Gen::map()` refusing a smaller value) that throws while listing candidates is
+treated as having no more of them, and this is where "it did not shrink" gets
+its reason. So
 are those of `DistributionReport::toArray()`: `attempts`, `discards`,
 `discardPercent`, `skips`, `checks`, `coverageAssessed`, `labels` (each
 `{label, count, percent, required, met}`), plus `tables` when the run
@@ -255,12 +309,14 @@ through their source domain.
 | `Gen::intRange($min, $max)` | `FlatMappedArbitrary`, ordered pairs `[lo, hi]` with `lo <= hi` | both bounds shrink, order always holds |
 | `Gen::recursive($leaf, $wrap, $maxDepth)` | bounded recursive structures: `$wrap` lifts the previous level's arbitrary | within the branch that generated the value |
 | `Gen::oneOf(...$values)` | `OneOfArbitrary`, one of the given values — values, not generators: an arbitrary among them is rejected (use `frequency()` to pick between generators) | toward earlier-listed distinct values (put simpler values first) |
-| `Gen::nullable($inner)` | `NullableArbitrary`, `null` or an `$inner` value | prefers `null`, then the inner tree |
+| `Gen::nullable($inner)` | `NullableArbitrary`, `null` or an `$inner` value (typed `T\|null` for psalm) | prefers `null`, then the inner tree |
 | `Gen::map($inner, $map)` | `MappedArbitrary`, `$inner` transformed by `$map` | through the inner tree, re-applying `$map` |
 | `Gen::flatMap($inner, $flatMap)` | `FlatMappedArbitrary`, dependent generator returned by `$flatMap($innerValue)` | source value first (dependent value regenerated), then the dependent tree |
 | `Gen::filter($inner, $predicate)` | `FilteredArbitrary`, `$inner` values satisfying `$predicate` (throws `GenerationExhaustedException` after 100 rejected draws — never yields an out-of-domain value) | inner tree, pruning candidates that fail the predicate |
 | `Gen::tuple(...$elements)` | `TupleArbitrary`, fixed-arity tuple, one value per element | each position via its element, arity fixed |
+| `Gen::pair($first, $second)` / `Gen::triple($first, $second, $third)` | `TupleArbitrary` of two / three elements, typed for psalm as `array{A, B}` / `array{A, B, C}` — the same values and shrinks as the tuple | each position via its element |
 | `Gen::frequency($pairs)` | `FrequencyArbitrary`, weighted choice over `[weight, arbitrary]` pairs | within the branch that generated the value |
+| `Gen::anyOf(...$generators)` | `FrequencyArbitrary` with every weight 1: an equal-weight choice between **generators** (where `oneOf` picks between values) — the same sequence as the equivalent `frequency` | within the branch that generated the value |
 | `Gen::ipv4()` | IPv4 dotted-quad strings | each octet toward `0` |
 | `Gen::ipv6()` | IPv6 addresses in the canonical RFC 5952 text form (lowercase, no leading zeros, longest zero run compressed to `::`) | each group toward `0`, ending at `::` |
 | `Gen::email()` | `local@label.tld` addresses | toward the shortest local/label and first TLD |
@@ -271,8 +327,13 @@ through their source domain.
 | `Gen::commands($initialModel, $commandGenerators, $minLength, $maxLength)` | `CommandSequenceArbitrary`, valid command sequences for stateful testing | drops command blocks, then simplifies each command |
 | `Gen::rules($machine, $minLength, $maxLength)` | `RuleSequence` over a rule-based machine class (`#[Rule]`/`#[Precondition]`/`#[Invariant]` methods) — see [Rule-based machines](#rule-based-machines-genrules) | like `commands`: drops steps, then simplifies each step's arguments |
 | `Gen::swarm($arbitrary)` | `SwarmArbitrary`, swarm testing: each case may use only a non-empty subset of the wrapped choice generator's variants (`oneOf`, `elements`, `frequency`, `commands`) | inside the subset the case came from — never widening back to the full alphabet |
-| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares — a [`#[Generate]`](#generators-on-the-parameter-generate) attribute on the parameter, then the docblock psalm type when there is one (`int<0, 100>`, `non-empty-string`, `numeric-string`, `lowercase-string`, `non-falsy-string`, `list<LineItem>`, `array{id: int, name?: string}`, `Status\|null`, `'a'\|'b'`; class names resolve through the file's namespace and `use` imports), the native type otherwise. Three spellings are read: `@psalm-param`/`@phpstan-param` win over `@param`, and a `@var` (`@psalm-var`) on the promoted property itself is read when the constructor docblock says nothing about it. A native `float` means `floatBetween(-1e6, 1e6)`. Anything unreadable — a bare `array`, `mixed`, a native union, a docblock type outside the subset, an unknown class name (named in the message) — throws instead of guessing, an override naming no parameter too | through the generated arguments, rebuilding the instance |
+| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, instances built from what the constructor declares (an enum, `DateTimeImmutable`, `Random\Engine` and `Random\Randomizer` without overrides are `enum()`, `datetime()`, `randomEngine()`, `randomizer()`, as they are for a parameter) — a [`#[Generate]`](#generators-on-the-parameter-generate) attribute on the parameter, then the docblock psalm type when there is one (`int<0, 100>`, `float<0.0, 1.0>`, `array-key`, `scalar`, `non-empty-string`, `numeric-string`, `lowercase-string`, `non-falsy-string`, `list<LineItem>`, `array{id: int, name?: string}`, `Status\|null`, `'a'\|'b'`; class names resolve through the file's namespace and `use` imports), the native type otherwise. Three spellings are read: `@psalm-param`/`@phpstan-param` win over `@param`, and a `@var` (`@psalm-var`) on the promoted property itself is read when the constructor docblock says nothing about it. A native `float` means `floatBetween(-1e6, 1e6)`. Anything unreadable — a bare `array`, `mixed`, a native union, a docblock type outside the subset, an unknown class name (named in the message) — throws instead of guessing, an override naming no parameter too | through the generated arguments, rebuilding the instance |
 | `Gen::forParameters($function, $overrides, derive: true)` | not an arbitrary but a map: `array<string, ArbitraryInterface>` for the parameters of a `ReflectionFunctionAbstract` (method or closure), by name in signature order — the `forClass` rules applied to any signature; overrides may be partial, the rest is derived; anything unreadable throws naming the function and the parameter. `derive: false` reads only overrides and `#[Generate]` and refuses a parameter with neither | each entry shrinks through its own generator |
+
+A size or length bound may be `0` (`arrayOf($g, 0, 0)` is always `[]`), so a
+dependent `flatMap(intBetween(0, 3), fn ($n) => arrayOf($g, 0, $n))` works for
+`$n = 0`. A refused range names the factory and the values it got:
+`Gen::arrayOf(): minSize must be less than or equal to maxSize, got 3 and 0`.
 
 ### Generators on the parameter: `#[Generate]`
 
@@ -472,6 +533,10 @@ does not hold — the attempt is neither a failure nor a successful check, and
 `runs` still means successful checks. Retries stop at `maxDiscards` (default
 `runs * 10`), failing with a structured `GaveUpException`. Construct valid
 inputs (`flatMap`/`draw`) instead of discarding broadly.
+
+An explicit example the body discards still passes, but it checked nothing:
+`RunStatistics::$discardedExamples` counts them and both adapters warn —
+after a precondition moves, a pinned case can silently stop pinning anything.
 
 Environmental skips — a skipped body or lifecycle hook — are counted and
 budgeted separately: they say nothing about the input, so exhausting their

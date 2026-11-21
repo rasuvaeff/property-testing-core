@@ -275,6 +275,75 @@ final class TypeGeneratorsTest
         return new \ReflectionFunction($closure);
     }
 
+    /**
+     * `array-key` and `scalar` are the unions psalm names: generated exactly as
+     * the spelled-out union would be, value for value under one seed.
+     */
+    #[DataProvider('namedUnions')]
+    public function aNamedUnionGeneratesAsItsSpelledOutUnion(string $named, string $spelled, array $types): void
+    {
+        $values = $this->draws($this->read($named));
+
+        Assert::same($values, $this->draws($this->read($spelled)));
+
+        $seen = array_values(array_unique(array_map(get_debug_type(...), $values)));
+        sort($seen);
+        Assert::same($seen, $types);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, list<string>}>
+     */
+    public static function namedUnions(): iterable
+    {
+        yield 'array-key' => ['array-key', 'int|string', ['int', 'string']];
+        yield 'scalar' => ['scalar', 'int|float|string|bool', ['bool', 'float', 'int', 'string']];
+    }
+
+    #[DataProvider('rangedFloats')]
+    public function aRangedFloatIsFloatBetweenItsEnds(string $type, float $min, float $max): void
+    {
+        $values = $this->draws($this->read($type));
+
+        Assert::same($values, $this->draws(Gen::floatBetween($min, $max)));
+        Assert::same(min($values), $min);
+        Assert::true(max($values) <= $max);
+    }
+
+    /**
+     * @return iterable<string, array{string, float, float}>
+     */
+    public static function rangedFloats(): iterable
+    {
+        yield 'unit interval' => ['float<0.0, 1.0>', 0.0, 1.0];
+        yield 'integers as ends, spaced' => ['float< -5 ,5 >', -5.0, 5.0];
+        yield 'fractions' => ['float<-0.25, 0.75>', -0.25, 0.75];
+    }
+
+    /**
+     * A float has no finite native ends to stand for `min`/`max`, and an
+     * exponent or a bare dot is not a decimal the reader accepts.
+     */
+    #[DataProvider('unreadFloats')]
+    public function aRangedFloatOutsideTheSubsetStaysUnread(string $type): void
+    {
+        Assert::null($this->read($type));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function unreadFloats(): iterable
+    {
+        yield 'min' => ['float<min, 1.0>'];
+        yield 'max' => ['float<0.0, max>'];
+        yield 'exponent' => ['float<0, 1e3>'];
+        yield 'bare dot' => ['float<.5, 1>'];
+        yield 'one end' => ['float<1.0>'];
+        yield 'trailing text' => ['float<0, 1>x'];
+        yield 'leading text' => ['xfloat<0, 1>'];
+    }
+
     private function read(string $type): ?ArbitraryInterface
     {
         return TypeGenerators::fromDocblock(

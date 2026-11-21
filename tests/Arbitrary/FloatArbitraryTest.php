@@ -159,7 +159,7 @@ final class FloatArbitraryTest
 
             Assert::fail('expected the non-finite bound to be rejected');
         } catch (\InvalidArgumentException $e) {
-            Assert::same($e->getMessage(), 'Min and max must be finite');
+            Assert::string($e->getMessage())->contains('Gen::floatBetween(): min and max must be finite, got ');
         }
     }
 

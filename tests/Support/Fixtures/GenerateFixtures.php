@@ -55,7 +55,7 @@ final class GenerateMethods
     public function onSomeParameters(#[Generate(new IntArbitrary(1, 1))] int $attributed, int $plain): void {}
 
     /**
-     * @param float<0.0, 1.0> $ratio
+     * @param float<min, 1.0> $ratio
      */
     public function overAnUnreadableDocblock(#[Generate(new FloatArbitrary(0.0, 1.0))] float $ratio): void {}
 

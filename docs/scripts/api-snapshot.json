@@ -163,12 +163,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 51
+                "startLine": 45
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ArrayArbitrary.php#L26",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ArrayArbitrary.php#L28",
         "implementedBy": []
     },
     {
@@ -331,12 +331,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 38
+                "startLine": 31
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/BytesArbitrary.php#L20",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/BytesArbitrary.php#L21",
         "implementedBy": []
     },
     {
@@ -416,12 +416,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 56
+                "startLine": 49
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CharsetStringArbitrary.php#L24",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CharsetStringArbitrary.php#L25",
         "implementedBy": []
     },
     {
@@ -608,7 +608,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 89
+                "startLine": 82
             },
             {
                 "name": "variantCount",
@@ -625,7 +625,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 128
+                "startLine": 121
             },
             {
                 "name": "withVariants",
@@ -655,12 +655,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 148
+                "startLine": 141
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CommandSequenceArbitrary.php#L36",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CommandSequenceArbitrary.php#L37",
         "implementedBy": []
     },
     {
@@ -920,7 +920,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 55
+                "startLine": 61
             }
         ],
         "constants": [],
@@ -1018,12 +1018,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 65
+                "startLine": 58
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/DictionaryArbitrary.php#L32",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/DictionaryArbitrary.php#L33",
         "implementedBy": []
     },
     {
@@ -1462,12 +1462,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 47
+                "startLine": 52
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/FloatArbitrary.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/FloatArbitrary.php#L32",
         "implementedBy": []
     },
     {
@@ -1657,7 +1657,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 43
+                "startLine": 42
             },
             {
                 "name": "domainSize",
@@ -1674,7 +1674,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 60
+                "startLine": 59
             },
             {
                 "name": "enumerate",
@@ -1691,12 +1691,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 73
+                "startLine": 72
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/IntArbitrary.php#L29",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/IntArbitrary.php#L30",
         "implementedBy": []
     },
     {
@@ -1833,8 +1833,11 @@
         "deprecated": null,
         "see": [],
         "extensionTags": {
+            "template": [
+                "TValue of mixed = mixed"
+            ],
             "implements": [
-                "\\Rasuvaeff\\PropertyTesting\\Enumerable<mixed>"
+                "\\Rasuvaeff\\PropertyTesting\\Enumerable<\\Rasuvaeff\\PropertyTesting\\Arbitrary\\TValue|null>"
             ]
         },
         "extends": null,
@@ -1846,7 +1849,7 @@
         "constructorParams": [
             {
                 "name": "inner",
-                "type": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\Arbitrary\\TValue>",
                 "description": "",
                 "default": null,
                 "promoted": true,
@@ -1879,7 +1882,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 28
+                "startLine": 32
             },
             {
                 "name": "domainSize",
@@ -1896,7 +1899,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 42
+                "startLine": 46
             },
             {
                 "name": "enumerate",
@@ -1918,12 +1921,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 55
+                "startLine": 59
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/NullableArbitrary.php#L21",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/NullableArbitrary.php#L22",
         "implementedBy": []
     },
     {
@@ -2197,7 +2200,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 46
+                "startLine": 47
             },
             {
                 "name": "domainSize",
@@ -2214,7 +2217,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 60
+                "startLine": 61
             },
             {
                 "name": "enumerate",
@@ -2236,12 +2239,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 71
+                "startLine": 72
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/RecordArbitrary.php#L25",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/RecordArbitrary.php#L26",
         "implementedBy": []
     },
     {
@@ -2321,12 +2324,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 97
+                "startLine": 90
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/StringArbitrary.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/StringArbitrary.php#L31",
         "implementedBy": []
     },
     {
@@ -2409,12 +2412,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 74
+                "startLine": 71
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/SubsetArbitrary.php#L30",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/SubsetArbitrary.php#L31",
         "implementedBy": []
     },
     {
@@ -2547,7 +2550,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 44
+                "startLine": 45
             },
             {
                 "name": "domainSize",
@@ -2564,7 +2567,7 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 56
+                "startLine": 57
             },
             {
                 "name": "enumerate",
@@ -2581,12 +2584,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 65
+                "startLine": 66
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/TupleArbitrary.php#L24",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/TupleArbitrary.php#L25",
         "implementedBy": []
     },
     {
@@ -2678,12 +2681,12 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 66
+                "startLine": 59
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/UniqueArrayArbitrary.php#L37",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/UniqueArrayArbitrary.php#L38",
         "implementedBy": []
     },
     {
@@ -3178,6 +3181,15 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "shrinkErrors",
+                "type": "list<string>",
+                "description": "Why enumerating some node's shrink candidates ended early,\nas `Class: message`, each distinct one once and at most ten: a `Shrinkable` tree (a\nuser-written one, a `Gen::map()` refusing a smaller value) that throws while listing\nits candidates is treated as having no more of them, and without this a bug there\nwould read as \"it did not shrink\". Empty when every enumeration ran to its end. Not\npart of \\Rasuvaeff\\PropertyTesting\\toArray() or the exception message.",
+                "default": "[]",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [],
@@ -3195,7 +3207,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 75
+                "startLine": 82
             },
             {
                 "name": "toArray",
@@ -3210,7 +3222,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 85
+                "startLine": 92
             },
             {
                 "name": "toJson",
@@ -3233,7 +3245,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 108
+                "startLine": 115
             },
             {
                 "name": "toExamplesCode",
@@ -3256,7 +3268,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 124
+                "startLine": 131
             }
         ],
         "constants": [],
@@ -4919,7 +4931,7 @@
                     },
                     {
                         "name": "maxLength",
-                        "type": "int<1, max>",
+                        "type": "int<0, max>",
                         "description": "",
                         "default": "100",
                         "variadic": false
@@ -5341,14 +5353,14 @@
                 ],
                 "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
                 "summary": "Instances of $class, generated from what its constructor already\ndeclares — the reflection answer to jqwik's type-driven `@ForAll` and\nRust's `derive(Arbitrary)`, in a language that has no macros but does\nhave promoted constructor properties and psalm annotations.",
-                "description": "```php\nGen::forClass(Money::class);\nGen::forClass(Money::class, ['amount' => Gen::intPositive()]);\n```\n\nPer parameter, in order: an override, then a \\Rasuvaeff\\PropertyTesting\\Generate attribute\non the parameter, then the docblock (psalm subset;\n`@psalm-param`/`@phpstan-param` over `@param`, and the promoted\nproperty's own `@var` when the constructor docblock is silent), then\nthe native type. The docblock wins over the native type because it says\nmore — `int` and `int<0, 100>` are the same native type and a very\ndifferent value space — and a type this cannot read is an exception\nnaming the parameter rather than a widened guess. See\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\ClassArbitrary for the supported subset and for what a validating\nconstructor does.",
+                "description": "```php\nGen::forClass(Money::class);\nGen::forClass(Money::class, ['amount' => Gen::intPositive()]);\n```\n\nAn enum, `DateTimeImmutable`, `Random\\Engine` and `Random\\Randomizer`\nare answered as they are for a class-typed parameter — `Gen::enum()`,\n`Gen::datetime()`, `Gen::randomEngine()`, `Gen::randomizer()` — unless\noverrides are given, which ask for the constructor explicitly.\n\nPer parameter, in order: an override, then a \\Rasuvaeff\\PropertyTesting\\Generate attribute\non the parameter, then the docblock (psalm subset;\n`@psalm-param`/`@phpstan-param` over `@param`, and the promoted\nproperty's own `@var` when the constructor docblock is silent), then\nthe native type. The docblock wins over the native type because it says\nmore — `int` and `int<0, 100>` are the same native type and a very\ndifferent value space — and a type this cannot read is an exception\nnaming the parameter rather than a widened guess. See\n\\Rasuvaeff\\PropertyTesting\\Arbitrary\\ClassArbitrary for the supported subset and for what a validating\nconstructor does.",
                 "throws": [],
                 "throwsInBody": false,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 420
+                "startLine": 425
             },
             {
                 "name": "forParameters",
@@ -5392,7 +5404,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 467
+                "startLine": 483
             },
             {
                 "name": "swarm",
@@ -5415,7 +5427,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 509
+                "startLine": 525
             },
             {
                 "name": "elements",
@@ -5443,7 +5455,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 528
+                "startLine": 544
             },
             {
                 "name": "constant",
@@ -5466,7 +5478,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 546
+                "startLine": 562
             },
             {
                 "name": "enum",
@@ -5489,7 +5501,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 561
+                "startLine": 577
             },
             {
                 "name": "floatSpecial",
@@ -5504,7 +5516,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 587
+                "startLine": 603
             },
             {
                 "name": "intRange",
@@ -5534,7 +5546,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 609
+                "startLine": 625
             },
             {
                 "name": "recursive",
@@ -5571,7 +5583,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 646
+                "startLine": 664
             },
             {
                 "name": "nullable",
@@ -5579,7 +5591,7 @@
                 "params": [
                     {
                         "name": "inner",
-                        "type": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\TValue>",
                         "description": "",
                         "default": null,
                         "variadic": false
@@ -5594,7 +5606,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 676
+                "startLine": 698
             },
             {
                 "name": "map",
@@ -5624,7 +5636,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 694
+                "startLine": 716
             },
             {
                 "name": "flatMap",
@@ -5654,7 +5666,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 714
+                "startLine": 736
             },
             {
                 "name": "filter",
@@ -5684,7 +5696,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 729
+                "startLine": 751
             },
             {
                 "name": "draw",
@@ -5707,7 +5719,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 766
+                "startLine": 788
             },
             {
                 "name": "composite",
@@ -5730,7 +5742,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 804
+                "startLine": 826
             },
             {
                 "name": "note",
@@ -5760,7 +5772,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 830
+                "startLine": 852
             },
             {
                 "name": "tuple",
@@ -5783,7 +5795,102 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 842
+                "startLine": 864
+            },
+            {
+                "name": "pair",
+                "static": true,
+                "params": [
+                    {
+                        "name": "first",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\TFirst>",
+                        "description": "Generates the first element.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "second",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\TSecond>",
+                        "description": "Generates the second element.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "summary": "Two values, one from each generator, as `[$first, $second]`: tuple()\nwith the element types kept, so a property or a map() reads them\ntyped. Generates and shrinks exactly like the two-element tuple.",
+                "description": "```php\nGen::map(Gen::pair(Gen::intPositive(), Gen::stringAscii()), static fn (array $p): Item => new Item(...$p));\n```",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 886
+            },
+            {
+                "name": "triple",
+                "static": true,
+                "params": [
+                    {
+                        "name": "first",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\TFirst>",
+                        "description": "Generates the first element.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "second",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\TSecond>",
+                        "description": "Generates the second element.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "third",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface<\\Rasuvaeff\\PropertyTesting\\TThird>",
+                        "description": "Generates the third element.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "summary": "Three values, one from each generator, as `[$first, $second, $third]`:\ntuple() with the element types kept. Generates and shrinks exactly\nlike the three-element tuple.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 909
+            },
+            {
+                "name": "anyOf",
+                "static": true,
+                "params": [
+                    {
+                        "name": "generators",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                        "description": "The generators to choose between, at least one.",
+                        "default": null,
+                        "variadic": true
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "summary": "An equal-weight choice between generators: frequency() with every\nweight 1, and the same sequence for a given seed. The choice between\ngenerators that oneOf() refuses — `oneOf` picks between values.",
+                "description": "```php\nGen::anyOf(Gen::int(), Gen::constant(null));\n```\n\nTyped as `mixed`: the generators may produce different types, and a\ntemplate over a variadic would make psalm refuse exactly that mix. Use\n\\Rasuvaeff\\PropertyTesting\\frequency() where the common type matters to static analysis.",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When no generator is given."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 936
             },
             {
                 "name": "frequency",
@@ -5806,7 +5913,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 858
+                "startLine": 959
             },
             {
                 "name": "uuid",
@@ -5821,7 +5928,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 871
+                "startLine": 972
             },
             {
                 "name": "randomEngine",
@@ -5836,7 +5943,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 904
+                "startLine": 1005
             },
             {
                 "name": "randomizer",
@@ -5851,7 +5958,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 915
+                "startLine": 1016
             },
             {
                 "name": "datetime",
@@ -5881,7 +5988,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 927
+                "startLine": 1028
             },
             {
                 "name": "ipv4",
@@ -5896,7 +6003,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 938
+                "startLine": 1039
             },
             {
                 "name": "ipv6",
@@ -5911,7 +6018,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 967
+                "startLine": 1068
             },
             {
                 "name": "email",
@@ -5926,7 +6033,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 991
+                "startLine": 1092
             },
             {
                 "name": "url",
@@ -5941,7 +6048,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1015
+                "startLine": 1116
             },
             {
                 "name": "mixed",
@@ -5969,7 +6076,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1064
+                "startLine": 1165
             },
             {
                 "name": "json",
@@ -5992,7 +6099,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1115
+                "startLine": 1218
             },
             {
                 "name": "jsonString",
@@ -6015,7 +6122,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1141
+                "startLine": 1244
             },
             {
                 "name": "regex",
@@ -6045,7 +6152,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1177
+                "startLine": 1280
             },
             {
                 "name": "stringMatching",
@@ -6075,7 +6182,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1190
+                "startLine": 1293
             },
             {
                 "name": "commands",
@@ -6119,7 +6226,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1212
+                "startLine": 1315
             },
             {
                 "name": "rules",
@@ -6156,7 +6263,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1280
+                "startLine": 1383
             },
             {
                 "name": "sample",
@@ -6193,7 +6300,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1304
+                "startLine": 1407
             },
             {
                 "name": "sampleShrinks",
@@ -6230,7 +6337,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 1333
+                "startLine": 1436
             }
         ],
         "constants": [],
@@ -6589,6 +6696,208 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\Bounds",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The range checks every bounded generator's constructor makes, worded once:\nthe message names the generator and the values it refused, because inside\na \\Rasuvaeff\\PropertyTesting\\Gen::flatMap() the caller cannot tell\nwhich of the nested generators said no.",
+        "description": "",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "size",
+                "static": true,
+                "params": [
+                    {
+                        "name": "generator",
+                        "type": "string",
+                        "description": "The factory the caller knows the generator by, e.g. `Gen::arrayOf()`.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "minName",
+                        "type": "string",
+                        "description": "The minimum's parameter name, e.g. `minSize`.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxName",
+                        "type": "string",
+                        "description": "The maximum's parameter name, e.g. `maxSize`.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "min",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "max",
+                        "type": "int",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "void",
+                "summary": "A size or length range: `0 <= $min <= $max`. A maximum of zero is a\nvalid range — the generator then produces only the empty value, which\nis what a dependent `flatMap(intBetween(0, 3), fn ($n) => arrayOf($g, 0, $n))`\nasks for when it draws `0`.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When the minimum is negative or above the maximum."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 36
+            },
+            {
+                "name": "ordered",
+                "static": true,
+                "params": [
+                    {
+                        "name": "generator",
+                        "type": "string",
+                        "description": "The factory the caller knows the generator by, e.g. `Gen::intBetween()`.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "minName",
+                        "type": "string",
+                        "description": "The lower end's parameter name.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxName",
+                        "type": "string",
+                        "description": "The upper end's parameter name.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "min",
+                        "type": "int|float",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "max",
+                        "type": "int|float",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "void",
+                "summary": "An inclusive range whose ends may be equal: `$min <= $max`.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When the lower end is above the upper one."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 59
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/Bounds.php#L17",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\ComponentShrinks",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "Element-wise shrinking of a fixed set of components — the positions of a\ntuple, the fields of a record, the elements of a list once its length is\nsettled: one component at a time, in key order, through that component's own\nshrink tree, every other component kept as it is.",
+        "description": "The candidate order is part of the observable contract — a\n\\Rasuvaeff\\PropertyTesting\\CounterExample::$path indexes into it and\nthe minimised value depends on it — so every arbitrary that shrinks this way\ngoes through here instead of spelling the loop out again.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                ""
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "of",
+                "static": true,
+                "params": [
+                    {
+                        "name": "components",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Internal\\TComponents",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "rebuild",
+                        "type": "callable",
+                        "description": "Builds the candidate from the\ncomponents with one of them replaced; the keys and their order never change.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Generator",
+                "summary": "",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 39
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/ComponentShrinks.php#L22",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\Internal\\CorpusDocument",
         "kind": "class",
         "isApi": false,
@@ -6932,6 +7241,194 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/CorpusDocument.php#L37",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\Descent",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "Where one shrink descent stands: the current trees and draw tape, the notes\nand failure of the last accepted candidate, what was counted on the way,\nand the steps taken — which the runner reports whether the descent ran to\nits end or was cut short by a cap or a budget.",
+        "description": "",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                "Driven by the property runner."
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "trees",
+                "type": "array<string,\\Rasuvaeff\\PropertyTesting\\Shrinkable>",
+                "description": "The arguments' shrink trees.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": false
+            },
+            {
+                "name": "tape",
+                "type": "list<\\Rasuvaeff\\PropertyTesting\\Shrinkable>",
+                "description": "The recorded in-body draws.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": false
+            },
+            {
+                "name": "notes",
+                "type": "array<string,mixed>",
+                "description": "The notes of the run the trees and tape belong to.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": false
+            }
+        ],
+        "publicProperties": [
+            {
+                "name": "steps",
+                "type": "int",
+                "readonly": false,
+                "summary": ""
+            },
+            {
+                "name": "trials",
+                "type": "int",
+                "readonly": false,
+                "summary": ""
+            },
+            {
+                "name": "failure",
+                "type": "?Throwable",
+                "readonly": false,
+                "summary": ""
+            }
+        ],
+        "publicMethods": [
+            {
+                "name": "accept",
+                "static": false,
+                "params": [
+                    {
+                        "name": "step",
+                        "type": "array{name: string, index: int<0, max>}",
+                        "description": "What a path records for it.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "trees",
+                        "type": "array<string,\\Rasuvaeff\\PropertyTesting\\Shrinkable>",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "tape",
+                        "type": "list<\\Rasuvaeff\\PropertyTesting\\Shrinkable>",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "notes",
+                        "type": "array<string,mixed>",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "failure",
+                        "type": "?Throwable",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "void",
+                "summary": "Moves the descent to an accepted candidate.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 57
+            },
+            {
+                "name": "path",
+                "static": false,
+                "params": [],
+                "returnType": "string",
+                "summary": "The accepted steps as a replayable path.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 70
+            },
+            {
+                "name": "recordError",
+                "static": false,
+                "params": [
+                    {
+                        "name": "error",
+                        "type": "Throwable",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "void",
+                "summary": "Remembers why enumerating a node's candidates ended early, once per\ndistinct `Class: message`, up to MAX_ERRORS.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 79
+            },
+            {
+                "name": "errors",
+                "static": false,
+                "params": [],
+                "returnType": "array",
+                "summary": "",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 91
+            }
+        ],
+        "constants": [
+            {
+                "name": "MAX_ERRORS",
+                "type": "int",
+                "summary": "How many distinct enumeration errors a counterexample carries. A\nshrinkable that throws usually throws the same way on every node it is\nasked about; past a handful the list stops telling anything new.",
+                "value": 10
+            }
+        ],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/Descent.php#L17",
         "implementedBy": []
     },
     {
@@ -7766,6 +8263,34 @@
         "publicProperties": [],
         "publicMethods": [
             {
+                "name": "forSpecialClass",
+                "static": true,
+                "params": [
+                    {
+                        "name": "type",
+                        "type": "string",
+                        "description": "",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?Rasuvaeff\\PropertyTesting\\ArbitraryInterface",
+                "summary": "The generator of a class that is not built through its constructor — an\nenum, `DateTimeImmutable`, the native random API — or null for any other\nclass. Shared by a class-typed parameter and Gen::forClass() at\nthe top level, so the two answer the same for the same type.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "For a `DateTimeInterface` other than `DateTimeImmutable`,\nwhose constructor would be fed random strings that never parse as a date."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 42
+            },
+            {
                 "name": "forConstructor",
                 "static": true,
                 "params": [
@@ -7807,7 +8332,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 42
+                "startLine": 88
             },
             {
                 "name": "forSignature",
@@ -7865,12 +8390,141 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 82
+                "startLine": 128
             }
         ],
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/ParameterGenerators.php#L26",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Internal\\PhaseContext",
+        "kind": "class",
+        "isApi": false,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "What every attempt of one phase shares: the property and its executor, the\nphase's random stream and seed, its counters and target pool, the listeners,\nthe path to follow instead of searching, and the run count and budgets the\nexits are judged against. One phase, one context — a corpus seed replay is a\nphase of its own.",
+        "description": "",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": {
+            "internal": [
+                "Driven by the property runner."
+            ]
+        },
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "property",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\PropertyDefinition",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "executor",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\TrialExecutor",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "random",
+                "type": "Rasuvaeff\\PropertyTesting\\Random",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "seed",
+                "type": "int",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "counters",
+                "type": "Rasuvaeff\\PropertyTesting\\Internal\\PhaseCounters",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "pool",
+                "type": "Rasuvaeff\\PropertyTesting\\Internal\\SearchPool",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "listeners",
+                "type": "list<\\Rasuvaeff\\PropertyTesting\\PropertyListener>",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "path",
+                "type": "?string",
+                "description": "The descent to follow instead of searching for one; null searches.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "runs",
+                "type": "int",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "maxDiscards",
+                "type": "int",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "maxSkips",
+                "type": "int",
+                "description": "",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Internal/PhaseContext.php#L21",
         "implementedBy": []
     },
     {
@@ -7901,7 +8555,7 @@
                 "description": "The enumerated domain's size, when the phase walks instead of samples.",
                 "default": null,
                 "promoted": true,
-                "promotedVisibility": "private",
+                "promotedVisibility": "public",
                 "readonly": true
             },
             {
@@ -7909,6 +8563,15 @@
                 "type": "?string",
                 "description": "Why an exhaustive run samples after all; null otherwise.",
                 "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "discardedExamples",
+                "type": "int",
+                "description": "Explicit examples `Assume::that()` discarded before the phase.",
+                "default": "0",
                 "promoted": true,
                 "promotedVisibility": "private",
                 "readonly": true
@@ -7987,7 +8650,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 51
+                "startLine": 53
             },
             {
                 "name": "statistics",
@@ -8017,7 +8680,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 84
+                "startLine": 86
             }
         ],
         "constants": [],
@@ -8980,8 +9643,8 @@
     },
     {
         "root": "phpunit",
-        "rootVersion": "v1.0.0",
-        "rootReference": "e286bf83a70481952a0759da9241b8af15a170ec",
+        "rootVersion": "v1.1.0",
+        "rootReference": "6231af056e9e5e7c6f2e43fb5ed5906a9b103d18",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PhpUnitTrialExecutor",
         "kind": "class",
         "isApi": false,
@@ -9066,13 +9729,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/e286bf83a70481952a0759da9241b8af15a170ec/src/PhpUnit/PhpUnitTrialExecutor.php#L31",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/6231af056e9e5e7c6f2e43fb5ed5906a9b103d18/src/PhpUnit/PhpUnitTrialExecutor.php#L31",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v1.0.0",
-        "rootReference": "e286bf83a70481952a0759da9241b8af15a170ec",
+        "rootVersion": "v1.1.0",
+        "rootReference": "6231af056e9e5e7c6f2e43fb5ed5906a9b103d18",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyCheck",
         "kind": "class",
         "isApi": true,
@@ -9712,13 +10375,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/e286bf83a70481952a0759da9241b8af15a170ec/src/PhpUnit/PropertyCheck.php#L50",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/6231af056e9e5e7c6f2e43fb5ed5906a9b103d18/src/PhpUnit/PropertyCheck.php#L50",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v1.0.0",
-        "rootReference": "e286bf83a70481952a0759da9241b8af15a170ec",
+        "rootVersion": "v1.1.0",
+        "rootReference": "6231af056e9e5e7c6f2e43fb5ed5906a9b103d18",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\PropertyTesting",
         "kind": "trait",
         "isApi": true,
@@ -9737,13 +10400,13 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/e286bf83a70481952a0759da9241b8af15a170ec/src/PhpUnit/PropertyTesting.php#L25",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/6231af056e9e5e7c6f2e43fb5ed5906a9b103d18/src/PhpUnit/PropertyTesting.php#L25",
         "implementedBy": []
     },
     {
         "root": "phpunit",
-        "rootVersion": "v1.0.0",
-        "rootReference": "e286bf83a70481952a0759da9241b8af15a170ec",
+        "rootVersion": "v1.1.0",
+        "rootReference": "6231af056e9e5e7c6f2e43fb5ed5906a9b103d18",
         "class": "Rasuvaeff\\PropertyTesting\\PhpUnit\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -9804,13 +10467,13 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/e286bf83a70481952a0759da9241b8af15a170ec/src/PhpUnit/VerboseListener.php#L28",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-phpunit/blob/6231af056e9e5e7c6f2e43fb5ed5906a9b103d18/src/PhpUnit/VerboseListener.php#L28",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v1.0.0",
-        "rootReference": "0e741eb459d4204c7504fa2ac27db81e129deafa",
+        "rootVersion": "v1.2.1",
+        "rootReference": "8cb3fc903a037355e9c2ec144ffbf9ab483a1186",
         "class": "Rasuvaeff\\PropertyTesting\\Property",
         "kind": "class",
         "isApi": true,
@@ -9968,7 +10631,7 @@
             {
                 "name": "throws",
                 "type": "?class-string<\\Throwable>",
-                "description": "The exception class every run must throw. A run that\nthrows it (or a subclass) passes; one that returns normally fails with\n`Expected <class> to be thrown, but it was not` and shrinks like any other\ncounterexample; one that throws another class fails with that throw. A skip and an\n`Assume::that()` discard keep their meaning — never a pass earned by throwing. This is\nthe per-run replacement for `#[ExpectException]`, which observes the aggregate result\nand is refused on a property. The matching throw is recorded as an assertion, so a\nbody that asserts nothing else is not reported as risky.",
+                "description": "The exception class every run must throw. A run that\nthrows it (or a subclass) passes; one that returns normally fails with\n`Expected <class> to be thrown, but it was not` and shrinks like any other\ncounterexample; one that throws another class fails with that throw. A skip and an\n`Assume::that()` discard keep their meaning — never a pass earned by throwing. This is\nthe adapter alternative to `#[ExpectException]`, which is also checked per run. The\nmatching throw is recorded as an assertion, so a\nbody that asserts nothing else is not reported as risky.",
                 "default": "NULL",
                 "promoted": true,
                 "promotedVisibility": "public",
@@ -10009,6 +10672,15 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "failOn",
+                "type": "int",
+                "description": "PHP diagnostic levels that should falsify a run. A matching warning,\nnotice or deprecation is converted to an \\ErrorException, so it carries the\ngenerated input and shrinks like any other failure. 0 (the default) preserves PHP's\nnormal diagnostic handling. This opt-in overrides Testo's suite-level diagnostic\nmask, while `@`-suppressed diagnostics remain suppressed.",
+                "default": "0",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [
@@ -10028,7 +10700,7 @@
         "publicMethods": [],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Property.php#L35",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/8cb3fc903a037355e9c2ec144ffbf9ab483a1186/src/Property.php#L35",
         "implementedBy": []
     },
     {
@@ -10128,6 +10800,7 @@
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/PropertyListener.php#L26",
         "implementedBy": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\TraceListener",
             "Rasuvaeff\\PropertyTesting\\Testo\\VerboseListener",
             "Rasuvaeff\\PropertyTesting\\PhpUnit\\VerboseListener"
         ]
@@ -11012,6 +11685,162 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\DiagnosticLevel",
+        "kind": "enum",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "How a DiagnosticLine reads: information a developer may want while\ndebugging, or a warning that the run checked less than it looks like.",
+        "description": "Adapters map it onto their own channels — the PHPUnit adapter prints info on\nstdout and warnings on stderr, the Testo adapter logs both on its stderr\nchannel at the matching log level.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "UnitEnum"
+        ],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [],
+        "constants": [
+            {
+                "name": "Info",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\DiagnosticLevel",
+                "summary": "",
+                "value": null
+            },
+            {
+                "name": "Warning",
+                "type": "Rasuvaeff\\PropertyTesting\\Runner\\DiagnosticLevel",
+                "summary": "",
+                "value": null
+            }
+        ],
+        "enumCases": [
+            {
+                "name": "Info",
+                "backingValue": null
+            },
+            {
+                "name": "Warning",
+                "backingValue": null
+            }
+        ],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/DiagnosticLevel.php#L16",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\DiagnosticLine",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "One line of a property's diagnostics, as DiagnosticLines::of()\nwords it.",
+        "description": "",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "level",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\DiagnosticLevel",
+                "description": "Whether the line informs or warns.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "text",
+                "type": "non-empty-string",
+                "description": "The line, without a trailing newline.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/DiagnosticLine.php#L13",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\DiagnosticLines",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The lines an adapter prints after a property run, worded once for every\nadapter: the excessive-discard warning, the discarded-examples warning, the\n\\Rasuvaeff\\PropertyTesting\\Classify distribution, one line per\n`Classify::tabulate()` table, what exhaustive mode did, and the targeted\nsearch report — in that order, so two adapters writing into one log print\nthe same lines in the same order. The engine still never prints: the\nadapter decides where each DiagnosticLevel goes.",
+        "description": "```php\n$statistics = RunStatistics::of($result);\n\nif ($statistics !== null) {\n    foreach (DiagnosticLines::of($name, $statistics) as $line) {\n        fwrite($line->level === DiagnosticLevel::Warning ? STDERR : STDOUT, $line->text . \"\\n\");\n    }\n}\n```",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "of",
+                "static": true,
+                "params": [
+                    {
+                        "name": "name",
+                        "type": "string",
+                        "description": "The property's display name, as the messages quote it.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "statistics",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\RunStatistics",
+                        "description": "What the run counted (\\Rasuvaeff\\PropertyTesting\\Runner\\RunStatistics::of()).",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "array",
+                "summary": "The lines for one run, in print order; empty when there is nothing to say.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 50
+            }
+        ],
+        "constants": [
+            {
+                "name": "SKIP_RATE_WARNING_THRESHOLD",
+                "type": "float",
+                "summary": "More than this share of discarded attempts is worth a warning.",
+                "value": 0.9
+            }
+        ],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/DiagnosticLines.php#L30",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\Runner\\DistributionReport",
         "kind": "class",
         "isApi": true,
@@ -11270,6 +12099,291 @@
             }
         ],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/EdgeCases.php#L23",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\Environment",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The `PROPERTY_*` variables of one process, parsed, and the precedence that\nturns them and a property's own settings into a PropertyConfig:\n**the environment dials the suite, the code pins the property.** The run\ncount, the phase list, derandomization, the boundary mode, exhaustive mode\nand the search budget are suite knobs, so a variable that is set wins over\nwhat the code declares; a seed and a shrink path replay one specific failure,\nso what the code wrote down wins over the variable.",
+        "description": "The engine still never reads the environment: an adapter hands the raw\nvalues over, and only it calls `getenv()`.\n\n```php\n$variables = [];\n\nforeach (Environment::VARIABLES as $name) {\n    $variables[$name] = getenv($name);\n}\n\n$environment = Environment::fromVariables($variables);\n$config = $environment->config(runs: 200, seed: $pinnedSeed);\n```\n\nEach value means what the \\Rasuvaeff\\PropertyTesting\\Runner\\EnvironmentOverrides parser for it says,\nand an invalid one is refused while parsing, in the order of\n\\Rasuvaeff\\PropertyTesting\\Runner\\VARIABLES.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "seed",
+                "type": "?int",
+                "description": "`PROPERTY_SEED`, or null when unset.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "path",
+                "type": "?non-empty-string",
+                "description": "`PROPERTY_PATH`, or null when unset.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "runs",
+                "type": "?positive-int",
+                "description": "`PROPERTY_RUNS`, or null when unset.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "phases",
+                "type": "?list<\\Rasuvaeff\\PropertyTesting\\Runner\\Phase>",
+                "description": "`PROPERTY_PHASES`, or null when unset.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "derandomize",
+                "type": "?bool",
+                "description": "`PROPERTY_DERANDOMIZE`, or null when unset.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "edgeCases",
+                "type": "?\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                "description": "`PROPERTY_EDGE_CASES`, or null when unset.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "exhaustive",
+                "type": "?bool",
+                "description": "`PROPERTY_EXHAUSTIVE`, or null when unset.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "searchRuns",
+                "type": "?int<0, max>",
+                "description": "`PROPERTY_SEARCH_RUNS`, or null when unset.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "verbose",
+                "type": "bool",
+                "description": "`PROPERTY_VERBOSE`: whether the adapter adds its trace listener.",
+                "default": "false",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            },
+            {
+                "name": "db",
+                "type": "?non-empty-string",
+                "description": "`PROPERTY_DB`, the value for \\Rasuvaeff\\PropertyTesting\\Runner\\CorpusFactory::fromDsn(), or null when unset.",
+                "default": "NULL",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "fromVariables",
+                "static": true,
+                "params": [
+                    {
+                        "name": "variables",
+                        "type": "array<string,string|false>",
+                        "description": "Raw values by variable name, as `getenv()` reports them.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Runner\\Environment",
+                "summary": "Parses raw values as `getenv()` reports them, keyed by variable name. A\nmissing key, `false` and `''` all mean unset.",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When a value is invalid, naming the variable."
+                    }
+                ],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 89
+            },
+            {
+                "name": "config",
+                "static": false,
+                "params": [
+                    {
+                        "name": "runs",
+                        "type": "int",
+                        "description": "Number of successful checks; `PROPERTY_RUNS` wins.",
+                        "default": "100",
+                        "variadic": false
+                    },
+                    {
+                        "name": "seed",
+                        "type": "?int",
+                        "description": "The pinned seed; wins over `PROPERTY_SEED`.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxShrinks",
+                        "type": "?int",
+                        "description": "Cap on accepted shrink steps; no variable.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "maxDiscards",
+                        "type": "?int",
+                        "description": "Maximum discarded runs; no variable.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "timeoutMs",
+                        "type": "?int",
+                        "description": "Per-run deadline; no variable.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "budgetMs",
+                        "type": "?int",
+                        "description": "Random-phase budget; no variable.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "shrink",
+                        "type": "?\\Rasuvaeff\\PropertyTesting\\Runner\\ShrinkMode",
+                        "description": "Shrink mode; no variable.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "shrinkBudgetMs",
+                        "type": "?int",
+                        "description": "Shrink budget; no variable.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "phases",
+                        "type": "?list<\\Rasuvaeff\\PropertyTesting\\Runner\\Phase>",
+                        "description": "Stages to perform; `PROPERTY_PHASES` wins.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "derandomize",
+                        "type": "bool",
+                        "description": "Derive an unset seed from the id; `PROPERTY_DERANDOMIZE` wins.",
+                        "default": "false",
+                        "variadic": false
+                    },
+                    {
+                        "name": "path",
+                        "type": "?string",
+                        "description": "The shrink path to replay; wins over `PROPERTY_PATH`.",
+                        "default": "NULL",
+                        "variadic": false
+                    },
+                    {
+                        "name": "edgeCases",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases",
+                        "description": "Boundary mode; `PROPERTY_EDGE_CASES` wins.",
+                        "default": "Rasuvaeff\\PropertyTesting\\Runner\\EdgeCases::Mixin",
+                        "variadic": false
+                    },
+                    {
+                        "name": "exhaustive",
+                        "type": "bool",
+                        "description": "Exhaustive mode; `PROPERTY_EXHAUSTIVE` wins.",
+                        "default": "false",
+                        "variadic": false
+                    },
+                    {
+                        "name": "exhaustiveBudget",
+                        "type": "int",
+                        "description": "Largest enumerated domain; no variable.",
+                        "default": "10000",
+                        "variadic": false
+                    },
+                    {
+                        "name": "flakyReplays",
+                        "type": "int",
+                        "description": "Replays of the minimised input; no variable.",
+                        "default": "2",
+                        "variadic": false
+                    },
+                    {
+                        "name": "searchRuns",
+                        "type": "int",
+                        "description": "Targeted-search budget; `PROPERTY_SEARCH_RUNS` wins.",
+                        "default": "0",
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Runner\\PropertyConfig",
+                "summary": "The configuration for a property that declares these settings, with the\nenvironment applied: a set suite knob replaces the declared value, a set\n`$seed`/`$path` keeps the declared one. The parameters mirror\nPropertyConfig::__construct(), defaults included, and so do the\nrefusals of the configuration it builds.",
+                "description": "An adapter that draws a random seed for an unseeded property passes it\nas `$seed` — after it has checked, with its own message, that a path\ncomes with a seed: only it knows the seed is about to be invented.",
+                "throws": [
+                    {
+                        "type": "\\InvalidArgumentException",
+                        "description": "When the resulting configuration is invalid."
+                    }
+                ],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 135
+            }
+        ],
+        "constants": [
+            {
+                "name": "VARIABLES",
+                "type": "list<non-empty-string>",
+                "summary": "Every variable this reads, in the order fromVariables() parses them.",
+                "value": null
+            }
+        ],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/Environment.php#L36",
         "implementedBy": []
     },
     {
@@ -11544,6 +12658,113 @@
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/ExampleFailed.php#L15",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\FailOnTrialExecutor",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "Decorates a TrialExecutor so that PHP diagnostics of the given levels\n(`E_WARNING`, `E_DEPRECATED`, …) raised while the body runs become an\n`\\ErrorException` thrown at the place they were raised — a failing run the\nengine shrinks like any other, instead of a line in a log that a green\nsuite never looks at.",
+        "description": "```php\n$executor = new FailOnTrialExecutor($executor, E_WARNING | E_DEPRECATED);\n```\n\nThe handler is installed around each execution and restored after it, and\na diagnostic it does not claim goes on to whatever handler was installed\nbefore — a framework's own deprecation collector keeps working. An explicit\nlevel is allowed to see what the suite's `error_reporting()` masks (notably\n`E_DEPRECATED` and `E_NOTICE`), but a diagnostic silenced with `@` stays\nsilent: the operator changes `error_reporting()` for the handler, and that\nchange is what is detected.\n\nThe throw happens inside the decorated executor's call, so the executor\nfolds it into its outcome exactly as it folds any other exception from the\nbody.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\Runner\\TrialExecutor"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "inner",
+                "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\TrialExecutor",
+                "description": "The executor that runs the body.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            },
+            {
+                "name": "levels",
+                "type": "int",
+                "description": "A bitmask of `E_*` levels that fail the run; 0 changes nothing.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "execute",
+                "static": false,
+                "params": [
+                    {
+                        "name": "arguments",
+                        "type": "array<string,mixed>",
+                        "description": "Passed through unchanged.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "Rasuvaeff\\PropertyTesting\\Runner\\TrialOutcome",
+                "summary": "Runs the decorated executor with the handler installed.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 55
+            },
+            {
+                "name": "guard",
+                "static": true,
+                "params": [
+                    {
+                        "name": "levels",
+                        "type": "int",
+                        "description": "A bitmask of `E_*` levels that throw; 0 runs the call unguarded.",
+                        "default": null,
+                        "variadic": false
+                    },
+                    {
+                        "name": "call",
+                        "type": "callable",
+                        "description": "The one call to guard.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "mixed",
+                "summary": "Runs one call under the same handler, for an executor that cannot be\ndecorated because the call it guards sits inside its own error handling\n(the Testo adapter folds a throw from its pipeline into the run's result\nand has to see the `\\ErrorException` there).",
+                "description": "",
+                "throws": [
+                    {
+                        "type": "\\ErrorException",
+                        "description": "From inside the call, for a diagnostic of a claimed level."
+                    }
+                ],
+                "throwsInBody": true,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 75
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/FailOnTrialExecutor.php#L32",
         "implementedBy": []
     },
     {
@@ -12718,12 +13939,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 86
+                "startLine": 88
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L64",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/PropertyRunner.php#L66",
         "implementedBy": []
     },
     {
@@ -13796,10 +15017,43 @@
                 "promoted": true,
                 "promotedVisibility": "public",
                 "readonly": true
+            },
+            {
+                "name": "discardedExamples",
+                "type": "int",
+                "description": "Explicit examples (`<method>Examples()`) the body discarded with\n`Assume::that()`. Such an example counts as passed — the run's verdict does not change —\nbut it checked nothing: after a precondition moves, a pinned case can silently stop\npinning anything, and this is the number the adapters warn about.",
+                "default": "0",
+                "promoted": true,
+                "promotedVisibility": "public",
+                "readonly": true
             }
         ],
         "publicProperties": [],
-        "publicMethods": [],
+        "publicMethods": [
+            {
+                "name": "of",
+                "static": true,
+                "params": [
+                    {
+                        "name": "result",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Runner\\PropertyResult",
+                        "description": "Any outcome of a run.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "?Rasuvaeff\\PropertyTesting\\Runner\\RunStatistics",
+                "summary": "The statistics a result carries, for the outcomes that carry them —\nPassed, GaveUp, CoverageFailed and\nTimeBudgetExceeded — and null for every other one. The adapters'\ndiagnostics are built from these; a result type that gains statistics is\nadded here, not to the PropertyResult interface, which outside\nimplementations would have to follow.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 75
+            }
+        ],
         "constants": [],
         "enumCases": [],
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/RunStatistics.php#L15",
@@ -14244,6 +15498,69 @@
         "root": "core",
         "rootVersion": "working tree",
         "rootReference": null,
+        "class": "Rasuvaeff\\PropertyTesting\\Runner\\TraceListener",
+        "kind": "class",
+        "isApi": true,
+        "isAbstract": false,
+        "isThrowable": false,
+        "summary": "The `PROPERTY_VERBOSE` trace as a listener, worded once for every adapter:\none line per attempt's arguments, one per attempt's in-body draws, one per\ntarget improvement, one per accepted shrink step. Each line goes to the\nsink the adapter hands over — a stream, a logger — without a trailing\nnewline.",
+        "description": "```php\n$listeners[] = new TraceListener(static function (string $line): void {\n    fwrite(STDOUT, $line . \"\\n\");\n});\n```\n\nException-hardened by policy: a listener exception normally aborts the run\nas an infrastructure failure, but a bug in a built-in trace — or in the sink\nit writes to — must not fail every verbose consumer, so it swallows its own\nerrors instead.",
+        "deprecated": null,
+        "see": [],
+        "extensionTags": [],
+        "extends": null,
+        "implements": [
+            "Rasuvaeff\\PropertyTesting\\PropertyListener"
+        ],
+        "attributes": [],
+        "constructorParams": [
+            {
+                "name": "sink",
+                "type": "callable",
+                "description": "Receives each line.",
+                "default": null,
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
+            }
+        ],
+        "publicProperties": [],
+        "publicMethods": [
+            {
+                "name": "onEvent",
+                "static": false,
+                "params": [
+                    {
+                        "name": "event",
+                        "type": "\\Rasuvaeff\\PropertyTesting\\Event\\PropertyEvent",
+                        "description": "Any engine event.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "void",
+                "summary": "Writes the line for an event the trace covers; ignores the others.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [
+                    "Override"
+                ],
+                "startLine": 52
+            }
+        ],
+        "constants": [],
+        "enumCases": [],
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/TraceListener.php#L37",
+        "implementedBy": []
+    },
+    {
+        "root": "core",
+        "rootVersion": "working tree",
+        "rootReference": null,
         "class": "Rasuvaeff\\PropertyTesting\\Runner\\TrialExecutor",
         "kind": "interface",
         "isApi": true,
@@ -14289,6 +15606,7 @@
         "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Runner/TrialExecutor.php#L23",
         "implementedBy": [
             "Rasuvaeff\\PropertyTesting\\Runner\\CallableTrialExecutor",
+            "Rasuvaeff\\PropertyTesting\\Runner\\FailOnTrialExecutor",
             "Rasuvaeff\\PropertyTesting\\Testo\\TestoTrialExecutor",
             "Rasuvaeff\\PropertyTesting\\PhpUnit\\PhpUnitTrialExecutor"
         ]
@@ -15576,15 +16894,15 @@
     },
     {
         "root": "testo",
-        "rootVersion": "v1.0.0",
-        "rootReference": "0e741eb459d4204c7504fa2ac27db81e129deafa",
+        "rootVersion": "v1.2.1",
+        "rootReference": "8cb3fc903a037355e9c2ec144ffbf9ab483a1186",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\PropertyInterceptor",
         "kind": "class",
         "isApi": true,
         "isAbstract": false,
         "isThrowable": false,
         "summary": "The Testo adapter for a Property: resolves the test framework's\nconventions — the attribute, the reflection-discovered generators/examples\nmethods, the environment overrides — into a PropertyDefinition, runs\nit on the framework-agnostic PropertyRunner, and maps the structured\nPropertyResult back to a single Testo TestResult.",
-        "description": "The interceptor self-registers via the \\Rasuvaeff\\PropertyTesting\\Property attribute's\n\\Testo\\Pipeline\\Attribute\\FallbackInterceptor, so simply requiring the\npackage is enough — no plugin registration in testo.php is needed.\n\nIt sits close to the test function in the pipeline (after data providers,\nrepeat and retry policies) so it owns argument generation for property tests.",
+        "description": "The interceptor self-registers via the \\Rasuvaeff\\PropertyTesting\\Property attribute's\n\\Testo\\Pipeline\\Attribute\\FallbackInterceptor, so simply requiring the\npackage is enough — no plugin registration in testo.php is needed.\n\nIt wraps Testo's assertion interceptors so they run once per generated input,\nwhile remaining inside data-provider, repeat and retry policies so it owns\nargument generation for property tests.",
         "deprecated": null,
         "see": [],
         "extensionTags": [],
@@ -15657,18 +16975,18 @@
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 91
+                "startLine": 96
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Testo/PropertyInterceptor.php#L61",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/8cb3fc903a037355e9c2ec144ffbf9ab483a1186/src/Testo/PropertyInterceptor.php#L66",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v1.0.0",
-        "rootReference": "0e741eb459d4204c7504fa2ac27db81e129deafa",
+        "rootVersion": "v1.2.1",
+        "rootReference": "8cb3fc903a037355e9c2ec144ffbf9ab483a1186",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\TestoTrialExecutor",
         "kind": "class",
         "isApi": false,
@@ -15715,6 +17033,15 @@
                 "promoted": true,
                 "promotedVisibility": "private",
                 "readonly": true
+            },
+            {
+                "name": "failOn",
+                "type": "int",
+                "description": "PHP diagnostic levels that turn a run into an ErrorException.",
+                "default": "0",
+                "promoted": true,
+                "promotedVisibility": "private",
+                "readonly": true
             }
         ],
         "publicProperties": [],
@@ -15735,14 +17062,14 @@
                 "summary": "",
                 "description": "",
                 "throws": [],
-                "throwsInBody": false,
+                "throwsInBody": true,
                 "inheritedFrom": "Rasuvaeff\\PropertyTesting\\Runner\\TrialExecutor",
                 "see": [],
                 "deprecated": null,
                 "attributes": [
                     "Override"
                 ],
-                "startLine": 70
+                "startLine": 72
             },
             {
                 "name": "everyRunSkipped",
@@ -15757,7 +17084,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 182
+                "startLine": 229
             },
             {
                 "name": "firstSkip",
@@ -15772,7 +17099,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 190
+                "startLine": 237
             },
             {
                 "name": "attributes",
@@ -15787,18 +17114,18 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 218
+                "startLine": 265
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Testo/TestoTrialExecutor.php#L46",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/8cb3fc903a037355e9c2ec144ffbf9ab483a1186/src/Testo/TestoTrialExecutor.php#L46",
         "implementedBy": []
     },
     {
         "root": "testo",
-        "rootVersion": "v1.0.0",
-        "rootReference": "0e741eb459d4204c7504fa2ac27db81e129deafa",
+        "rootVersion": "v1.2.1",
+        "rootReference": "8cb3fc903a037355e9c2ec144ffbf9ab483a1186",
         "class": "Rasuvaeff\\PropertyTesting\\Testo\\VerboseListener",
         "kind": "class",
         "isApi": false,
@@ -15859,7 +17186,7 @@
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/0e741eb459d4204c7504fa2ac27db81e129deafa/src/Testo/VerboseListener.php#L31",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-testo/blob/8cb3fc903a037355e9c2ec144ffbf9ab483a1186/src/Testo/VerboseListener.php#L31",
         "implementedBy": []
     },
     {
@@ -15981,6 +17308,29 @@
                 "startLine": 23
             },
             {
+                "name": "renderArguments",
+                "static": true,
+                "params": [
+                    {
+                        "name": "arguments",
+                        "type": "array<array-key,mixed>",
+                        "description": "Values keyed by name.",
+                        "default": null,
+                        "variadic": false
+                    }
+                ],
+                "returnType": "string",
+                "summary": "Named values as `name=value, name=value`, each value through render(),\nin the given order — the form every counterexample message and the adapters'\nverbose trace print arguments, draws and notes in. An empty map renders as\nthe empty string.",
+                "description": "",
+                "throws": [],
+                "throwsInBody": false,
+                "inheritedFrom": null,
+                "see": [],
+                "deprecated": null,
+                "attributes": [],
+                "startLine": 36
+            },
+            {
                 "name": "normalize",
                 "static": true,
                 "params": [
@@ -16001,7 +17351,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 28
+                "startLine": 48
             },
             {
                 "name": "exportPhp",
@@ -16024,7 +17374,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 33
+                "startLine": 53
             }
         ],
         "constants": [],

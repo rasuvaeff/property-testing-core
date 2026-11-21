@@ -9,7 +9,7 @@ description: "Fixed-arity tuple: produces a list with one value per element arbi
 
 `Rasuvaeff\PropertyTesting\Arbitrary\TupleArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/TupleArbitrary.php#L24) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/TupleArbitrary.php#L25) — **Version:** working tree
 
 **Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

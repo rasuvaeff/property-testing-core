@@ -37,6 +37,13 @@ final class ValueRendererTest
         yield 'empty list' => [[], '[]'];
     }
 
+    public function rendersArgumentsAsNameValuePairsInOrder(): void
+    {
+        Assert::same(ValueRenderer::renderArguments(['b' => 'x', 'a' => [1, 2], 'draw#1' => null]), 'b="x", a=[1, 2], draw#1=null');
+        Assert::same(ValueRenderer::renderArguments([0 => true]), '0=true');
+        Assert::same(ValueRenderer::renderArguments([]), '');
+    }
+
     public function rendersResourcesViaDebugType(): void
     {
         // A resource matches none of the scalar/array/object arms, so it exercises

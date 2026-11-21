@@ -154,7 +154,7 @@ final class Gen
      * chosen, and the same defaults as {@see stringFrom()} and {@see bytes()}.
      *
      * @param int<0, max> $minLength
-     * @param int<1, max> $maxLength
+     * @param int<0, max> $maxLength
      *
      * @return ArbitraryInterface<string>
      */
@@ -396,6 +396,11 @@ final class Gen
      * Gen::forClass(Money::class, ['amount' => Gen::intPositive()]);
      * ```
      *
+     * An enum, `DateTimeImmutable`, `Random\Engine` and `Random\Randomizer`
+     * are answered as they are for a class-typed parameter — `Gen::enum()`,
+     * `Gen::datetime()`, `Gen::randomEngine()`, `Gen::randomizer()` — unless
+     * overrides are given, which ask for the constructor explicitly.
+     *
      * Per parameter, in order: an override, then a {@see Generate} attribute
      * on the parameter, then the docblock (psalm subset;
      * `@psalm-param`/`@phpstan-param` over `@param`, and the promoted
@@ -423,6 +428,17 @@ final class Gen
         bool $skipInvalid = false,
         int $maxDepth = 3,
     ): ArbitraryInterface {
+        // An enum, DateTimeImmutable and the native random API are not built
+        // through a constructor; answered here the same way as for a
+        // class-typed parameter. With overrides the caller asks for the
+        // constructor explicitly, and gets it.
+        $special = $overrides === [] ? ParameterGenerators::forSpecialClass($class) : null;
+
+        if ($special instanceof ArbitraryInterface) {
+            /** @var ArbitraryInterface<TValue> $special */
+            return $special;
+        }
+
         return new ClassArbitrary($class, $overrides, $skipInvalid, $maxDepth);
     }
 
@@ -642,6 +658,8 @@ final class Gen
      * the plain value it wraps, not merely to an empty container.
      *
      * @param Closure(ArbitraryInterface): ArbitraryInterface $wrap
+     *
+     * @return ArbitraryInterface<mixed>
      */
     public static function recursive(ArbitraryInterface $leaf, Closure $wrap, int $maxDepth = 3): ArbitraryInterface
     {
@@ -671,7 +689,11 @@ final class Gen
     /**
      * Yields null or a value from $inner with roughly even odds.
      *
-     * @return ArbitraryInterface<mixed>
+     * @template TValue
+     *
+     * @param ArbitraryInterface<TValue> $inner
+     *
+     * @return ArbitraryInterface<TValue|null>
      */
     public static function nullable(ArbitraryInterface $inner): ArbitraryInterface
     {
@@ -842,6 +864,85 @@ final class Gen
     public static function tuple(ArbitraryInterface ...$elements): ArbitraryInterface
     {
         return new TupleArbitrary(...$elements);
+    }
+
+    /**
+     * Two values, one from each generator, as `[$first, $second]`: {@see tuple()}
+     * with the element types kept, so a property or a {@see map()} reads them
+     * typed. Generates and shrinks exactly like the two-element tuple.
+     *
+     * ```php
+     * Gen::map(Gen::pair(Gen::intPositive(), Gen::stringAscii()), static fn (array $p): Item => new Item(...$p));
+     * ```
+     *
+     * @template TFirst
+     * @template TSecond
+     *
+     * @param ArbitraryInterface<TFirst> $first Generates the first element.
+     * @param ArbitraryInterface<TSecond> $second Generates the second element.
+     *
+     * @return ArbitraryInterface<array{TFirst, TSecond}>
+     */
+    public static function pair(ArbitraryInterface $first, ArbitraryInterface $second): ArbitraryInterface
+    {
+        /** @var ArbitraryInterface<array{TFirst, TSecond}> $pair */
+        $pair = new TupleArbitrary($first, $second);
+
+        return $pair;
+    }
+
+    /**
+     * Three values, one from each generator, as `[$first, $second, $third]`:
+     * {@see tuple()} with the element types kept. Generates and shrinks exactly
+     * like the three-element tuple.
+     *
+     * @template TFirst
+     * @template TSecond
+     * @template TThird
+     *
+     * @param ArbitraryInterface<TFirst> $first Generates the first element.
+     * @param ArbitraryInterface<TSecond> $second Generates the second element.
+     * @param ArbitraryInterface<TThird> $third Generates the third element.
+     *
+     * @return ArbitraryInterface<array{TFirst, TSecond, TThird}>
+     */
+    public static function triple(ArbitraryInterface $first, ArbitraryInterface $second, ArbitraryInterface $third): ArbitraryInterface
+    {
+        /** @var ArbitraryInterface<array{TFirst, TSecond, TThird}> $triple */
+        $triple = new TupleArbitrary($first, $second, $third);
+
+        return $triple;
+    }
+
+    /**
+     * An equal-weight choice between generators: {@see frequency()} with every
+     * weight 1, and the same sequence for a given seed. The choice between
+     * generators that {@see oneOf()} refuses — `oneOf` picks between values.
+     *
+     * ```php
+     * Gen::anyOf(Gen::int(), Gen::constant(null));
+     * ```
+     *
+     * Typed as `mixed`: the generators may produce different types, and a
+     * template over a variadic would make psalm refuse exactly that mix. Use
+     * {@see frequency()} where the common type matters to static analysis.
+     *
+     * @param ArbitraryInterface ...$generators The generators to choose between, at least one.
+     *
+     * @throws \InvalidArgumentException When no generator is given.
+     *
+     * @return ArbitraryInterface<mixed>
+     */
+    public static function anyOf(ArbitraryInterface ...$generators): ArbitraryInterface
+    {
+        if ($generators === []) {
+            throw new \InvalidArgumentException('Gen::anyOf() requires at least one generator');
+        }
+
+        return self::frequency(array_map(
+            static fn(ArbitraryInterface $generator): array => [1, $generator],
+            array_values($generators),
+        ));
     }
 
     /**
@@ -1111,6 +1212,8 @@ final class Gen
      * A JSON-encodable value — null, bool, int, float, string, or nested
      * lists/objects thereof — bounded to $maxDepth levels of nesting. Produces
      * the decoded PHP value; use {@see jsonString()} for the encoded text.
+     *
+     * @return ArbitraryInterface<mixed>
      */
     public static function json(int $maxDepth = 3): ArbitraryInterface
     {

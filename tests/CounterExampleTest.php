@@ -176,6 +176,16 @@ final class CounterExampleTest
      * freezes (point 4): a key may be added at the end, never renamed or
      * removed.
      */
+    public function shrinkErrorsDefaultToNoneAndStayOutOfTheFrozenArray(): void
+    {
+        Assert::same((new CounterExample(1, 0, [], []))->shrinkErrors, []);
+
+        $example = new CounterExample(1, 0, [], [], shrinkErrors: ['LogicException: broke']);
+
+        Assert::same($example->shrinkErrors, ['LogicException: broke']);
+        Assert::false(array_key_exists('shrinkErrors', $example->toArray()));
+    }
+
     public function toArrayKeysAreTheFrozenContract(): void
     {
         Assert::same(array_keys((new CounterExample(1, 0, [], []))->toArray()), [

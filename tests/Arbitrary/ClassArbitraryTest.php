@@ -318,7 +318,7 @@ final class ClassArbitraryTest
 
     public function aDocblockTypeItCannotReadOnAScalarIsRefusedNotWidened(): void
     {
-        // `float<0.0, 1.0>` is outside the readable subset. Falling back to the
+        // `float<min, 1.0>` is outside the readable subset. Falling back to the
         // native `float` would generate the whole line for a parameter that
         // promises the unit interval — the widened guess the class rules out.
         try {
@@ -328,7 +328,7 @@ final class ClassArbitraryTest
         } catch (\InvalidArgumentException $e) {
             Assert::same(
                 $e->getMessage(),
-                'Cannot generate ' . NarrowedFloat::class . ': parameter $ratio is documented as float<0.0, 1.0>, which this cannot read; pass an override or #[Generate]',
+                'Cannot generate ' . NarrowedFloat::class . ': parameter $ratio is documented as float<min, 1.0>, which this cannot read; pass an override or #[Generate]',
             );
         }
     }

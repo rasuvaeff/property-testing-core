@@ -311,10 +311,18 @@ final class UniqueArrayArbitraryTest
         new UniqueArrayArbitrary(new IntArbitrary(), -1, 5);
     }
 
-    #[ExpectException(\InvalidArgumentException::class)]
-    public function rejectsZeroMaximumSize(): void
+    public function aZeroMaximumSizeGeneratesOnlyTheEmptyList(): void
     {
-        new UniqueArrayArbitrary(new IntArbitrary(), 0, 0);
+        // A dependent flatMap(intBetween(0, 3), fn ($n) => …(0, $n)) draws 0.
+        $arbitrary = new UniqueArrayArbitrary(new IntArbitrary(), 0, 0);
+        $random = new Random(7);
+
+        for ($i = 0; $i < 50; ++$i) {
+            $tree = $arbitrary->generate($random);
+
+            Assert::same($tree->value, []);
+            Assert::same(iterator_to_array($tree->shrinks(), preserve_keys: false), []);
+        }
     }
 
     #[ExpectException(\InvalidArgumentException::class)]

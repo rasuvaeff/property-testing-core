@@ -29,9 +29,11 @@ use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
 use Rasuvaeff\PropertyTesting\GenerationErrorException;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
+use Rasuvaeff\PropertyTesting\Internal\Descent;
 use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Internal\DrawContext;
 use Rasuvaeff\PropertyTesting\Internal\FailureIdentity;
+use Rasuvaeff\PropertyTesting\Internal\PhaseContext;
 use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Internal\ReplayVerdict;
 use Rasuvaeff\PropertyTesting\Internal\SearchPool;
@@ -117,12 +119,16 @@ final readonly class PropertyRunner
 
         $this->emit($listeners, new PropertyStarted($property->id, $seed, $runs));
 
-        if ($config->runs(Phase::Examples)) {
-            $exampleFailure = $this->runExamples($property, $executor, $seed, $listeners);
+        $discardedExamples = 0;
 
-            if ($exampleFailure instanceof PropertyResult) {
-                return $this->finish($listeners, $property->id, $exampleFailure, coverageAssessed: false);
+        if ($config->runs(Phase::Examples)) {
+            $examples = $this->runExamples($property, $executor, $seed, $listeners);
+
+            if ($examples instanceof PropertyResult) {
+                return $this->finish($listeners, $property->id, $examples, coverageAssessed: false);
             }
+
+            $discardedExamples = $examples;
         }
 
         // Opt-in regression replay: re-run every recorded past failure first
@@ -182,7 +188,7 @@ final readonly class PropertyRunner
                     // entry's mode, not the current configuration's: a suite
                     // that switched modes since must still see its regression.
                     $replayRuns = max($runs, ($entry->runsBeforeFailure ?? -1) + 1);
-                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $entry->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $this->maxSkips($config->maxDiscards, $replayRuns), $listeners, null, $domainSize, $exhaustiveDeclined);
+                    $replay = $this->runPhase($property, $executor, new Random($entry->seed, $entry->edgeCases), $entry->seed, $replayRuns, $this->maxDiscards($config->maxDiscards, $replayRuns), $this->maxSkips($config->maxDiscards, $replayRuns), $listeners, null, new PhaseCounters($domainSize, $exhaustiveDeclined, $discardedExamples));
 
                     if ($replay->failure() instanceof \Throwable) {
                         return $this->finish($listeners, $property->id, $replay, $this->assessedCoverage($replay));
@@ -214,10 +220,11 @@ final readonly class PropertyRunner
                 discards: 0,
                 checks: 0,
                 classifications: [],
+                discardedExamples: $discardedExamples,
             )), coverageAssessed: false);
         }
 
-        $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $maxSkips, $listeners, $config->path, $domainSize, $exhaustiveDeclined, $corpus);
+        $result = $this->runPhase($property, $executor, new Random($seed, $config->edgeCases), $seed, $runs, $maxDiscards, $maxSkips, $listeners, $config->path, new PhaseCounters($domainSize, $exhaustiveDeclined, $discardedExamples), $corpus);
 
         if ($corpus instanceof Corpus && $result instanceof Falsified) {
             $counterExample = $result->counterExample();
@@ -327,7 +334,7 @@ final readonly class PropertyRunner
         // requirements: drained here so nothing leaks into the next run().
         Target::flushDirections();
 
-        $statistics = $this->statisticsOf($result);
+        $statistics = RunStatistics::of($result);
 
         $this->emit($listeners, new PropertyFinished(
             $propertyId,
@@ -348,23 +355,6 @@ final readonly class PropertyRunner
     private function assessedCoverage(PropertyResult $result): bool
     {
         return $result instanceof Passed || $result instanceof CoverageFailed;
-    }
-
-    /**
-     * The counters of the run that just ended, for the outcomes that carry
-     * them; null for the rest. The distribution and the search report are
-     * built from these once, here — {@see Classify::label()} runs inside the
-     * body on every run, this runs after the last one.
-     */
-    private function statisticsOf(PropertyResult $result): ?RunStatistics
-    {
-        return match (true) {
-            $result instanceof Passed => $result->statistics,
-            $result instanceof CoverageFailed => $result->statistics,
-            $result instanceof GaveUp => $result->statistics,
-            $result instanceof TimeBudgetExceeded => $result->statistics,
-            default => null,
-        };
     }
 
     /**
@@ -389,19 +379,18 @@ final readonly class PropertyRunner
         int $maxSkips,
         array $listeners,
         ?string $path,
-        ?int $domainSize = null,
-        ?string $exhaustiveDeclined = null,
+        PhaseCounters $counters,
         ?Corpus $corpus = null,
     ): PropertyResult {
         $budgetMs = $property->config->budgetMs;
-        $counters = new PhaseCounters($domainSize, $exhaustiveDeclined);
         $pool = new SearchPool();
+        $phase = new PhaseContext($property, $executor, $random, $seed, $counters, $pool, $listeners, $path, $runs, $maxDiscards, $maxSkips);
         $phaseStart = $this->clock->nanoseconds();
 
         // An enumerated domain is walked to its end regardless of $runs — a
         // discarded input is skipped, not resampled — and the walk is the
         // same for every seed; the seed still drives the in-body draws.
-        $enumeration = $domainSize === null ? null : Domain::cartesian($this->enumerableGenerators($property));
+        $enumeration = $counters->domainSize === null ? null : Domain::cartesian($this->enumerableGenerators($property));
 
         while ($enumeration instanceof \Generator ? $enumeration->valid() : $counters->checks < $runs) {
             $overrun = $this->budgetExceeded($property, $budgetMs, $phaseStart, $runs, $counters);
@@ -432,7 +421,7 @@ final readonly class PropertyRunner
                 throw $this->generationError($property, $seed, $counters, $error);
             }
 
-            $verdict = $this->attempt($property, $executor, $random, $seed, $trees, $counters, $pool, $listeners, $path, $runs, $maxDiscards, $maxSkips);
+            $verdict = $this->attempt($phase, $trees);
 
             if ($verdict instanceof PropertyResult) {
                 return $verdict;
@@ -445,7 +434,7 @@ final readonly class PropertyRunner
         $search = null;
 
         if ($property->config->searchRuns > 0 && Target::directions() !== []) {
-            $verdict = $this->search($property, $executor, $random, $seed, $counters, $pool, $listeners, $path, $runs, $maxDiscards, $maxSkips, $budgetMs, $phaseStart, $corpus);
+            $verdict = $this->search($phase, $budgetMs, $phaseStart, $corpus);
 
             if ($verdict instanceof PropertyResult) {
                 return $verdict;
@@ -508,22 +497,17 @@ final readonly class PropertyRunner
      * announced.
      *
      * @param array<string, Shrinkable> $trees
-     * @param list<PropertyListener> $listeners
      */
-    private function attempt(
-        PropertyDefinition $property,
-        TrialExecutor $executor,
-        Random $random,
-        int $seed,
-        array $trees,
-        PhaseCounters $counters,
-        SearchPool $pool,
-        array $listeners,
-        ?string $path,
-        int $runs,
-        int $maxDiscards,
-        int $maxSkips,
-    ): ?PropertyResult {
+    private function attempt(PhaseContext $phase, array $trees): ?PropertyResult
+    {
+        $property = $phase->property;
+        $executor = $phase->executor;
+        $random = $phase->random;
+        $counters = $phase->counters;
+        $listeners = $phase->listeners;
+        $path = $phase->path;
+        $maxDiscards = $phase->maxDiscards;
+        $maxSkips = $phase->maxSkips;
         $maxShrinks = $property->config->maxShrinks;
         $shrinkMode = $property->config->shrink;
         $shrinkBudgetMs = $shrinkMode === ShrinkMode::Bounded ? $property->config->shrinkBudgetMs : null;
@@ -568,7 +552,7 @@ final readonly class PropertyRunner
                 return new GaveUp(
                     exception: new GaveUpException(
                         propertyName: $property->name,
-                        requiredRuns: $runs,
+                        requiredRuns: $phase->runs,
                         successfulRuns: $counters->checks,
                         discardedRuns: $counters->discards,
                         attempts: $counters->attempts,
@@ -596,13 +580,12 @@ final readonly class PropertyRunner
                 return new PathFailed($descent);
             }
 
-            [$shrunk, $shrunkDraws, $shrinkSteps, $shrunkFailure, $shrinkTrials, $shrinkPath, $shrunkNotes, $shrunkTrees, $shrunkTape] = $descent;
 
             // Re-execute the minimised input a few times: a replay that
             // passes says the failure is nondeterminism in the body or
             // the code under test, not a counterexample — reported as
             // such rather than left to oscillate between corpus replays.
-            [$replays, $passedOnReplay] = $this->replayCounterExample($executor, $shrunkTrees, $shrunkTape, $random, $property->config->flakyReplays);
+            [$replays, $passedOnReplay] = $this->replayCounterExample($executor, $descent->trees, $descent->tape, $random, $property->config->flakyReplays);
 
             // Drain the coverage requirements like every other exit path —
             // after the replays, which arm them again: the 2.8 interceptor
@@ -612,25 +595,26 @@ final readonly class PropertyRunner
             Classify::flushRequirements();
 
             return new Falsified(new PropertyViolationException(new CounterExample(
-                seed: $seed,
+                seed: $phase->seed,
                 runsBeforeFailure: $counters->checks,
                 originalArguments: array_merge($arguments, $this->drawArguments($draws)),
-                shrunkArguments: array_merge($shrunk, $shrunkDraws),
-                shrinkSteps: $shrinkSteps,
+                shrunkArguments: array_merge($this->values($descent->trees), $this->drawArguments($descent->tape)),
+                shrinkSteps: $descent->steps,
                 // Report the failure of the minimised sequence, not the
                 // original: for a shrunk counterexample the two can differ
                 // (e.g. a different failing step), and the developer acts on
                 // the minimal one. Falls back to the original when nothing shrank.
-                failure: $shrunkFailure ?? $outcome->failure,
+                failure: $descent->failure ?? $outcome->failure,
                 discards: $counters->discards,
-                shrinkTrials: $shrinkTrials,
-                path: $shrinkPath,
+                shrinkTrials: $descent->trials,
+                path: $path ?? $descent->path(),
                 edgeCases: $random->edgeCases,
                 skips: $counters->skips,
                 originalNotes: $notes,
-                shrunkNotes: $shrunkNotes,
+                shrunkNotes: $descent->notes,
                 replays: $replays,
                 passedOnReplay: $passedOnReplay,
+                shrinkErrors: $descent->errors(),
             )));
         }
 
@@ -659,9 +643,9 @@ final readonly class PropertyRunner
             // A numeric label comes back from the array as an int.
             $label = (string) $label;
             $direction = Target::directions()[$label];
-            $previous = $pool->best($label);
+            $previous = $phase->pool->best($label);
 
-            if ($pool->offer($label, $direction, $score, $trees)) {
+            if ($phase->pool->offer($label, $direction, $score, $trees)) {
                 $this->emit($listeners, new TargetImproved($property->id, $label, $direction, $score, $previous, $arguments));
             }
         }
@@ -677,25 +661,15 @@ final readonly class PropertyRunner
      * take turns. A {@see SearchCorpus} seeds the pool before the climb and
      * receives it after, so the next run resumes from here.
      *
-     * @param list<PropertyListener> $listeners
      * @return PropertyResult|SearchReport The result that ended the search, or its report.
      */
-    private function search(
-        PropertyDefinition $property,
-        TrialExecutor $executor,
-        Random $random,
-        int $seed,
-        PhaseCounters $counters,
-        SearchPool $pool,
-        array $listeners,
-        ?string $path,
-        int $runs,
-        int $maxDiscards,
-        int $maxSkips,
-        ?int $budgetMs,
-        int $phaseStart,
-        ?Corpus $corpus,
-    ): PropertyResult|SearchReport {
+    private function search(PhaseContext $phase, ?int $budgetMs, int $phaseStart, ?Corpus $corpus): PropertyResult|SearchReport
+    {
+        $property = $phase->property;
+        $random = $phase->random;
+        $counters = $phase->counters;
+        $pool = $phase->pool;
+        $listeners = $phase->listeners;
         if ($corpus instanceof SearchCorpus) {
             try {
                 $recalled = $corpus->recallTargets($property->id, $property->parameterNames);
@@ -729,7 +703,7 @@ final readonly class PropertyRunner
                 break;
             }
 
-            $overrun = $this->budgetExceeded($property, $budgetMs, $phaseStart, $runs, $counters);
+            $overrun = $this->budgetExceeded($property, $budgetMs, $phaseStart, $phase->runs, $counters);
 
             if ($overrun instanceof PropertyResult) {
                 return $overrun;
@@ -746,11 +720,11 @@ final readonly class PropertyRunner
 
                 return new GenerationFailed($exhausted);
             } catch (\Throwable $error) {
-                throw $this->generationError($property, $seed, $counters, $error);
+                throw $this->generationError($property, $phase->seed, $counters, $error);
             }
 
             ++$evaluations;
-            $verdict = $this->attempt($property, $executor, $random, $seed, $trees, $counters, $pool, $listeners, $path, $runs, $maxDiscards, $maxSkips);
+            $verdict = $this->attempt($phase, $trees);
 
             if ($verdict instanceof PropertyResult) {
                 return $verdict;
@@ -895,7 +869,9 @@ final readonly class PropertyRunner
     /**
      * Runs the fixed examples (if any) before the random inputs, short-circuiting
      * on the first failure — a pinned example is already minimal, so it is not
-     * shrunk. Returns the failing result, or null when all pass.
+     * shrunk. Returns the failing result, or — when all pass — how many of
+     * them the body discarded with {@see \Rasuvaeff\PropertyTesting\Assume::that()}:
+     * such an example passes, but checked nothing, and the statistics say so.
      *
      * @param list<PropertyListener> $listeners
      */
@@ -904,9 +880,10 @@ final readonly class PropertyRunner
         TrialExecutor $executor,
         int $seed,
         array $listeners,
-    ): ?PropertyResult {
+    ): PropertyResult|int {
         $timeoutMs = $property->config->timeoutMs;
         $index = 0;
+        $discarded = 0;
         // Examples may call Gen::draw(); their draws come from a dedicated
         // deterministic stream so the random phase's sequence is untouched.
         $random = new Random($seed, $property->config->edgeCases);
@@ -948,10 +925,14 @@ final readonly class PropertyRunner
                 return new DeadlineExceeded($deadlineFailure);
             }
 
+            if ($outcome->isDiscarded() && !$outcome->isSkipped()) {
+                ++$discarded;
+            }
+
             ++$index;
         }
 
-        return null;
+        return $discarded;
     }
 
     /**
@@ -1069,15 +1050,13 @@ final readonly class PropertyRunner
      *        a `TypeError` in the body's setup is not a smaller counterexample of an assertion
      *        failure, and neither is one that trips the body's *other* assertion). Null, or a
      *        run that failed without an exception, accepts any failure.
-     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string, 6: array<string, mixed>, 7: array<string, Shrinkable>, 8: list<Shrinkable>} The
-     *         minimised arguments, the minimised draws (as `draw#N` pseudo-arguments), the number
-     *         of accepted shrink steps, the failure of the last accepted candidate (null when
-     *         nothing shrank), the total number of candidates tried (accepted and rejected),
-     *         the descent itself as a replayable path (see {@see ShrinkPath}), the notes of
-     *         the last accepted run (the original's when nothing shrank), and the minimised
-     *         trees and tape themselves, for whatever re-executes the input. Every exit carries
-     *         the steps actually taken — a descent cut short by the cap or the budget is still
-     *         replayable up to where it stopped.
+     * @return Descent Where the descent stopped: the minimised trees and tape, the number of
+     *         accepted steps, the failure of the last accepted candidate (null when nothing
+     *         shrank), the total number of candidates tried (accepted and rejected), the notes of
+     *         the last accepted run (the original's when nothing shrank), the errors that ended a
+     *         node's enumeration early, and the descent itself as a replayable path (see
+     *         {@see ShrinkPath}). Every exit carries the steps actually taken — a descent cut
+     *         short by the cap or the budget is still replayable up to where it stopped.
      */
     private function shrink(
         string $propertyId,
@@ -1091,9 +1070,11 @@ final readonly class PropertyRunner
         ?int $budgetMs,
         array $listeners,
         ?\Throwable $failure = null,
-    ): array {
+    ): Descent {
+        $descent = new Descent($trees, $tape, $notes);
+
         if ($mode === ShrinkMode::Off) {
-            return [$this->values($trees), $this->drawArguments($tape), 0, null, 0, '', $notes, $trees, $tape];
+            return $descent;
         }
 
         // Built once: it reads the original failure's throw site, and every
@@ -1102,65 +1083,33 @@ final readonly class PropertyRunner
         $identity = FailureIdentity::of($propertyId, $failure, __FILE__);
 
         $deadlineNs = $budgetMs === null ? null : $this->clock->nanoseconds() + $budgetMs * 1_000_000;
-        $current = $trees;
-        $currentTape = $tape;
-        $currentNotes = $notes;
-        $steps = 0;
-        $trials = 0;
-        $acceptedFailure = null;
-        /** @var list<array{name: string, index: int<0, max>}> $acceptedSteps */
-        $acceptedSteps = [];
 
         do {
             $improved = false;
 
-            foreach (array_keys($current) as $name) {
+            foreach (array_keys($descent->trees) as $name) {
                 // Stop before accepting any further candidate once the cap is hit.
                 // Checking here (before the per-parameter search) makes maxShrinks=0
                 // return the original counterexample with zero accepted steps.
-                if ($this->capReached($maxShrinks, $currentTape, $steps) || $this->budgetSpent($deadlineNs)) {
-                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps), $currentNotes, $current, $currentTape];
+                if ($this->capReached($maxShrinks, $descent->tape, $descent->steps) || $this->budgetSpent($deadlineNs)) {
+                    return $descent;
                 }
 
-                // Counted over every candidate the enumeration yields, skipped
-                // ones included: the index is what a replay indexes back into,
-                // so both sides must agree on what they are counting.
-                $index = -1;
-
-                foreach ($this->candidates($current[$name]) as $candidate) {
-                    ++$index;
-
-                    // A candidate whose value equals the current one (possible under a
-                    // non-injective map) makes no progress; skip it and its subtree.
-                    if ($candidate->value === $current[$name]->value) {
-                        continue;
-                    }
-
-                    // Replace one parameter in place: array_replace keeps $current's
-                    // key order, so the executor still receives each value under the
-                    // right parameter. Array union ([$name => ...] + $current) would
-                    // move $name to the front and scramble non-leading parameters.
-                    $trial = array_replace($current, [$name => $candidate]);
-                    [$outcome, $recorded, $trialNotes] = $this->trial($executor, $trial, $currentTape, $random);
-                    ++$trials;
-
-                    $accepted = $this->failsTheSameWay($outcome, $identity);
-                    $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, $accepted));
-
-                    if ($accepted) {
-                        $this->emit($listeners, new ShrinkAccepted($propertyId, $steps + 1, $name, $current[$name]->value, $candidate->value));
-
-                        $current = $trial;
-                        $currentTape = $recorded;
-                        $currentNotes = $trialNotes;
-                        $acceptedFailure = $outcome->failure;
-                        $acceptedSteps[] = ['name' => $name, 'index' => $index];
-                        ++$steps;
-                        $improved = true;
-
-                        break;
-                    }
-                }
+                // Replace one parameter in place: array_replace keeps the
+                // trees' key order, so the executor still receives each value
+                // under the right parameter. Array union ([$name => ...] + $trees)
+                // would move $name to the front and scramble non-leading parameters.
+                $improved = $this->descendAt(
+                    $propertyId,
+                    $executor,
+                    $descent,
+                    $descent->trees[$name],
+                    $name,
+                    static fn(Shrinkable $candidate): array => [array_replace($descent->trees, [$name => $candidate]), $descent->tape],
+                    $random,
+                    $listeners,
+                    $identity,
+                ) || $improved;
             }
 
             // Walk the tape positions like extra parameters. The bound is re-read
@@ -1169,46 +1118,80 @@ final readonly class PropertyRunner
             // the smaller prefix.
             $position = 0;
 
-            while ($position < count($currentTape)) {
-                if ($this->capReached($maxShrinks, $currentTape, $steps) || $this->budgetSpent($deadlineNs)) {
-                    return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps), $currentNotes, $current, $currentTape];
+            while ($position < count($descent->tape)) {
+                if ($this->capReached($maxShrinks, $descent->tape, $descent->steps) || $this->budgetSpent($deadlineNs)) {
+                    return $descent;
                 }
 
-                $index = -1;
-
-                foreach ($this->candidates($currentTape[$position]) as $candidate) {
-                    ++$index;
-
-                    if ($candidate->value === $currentTape[$position]->value) {
-                        continue;
-                    }
-
-                    $trialTape = array_replace($currentTape, [$position => $candidate]);
-                    [$outcome, $recorded, $trialNotes] = $this->trial($executor, $current, $trialTape, $random);
-                    ++$trials;
-
-                    $accepted = $this->failsTheSameWay($outcome, $identity);
-                    $this->emit($listeners, new ShrinkTried($propertyId, 'draw#' . ($position + 1), $candidate->value, $accepted));
-
-                    if ($accepted) {
-                        $this->emit($listeners, new ShrinkAccepted($propertyId, $steps + 1, 'draw#' . ($position + 1), $currentTape[$position]->value, $candidate->value));
-
-                        $currentTape = $recorded;
-                        $currentNotes = $trialNotes;
-                        $acceptedFailure = $outcome->failure;
-                        $acceptedSteps[] = ['name' => 'draw#' . ($position + 1), 'index' => $index];
-                        ++$steps;
-                        $improved = true;
-
-                        break;
-                    }
-                }
+                $improved = $this->descendAt(
+                    $propertyId,
+                    $executor,
+                    $descent,
+                    $descent->tape[$position],
+                    'draw#' . ($position + 1),
+                    static fn(Shrinkable $candidate): array => [$descent->trees, array_replace($descent->tape, [$position => $candidate])],
+                    $random,
+                    $listeners,
+                    $identity,
+                ) || $improved;
 
                 ++$position;
             }
         } while ($improved);
 
-        return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $trials, ShrinkPath::format($acceptedSteps), $currentNotes, $current, $currentTape];
+        return $descent;
+    }
+
+    /**
+     * One step of the descent at one node — a parameter or a recorded draw:
+     * try its candidates in order and move the descent to the first one that
+     * fails the same way. A candidate whose value equals the node's (possible
+     * under a non-injective map) makes no progress and is skipped with its
+     * subtree; it still counts toward the index, which is what a replayed path
+     * indexes back into, so both sides count the same things.
+     *
+     * @param Shrinkable<mixed> $node
+     * @param \Closure(Shrinkable): array{0: array<string, Shrinkable>, 1: list<Shrinkable>} $place
+     *        The trees and tape to run with the candidate in the node's place.
+     * @param list<PropertyListener> $listeners
+     * @return bool Whether a candidate was accepted.
+     */
+    private function descendAt(
+        string $propertyId,
+        TrialExecutor $executor,
+        Descent $descent,
+        Shrinkable $node,
+        string $name,
+        \Closure $place,
+        Random $random,
+        array $listeners,
+        FailureIdentity $identity,
+    ): bool {
+        $index = -1;
+
+        foreach ($this->candidates($node, $descent) as $candidate) {
+            ++$index;
+
+            if ($candidate->value === $node->value) {
+                continue;
+            }
+
+            [$trialTrees, $trialTape] = $place($candidate);
+            [$outcome, $recorded, $trialNotes] = $this->trial($executor, $trialTrees, $trialTape, $random);
+            ++$descent->trials;
+
+            $accepted = $this->failsTheSameWay($outcome, $identity);
+            $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, $accepted));
+
+            if ($accepted) {
+                $this->emit($listeners, new ShrinkAccepted($propertyId, $descent->steps + 1, $name, $node->value, $candidate->value));
+                $descent->accept(['name' => $name, 'index' => $index], $trialTrees, $recorded, $trialNotes, $outcome->failure);
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1291,8 +1274,8 @@ final readonly class PropertyRunner
      * @param list<Shrinkable> $tape The failing run's recorded in-body draws.
      * @param array<string, mixed> $notes The failing run's {@see \Rasuvaeff\PropertyTesting\Gen::note()} values.
      * @param list<PropertyListener> $listeners
-     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: int, 3: ?\Throwable, 4: int, 5: string, 6: array<string, mixed>, 7: array<string, Shrinkable>, 8: list<Shrinkable>}|PathViolationException
-     *         The same tuple {@see shrink()} returns, or the reason the path could not be followed.
+     * @return Descent|PathViolationException What {@see shrink()} returns, or the reason the path
+     *         could not be followed.
      */
     private function replayPath(
         string $propertyId,
@@ -1303,39 +1286,36 @@ final readonly class PropertyRunner
         Random $random,
         string $path,
         array $listeners,
-    ): array|PathViolationException {
-        $current = $trees;
-        $currentTape = $tape;
-        $currentNotes = $notes;
-        $steps = 0;
-        $acceptedFailure = null;
+    ): Descent|PathViolationException {
+        $descent = new Descent($trees, $tape, $notes);
 
         foreach (ShrinkPath::parse($path) as $step) {
             $name = $step['name'];
             $number = ShrinkPath::drawNumber($name);
             $position = $number === null ? null : $number - 1;
-            $node = $position === null ? ($current[$name] ?? null) : ($currentTape[$position] ?? null);
+            $node = $position === null ? ($descent->trees[$name] ?? null) : ($descent->tape[$position] ?? null);
 
             if (!$node instanceof Shrinkable) {
-                return $this->pathBroken($path, $steps, $step, 'names something this run does not have');
+                return $this->pathBroken($path, $descent->steps, $step, 'names something this run does not have');
             }
 
-            $candidate = $this->candidateAt($node, $step['index']);
+            $candidate = $this->candidateAt($node, $step['index'], $descent);
 
             if (!$candidate instanceof Shrinkable) {
-                return $this->pathBroken($path, $steps, $step, 'has no such candidate any more');
+                return $this->pathBroken($path, $descent->steps, $step, 'has no such candidate any more');
             }
 
             // A candidate that no longer differs from the value it replaces
             // would re-run the identical input, still fail, and report a path
             // that "applied" without minimising anything.
             if ($candidate->value === $node->value) {
-                return $this->pathBroken($path, $steps, $step, 'no longer changes the value');
+                return $this->pathBroken($path, $descent->steps, $step, 'no longer changes the value');
             }
 
-            $trial = $position === null ? array_replace($current, [$name => $candidate]) : $current;
-            $trialTape = $position === null ? $currentTape : array_replace($currentTape, [$position => $candidate]);
+            $trial = $position === null ? array_replace($descent->trees, [$name => $candidate]) : $descent->trees;
+            $trialTape = $position === null ? $descent->tape : array_replace($descent->tape, [$position => $candidate]);
             [$outcome, $recorded, $trialNotes] = $this->trial($executor, $trial, $trialTape, $random);
+            ++$descent->trials;
 
             if ($outcome->isFailed() && $outcome->failure instanceof GenerationExhaustedException) {
                 // A draw past the end of the tape regenerates through the live
@@ -1348,26 +1328,21 @@ final readonly class PropertyRunner
                 // the mismatch instead.
                 $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, accepted: false));
 
-                return $this->pathBroken($path, $steps, $step, 'exhausted a generator instead of falsifying the property');
+                return $this->pathBroken($path, $descent->steps, $step, 'exhausted a generator instead of falsifying the property');
             }
 
             $accepted = $outcome->isFailed();
             $this->emit($listeners, new ShrinkTried($propertyId, $name, $candidate->value, $accepted));
 
             if (!$accepted) {
-                return $this->pathBroken($path, $steps, $step, 'no longer falsifies the property');
+                return $this->pathBroken($path, $descent->steps, $step, 'no longer falsifies the property');
             }
 
-            $this->emit($listeners, new ShrinkAccepted($propertyId, $steps + 1, $name, $node->value, $candidate->value));
-
-            $current = $trial;
-            $currentTape = $recorded;
-            $currentNotes = $trialNotes;
-            $acceptedFailure = $outcome->failure;
-            ++$steps;
+            $this->emit($listeners, new ShrinkAccepted($propertyId, $descent->steps + 1, $name, $node->value, $candidate->value));
+            $descent->accept($step, $trial, $recorded, $trialNotes, $outcome->failure);
         }
 
-        return [$this->values($current), $this->drawArguments($currentTape), $steps, $acceptedFailure, $steps, $path, $currentNotes, $current, $currentTape];
+        return $descent;
     }
 
     /**
@@ -1392,11 +1367,11 @@ final readonly class PropertyRunner
      * @param Shrinkable<mixed> $node
      * @return ?Shrinkable<mixed>
      */
-    private function candidateAt(Shrinkable $node, int $index): ?Shrinkable
+    private function candidateAt(Shrinkable $node, int $index, Descent $descent): ?Shrinkable
     {
         $position = 0;
 
-        foreach ($this->candidates($node) as $candidate) {
+        foreach ($this->candidates($node, $descent) as $candidate) {
             if ($position === $index) {
                 return $candidate;
             }
@@ -1420,18 +1395,21 @@ final readonly class PropertyRunner
      * as exhausted: the candidates yielded before the throw count, the
      * descent continues with the next node, and a replayed path indexing past
      * that point reports the candidate as missing rather than re-throwing.
+     * What threw is kept on the descent and reaches the counterexample as
+     * {@see \Rasuvaeff\PropertyTesting\CounterExample::$shrinkErrors}: a bug in a
+     * user-written tree must not look like "it did not shrink".
      *
      * @param Shrinkable<mixed> $node
      * @return \Generator<int, Shrinkable<mixed>>
      */
-    private function candidates(Shrinkable $node): \Generator
+    private function candidates(Shrinkable $node, Descent $descent): \Generator
     {
         try {
             foreach ($node->shrinks() as $candidate) {
                 yield $candidate;
             }
-        } catch (\Throwable) {
-            return;
+        } catch (\Throwable $error) {
+            $descent->recordError($error);
         }
     }
 

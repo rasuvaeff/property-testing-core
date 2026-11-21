@@ -25,6 +25,26 @@ final class ValueRenderer
         return self::format($value, self::MAX_DEPTH, []);
     }
 
+    /**
+     * Named values as `name=value, name=value`, each value through {@see render()},
+     * in the given order — the form every counterexample message and the adapters'
+     * verbose trace print arguments, draws and notes in. An empty map renders as
+     * the empty string.
+     *
+     * @param array<array-key, mixed> $arguments Values keyed by name.
+     */
+    public static function renderArguments(array $arguments): string
+    {
+        $pairs = [];
+
+        /** @var mixed $value */
+        foreach ($arguments as $name => $value) {
+            $pairs[] = $name . '=' . self::render($value);
+        }
+
+        return implode(', ', $pairs);
+    }
+
     public static function normalize(mixed $value): mixed
     {
         return self::normalizeValue($value, 32, []);

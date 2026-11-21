@@ -6,6 +6,8 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
+use Rasuvaeff\PropertyTesting\Internal\Bounds;
+use Rasuvaeff\PropertyTesting\Internal\ComponentShrinks;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -33,15 +35,7 @@ final readonly class ArrayArbitrary implements ArbitraryInterface
         private int $minSize = 0,
         private int $maxSize = 100,
     ) {
-        if ($minSize < 0) {
-            throw new \InvalidArgumentException('Minimum size must be greater than or equal to 0');
-        }
-        if ($maxSize < 1) {
-            throw new \InvalidArgumentException('Maximum size must be greater than or equal to 1');
-        }
-        if ($minSize > $maxSize) {
-            throw new \InvalidArgumentException('Minimum size must be less than or equal to maximum size');
-        }
+        Bounds::size('Gen::arrayOf()', 'minSize', 'maxSize', $minSize, $maxSize);
     }
 
     /**
@@ -86,10 +80,8 @@ final readonly class ArrayArbitrary implements ArbitraryInterface
 
             // 2. Then elements: shrink one element at a time through its own tree,
             //    keeping the array length fixed.
-            foreach ($elements as $index => $element) {
-                foreach ($element->shrinks() as $smaller) {
-                    yield $this->tree(array_replace($elements, [$index => $smaller]));
-                }
+            foreach (ComponentShrinks::of($elements, $this->tree(...)) as $candidate) {
+                yield $candidate;
             }
         });
     }

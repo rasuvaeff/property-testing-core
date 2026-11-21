@@ -156,6 +156,54 @@ shrinker'а (принятые и отвергнутые); `shrink step(s)` — �
 машина без зависимости удалит контрпример для всех машин, где он
 воспроизводится.
 
+`FailOnTrialExecutor` оборачивает любой executor так, что PHP-диагностики
+заданных уровней, поднятые телом, становятся `\ErrorException` в месте, где
+они подняты, — падающим прогоном, который сжимается как любой другой:
+`new FailOnTrialExecutor($executor, E_WARNING | E_DEPRECATED)`. Уровень, который
+он не забирает, уходит ранее установленному обработчику, диагностика,
+заглушённая `@`, остаётся заглушённой, а `FailOnTrialExecutor::guard($levels, $call)`
+выполняет один вызов под тем же обработчиком. Оба адаптера отдают это наружу
+(`failOn`).
+
+### Строительные блоки адаптера
+
+Движок не читает окружение и ничего не печатает. То, что адаптер делает вокруг
+него, — одинаково во всех адаптерах, чтобы два адаптера, пишущие в один лог,
+совпадали, — лежит в ядре:
+
+| Часть | Делает |
+|---|---|
+| `Environment::fromVariables($variables)` | Разбирает значения `PROPERTY_*`, которые адаптер прочитал через `getenv()` (`Environment::VARIABLES` перечисляет их в порядке разбора), и отклоняет невалидное, называя переменную. `->config(...)` принимает собственные настройки property с параметрами и умолчаниями `PropertyConfig` и применяет приоритет: окружение крутит сьют (`runs`, `phases`, `derandomize`, `edgeCases`, `exhaustive`, `searchRuns`), код пинит property (`seed`, `path`). `->verbose` и `->db` — переключатель трассы и DSN корпуса |
+| `RunStatistics::of($result)` | Статистика, которую несёт результат (`Passed`, `GaveUp`, `CoverageFailed`, `TimeBudgetExceeded`), или null |
+| `DiagnosticLines::of($name, $statistics)` | Строки для печати после прогона в фиксированном порядке, у каждой `DiagnosticLevel` (`Info` или `Warning`): предупреждение об избытке discard'ов, предупреждение об отброшенных примерах, распределение, по строке на таблицу `tabulate()`, что сделал exhaustive-режим, отчёт поиска |
+| `TraceListener($sink)` | Трасса `PROPERTY_VERBOSE` как listener: по строке на аргументы попытки, на её draw'ы, на улучшение цели и на принятый шаг сжатия, передаётся в `Closure(string): void`; свои ошибки и ошибки приёмника глотает |
+| `FailOnTrialExecutor` | PHP-диагностики как падающие прогоны (см. выше) |
+| `ValueRenderer::renderArguments($arguments)` | `name=value, name=value` — форма, в которой аргументы печатает каждое сообщение |
+
+```php
+$variables = [];
+
+foreach (Environment::VARIABLES as $name) {
+    $variables[$name] = getenv($name);
+}
+
+$environment = Environment::fromVariables($variables);
+$result = $runner->run(
+    new PropertyDefinition('Suite::prop', 'prop', $generators, ['x'], $environment->config(runs: 200)),
+    new FailOnTrialExecutor($executor, E_WARNING),
+    $environment->verbose ? [new TraceListener(static fn (string $line) => fwrite(STDERR, $line . "\n"))] : [],
+);
+
+$statistics = RunStatistics::of($result);
+
+foreach ($statistics === null ? [] : DiagnosticLines::of('prop', $statistics) as $line) {
+    fwrite($line->level === DiagnosticLevel::Warning ? STDERR : STDOUT, $line->text . "\n");
+}
+```
+
+Доля в этих строках округляется половиной вверх по точному отношению (`23/40`
+даёт 58%).
+
 ### Структурные результаты
 
 `PropertyRunner::run()` возвращает один из закрытой иерархии `PropertyResult` —
@@ -198,7 +246,8 @@ harness может написать `catch (PropertyTestingException $e)` для
 
 `RunStatistics` отдаёт сырые счётчики фазы (attempts, discards, skips, checks,
 классификация по меткам, таблицы `tabulate()`, размер перебранного домена или
-причину отказа от перебора, `SearchReport`) — distribution-отчёт и
+причину отказа от перебора, `SearchReport`, число явных примеров, отброшенных
+`Assume`) — distribution-отчёт и
 предупреждение о discard'ах печатает адаптер; движок никогда не форматирует
 вывод фреймворка.
 
@@ -208,7 +257,13 @@ harness может написать `catch (PropertyTestingException $e)` для
 ключи заморожены (политика совместимости, п. 4): `seed`, `runsBeforeFailure`,
 `originalArguments`, `shrunkArguments`, `shrinkSteps`, `shrinkTrials`, `path`,
 `failure` (`{type, message}` или null), `discards`, `skips`, `edgeCases`,
-`originalNotes`, `shrunkNotes`, `replays`, `passedOnReplay`. Как и
+`originalNotes`, `shrunkNotes`, `replays`, `passedOnReplay`.
+`CounterExample::$shrinkErrors` — почему кандидаты сжатия какого-то узла
+кончились раньше времени, в виде `Class: message`, каждое различное по разу, не
+больше десяти, — только свойство, вне замороженного массива и сообщения:
+пользовательский `Shrinkable` (или `Gen::map()`, отказавший меньшему значению),
+бросивший при перечислении кандидатов, считается исчерпанным, и здесь «не
+сжалось» получает причину. Как и
 ключи `DistributionReport::toArray()`: `attempts`, `discards`,
 `discardPercent`, `skips`, `checks`, `coverageAssessed`, `labels` (каждый —
 `{label, count, percent, required, met}`), плюс `tables`, когда прогон
@@ -255,12 +310,14 @@ harness может написать `catch (PropertyTestingException $e)` для
 | `Gen::intRange($min, $max)` | `FlatMappedArbitrary`, упорядоченные пары `[lo, hi]` с `lo <= hi` | обе границы сжимаются, порядок всегда сохраняется |
 | `Gen::recursive($leaf, $wrap, $maxDepth)` | ограниченные рекурсивные структуры: `$wrap` поднимает arbitrary предыдущего уровня | внутри породившей значение ветви |
 | `Gen::oneOf(...$values)` | `OneOfArbitrary`, одно из перечисленных значений — именно значений: генератор среди них отвергается (выбор между генераторами — `frequency()`) | к раньше перечисленным различным значениям (простые — первыми) |
-| `Gen::nullable($inner)` | `NullableArbitrary`, `null` или значение `$inner` | предпочитает `null`, затем внутреннее дерево |
+| `Gen::nullable($inner)` | `NullableArbitrary`, `null` или значение `$inner` (для psalm — `T\|null`) | предпочитает `null`, затем внутреннее дерево |
 | `Gen::map($inner, $map)` | `MappedArbitrary`, `$inner`, преобразованный `$map` | через внутреннее дерево, с повторным применением `$map` |
 | `Gen::flatMap($inner, $flatMap)` | `FlatMappedArbitrary`, зависимый генератор из `$flatMap($innerValue)` | сначала исходное значение (зависимое регенерируется), затем зависимое дерево |
 | `Gen::filter($inner, $predicate)` | `FilteredArbitrary`, значения `$inner`, удовлетворяющие `$predicate` (после 100 отвергнутых draw бросает `GenerationExhaustedException` — никогда не отдаёт значение вне домена) | внутреннее дерево с отсечением кандидатов, не проходящих предикат |
 | `Gen::tuple(...$elements)` | `TupleArbitrary`, кортеж фиксированной арности | каждая позиция через свой элемент, арность фиксирована |
+| `Gen::pair($first, $second)` / `Gen::triple($first, $second, $third)` | `TupleArbitrary` из двух / трёх элементов, для psalm типизированный как `array{A, B}` / `array{A, B, C}` — те же значения и сжатия, что у кортежа | каждая позиция через свой элемент |
 | `Gen::frequency($pairs)` | `FrequencyArbitrary`, взвешенный выбор по парам `[вес, arbitrary]` | внутри породившей значение ветви |
+| `Gen::anyOf(...$generators)` | `FrequencyArbitrary` со всеми весами 1: равновероятный выбор между **генераторами** (`oneOf` выбирает между значениями) — та же последовательность, что у эквивалентного `frequency` | внутри породившей значение ветви |
 | `Gen::ipv4()` | IPv4-строки в точечной нотации | каждый октет к `0` |
 | `Gen::ipv6()` | IPv6-адреса в канонической текстовой форме RFC 5952 (нижний регистр, без ведущих нулей, самый длинный прогон нулевых групп сжат в `::`) | каждая группа к `0`, в пределе `::` |
 | `Gen::email()` | адреса `local@label.tld` | к кратчайшим local/label и первому TLD |
@@ -270,8 +327,13 @@ harness может написать `catch (PropertyTestingException $e)` для
 | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | строки, соответствующие подмножеству regex (компилируется в комбинаторы), паттерн — **без разделителей**: `Gen::regex('[a-z]{3,6}')`, а не `'/[a-z]{3,6}/'`; `.` и отрицающий класс берут символы из printable ASCII (`0x20`..`0x7E`, без перевода строки); POSIX-классы внутри класса (`[[:alpha:]_]`, `[[:^digit:]]`) — те ASCII-символы, которые им сопоставляет PCRE, неизвестное имя бросает исключение | более короткие/простые совпадения (через скомпилированные деревья) |
 | `Gen::commands($initialModel, $commandGenerators, $minLength, $maxLength)` | `CommandSequenceArbitrary`, валидные последовательности команд для stateful-тестирования | сбрасывает блоки команд, затем упрощает каждую |
 | `Gen::rules($machine, $minLength, $maxLength)` | `RuleSequence` над классом rule-машины (методы `#[Rule]`/`#[Precondition]`/`#[Invariant]`) — см. [Rule-машины](#rule-машины-genrules) | как `commands`: сбрасывает шаги, затем упрощает аргументы каждого || `Gen::swarm($arbitrary)` | `SwarmArbitrary`, swarm-тестирование: каждый случай видит лишь непустое подмножество вариантов обёрнутого генератора выбора (`oneOf`, `elements`, `frequency`, `commands`) | внутри подмножества, из которого случай получился, — обратно до полного алфавита не расширяется |
-| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор: атрибут [`#[Generate]`](#генераторы-на-параметре-generate) на параметре, затем psalm-тип из докблока, если он есть (`int<0, 100>`, `non-empty-string`, `numeric-string`, `lowercase-string`, `non-falsy-string`, `list<LineItem>`, `array{id: int, name?: string}`, `Status\|null`, `'a'\|'b'`; имена классов резолвятся через namespace и `use`-импорты файла), иначе нативный. Читаются три написания: `@psalm-param`/`@phpstan-param` берут верх над `@param`, а `@var` (`@psalm-var`) на самом promoted-свойстве читается, когда докблок конструктора о нём молчит. Нативный `float` означает `floatBetween(-1e6, 1e6)`. Всё, что прочитать нельзя — голый `array`, `mixed`, нативный union, докблок-тип вне подмножества, неизвестное имя класса (называется в сообщении), — исключение, а не догадка, как и override с именем несуществующего параметра | через сгенерированные аргументы, пересобирая экземпляр |
+| `Gen::forClass($class, $overrides)` | `ClassArbitrary`, экземпляры по тому, что объявляет конструктор (enum, `DateTimeImmutable`, `Random\Engine` и `Random\Randomizer` без overrides — это `enum()`, `datetime()`, `randomEngine()`, `randomizer()`, как и для параметра): атрибут [`#[Generate]`](#генераторы-на-параметре-generate) на параметре, затем psalm-тип из докблока, если он есть (`int<0, 100>`, `float<0.0, 1.0>`, `array-key`, `scalar`, `non-empty-string`, `numeric-string`, `lowercase-string`, `non-falsy-string`, `list<LineItem>`, `array{id: int, name?: string}`, `Status\|null`, `'a'\|'b'`; имена классов резолвятся через namespace и `use`-импорты файла), иначе нативный. Читаются три написания: `@psalm-param`/`@phpstan-param` берут верх над `@param`, а `@var` (`@psalm-var`) на самом promoted-свойстве читается, когда докблок конструктора о нём молчит. Нативный `float` означает `floatBetween(-1e6, 1e6)`. Всё, что прочитать нельзя — голый `array`, `mixed`, нативный union, докблок-тип вне подмножества, неизвестное имя класса (называется в сообщении), — исключение, а не догадка, как и override с именем несуществующего параметра | через сгенерированные аргументы, пересобирая экземпляр |
 | `Gen::forParameters($function, $overrides, derive: true)` | не arbitrary, а карта: `array<string, ArbitraryInterface>` для параметров `ReflectionFunctionAbstract` (метода или кложуры), по именам в порядке сигнатуры — правила `forClass`, применённые к любой сигнатуре; overrides могут быть частичными, остальное достраивается; всё нечитаемое — исключение с именем функции и параметра. `derive: false` читает только overrides и `#[Generate]` и отказывает параметру без того и другого | каждая запись shrink'ается через свой генератор |
+
+Граница размера или длины может быть `0` (`arrayOf($g, 0, 0)` — всегда `[]`),
+поэтому зависимый `flatMap(intBetween(0, 3), fn ($n) => arrayOf($g, 0, $n))`
+работает и при `$n = 0`. Отклонённый диапазон называет фабрику и полученные
+значения: `Gen::arrayOf(): minSize must be less than or equal to maxSize, got 3 and 0`.
 
 ### Генераторы на параметре: `#[Generate]`
 
@@ -474,6 +536,11 @@ in-body draw; тело, потребляющее тысячи случайных
 по-прежнему означает успешные проверки. Повторы ограничены `maxDiscards`
 (по умолчанию `runs * 10`) со структурным `GaveUpException` при превышении.
 Конструируйте валидные входы (`flatMap`/`draw`) вместо массового отбрасывания.
+
+Явный пример, отброшенный телом, всё равно проходит, но ничего не проверил:
+`RunStatistics::$discardedExamples` считает такие примеры, и оба адаптера
+предупреждают — после сдвига предусловия закреплённый кейс может молча
+перестать что-либо закреплять.
 
 Skip'ы окружения — пропущенное тело или lifecycle-хук — считаются и
 ограничиваются отдельно: о входе они не говорят ничего, поэтому исчерпание их

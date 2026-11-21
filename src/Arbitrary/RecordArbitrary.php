@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Enumerable;
+use Rasuvaeff\PropertyTesting\Internal\ComponentShrinks;
 use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
@@ -98,10 +99,8 @@ final readonly class RecordArbitrary implements Enumerable
         return Shrinkable::of($value, function () use ($fields): \Generator {
             // The key set is fixed: there is no length phase. Shrink one field at a
             // time through its own tree, keeping the others as-is.
-            foreach ($fields as $key => $field) {
-                foreach ($field->shrinks() as $smaller) {
-                    yield $this->tree(array_replace($fields, [$key => $smaller]));
-                }
+            foreach (ComponentShrinks::of($fields, $this->tree(...)) as $candidate) {
+                yield $candidate;
             }
         });
     }

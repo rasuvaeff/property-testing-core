@@ -9,9 +9,13 @@ description: "Wraps another arbitrary and additionally yields `null` with roughl
 
 `Rasuvaeff\PropertyTesting\Arbitrary\NullableArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/NullableArbitrary.php#L21) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/NullableArbitrary.php#L22) — **Version:** working tree
 
 **Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
+
+**Type parameters:**
+
+- `TValue of mixed = mixed`
 
 Wraps another arbitrary and additionally yields `null` with roughly even odds.
 
@@ -21,13 +25,13 @@ Shrinking prefers `null` over descending into the inner value's tree.
 
 ```php
 __construct(
-    ArbitraryInterface $inner,
+    \ArbitraryInterface<\Arbitrary\TValue> $inner,
 )
 ```
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `$inner` | [`ArbitraryInterface`](/api/classes/ArbitraryInterface) | *required* |  |
+| `$inner` | `\ArbitraryInterface<\Arbitrary\TValue>` | *required* |  |
 
 ## Methods
 

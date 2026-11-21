@@ -23,6 +23,7 @@ use Rasuvaeff\PropertyTesting\Runner\PropertyResult;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
 use Rasuvaeff\PropertyTesting\Runner\SearchReport;
 use Rasuvaeff\PropertyTesting\Runner\TargetDirection;
+use Rasuvaeff\PropertyTesting\Runner\TargetOutcome;
 use Rasuvaeff\PropertyTesting\Target;
 use Rasuvaeff\PropertyTesting\Tests\Support\CollectingListener;
 use Rasuvaeff\PropertyTesting\Tests\Support\RecordingSearchCorpus;
@@ -41,6 +42,8 @@ use Testo\Test;
 #[Covers(PhaseCounters::class)]
 #[Covers(SearchReport::class)]
 #[Covers(SearchPool::class)]
+#[Covers(TargetImproved::class)]
+#[Covers(TargetOutcome::class)]
 final class PropertyRunnerSearchTest
 {
     /**

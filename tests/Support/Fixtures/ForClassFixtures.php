@@ -111,7 +111,7 @@ final readonly class DocblockClassTypes
 
 final readonly class NarrowedFloat
 {
-    /** @param float<0.0, 1.0> $ratio */
+    /** @param float<min, 1.0> $ratio */
     public function __construct(
         public float $ratio,
     ) {}

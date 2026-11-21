@@ -6,8 +6,10 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Internal\Boundary;
+use Rasuvaeff\PropertyTesting\Internal\Bounds;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
+use Rasuvaeff\PropertyTesting\ValueRenderer;
 
 /**
  * Generates floats in the half-open range [min, max).
@@ -36,11 +38,14 @@ final readonly class FloatArbitrary implements ArbitraryInterface
         private float $max = 1.0,
     ) {
         if (!is_finite($min) || !is_finite($max)) {
-            throw new \InvalidArgumentException('Min and max must be finite');
+            throw new \InvalidArgumentException(sprintf(
+                'Gen::floatBetween(): min and max must be finite, got %s and %s',
+                ValueRenderer::render($min),
+                ValueRenderer::render($max),
+            ));
         }
-        if ($min > $max) {
-            throw new \InvalidArgumentException('Min must be less than or equal to max');
-        }
+
+        Bounds::ordered('Gen::floatBetween()', 'min', 'max', $min, $max);
     }
 
     #[\Override]

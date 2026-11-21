@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
+use Rasuvaeff\PropertyTesting\Internal\Bounds;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -50,15 +51,11 @@ final readonly class SubsetArbitrary implements ArbitraryInterface
         $count = count($values);
         $resolvedMaxSize = $maxSize ?? $count;
 
-        if ($minSize < 0) {
-            throw new \InvalidArgumentException('Minimum size must be greater than or equal to 0');
-        }
-        if ($minSize > $resolvedMaxSize) {
-            throw new \InvalidArgumentException('Minimum size must be less than or equal to maximum size');
-        }
+        Bounds::size('Gen::subset()', 'minSize', 'maxSize', $minSize, $resolvedMaxSize);
+
         if ($resolvedMaxSize > $count) {
             throw new \InvalidArgumentException(sprintf(
-                'Maximum size %d exceeds the source size %d',
+                'Gen::subset(): maxSize must be less than or equal to the source size, got %d and %d',
                 $resolvedMaxSize,
                 $count,
             ));

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Docs:** a docblock union of enum case literals (`@param St::A|St::B`) is not
+  read by `Gen::forClass()` / `Gen::forParameters()` — every case is drawn;
+  narrow it with an override (#186).
+
 ## 1.5.0 — 2026-11-21
 
 - **Added:** adapter building blocks in `Runner\`, so the Testo and PHPUnit

@@ -38,7 +38,7 @@ shrink it to a minimal counterexample you can actually read.
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.3 – 8.6
 - `ext-mbstring`
 - `ext-random`
 - `ext-tokenizer`

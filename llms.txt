@@ -15,7 +15,7 @@ with the frozen `rasuvaeff/property-testing` 2.x (same namespace).
 composer require --dev rasuvaeff/property-testing-core
 ```
 
-Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
+Runtime deps: PHP `8.3 - 8.6`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
 
 ## Rules
 

@@ -9,7 +9,7 @@ description: "Generates subsets of a fixed ordered set: every result is a list o
 
 `Rasuvaeff\PropertyTesting\Arbitrary\SubsetArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/SubsetArbitrary.php#L30) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/SubsetArbitrary.php#L31) — **Version:** working tree
 
 **Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

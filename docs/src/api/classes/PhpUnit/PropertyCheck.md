@@ -9,7 +9,7 @@ description: "Fluent builder mapping the engine's structured PropertyResult onto
 
 `Rasuvaeff\PropertyTesting\PhpUnit\PropertyCheck`
 
-**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/e286bf83a70481952a0759da9241b8af15a170ec/src/PhpUnit/PropertyCheck.php#L50) — **Version:** v1.0.0
+**Class** — **Package:** [property-testing-phpunit](https://github.com/rasuvaeff/property-testing-phpunit) — [Source](https://github.com/rasuvaeff/property-testing-phpunit/blob/6231af056e9e5e7c6f2e43fb5ed5906a9b103d18/src/PhpUnit/PropertyCheck.php#L50) — **Version:** v1.1.0
 
 Fluent builder mapping the engine's structured PropertyResult onto PHPUnit:
 a pass counts one assertion, every failing outcome surfaces as one

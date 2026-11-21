@@ -411,6 +411,8 @@ final class PropertyRunnerShrinkTest
         Assert::same($example->shrinkTrials, 1);
         Assert::same(count($listener->ofType(ShrinkTried::class)), 1);
         Assert::same(count($listener->ofType(ShrinkAccepted::class)), 0);
+        // Not "it did not shrink": what ended the enumeration is on the record.
+        Assert::same($example->shrinkErrors, ['LogicException: shrink tree broke']);
     }
 
     public function aDrawWhoseEnumerationThrowsEndsWithoutLosingTheCounterexample(): void

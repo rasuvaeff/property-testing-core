@@ -29,8 +29,8 @@ final class PropertyViolationException extends RuntimeException implements Prope
 
     private function render(CounterExample $c): string
     {
-        $original = $this->format($c->originalArguments);
-        $shrunk = $this->format($c->shrunkArguments);
+        $original = ValueRenderer::renderArguments($c->originalArguments);
+        $shrunk = ValueRenderer::renderArguments($c->shrunkArguments);
 
         $message = sprintf(
             "Property falsified after %d successful run(s); seed=%d\n  Original: %s\n  Shrunk:   %s (%d shrink step(s)%s)",
@@ -51,7 +51,7 @@ final class PropertyViolationException extends RuntimeException implements Prope
         // The notes of the run being acted on: the shrunk one, which is the
         // original when nothing shrank. Only when the body attached any.
         if ($c->shrunkNotes !== []) {
-            $message .= sprintf("\n  Notes:    %s", $this->format($c->shrunkNotes));
+            $message .= sprintf("\n  Notes:    %s", ValueRenderer::renderArguments($c->shrunkNotes));
         }
 
         if ($c->failure instanceof \Throwable) {
@@ -99,19 +99,5 @@ final class PropertyViolationException extends RuntimeException implements Prope
         }
 
         return implode(', ', $parts);
-    }
-
-    /**
-     * @param array<string, mixed> $arguments
-     */
-    private function format(array $arguments): string
-    {
-        $pairs = array_map(
-            static fn(mixed $value, mixed $name): string => $name . '=' . ValueRenderer::render($value),
-            $arguments,
-            array_keys($arguments),
-        );
-
-        return implode(', ', $pairs);
     }
 }

@@ -31,6 +31,52 @@ final class ParameterGenerators
     }
 
     /**
+     * The generator of a class that is not built through its constructor — an
+     * enum, `DateTimeImmutable`, the native random API — or null for any other
+     * class. Shared by a class-typed parameter and {@see Gen::forClass()} at
+     * the top level, so the two answer the same for the same type.
+     *
+     * @throws \InvalidArgumentException For a `DateTimeInterface` other than `DateTimeImmutable`,
+     *         whose constructor would be fed random strings that never parse as a date.
+     */
+    public static function forSpecialClass(string $type): ?ArbitraryInterface
+    {
+        if (enum_exists($type)) {
+            /** @var class-string<\UnitEnum> $type */
+            return Gen::enum($type);
+        }
+
+        if ($type === \DateTimeImmutable::class) {
+            return Gen::datetime();
+        }
+
+        // The native random API: an engine (or a randomizer over one)
+        // whose decisions ride the draw tape, so they shrink.
+        if ($type === \Random\Engine::class) {
+            return Gen::randomEngine();
+        }
+
+        if ($type === \Random\Randomizer::class) {
+            return Gen::randomizer();
+        }
+
+        if (is_a($type, \DateTimeInterface::class, allow_string: true)) {
+            // Only the exact class has a generator. Anything else that
+            // implements the interface — a subclass, DateTime — inherits a
+            // constructor whose reflection asks for a `string` and a
+            // `?DateTimeZone`, and a random string never parses as a date:
+            // building it would explode with a parse error deep inside the
+            // recursion instead of naming the type that cannot be built.
+            throw new \InvalidArgumentException(sprintf(
+                'Cannot generate %s: only DateTimeImmutable itself is generated from a signature; pass an override',
+                $type,
+            ));
+        }
+
+        return null;
+    }
+
+    /**
      * The generator of one constructor's arguments, keyed by parameter name.
      *
      * @param class-string $class
@@ -309,36 +355,10 @@ final class ParameterGenerators
                 ));
             }
 
-            if (enum_exists($type)) {
-                /** @var class-string<\UnitEnum> $type */
-                return Gen::enum($type);
-            }
+            $special = self::forSpecialClass($type);
 
-            if ($type === \DateTimeImmutable::class) {
-                return Gen::datetime();
-            }
-
-            // The native random API: an engine (or a randomizer over one)
-            // whose decisions ride the draw tape, so they shrink.
-            if ($type === \Random\Engine::class) {
-                return Gen::randomEngine();
-            }
-
-            if ($type === \Random\Randomizer::class) {
-                return Gen::randomizer();
-            }
-
-            if (is_a($type, \DateTimeInterface::class, allow_string: true)) {
-                // Only the exact class has a generator. Anything else that
-                // implements the interface — a subclass, DateTime — inherits a
-                // constructor whose reflection asks for a `string` and a
-                // `?DateTimeZone`, and a random string never parses as a date:
-                // building it would explode with a parse error deep inside the
-                // recursion instead of naming the type that cannot be built.
-                throw new \InvalidArgumentException(sprintf(
-                    'Cannot generate %s: only DateTimeImmutable itself is generated from a signature; pass an override',
-                    $type,
-                ));
+            if ($special instanceof ArbitraryInterface) {
+                return $special;
             }
 
             /** @var class-string $type */
@@ -364,7 +384,7 @@ final class ParameterGenerators
             // A docblock type outside the readable subset says more than the
             // native type — that is why it was written — and generating from
             // the native type instead would be the widened guess the class
-            // promises never to make: `float<0.0, 1.0>` is not `float`. The
+            // promises never to make: `callable-string` is not `string`. The
             // one exception is a native class type, whose docblock can only
             // narrow its generics (`Collection<Item>`), never its values.
             if (!$native instanceof \ReflectionNamedType || $native->isBuiltin()) {

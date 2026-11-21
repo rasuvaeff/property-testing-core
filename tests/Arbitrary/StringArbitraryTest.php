@@ -396,10 +396,18 @@ final class StringArbitraryTest
         new StringArbitrary(-1, 5);
     }
 
-    #[ExpectException(\InvalidArgumentException::class)]
-    public function rejectsZeroMaximumLength(): void
+    public function aZeroMaximumLengthGeneratesOnlyTheEmptyString(): void
     {
-        new StringArbitrary(0, 0);
+        // A dependent flatMap(intBetween(0, 3), fn ($n) => …(0, $n)) draws 0.
+        $arbitrary = new StringArbitrary(0, 0);
+        $random = new Random(7);
+
+        for ($i = 0; $i < 50; ++$i) {
+            $tree = $arbitrary->generate($random);
+
+            Assert::same($tree->value, '');
+            Assert::same(iterator_to_array($tree->shrinks(), preserve_keys: false), []);
+        }
     }
 
     #[ExpectException(\InvalidArgumentException::class)]

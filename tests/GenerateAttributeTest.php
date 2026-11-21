@@ -58,7 +58,7 @@ final class GenerateAttributeTest
 
     public function theAttributeStandsInForAnUnreadableDocblock(): void
     {
-        // Without the attribute `float<0.0, 1.0>` is refused; with it, the
+        // Without the attribute `float<min, 1.0>` is refused; with it, the
         // docblock is never read.
         $generators = Gen::forParameters(self::method('overAnUnreadableDocblock'));
         $random = new Random(2);
@@ -165,7 +165,7 @@ final class GenerateAttributeTest
      */
     public static function refusals(): iterable
     {
-        yield 'constructor rejects its arguments' => ['invalidArguments', 'cannot be built: Min must be less than or equal to max'];
+        yield 'constructor rejects its arguments' => ['invalidArguments', 'cannot be built: Gen::intBetween(): min must be less than or equal to max, got 10 and 1'];
         yield 'repeated' => ['repeated', sprintf('cannot be built: Attribute "%s" must not be repeated', Generate::class)];
         yield 'non-static factory' => ['nonStaticFactory', sprintf('names %s::notStatic(), which is not static', GenerateMethods::class)];
         yield 'array that is no callable' => ['notACallableArray', 'takes an ArbitraryInterface or a static factory returning one, got array'];

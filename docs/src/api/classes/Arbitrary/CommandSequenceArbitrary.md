@@ -9,7 +9,7 @@ description: "Generates valid Command sequences for stateful / model-based testi
 
 `Rasuvaeff\PropertyTesting\Arbitrary\CommandSequenceArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CommandSequenceArbitrary.php#L36) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/CommandSequenceArbitrary.php#L37) — **Version:** working tree
 
 **Implements:** [`Swarmable`](/api/classes/Swarmable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

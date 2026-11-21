@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Enumerable;
+use Rasuvaeff\PropertyTesting\Internal\ComponentShrinks;
 use Rasuvaeff\PropertyTesting\Internal\Domain;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
@@ -101,10 +102,8 @@ final readonly class TupleArbitrary implements Enumerable
         return Shrinkable::of($value, function () use ($components): \Generator {
             // Arity is fixed: there is no length phase. Shrink one position at a
             // time through its own tree, keeping the others as-is.
-            foreach ($components as $index => $component) {
-                foreach ($component->shrinks() as $smaller) {
-                    yield $this->tree(array_replace($components, [$index => $smaller]));
-                }
+            foreach (ComponentShrinks::of($components, $this->tree(...)) as $candidate) {
+                yield $candidate;
             }
         });
     }

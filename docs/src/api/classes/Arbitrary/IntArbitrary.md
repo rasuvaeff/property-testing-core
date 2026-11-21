@@ -9,7 +9,7 @@ description: "Generates integers within an inclusive range and shrinks them towa
 
 `Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/IntArbitrary.php#L29) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/IntArbitrary.php#L30) — **Version:** working tree
 
 **Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

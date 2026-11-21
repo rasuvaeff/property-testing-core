@@ -151,7 +151,7 @@ final class DateTimeArbitraryTest
 
             Assert::fail('expected the inverted range to be refused');
         } catch (\InvalidArgumentException $e) {
-            Assert::same($e->getMessage(), 'Min must be less than or equal to max');
+            Assert::same($e->getMessage(), 'Gen::datetime(): min must be less than or equal to max, got 2024-01-01T00:00:00.000001+00:00 and 2024-01-01T00:00:00.000000+00:00');
         }
     }
 

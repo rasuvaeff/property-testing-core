@@ -35,6 +35,7 @@ __construct(
     array<string,mixed> $shrunkNotes = [],
     int $replays = 0,
     ?int $passedOnReplay = NULL,
+    list<string> $shrinkErrors = [],
 )
 ```
 
@@ -55,6 +56,7 @@ __construct(
 | `$shrunkNotes` | `array<string,mixed>` | `[]` | What [`Gen`](/api/classes/Gen)::note() attached during the run of the minimised arguments — the original notes when nothing shrank. |
 | `$replays` | `int` | `0` | How many times the minimised input was re-executed after the descent ([`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$flakyReplays) to tell a counterexample from nondeterminism — up to the configured count, stopping at the first replay that passed. |
 | `$passedOnReplay` | `?int` | `NULL` | The one-based replay that did not fail, when one did: the counterexample is flaky — the body or the code under test is nondeterministic, and the input is not by itself what falsifies the property. Null when every replay failed again (or none ran). |
+| `$shrinkErrors` | `list<string>` | `[]` | Why enumerating some node's shrink candidates ended early, as `Class: message`, each distinct one once and at most ten: a `Shrinkable` tree (a user-written one, a `Gen::map()` refusing a smaller value) that throws while listing its candidates is treated as having no more of them, and without this a bug there would read as "it did not shrink". Empty when every enumeration ran to its end. Not part of `toArray`() or the exception message. |
 
 ## Methods
 

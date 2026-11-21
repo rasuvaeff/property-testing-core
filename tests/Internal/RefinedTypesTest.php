@@ -243,7 +243,7 @@ final class RefinedTypesTest
         yield 'unsealed' => ['unsealed', 'array{a: int, ...}'];
         yield 'keyed list' => ['keyedList', 'list{a: int}'];
         yield 'double-quoted key' => ['doubleQuotedKey', 'array{"a": int}'];
-        yield 'unreadable value type' => ['unreadableValue', 'array{a: float<0.0, 1.0>}'];
+        yield 'unreadable value type' => ['unreadableValue', 'array{a: float<min, 1.0>}'];
     }
 
     /**

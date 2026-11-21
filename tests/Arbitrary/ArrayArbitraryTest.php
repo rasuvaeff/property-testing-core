@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\Arbitrary\ArrayArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
+use Rasuvaeff\PropertyTesting\Internal\ComponentShrinks;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
@@ -15,6 +16,7 @@ use Testo\Test;
 
 #[Test]
 #[Covers(ArrayArbitrary::class)]
+#[Covers(ComponentShrinks::class)]
 final class ArrayArbitraryTest
 {
     public function generateStaysWithinSizeRange(): void
@@ -202,10 +204,18 @@ final class ArrayArbitraryTest
         new ArrayArbitrary(new IntArbitrary(), -1, 5);
     }
 
-    #[ExpectException(\InvalidArgumentException::class)]
-    public function rejectsZeroMaximumSize(): void
+    public function aZeroMaximumSizeGeneratesOnlyTheEmptyList(): void
     {
-        new ArrayArbitrary(new IntArbitrary(), 0, 0);
+        // A dependent flatMap(intBetween(0, 3), fn ($n) => …(0, $n)) draws 0.
+        $arbitrary = new ArrayArbitrary(new IntArbitrary(), 0, 0);
+        $random = new Random(7);
+
+        for ($i = 0; $i < 50; ++$i) {
+            $tree = $arbitrary->generate($random);
+
+            Assert::same($tree->value, []);
+            Assert::same(iterator_to_array($tree->shrinks(), preserve_keys: false), []);
+        }
     }
 
     #[ExpectException(\InvalidArgumentException::class)]

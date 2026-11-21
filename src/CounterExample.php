@@ -49,6 +49,12 @@ final readonly class CounterExample
      *        counterexample is flaky — the body or the code under test is nondeterministic, and the
      *        input is not by itself what falsifies the property. Null when every replay failed again
      *        (or none ran).
+     * @param list<string> $shrinkErrors Why enumerating some node's shrink candidates ended early,
+     *        as `Class: message`, each distinct one once and at most ten: a `Shrinkable` tree (a
+     *        user-written one, a `Gen::map()` refusing a smaller value) that throws while listing
+     *        its candidates is treated as having no more of them, and without this a bug there
+     *        would read as "it did not shrink". Empty when every enumeration ran to its end. Not
+     *        part of {@see toArray()} or the exception message.
      */
     public function __construct(
         public int $seed,
@@ -66,6 +72,7 @@ final readonly class CounterExample
         public array $shrunkNotes = [],
         public int $replays = 0,
         public ?int $passedOnReplay = null,
+        public array $shrinkErrors = [],
     ) {}
 
     /**

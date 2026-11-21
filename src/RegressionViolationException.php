@@ -33,7 +33,7 @@ final class RegressionViolationException extends RuntimeException implements Pro
         $message = sprintf(
             'Recorded regression failed (originally found with seed %d): %s',
             $seed,
-            $this->format($arguments),
+            ValueRenderer::renderArguments($arguments),
         );
 
         if ($failure instanceof \Throwable) {
@@ -54,20 +54,5 @@ final class RegressionViolationException extends RuntimeException implements Pro
     public function getSeed(): int
     {
         return $this->seed;
-    }
-
-    /**
-     * @param array<string, mixed> $arguments
-     */
-    private function format(array $arguments): string
-    {
-        $parts = [];
-
-        /** @var mixed $value */
-        foreach ($arguments as $name => $value) {
-            $parts[] = $name . '=' . ValueRenderer::render($value);
-        }
-
-        return implode(', ', $parts);
     }
 }

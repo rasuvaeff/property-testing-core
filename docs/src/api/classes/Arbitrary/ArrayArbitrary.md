@@ -9,7 +9,7 @@ description: "Generates lists whose elements come from a delegate arbitrary and 
 
 `Rasuvaeff\PropertyTesting\Arbitrary\ArrayArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ArrayArbitrary.php#L26) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/ArrayArbitrary.php#L28) — **Version:** working tree
 
 **Implements:** [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

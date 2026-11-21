@@ -173,12 +173,14 @@ rejected at construction.
 | Unique array (ids, keys) | `Gen::uniqueArrayOf($element, $min, $max)` | Distinct by `===`; for VOs unique by one field add `by: fn ($u) => $u->id` (key must be `int\|string`) |
 | Map / dictionary | `Gen::dictOf($keyArb, $valueArb, $min, $max)` | |
 | Fixed-arity tuple | `Gen::tuple($a, $b, $c)` | One value per element, arity fixed; each position shrinks via its own generator |
+| Typed pair / triple | `Gen::pair($a, $b)`, `Gen::triple($a, $b, $c)` | The two/three-element tuple typed `array{A, B}` for psalm — use it under `Gen::map()` instead of nested `flatMap` when the parts are independent |
 | Ordered pair / interval `[lo, hi]` | `Gen::intRange($min, $max)` | `lo <= hi` always holds, both bounds shrink — no `Assume` discard |
 | Subset of a fixed set (feature flags, permissions) | `Gen::subset($values, $minSize, $maxSize)` | Distinct members in source order; duplicates in `$values` throw; shrinks toward a short prefix |
 | Fixed-shape object/VO | `Gen::record(['id' => Gen::uuid(), 'age' => Gen::intBetween(0, 120)])` | |
 | One of N | `Gen::oneOf($a, $b, $c)` or `Gen::elements([$a, $b, $c])` | **VALUES, not generators.** Passing an `ArbitraryInterface` is rejected since core 0.9 — it used to make the generator object itself the generated value. To pick between generators use `Gen::frequency()` |
 | Enum cases | `Gen::enum(MyEnum::class)` | |
 | Weighted choice | `Gen::frequency([[7, $common], [3, $rare]])` | Takes generators, unlike `oneOf`/`elements` |
+| Equal choice between generators | `Gen::anyOf($a, $b, $c)` | `frequency` with weight 1 each, same sequence — the short form of `[[1, $a], [1, $b]]` |
 | Case that must LACK an operation | `Gen::swarm(Gen::oneOf(...))` / `Gen::swarm(Gen::commands(...))` | Swarm testing: each case uses a random non-empty subset of the variants; shrinking stays inside that subset |
 | UUID v4 | `Gen::uuid()` | |
 | Date/time | `Gen::datetime($min, $max)` | UTC `DateTimeImmutable` |
@@ -186,7 +188,7 @@ rejected at construction.
 | JSON value | `Gen::json($maxDepth)` / `Gen::jsonString($maxDepth)` | |
 | String matching a regex | `Gen::regex($pattern)` / `Gen::stringMatching($pattern)` | **NO DELIMITERS**: `[a-z]+`, not `/[a-z]+/` — a delimited pattern is refused since core 0.9. PCRE subset: literals, `.`, classes `[...]` (ranges, negation, `\d\w\s` and negations, POSIX `[:alpha:]`/`[:^digit:]` inside a class), escapes `\d\w\s\D\W\S\t\n\r` and `\`-escaped punctuation, quantifiers `* + ? {n} {n,} {n,m}`, alternation `\|`, groups `(...)`/`(?:...)`, a leading `^` and trailing `$` as no-ops. Anchors elsewhere, backreferences, lookaround, flags, lazy/possessive quantifiers throw |
 | Recursive structure (tree) | `Gen::recursive($leaf, $wrap, $maxDepth)` | |
-| Nullable | `Gen::nullable($inner)` | |
+| Nullable | `Gen::nullable($inner)` | Typed `T\|null` |
 | Dependent on previous value | `Gen::flatMap($inner, fn($x) => $dependent)` | Integrated shrinking preserved |
 | Several dependent values, reusable | `Gen::composite(fn (Draw $d) => new Interval($min = $d->draw(...), $d->draw(Gen::datetime(min: $min))))` | An ordinary generator (composes with `map`/`arrayOf`/providers); shrinks the draws, earliest first; a body that throws for a shrunk draw refuses the candidate |
 | In-body draw (rare, multiple deps) | `Gen::draw($arb)` | ONLY inside a running property body; replay tape recorded |

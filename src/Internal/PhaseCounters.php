@@ -36,10 +36,12 @@ final class PhaseCounters
     /**
      * @param ?int $domainSize The enumerated domain's size, when the phase walks instead of samples.
      * @param ?string $exhaustiveDeclined Why an exhaustive run samples after all; null otherwise.
+     * @param int $discardedExamples Explicit examples `Assume::that()` discarded before the phase.
      */
     public function __construct(
-        private readonly ?int $domainSize,
+        public readonly ?int $domainSize,
         private readonly ?string $exhaustiveDeclined,
+        private readonly int $discardedExamples = 0,
     ) {}
 
     /**
@@ -95,6 +97,7 @@ final class PhaseCounters
             $this->domainSize,
             $this->exhaustiveDeclined,
             $search,
+            $this->discardedExamples,
         );
     }
 }

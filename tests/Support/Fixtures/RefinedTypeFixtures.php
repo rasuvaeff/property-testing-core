@@ -59,7 +59,7 @@ final class RefinedTypeMethods
     public function doubleQuotedKey(array $shape): void {}
 
     /**
-     * @param array{a: float<0.0, 1.0>} $shape
+     * @param array{a: float<min, 1.0>} $shape
      */
     public function unreadableValue(array $shape): void {}
 }

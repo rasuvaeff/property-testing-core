@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
+use Rasuvaeff\PropertyTesting\Internal\Bounds;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -23,15 +24,7 @@ final readonly class BytesArbitrary implements ArbitraryInterface
         private int $minLength = 0,
         private int $maxLength = 100,
     ) {
-        if ($minLength < 0) {
-            throw new \InvalidArgumentException('Minimum length must be greater than or equal to 0');
-        }
-        if ($maxLength < 1) {
-            throw new \InvalidArgumentException('Maximum length must be greater than or equal to 1');
-        }
-        if ($minLength > $maxLength) {
-            throw new \InvalidArgumentException('Minimum length must be less than or equal to maximum length');
-        }
+        Bounds::size('Gen::bytes()', 'minLength', 'maxLength', $minLength, $maxLength);
     }
 
     #[\Override]

@@ -8,6 +8,7 @@ use Closure;
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
 use Rasuvaeff\PropertyTesting\Internal\BlockRemovals;
+use Rasuvaeff\PropertyTesting\Internal\Bounds;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -48,15 +49,7 @@ final readonly class UniqueArrayArbitrary implements ArbitraryInterface
         private int $maxSize = 100,
         private ?Closure $by = null,
     ) {
-        if ($minSize < 0) {
-            throw new \InvalidArgumentException('Minimum size must be greater than or equal to 0');
-        }
-        if ($maxSize < 1) {
-            throw new \InvalidArgumentException('Maximum size must be greater than or equal to 1');
-        }
-        if ($minSize > $maxSize) {
-            throw new \InvalidArgumentException('Minimum size must be less than or equal to maximum size');
-        }
+        Bounds::size('Gen::uniqueArrayOf()', 'minSize', 'maxSize', $minSize, $maxSize);
     }
 
     /**

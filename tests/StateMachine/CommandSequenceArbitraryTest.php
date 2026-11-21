@@ -260,10 +260,14 @@ final class CommandSequenceArbitraryTest
         new CommandSequenceArbitrary([], [Gen::constant(new PopCommand())], minLength: -1);
     }
 
-    #[ExpectException(\InvalidArgumentException::class)]
-    public function rejectsAMaxLengthBelowOne(): void
+    public function aZeroMaxLengthGeneratesOnlyTheEmptySequence(): void
     {
-        new CommandSequenceArbitrary([], [Gen::constant(new PopCommand())], maxLength: 0);
+        $arbitrary = new CommandSequenceArbitrary([], [Gen::constant(new PopCommand())], maxLength: 0);
+        $random = new Random(7);
+
+        for ($i = 0; $i < 20; ++$i) {
+            Assert::same($arbitrary->generate($random)->value->commands, []);
+        }
     }
 
     #[ExpectException(\InvalidArgumentException::class)]

@@ -50,12 +50,6 @@ final class DeadlineExceededException extends RuntimeException implements Proper
             return '(no arguments)';
         }
 
-        $pairs = array_map(
-            static fn(mixed $value, mixed $name): string => $name . '=' . ValueRenderer::render($value),
-            $arguments,
-            array_keys($arguments),
-        );
-
-        return implode(', ', $pairs);
+        return ValueRenderer::renderArguments($arguments);
     }
 }

@@ -7,6 +7,7 @@ namespace Rasuvaeff\PropertyTesting\Tests\Arbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\BoolArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\IntArbitrary;
 use Rasuvaeff\PropertyTesting\Arbitrary\RecordArbitrary;
+use Rasuvaeff\PropertyTesting\Internal\ComponentShrinks;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Tests\Support\Trees;
 use Testo\Assert;
@@ -16,6 +17,7 @@ use Testo\Test;
 
 #[Test]
 #[Covers(RecordArbitrary::class)]
+#[Covers(ComponentShrinks::class)]
 final class RecordArbitraryTest
 {
     public function generateProducesOneValuePerFieldKeyedByName(): void

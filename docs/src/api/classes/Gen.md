@@ -90,7 +90,7 @@ Printable ASCII strings of length 0..100.
 ```php
 static stringOf(
     int<0, max> $minLength = 0,
-    int<1, max> $maxLength = 100,
+    int<0, max> $maxLength = 100,
 ): ArbitraryInterface
 ```
 
@@ -322,6 +322,11 @@ Gen::forClass(Money::class);
 Gen::forClass(Money::class, ['amount' => Gen::intPositive()]);
 ```
 
+An enum, `DateTimeImmutable`, ``Random\Engine`` and ``Random\Randomizer``
+are answered as they are for a class-typed parameter — `Gen::enum()`,
+`Gen::datetime()`, `Gen::randomEngine()`, `Gen::randomizer()` — unless
+overrides are given, which ask for the constructor explicitly.
+
 Per parameter, in order: an override, then a [`Generate`](/api/classes/Generate) attribute
 on the parameter, then the docblock (psalm subset;
 `@psalm-param`/`@phpstan-param` over `@param`, and the promoted
@@ -470,7 +475,7 @@ the plain value it wraps, not merely to an empty container.
 ### nullable()
 
 ```php
-static nullable(ArbitraryInterface $inner): ArbitraryInterface
+static nullable(\ArbitraryInterface<\TValue> $inner): ArbitraryInterface
 ```
 
 Yields null or a value from $inner with roughly even odds.
@@ -610,6 +615,68 @@ static tuple(ArbitraryInterface $elements): ArbitraryInterface
 Fixed-arity tuple: one value per element arbitrary, in order. The property
 receives the tuple as a single array argument; shrinking reduces each
 position through its own arbitrary while keeping the arity fixed.
+
+### pair()
+
+```php
+static pair(
+    \ArbitraryInterface<\TFirst> $first,
+    \ArbitraryInterface<\TSecond> $second,
+): ArbitraryInterface
+```
+
+Two values, one from each generator, as `[$first, $second]`: tuple()
+with the element types kept, so a property or a map() reads them
+typed. Generates and shrinks exactly like the two-element tuple.
+
+- `$first` — Generates the first element.
+- `$second` — Generates the second element.
+
+```php
+Gen::map(Gen::pair(Gen::intPositive(), Gen::stringAscii()), static fn (array $p): Item => new Item(...$p));
+```
+
+### triple()
+
+```php
+static triple(
+    \ArbitraryInterface<\TFirst> $first,
+    \ArbitraryInterface<\TSecond> $second,
+    \ArbitraryInterface<\TThird> $third,
+): ArbitraryInterface
+```
+
+Three values, one from each generator, as `[$first, $second, $third]`:
+tuple() with the element types kept. Generates and shrinks exactly
+like the three-element tuple.
+
+- `$first` — Generates the first element.
+- `$second` — Generates the second element.
+- `$third` — Generates the third element.
+
+### anyOf()
+
+```php
+static anyOf(\ArbitraryInterface $generators): ArbitraryInterface
+```
+
+An equal-weight choice between generators: frequency() with every
+weight 1, and the same sequence for a given seed. The choice between
+generators that oneOf() refuses — `oneOf` picks between values.
+
+- `$generators` — The generators to choose between, at least one.
+
+**Throws:**
+
+- `InvalidArgumentException` — When no generator is given.
+
+```php
+Gen::anyOf(Gen::int(), Gen::constant(null));
+```
+
+Typed as `mixed`: the generators may produce different types, and a
+template over a variadic would make psalm refuse exactly that mix. Use
+`frequency`() where the common type matters to static analysis.
 
 ### frequency()
 

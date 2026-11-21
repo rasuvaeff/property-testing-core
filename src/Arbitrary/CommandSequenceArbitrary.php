@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\ArbitraryInterface;
 use Rasuvaeff\PropertyTesting\GenerationExhaustedException;
+use Rasuvaeff\PropertyTesting\Internal\Bounds;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 use Rasuvaeff\PropertyTesting\StateMachine\Command;
@@ -67,15 +68,7 @@ final readonly class CommandSequenceArbitrary implements Swarmable
                 ));
             }
         }
-        if ($minLength < 0) {
-            throw new \InvalidArgumentException('Minimum length must be greater than or equal to 0');
-        }
-        if ($maxLength < 1) {
-            throw new \InvalidArgumentException('Maximum length must be greater than or equal to 1');
-        }
-        if ($minLength > $maxLength) {
-            throw new \InvalidArgumentException('Minimum length must be less than or equal to maximum length');
-        }
+        Bounds::size('Gen::commands()', 'minLength', 'maxLength', $minLength, $maxLength);
 
         /** @var non-empty-list<ArbitraryInterface<Command>> $validated */
         $validated = array_values($commandGenerators);

@@ -9,7 +9,7 @@ description: "Fixed-shape associative array: produces a map with one value per n
 
 `Rasuvaeff\PropertyTesting\Arbitrary\RecordArbitrary`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/RecordArbitrary.php#L25) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Arbitrary/RecordArbitrary.php#L26) — **Version:** working tree
 
 **Implements:** [`Enumerable`](/api/classes/Enumerable), [`ArbitraryInterface`](/api/classes/ArbitraryInterface)
 

@@ -1,5 +1,65 @@
 # Changelog
 
+## 1.5.0 — 2026-11-21
+
+- **Added:** adapter building blocks in `Runner\`, so the Testo and PHPUnit
+  adapters print the same bytes from one implementation (#199):
+  `Environment::fromVariables()` parses every `PROPERTY_*` value an adapter read
+  (`Environment::VARIABLES`, in parse order) and `->config(...)` applies the
+  precedence table — the environment wins for `runs`, `phases`, `derandomize`,
+  `edgeCases`, `exhaustive`, `searchRuns`, the code for `seed` and `path`;
+  `RunStatistics::of(PropertyResult)`; `DiagnosticLines::of($name, $statistics)`
+  with `DiagnosticLine` and `DiagnosticLevel` — the discard warning, the
+  distribution, the tables, the exhaustive and search reports in their fixed
+  order; `TraceListener` — the `PROPERTY_VERBOSE` trace on a
+  `Closure(string): void` sink; `FailOnTrialExecutor` (and its
+  `guard($levels, $call)`) — PHP diagnostics of chosen levels as failing,
+  shrinkable runs, moved out of the Testo adapter.
+  `PropertyResult` gains no member. A share in a diagnostic line is rounded half
+  up on the exact ratio: `23/40` reads 58%, where the Testo adapter printed 57%
+  under PHP 8.4+.
+- **Added:** `RunStatistics::$discardedExamples` — explicit examples the body
+  discarded with `Assume::that()`. Such an example still passes; the adapters warn
+  about it (#188).
+- **Added:** `Gen::anyOf(...$generators)`, an equal-weight choice between
+  generators — `frequency()` with weight 1 each and the same sequence (#191).
+- **Added:** `Gen::pair()` and `Gen::triple()`, the two- and three-element
+  tuples typed `array{A, B}` / `array{A, B, C}`; `Gen::nullable()` is typed
+  `ArbitraryInterface<T|null>`, `recursive()` and `json()` declare their return
+  type (#190).
+- **Added:** `CounterExample::$shrinkErrors` — what ended a node's shrink
+  candidate enumeration early (`Class: message`, distinct, at most ten). A bug in
+  a user-written `Shrinkable` no longer reads as "it did not shrink". Kept out of
+  `toArray()` and the message (#194).
+- **Added:** `ValueRenderer::renderArguments()`, the `name=value, …` form every
+  message prints arguments in, used by the exceptions and the trace (#193).
+- **Added:** type inference reads `array-key` (as `int|string`), `scalar` (as
+  `int|float|string|bool`) and `float<a, b>` with decimal ends; each was refused
+  before (#195).
+- **Changed:** `Gen::forClass()` of an enum, `DateTimeImmutable`,
+  `Random\Engine` or `Random\Randomizer` without overrides generates it as a
+  class-typed parameter would (`enum()`, `datetime()`, …) instead of failing;
+  another `DateTimeInterface` is refused by name. With overrides the constructor
+  is used as before (#186).
+- **Changed:** a size or length bound of `0` is accepted by `arrayOf`,
+  `uniqueArrayOf`, `dictOf`, `stringOf`, `stringFrom`, `bytes` and `commands`
+  (it generates only the empty value), so a dependent
+  `flatMap(intBetween(0, 3), fn ($n) => arrayOf($g, 0, $n))` works for `0`.
+  Configurations valid before and their seed sequences are unchanged (#187).
+- **Changed:** a generator constructor that refuses its range names the factory
+  and the values: `Gen::arrayOf(): minSize must be less than or equal to maxSize,
+  got 3 and 0` instead of `Minimum size must be less than or equal to maximum
+  size` (#192).
+- **Internal:** `PropertyRunner`'s shrink descent is an `Internal\Descent`
+  instead of a positional nine-element tuple, one descent step serves both
+  parameters and recorded draws, and an `Internal\PhaseContext` replaces the
+  12–14 positional parameters of `attempt()` and `search()` (#189); tuple,
+  record and list shrinking share one element-wise helper (#193). Events,
+  trials and shrink candidates keep their exact order; the seed determinism
+  vectors are unchanged and `SEQUENCE_EPOCH` stays 4.
+- **Tests:** `TargetImproved` and `TargetOutcome` are named in `#[Covers]`; the
+  discarded-examples case has its regression tests (#197).
+
 ## 1.4.0 — 2026-11-20
 
 - **Added:** `GenerationErrorException` (implements `PropertyTestingException`).

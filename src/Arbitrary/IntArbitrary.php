@@ -6,6 +6,7 @@ namespace Rasuvaeff\PropertyTesting\Arbitrary;
 
 use Rasuvaeff\PropertyTesting\Enumerable;
 use Rasuvaeff\PropertyTesting\Internal\Boundary;
+use Rasuvaeff\PropertyTesting\Internal\Bounds;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Shrinkable;
 
@@ -34,9 +35,7 @@ final readonly class IntArbitrary implements Enumerable
         private int $min = PHP_INT_MIN,
         private int $max = PHP_INT_MAX,
     ) {
-        if ($min > $max) {
-            throw new \InvalidArgumentException('Min must be less than or equal to max');
-        }
+        Bounds::ordered('Gen::intBetween()', 'min', 'max', $min, $max);
     }
 
     #[\Override]

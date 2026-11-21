@@ -31,6 +31,7 @@ __construct(
     ?int $domainSize = NULL,
     ?string $exhaustiveDeclined = NULL,
     ?\Runner\SearchReport $search = NULL,
+    int $discardedExamples = 0,
 )
 ```
 
@@ -47,4 +48,22 @@ __construct(
 | `$domainSize` | `?int` | `NULL` | The size of the parameter domain the phase enumerated instead of sampling ([`Runner\PropertyConfig`](/api/classes/Runner/PropertyConfig)::$exhaustive); null when it sampled. |
 | `$exhaustiveDeclined` | `?string` | `NULL` | Why an exhaustive run sampled after all — a parameter without a finite domain, or a domain above the budget; null when it enumerated or was never asked to. |
 | `$search` | `?\Runner\SearchReport` | `NULL` | What the targeted search amounted to; null when the property targeted nothing. |
+| `$discardedExamples` | `int` | `0` | Explicit examples (`&lt;method&gt;Examples()`) the body discarded with `Assume::that()`. Such an example counts as passed — the run's verdict does not change — but it checked nothing: after a precondition moves, a pinned case can silently stop pinning anything, and this is the number the adapters warn about. |
+
+## Methods
+
+### of()
+
+```php
+static of(\Runner\PropertyResult $result): ?Runner\RunStatistics
+```
+
+The statistics a result carries, for the outcomes that carry them —
+Passed, GaveUp, CoverageFailed and
+TimeBudgetExceeded — and null for every other one. The adapters'
+diagnostics are built from these; a result type that gains statistics is
+added here, not to the PropertyResult interface, which outside
+implementations would have to follow.
+
+- `$result` — Any outcome of a run.
 

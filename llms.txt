@@ -28,6 +28,12 @@ Runtime deps: PHP `8.3 - 8.5`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
   `CorpusFactory::fromDsn()` (path -> FilesystemCorpus; `redis://host[:port][/db][?prefix=&timeout=seconds]`
   or `rediss://` -> RedisCorpus via ext-redis or predis, memoized per value; other scheme ->
   error). No helper reads the variable for you: fromDsn() is the only way in.
+  `Environment::fromVariables(array<name, string|false>)` parses all of them at once
+  (`Environment::VARIABLES` = PROPERTY_SEED, _PATH, _RUNS, _PHASES, _DERANDOMIZE,
+  _EDGE_CASES, _EXHAUSTIVE, _SEARCH_RUNS, _VERBOSE, _DB, in parse order: the first invalid
+  one in that order is the one refused); `->config(...)` (PropertyConfig's parameters and
+  defaults) applies the precedence: env WINS for runs/phases/derandomize/edgeCases/
+  exhaustive/searchRuns, the code WINS for seed/path; `->verbose`, `->db` are the rest.
 - Sequential-only: `Classify` and the in-body draw tape are process-local
   statics armed/drained around each body execution. Do not run properties
   concurrently in one process.
@@ -150,12 +156,17 @@ deterministic deadline/budget tests; `MonotonicClock` is the default.
 Every result implements `PropertyResult` (`failure(): ?Throwable`, null = pass):
 
 - `Passed` — carries `RunStatistics` ($attempts, $discards, $checks,
-  $classifications per label, $requirements = the cover() thresholds per label, $skips).
+  $classifications per label, $requirements = the cover() thresholds per label, $skips,
+  $discardedExamples = explicit examples Assume discarded: they PASS but checked nothing).
+  `RunStatistics::of(PropertyResult): ?RunStatistics` = the statistics of Passed/GaveUp/
+  CoverageFailed/TimeBudgetExceeded, null otherwise.
 - `Falsified` — carries `PropertyViolationException`;
   `counterExample(): CounterExample` (`seed`, `runsBeforeFailure`,
   `originalArguments`, `shrunkArguments`, `shrinkSteps`, `shrinkTrials`,
   `discards` (Assume) and `skips` (environmental) -- two counters, not one;
-  `path`, `failure`, `toArray()`, `toJson()`, `toExamplesCode()`).
+  `path`, `failure`, `toArray()`, `toJson()`, `toExamplesCode()`;
+  `shrinkErrors` = list<string> `Class: message` of what ended a node's candidate
+  enumeration early, distinct, max 10 -- NOT in toArray() and NOT in the message).
   The falsification message ends with a `Path:` line carrying that same value
   (omitted when nothing shrank), so a replay is a copy of the line plus the seed
   printed above it.
@@ -186,6 +197,20 @@ refused to run the body (the entry is kept). Both mean "checked nothing", but
 they are counted apart on `RunStatistics` and spend separate budgets.
 `Assume::that()` throws `AssumptionSkipped` (`@api`, final): an executor catches it
 and returns `discarded()`.
+`FailOnTrialExecutor(TrialExecutor $inner, int $levels)` decorates an executor: PHP
+diagnostics of $levels (E_* bitmask, 0 = off, < 0 throws) raised by the body become an
+`\ErrorException` at the raise site = a failing run that shrinks; unclaimed levels go to the
+previous handler; `@`-silenced stays silent. `FailOnTrialExecutor::guard($levels, Closure)`
+runs one call under the same handler.
+
+Adapter helpers (`Runner\`), so adapters print the same bytes:
+`DiagnosticLines::of(string $name, RunStatistics): list<DiagnosticLine>` (`$level`:
+`DiagnosticLevel::Info|Warning`, `$text`) in this order: discard warning (> 90% of attempts),
+discarded-examples warning, distribution, one line per tabulate() table, exhaustive,
+search. Shares round half up on the exact ratio (23/40 -> 58%).
+`TraceListener(Closure(string): void $sink)` = the PROPERTY_VERBOSE trace (attempt
+arguments, attempt draws, target improvements, accepted shrink steps); swallows its own and
+the sink's errors. `ValueRenderer::renderArguments(array)` = `name=value, name=value`.
 
 Marker: every exception the engine reports implements `PropertyTestingException`
 (empty interface extending \Throwable): PropertyViolationException,
@@ -300,6 +325,8 @@ Gen::mixed(int $maxDepth = 2)           // <mixed>, any PHP type: null/bool/int/
                                         // nested list/string-keyed/int-keyed arrays, stdClass, ArrayObject; no closures,
                                         // anonymous classes, resources, enums; shrinks to null,false,0,'',[] first; objects
                                         // make the corpus store a seed entry; forParameters() still refuses `mixed`
+// Size/length bounds: 0 <= min <= max, max MAY be 0 (always the empty value). A refused range
+// names the factory and the values: "Gen::arrayOf(): minSize must be less than or equal to maxSize, got 3 and 0".
 Gen::arrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100)  // <list<T>>
 Gen::nonEmptyArrayOf(ArbitraryInterface $element, int $maxSize = 100)            // <list<T>>, >= 1
 Gen::uniqueArrayOf(ArbitraryInterface $element, int $minSize = 0, int $maxSize = 100, ?Closure $by = null)
@@ -340,12 +367,16 @@ Gen::datetime(?DateTimeImmutable $min = null, ?DateTimeImmutable $max = null) //
 Gen::floatSpecial()                     // <float> over NAN/±INF/-0.0/float edges
 Gen::intRange(int $min, int $max)       // <array{int, int}>: ordered [lo, hi]
 Gen::recursive(ArbitraryInterface $leaf, Closure $wrap, int $maxDepth = 3)
-Gen::nullable(ArbitraryInterface $inner)        // <mixed>, null or the inner value
+Gen::nullable(ArbitraryInterface $inner)        // <T|null>, null or the inner value
 Gen::map(ArbitraryInterface $inner, Closure $map)     // <TOut>
 Gen::flatMap(ArbitraryInterface $inner, Closure $flatMap) // <TOut>, dependent domains
 Gen::filter(ArbitraryInterface $inner, Closure $predicate) // <T>, 100 retries then GenerationExhaustedException
 Gen::tuple(ArbitraryInterface ...$elements)          // <list<mixed>>
-Gen::frequency(iterable $pairs)                      // <T>, [weight, arb] pairs -- the one that takes GENERATORS
+Gen::pair(ArbitraryInterface $a, ArbitraryInterface $b)   // <array{A, B}>: tuple of two, same values/shrinks, typed
+Gen::triple(ArbitraryInterface $a, ArbitraryInterface $b, ArbitraryInterface $c) // <array{A, B, C}>
+Gen::frequency(iterable $pairs)                      // <T>, [weight, arb] pairs -- takes GENERATORS
+Gen::anyOf(ArbitraryInterface ...$generators)        // <mixed>: equal-weight choice between GENERATORS = frequency with
+                                                     // weight 1 each, same sequence; [] throws
 Gen::commands(mixed $initialModel, array $commandGenerators, int $minLength = 0, int $maxLength = 100) // <CommandSequence>
 Gen::rules(string $machine, int $minLength = 0, int $maxLength = 100) // <RuleSequence>: rule-based machine (see Stateful)
 Gen::swarm(ArbitraryInterface $arbitrary)  // <T>: swarm testing. Wraps a CHOICE generator (oneOf/elements/frequency/commands) or any Swarmable; anything else throws. Each generated case may use only a random NON-EMPTY subset of the variants; frequency weights of survivors are kept. Shrinking stays INSIDE that subset (never widens back), which is what keeps an "operation never occurred" finding reproducible. Subset is drawn once per generated value -> wrap the generator whose scope you mean (swarm(commands(...)) = whole sequence; arrayOf(swarm(oneOf(...))) redraws per element). Counterexample reports the value, not the subset; seed replay reproduces both. swarm(commands(...)) with minLength > 0 can throw GenerationExhaustedException when the subset starves the sequence.
@@ -365,10 +396,13 @@ Gen::swarm(ArbitraryInterface $arbitrary)  // <T>: swarm testing. Wraps a CHOICE
 // (upper bound), EdgeCased — the wrappers answer null over an unbounded source and their enumerate()
 // throws LogicException. Order: ints ascending, oneOf as listed, null first, first component slowest.
 Gen::forClass(string $class, array $overrides = [], bool $skipInvalid = false, int $maxDepth = 3)
-// <T>: instances from the constructor. Per parameter, in order: override, #[Generate] on the
+// <T>: instances from the constructor. Without overrides an enum / DateTimeImmutable / Random\Engine /
+// Random\Randomizer class is Gen::enum()/datetime()/randomEngine()/randomizer() (like a nested
+// parameter); another DateTimeInterface throws. Per parameter, in order: override, #[Generate] on the
 // parameter, docblock psalm type, native type. Docblock spellings: @psalm-param / @phpstan-param win over @param; a
 // @var (@psalm-var, @phpstan-var) on the PROMOTED PROPERTY is read when the constructor
-// docblock says nothing about that parameter. Reads int<0,100> | positive-int |
+// docblock says nothing about that parameter. Reads int<0,100> | float<0.0, 1.0> (decimal ends only) |
+// array-key (= int|string) | scalar (= int|float|string|bool) | positive-int |
 // non-negative-int | non-empty-string | numeric-string | non-falsy-string (truthy-string) |
 // lowercase-string | non-empty-lowercase-string | list<T> | non-empty-list<T> | T[] | array<K,V> |
 // non-empty-array<K,V> | array{a: T, b?: U, 'quoted key': V, 3: W} (optional key: SOMETIMES ABSENT,
@@ -378,7 +412,7 @@ Gen::forClass(string $class, array $overrides = [], bool $skipInvalid = false, i
 // inside docblock types (list<LineItem>, Status|null, \DateTimeImmutable) resolve through the
 // declaring file's namespace and `use` imports, like the code beneath the docblock. ANYTHING ELSE
 // (bare array, mixed, callable, an untyped parameter, a NATIVE UNION such as int|string, a
-// variadic, a docblock type outside this subset such as float<0.0, 1.0> or an unsealed
+// variadic, a docblock type outside this subset such as float<min, 1.0> or an unsealed
 // array{a: int, ...} / a "double-quoted" shape key / list{a: int}, an
 // unknown class name — the message says `unknown class "Nope"`) THROWS naming the parameter and
 // the type — never a widened guess; the one fallback is a native CLASS type whose docblock only

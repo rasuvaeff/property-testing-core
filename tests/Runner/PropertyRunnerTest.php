@@ -11,6 +11,8 @@ use Rasuvaeff\PropertyTesting\ExampleViolationException;
 use Rasuvaeff\PropertyTesting\GaveUpException;
 use Rasuvaeff\PropertyTesting\Gen;
 use Rasuvaeff\PropertyTesting\GenerationErrorException;
+use Rasuvaeff\PropertyTesting\Internal\Descent;
+use Rasuvaeff\PropertyTesting\Internal\PhaseContext;
 use Rasuvaeff\PropertyTesting\Internal\PhaseCounters;
 use Rasuvaeff\PropertyTesting\Runner\CallableTrialExecutor;
 use Rasuvaeff\PropertyTesting\Runner\CorpusEntry;
@@ -20,6 +22,7 @@ use Rasuvaeff\PropertyTesting\Runner\Falsified;
 use Rasuvaeff\PropertyTesting\Runner\GaveUp;
 use Rasuvaeff\PropertyTesting\Runner\GenerationFailed;
 use Rasuvaeff\PropertyTesting\Runner\Passed;
+use Rasuvaeff\PropertyTesting\Runner\Phase;
 use Rasuvaeff\PropertyTesting\Runner\PropertyConfig;
 use Rasuvaeff\PropertyTesting\Runner\PropertyDefinition;
 use Rasuvaeff\PropertyTesting\Runner\PropertyRunner;
@@ -48,6 +51,8 @@ use Testo\Test;
 #[Covers(ExampleFailed::class)]
 #[Covers(RunStatistics::class)]
 #[Covers(PhaseCounters::class)]
+#[Covers(PhaseContext::class)]
+#[Covers(Descent::class)]
 final class PropertyRunnerTest
 {
     public function passedCarriesTheRunStatistics(): void
@@ -449,6 +454,80 @@ final class PropertyRunnerTest
         Assert::same($result->exception->getIndex(), 0);
         Assert::same($result->exception->getArguments(), [999]);
         Assert::same($bodies, 1);
+    }
+
+    /**
+     * An example the body discards checked nothing: it still passes, and the
+     * statistics count it — a skipped one is the environment's verdict and is
+     * not counted.
+     */
+    public function examplesDiscardedByAssumeAreCountedNotFailed(): void
+    {
+        $definition = new PropertyDefinition(
+            id: 'standalone::discardedExamples',
+            name: 'discardedExamples',
+            generators: ['value' => Gen::intBetween(0, 10)],
+            parameterNames: ['value'],
+            config: new PropertyConfig(runs: 5, seed: 42),
+            examples: [[-1], [3], [-2], [100]],
+        );
+
+        $result = (new PropertyRunner())->run(
+            $definition,
+            new class implements TrialExecutor {
+                #[\Override]
+                public function execute(array $arguments): TrialOutcome
+                {
+                    return match (true) {
+                        $arguments['value'] < 0 => TrialOutcome::discarded(),
+                        $arguments['value'] > 10 => TrialOutcome::skipped(),
+                        default => TrialOutcome::passed(),
+                    };
+                }
+            },
+        );
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($result->statistics->discardedExamples, 2);
+        Assert::same($result->statistics->discards, 0);
+    }
+
+    public function discardedExamplesReachTheStatisticsWithoutARandomPhase(): void
+    {
+        $definition = new PropertyDefinition(
+            id: 'standalone::examplesOnly',
+            name: 'examplesOnly',
+            generators: ['value' => Gen::intBetween(0, 10)],
+            parameterNames: ['value'],
+            config: new PropertyConfig(runs: 5, seed: 42, phases: [Phase::Examples]),
+            examples: [[-1]],
+        );
+
+        $result = (new PropertyRunner())->run($definition, new CallableTrialExecutor(static function (int $value): void {
+            Assume::that($value >= 0);
+        }));
+
+        Assert::instanceOf($result, Passed::class);
+        Assert::same($result->statistics->discardedExamples, 1);
+    }
+
+    public function discardedExamplesReachTheStatisticsOfAnExhaustedPhase(): void
+    {
+        $definition = new PropertyDefinition(
+            id: 'standalone::examplesThenGaveUp',
+            name: 'examplesThenGaveUp',
+            generators: ['value' => Gen::intBetween(0, 10)],
+            parameterNames: ['value'],
+            config: new PropertyConfig(runs: 5, seed: 42, maxDiscards: 3),
+            examples: [[1]],
+        );
+
+        $result = (new PropertyRunner())->run($definition, new CallableTrialExecutor(static function (int $value): void {
+            Assume::that(condition: false);
+        }));
+
+        Assert::instanceOf($result, GaveUp::class);
+        Assert::same($result->statistics->discardedExamples, 1);
     }
 
     public function falsificationDrainsTheCoverageRequirements(): void

@@ -11,7 +11,7 @@ description: "Observer of a property run's lifecycle events."
 
 **Interface** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/PropertyListener.php#L26) — **Version:** working tree
 
-**Implemented by:** `Testo\VerboseListener`, `PhpUnit\VerboseListener`
+**Implemented by:** [`Runner\TraceListener`](/api/classes/Runner/TraceListener), `Testo\VerboseListener`, `PhpUnit\VerboseListener`
 
 Observer of a property run's lifecycle events.
 

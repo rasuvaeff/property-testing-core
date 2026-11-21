@@ -15,11 +15,15 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  *
  * Shrinking prefers `null` over descending into the inner value's tree.
  *
- * @implements Enumerable<mixed>
+ * @template TValue
+ * @implements Enumerable<TValue|null>
  * @api
  */
 final readonly class NullableArbitrary implements Enumerable
 {
+    /**
+     * @param ArbitraryInterface<TValue> $inner
+     */
     public function __construct(
         private ArbitraryInterface $inner,
     ) {}

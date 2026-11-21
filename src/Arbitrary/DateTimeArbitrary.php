@@ -42,8 +42,14 @@ final readonly class DateTimeArbitrary implements ArbitraryInterface
         $minMicro = $min instanceof DateTimeImmutable ? $this->toMicroseconds($min) : 0;
         $maxMicro = $max instanceof DateTimeImmutable ? $this->toMicroseconds($max) : self::DEFAULT_MAX_TIMESTAMP * self::MICROSECONDS;
 
-        // IntArbitrary refuses an inverted range with the message this class
-        // always used; one check, not two.
+        if ($minMicro > $maxMicro) {
+            throw new \InvalidArgumentException(sprintf(
+                'Gen::datetime(): min must be less than or equal to max, got %s and %s',
+                $this->fromMicroseconds($minMicro)->format('Y-m-d\TH:i:s.uP'),
+                $this->fromMicroseconds($maxMicro)->format('Y-m-d\TH:i:s.uP'),
+            ));
+        }
+
         $this->microseconds = new IntArbitrary($minMicro, $maxMicro);
     }
 

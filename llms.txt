@@ -398,7 +398,8 @@ Gen::swarm(ArbitraryInterface $arbitrary)  // <T>: swarm testing. Wraps a CHOICE
 Gen::forClass(string $class, array $overrides = [], bool $skipInvalid = false, int $maxDepth = 3)
 // <T>: instances from the constructor. Without overrides an enum / DateTimeImmutable / Random\Engine /
 // Random\Randomizer class is Gen::enum()/datetime()/randomEngine()/randomizer() (like a nested
-// parameter); another DateTimeInterface throws. Per parameter, in order: override, #[Generate] on the
+// parameter); another DateTimeInterface throws. An enum-case literal union (@param St::A|St::B) is
+// not read: the native enum type wins and every case is drawn — narrow with an override. Per parameter, in order: override, #[Generate] on the
 // parameter, docblock psalm type, native type. Docblock spellings: @psalm-param / @phpstan-param win over @param; a
 // @var (@psalm-var, @phpstan-var) on the PROMOTED PROPERTY is read when the constructor
 // docblock says nothing about that parameter. Reads int<0,100> | float<0.0, 1.0> (decimal ends only) |

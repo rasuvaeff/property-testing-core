@@ -58,8 +58,8 @@ use Rasuvaeff\PropertyTesting\StateMachine\RuleStep;
  */
 final class Gen
 {
-    private const string ALPHA = 'abcdefghijklmnopqrstuvwxyz';
-    private const string ALNUM = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    private const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
+    private const ALNUM = 'abcdefghijklmnopqrstuvwxyz0123456789';
 
     private function __construct()
     {

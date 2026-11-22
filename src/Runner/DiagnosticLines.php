@@ -32,7 +32,7 @@ final class DiagnosticLines
     /**
      * More than this share of discarded attempts is worth a warning.
      */
-    public const float SKIP_RATE_WARNING_THRESHOLD = 0.9;
+    public const SKIP_RATE_WARNING_THRESHOLD = 0.9;
 
     private function __construct()
     {

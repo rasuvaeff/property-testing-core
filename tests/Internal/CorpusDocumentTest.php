@@ -17,7 +17,7 @@ use Testo\Test;
 #[Covers(CorpusDocument::class)]
 final class CorpusDocumentTest
 {
-    private const int EPOCH = 1;
+    private const EPOCH = 1;
 
     public function seedEntryOmitsRunsBeforeFailureWhenUnknown(): void
     {

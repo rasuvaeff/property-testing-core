@@ -52,7 +52,7 @@ final readonly class RedisCorpus implements Corpus, SearchCorpus
      * pathological storm would only make the run slower without making the
      * corpus more correct.
      */
-    public const int MAX_ATTEMPTS = 5;
+    public const MAX_ATTEMPTS = 5;
 
     /**
      * @param CorpusClient $client The Redis client seam — {@see \Rasuvaeff\PropertyTesting\Runner\Redis\PhpRedisCorpusClient}

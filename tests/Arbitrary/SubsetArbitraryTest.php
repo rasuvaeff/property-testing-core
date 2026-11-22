@@ -19,7 +19,7 @@ use Testo\Test;
 #[Covers(SubsetArbitrary::class)]
 final class SubsetArbitraryTest
 {
-    private const array LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    private const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
     // -- Construction boundaries -------------------------------------------
 

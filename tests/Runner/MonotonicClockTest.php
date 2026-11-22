@@ -22,9 +22,9 @@ final class MonotonicClockTest
      * Windows, where the timer granularity rounds the sleep and `hrtime()` then
      * reports fewer nanoseconds than were asked for (seen on CI 2026-09-28).
      */
-    private const int FLOOR_NS = 1_000_000;
+    private const FLOOR_NS = 1_000_000;
 
-    private const int SLEEP_US = 20_000;
+    private const SLEEP_US = 20_000;
 
     public function isTheDefaultClock(): void
     {

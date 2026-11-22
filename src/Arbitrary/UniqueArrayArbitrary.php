@@ -37,7 +37,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  */
 final readonly class UniqueArrayArbitrary implements ArbitraryInterface
 {
-    private const int MAX_ATTEMPTS_PER_ELEMENT = 10;
+    private const MAX_ATTEMPTS_PER_ELEMENT = 10;
 
     /**
      * @param ArbitraryInterface<TElement> $element

@@ -32,7 +32,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  */
 final readonly class FilteredArbitrary implements Enumerable
 {
-    private const int MAX_ATTEMPTS = 100;
+    private const MAX_ATTEMPTS = 100;
 
     /**
      * @param ArbitraryInterface<TInner> $inner

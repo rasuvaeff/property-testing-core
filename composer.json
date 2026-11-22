@@ -23,7 +23,7 @@
         "source": "https://github.com/rasuvaeff/property-testing-core"
     },
     "require": {
-        "php": "8.3 - 8.6",
+        "php": "8.2 - 8.6",
         "ext-mbstring": "*",
         "ext-random": "*",
         "ext-tokenizer": "*"

@@ -139,7 +139,7 @@ The argument is either an arbitrary built with `new` or a reference to a static
 factory that returns one — a method name of the declaring class,
 `'Class::method'`, `[Class::class, 'method']`, an invokable object. An
 attribute argument is a constant expression: `Gen::*` calls cannot appear in
-it, and on PHP 8.3 and 8.4 neither can a closure, so `Gen::map()`,
+it, and on PHP 8.2–8.4 neither can a closure, so `Gen::map()`,
 `Gen::email()`, `Gen::regex()` and the rest of the closure-built generators go
 through a factory reference.
 

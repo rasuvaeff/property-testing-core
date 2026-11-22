@@ -36,7 +36,7 @@ final readonly class DictionaryArbitrary implements ArbitraryInterface
      * Draws per requested key before giving up (guards a key space too small to
      * fill the drawn size with distinct keys).
      */
-    private const int MAX_ATTEMPTS_PER_KEY = 10;
+    private const MAX_ATTEMPTS_PER_KEY = 10;
 
     /**
      * @param ArbitraryInterface<TKey>   $key

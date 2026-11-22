@@ -33,7 +33,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  */
 final readonly class EdgeCasedArbitrary implements Enumerable
 {
-    private const int BIAS_DENOMINATOR = 5;
+    private const BIAS_DENOMINATOR = 5;
 
     /** @var non-empty-list<T> */
     private array $edgeCases;

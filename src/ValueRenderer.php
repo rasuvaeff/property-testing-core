@@ -16,9 +16,9 @@ namespace Rasuvaeff\PropertyTesting;
  */
 final class ValueRenderer
 {
-    private const int MAX_DEPTH = 4;
-    private const int MAX_ELEMENTS = 8;
-    private const int MAX_STRING = 64;
+    private const MAX_DEPTH = 4;
+    private const MAX_ELEMENTS = 8;
+    private const MAX_STRING = 64;
 
     public static function render(mixed $value): string
     {

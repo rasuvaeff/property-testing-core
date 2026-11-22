@@ -22,7 +22,7 @@ final class CorpusScript
      * collides with it, and the alternative (a second key, or a Lua nil dance
      * across client encodings) buys nothing.
      */
-    public const string CAS = <<<'LUA'
+    public const CAS = <<<'LUA'
         local current = redis.call('GET', KEYS[1])
         local expected = ARGV[1]
         local document = ARGV[2]

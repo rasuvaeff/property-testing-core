@@ -22,14 +22,14 @@ namespace Rasuvaeff\PropertyTesting\Runner\Redis;
  */
 final readonly class RedisDsn
 {
-    public const int DEFAULT_PORT = 6379;
+    public const DEFAULT_PORT = 6379;
 
-    public const float DEFAULT_TIMEOUT = 5.0;
+    public const DEFAULT_TIMEOUT = 5.0;
 
-    public const int DEFAULT_DATABASE = 0;
+    public const DEFAULT_DATABASE = 0;
 
     /** The engine's own default, so a DSN without a prefix behaves like the plain constructor. */
-    public const string DEFAULT_PREFIX = 'property-testing:corpus:';
+    public const DEFAULT_PREFIX = 'property-testing:corpus:';
 
     /**
      * @param non-empty-string $host The host as a client connects to it: an IPv6 literal without

@@ -106,5 +106,5 @@ then `-names`.
 
 ## 9. PHP
 
-`8.3 - 8.5`. Support for a newer PHP minor ships as a patch that widens the
+`8.2 - 8.6`, the same lower bound as Testo. Support for a newer PHP minor ships as a patch that widens the
 constraint. Dropping a PHP version is a major.

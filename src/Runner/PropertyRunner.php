@@ -72,7 +72,7 @@ final readonly class PropertyRunner
      * the cap guarantees termination. An explicit
      * {@see PropertyConfig::$maxShrinks} still wins.
      */
-    private const int MAX_DRAW_SHRINK_STEPS = 1000;
+    private const MAX_DRAW_SHRINK_STEPS = 1000;
 
     private Clock $clock;
 

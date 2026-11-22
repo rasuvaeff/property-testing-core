@@ -22,7 +22,7 @@ core-only install reports nothing — the engine has no framework dependency.
 
 ## Requirements
 
-- PHP 8.3 – 8.5
+- PHP 8.2 – 8.6
 - `ext-mbstring`
 - `ext-random`
 - `ext-tokenizer` — `Gen::forClass()` / `Gen::forParameters()` read psalm `@param`

@@ -49,9 +49,9 @@ final class PropertyRunnerPathTest
      * {@see PropertyRunnerShrinkTest::shrinkLifecycleIsFullyReported()} pins at
      * 39 tried candidates.
      */
-    private const string INT_PATH = 'value:1/value:1/value:1/value:1/value:1/value:3/value:4/value:5/value:6';
+    private const INT_PATH = 'value:1/value:1/value:1/value:1/value:1/value:3/value:4/value:5/value:6';
 
-    private const string DRAW_PATH = 'value:1/draw#1:0/value:1/value:1/value:1/value:1/value:3/value:4/value:5/value:6';
+    private const DRAW_PATH = 'value:1/draw#1:0/value:1/value:1/value:1/value:1/value:3/value:4/value:5/value:6';
 
     public function aDescentIsRecordedAsAReplayablePath(): void
     {

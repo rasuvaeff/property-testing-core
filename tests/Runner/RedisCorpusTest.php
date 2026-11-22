@@ -29,7 +29,7 @@ use Testo\Test;
 #[Covers(CorpusDocument::class)]
 final class RedisCorpusTest
 {
-    private const string ID = 'X::y';
+    private const ID = 'X::y';
 
     public function recallIsEmptyWithoutARecord(): void
     {

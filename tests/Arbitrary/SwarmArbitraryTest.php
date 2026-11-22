@@ -25,7 +25,7 @@ use Testo\Test;
 #[Covers(SwarmArbitrary::class)]
 final class SwarmArbitraryTest
 {
-    private const array ALPHABET = ['a', 'b', 'c', 'd'];
+    private const ALPHABET = ['a', 'b', 'c', 'd'];
 
     public function everyGeneratedValueComesFromTheSourceAlphabet(): void
     {

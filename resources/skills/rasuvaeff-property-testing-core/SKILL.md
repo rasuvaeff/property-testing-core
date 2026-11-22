@@ -15,7 +15,7 @@ description: >-
 
 # rasuvaeff/property-testing-core
 
-Framework-agnostic property-based testing engine for PHP 8.3+. Namespace
+Framework-agnostic property-based testing engine for PHP 8.2+. Namespace
 `Rasuvaeff\PropertyTesting\`. Installed via the `rasuvaeff/property-testing-testo`
 adapter in Testo projects (drops a `#[Property]` attribute); the core is the
 engine under that attribute.

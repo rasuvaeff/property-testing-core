@@ -29,7 +29,7 @@ final class ShrinkPath
      * digits: a candidate a billion deep into a shrink enumeration is a typo,
      * not a path, and the bound keeps the parse away from integer saturation.
      */
-    private const string SEGMENT = '(?:[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*|draw#[1-9]\d{0,8}):\d{1,9}';
+    private const SEGMENT = '(?:[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*|draw#[1-9]\d{0,8}):\d{1,9}';
 
     /**
      * The recorded steps of a path.

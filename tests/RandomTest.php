@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Rasuvaeff\PropertyTesting\Tests;
 
+use Random\Engine\Mt19937;
+use Random\IntervalBoundary;
+use Random\Randomizer;
 use Rasuvaeff\PropertyTesting\Random;
 use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Core\Exception\SkipTest;
 use Testo\Test;
 
 #[Test]
@@ -45,6 +49,47 @@ final class RandomTest
 
             Assert::true($value >= 0.0 && $value < 1.0);
         }
+    }
+
+    public function floatMatchesNativeGetFloatInterleavedWithOtherDraws(): void
+    {
+        if (!method_exists(Randomizer::class, 'getFloat')) {
+            throw new SkipTest('Randomizer::getFloat() needs PHP 8.3');
+        }
+
+        for ($seed = 0; $seed < 300; ++$seed) {
+            $random = new Random($seed);
+            $native = new Randomizer(new Mt19937($seed));
+
+            for ($i = 0; $i < 40; ++$i) {
+                Assert::same($random->int(-1_000, 1_000), $native->getInt(-1_000, 1_000));
+                Assert::same($random->float(), $native->getFloat(0.0, 1.0, IntervalBoundary::ClosedOpen));
+                Assert::same($random->bytes(3), $native->getBytes(3));
+            }
+        }
+    }
+
+    /**
+     * The digest was taken from PHP 8.5's native `getInt()`/`getFloat()`/`getBytes()`
+     * on the same seeds, so on PHP 8.2 this is the check that the stream is unchanged.
+     */
+    public function mixedDrawStreamMatchesPinnedDigest(): void
+    {
+        $stream = '';
+        foreach ([0, 1, 42, 2026, 2_147_483_647] as $seed) {
+            $random = new Random($seed);
+
+            for ($i = 0; $i < 50; ++$i) {
+                $stream .= $random->int(-1_000, 1_000)
+                    . '|' . bin2hex(pack('E', $random->float()))
+                    . '|' . bin2hex($random->bytes(3)) . "\n";
+            }
+        }
+
+        Assert::same(
+            hash('sha256', $stream),
+            '5258def6244ca79df1887eaddacde54e18d3022ab73369a9e3a10a793e36b168',
+        );
     }
 
     public function floatProducesVaryingValuesAcrossTheUnitRange(): void

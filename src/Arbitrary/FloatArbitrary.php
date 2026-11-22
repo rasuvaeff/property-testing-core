@@ -31,7 +31,7 @@ use Rasuvaeff\PropertyTesting\ValueRenderer;
  */
 final readonly class FloatArbitrary implements ArbitraryInterface
 {
-    private const int BIAS_DENOMINATOR = 5;
+    private const BIAS_DENOMINATOR = 5;
 
     public function __construct(
         private float $min = 0.0,

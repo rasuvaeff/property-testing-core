@@ -36,7 +36,7 @@ final readonly class FilesystemCorpus implements Corpus, SearchCorpus
      * On-disk layout version. A file written by a different version is ignored
      * wholesale rather than guessed at.
      */
-    public const int FORMAT_VERSION = 1;
+    public const FORMAT_VERSION = 1;
 
     /**
      * Generation-sequence epoch. Seed entries reproduce a failure only while the
@@ -46,23 +46,23 @@ final readonly class FilesystemCorpus implements Corpus, SearchCorpus
      * different input under the guise of a regression. Values entries carry the
      * input itself and are unaffected.
      */
-    public const int SEQUENCE_EPOCH = 4;
+    public const SEQUENCE_EPOCH = 4;
 
     /**
      * A values entry costs one run; a seed entry costs a whole random phase
      * (`runs` checks), so the two are capped separately. Oldest entries are
      * evicted first.
      */
-    private const int MAX_VALUE_ENTRIES = 8;
+    private const MAX_VALUE_ENTRIES = 8;
 
-    private const int MAX_SEED_ENTRIES = 2;
+    private const MAX_SEED_ENTRIES = 2;
 
     /**
      * The directory's lock file; never removed (see {@see withLock()}). The
      * per-property `<sha1>.json.lock` files of 0.5 and earlier are left alone —
      * a process on that version may still hold one.
      */
-    private const string LOCK_FILE = '.corpus.lock';
+    private const LOCK_FILE = '.corpus.lock';
 
     /**
      * @param string $directory The directory the documents live in; created on the first write.

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.0 — 2026-11-22
 
 - **Changed:** PHP 8.2 is supported: the `php` constraint is widened to
   `8.2 - 8.6`, the same lower bound as `testo/testo` (#205). `Random::float()`

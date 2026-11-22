@@ -248,7 +248,7 @@ make release-check
   The job asserts the path install took effect (`composer show` prints a
   `path :` line) precisely so it cannot silently pass against the released
   core from Packagist. Its path-repository `versions` override follows the
-  current core release (`1.5.0`); both adapters require `^1.2`, so it is
+  current core release (`1.6.0`); both adapters require `^1.2`, so it is
   accepted without touching them. When core moves to a version
   they do not accept, this job is *supposed* to fail until the adapters are
   updated — do not paper over it by widening the override. Keeping it in step
@@ -275,7 +275,7 @@ make release-check
         set -e
         cleanup() { composer config --unset repositories.core; rm -f composer.lock; }
         trap cleanup EXIT
-        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"1.5.0\"}}}"
+        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"1.6.0\"}}}"
         composer update
         composer test
     ' || failed="$failed $adapter"

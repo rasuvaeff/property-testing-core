@@ -240,7 +240,7 @@ final class DictionaryArbitraryTest
         // (continue) and generation must keep filling the map with 'b' —
         // bailing out of the loop on a collision would under-fill it.
         $key = new class implements ArbitraryInterface {
-            private const array KEYS = ['a', 'a', 'b'];
+            private const KEYS = ['a', 'a', 'b'];
 
             private int $index = 0;
 

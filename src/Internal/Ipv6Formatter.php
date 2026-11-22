@@ -17,9 +17,9 @@ namespace Rasuvaeff\PropertyTesting\Internal;
  */
 final class Ipv6Formatter
 {
-    public const int GROUPS = 8;
+    public const GROUPS = 8;
 
-    private const int MIN_COMPRESSED_RUN = 2;
+    private const MIN_COMPRESSED_RUN = 2;
 
     /**
      * @param non-empty-list<int> $groups exactly `self::GROUPS` values in `[0, 65535]`

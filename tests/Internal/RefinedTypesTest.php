@@ -29,7 +29,7 @@ use Testo\Test;
 #[Covers(ParameterGenerators::class)]
 final class RefinedTypesTest
 {
-    private const int DRAWS = 500;
+    private const DRAWS = 500;
 
     public function aNumericStringIsAlwaysNumericAndReachesEveryForm(): void
     {

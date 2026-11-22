@@ -10,7 +10,7 @@
 
 [Русская версия](README.ru.md)
 
-Framework-agnostic property-based testing **engine** for PHP 8.3+: generators
+Framework-agnostic property-based testing **engine** for PHP 8.2+: generators
 with integrated shrinking, a structured property runner, a regression corpus,
 lifecycle events, and stateful/model-based testing — with no dependency on any
 test framework. Generate hundreds of random inputs, find the failing one, and
@@ -38,7 +38,7 @@ shrink it to a minimal counterexample you can actually read.
 
 ## Requirements
 
-- PHP 8.3 – 8.6
+- PHP 8.2 – 8.6
 - `ext-mbstring`
 - `ext-random`
 - `ext-tokenizer`
@@ -357,7 +357,7 @@ The argument is either an arbitrary built with `new` or a reference to a static
 factory that returns one: a method name of the declaring class,
 `'Class::method'`, `[Class::class, 'method']`, or an invokable object. An
 attribute argument is a constant expression, so `Gen::*` calls cannot appear in
-it, and on PHP 8.3/8.4 neither can a closure:
+it, and on PHP 8.2–8.4 neither can a closure:
 
 | Expressible with `new` | Needs a factory reference |
 |---|---|
@@ -858,11 +858,11 @@ test method and loses it for a closure, because PHP has never had a stable
 name for one:
 
 ```text
-PHP 8.3   Suite::{closure}
-PHP 8.4+  Suite::{closure:/app/tests/StackTest.php:19}
+PHP 8.2–8.3  Suite::{closure}
+PHP 8.4+     Suite::{closure:/app/tests/StackTest.php:19}
 ```
 
-On 8.3 every closure of a class collapses onto one id, so two properties in one
+Before 8.4 every closure of a class collapses onto one id, so two properties in one
 file overwrite each other's recorded counterexample; from 8.4 the id carries a
 line number, so inserting a line above the property orphans the entry it
 recorded yesterday. Nothing throws either way — the corpus simply stops
@@ -1037,7 +1037,7 @@ without reading a diff.
 | 6 | **Constructors** | Constructors of `@api` `final readonly` classes are append-only: new parameters carry defaults and go at the end, so positional construction keeps working. |
 | 7 | **How data is reached** | Frozen as it stands, and it is not uniform: results, events and most exceptions expose public `readonly` properties, while `PropertyViolationException`, `ExampleViolationException`, `PathViolationException` and `RegressionViolationException` expose getters. Both styles stay. Unifying them would break every consumer for a cosmetic gain, and the split is at least stable — a type either has the field or the getter, never one that later becomes the other. |
 | 8 | **The family** | The adapters (`-testo`, `-phpunit`) and `-names` require the engine with a caret range on the current major. A major here is a major there, and the engine is released first. |
-| 9 | **PHP** | `8.3 - 8.5`. Support for a newer PHP minor is a patch that widens the constraint; dropping a PHP version is a major. |
+| 9 | **PHP** | `8.2 - 8.6`, the same lower bound as Testo. Support for a newer PHP minor is a patch that widens the constraint; dropping a PHP version is a major. |
 
 Point 2 is the one that has already bitten: 0.6.0 changed the distribution of
 `Gen::string()` and bumped `SEQUENCE_EPOCH` to 2, 0.5.0 changed the order

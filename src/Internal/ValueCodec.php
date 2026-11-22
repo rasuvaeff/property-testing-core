@@ -23,14 +23,14 @@ namespace Rasuvaeff\PropertyTesting\Internal;
  */
 final readonly class ValueCodec
 {
-    private const string TAG = '#';
-    private const string TAG_ARRAY = 'a';
-    private const string TAG_FLOAT = 'f';
-    private const string TAG_BYTES = 'b';
-    private const string TAG_ENUM = 'e';
-    private const string FLOAT_NAN = 'nan';
-    private const string FLOAT_INF = 'inf';
-    private const string FLOAT_NEGATIVE_INF = '-inf';
+    private const TAG = '#';
+    private const TAG_ARRAY = 'a';
+    private const TAG_FLOAT = 'f';
+    private const TAG_BYTES = 'b';
+    private const TAG_ENUM = 'e';
+    private const FLOAT_NAN = 'nan';
+    private const FLOAT_INF = 'inf';
+    private const FLOAT_NEGATIVE_INF = '-inf';
 
     /**
      * The JSON-safe representation of $value wrapped in a single-element list,

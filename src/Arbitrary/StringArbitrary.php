@@ -30,9 +30,9 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  */
 final readonly class StringArbitrary implements ArbitraryInterface
 {
-    private const int ASCII_MIN = 32;
-    private const int ASCII_MAX = 126;
-    private const int BIAS_DENOMINATOR = 10;
+    private const ASCII_MIN = 32;
+    private const ASCII_MAX = 126;
+    private const BIAS_DENOMINATOR = 10;
 
     /**
      * Characters parsers and renderers trip over, drawn deliberately rather
@@ -41,7 +41,7 @@ final readonly class StringArbitrary implements ArbitraryInterface
      *
      * @var non-empty-list<int>
      */
-    private const array TROUBLEMAKERS = [
+    private const TROUBLEMAKERS = [
         0x0020, // space
         0x0022, // double quote
         0x0027, // single quote

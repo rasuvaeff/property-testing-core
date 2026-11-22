@@ -39,7 +39,7 @@ final class PropertyId
      * The newer form is the one that matters most — it looks specific enough
      * to trust, and it moves the moment anyone edits the lines above.
      */
-    private const string CLOSURE_MARKER = '{closure';
+    private const CLOSURE_MARKER = '{closure';
 
     private function __construct()
     {

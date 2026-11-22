@@ -24,7 +24,7 @@ final class FailureIdentityTest
      * A path no trace of this test can contain: these cases do not depend on
      * where the engine's own frames begin.
      */
-    private const string ELSEWHERE = '/engine/PropertyRunner.php';
+    private const ELSEWHERE = '/engine/PropertyRunner.php';
 
     public function withoutAnOriginalFailureAnyOutcomeIsTheSameFailure(): void
     {

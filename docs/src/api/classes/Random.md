@@ -9,7 +9,7 @@ description: "Seedable, deterministic pseudo-random number generator."
 
 `Rasuvaeff\PropertyTesting\Random`
 
-**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Random.php#L28) — **Version:** working tree
+**Class** — **Package:** [property-testing-core](https://github.com/rasuvaeff/property-testing-core) — [Source](https://github.com/rasuvaeff/property-testing-core/blob/master/src/Random.php#L27) — **Version:** working tree
 
 Seedable, deterministic pseudo-random number generator.
 
@@ -70,6 +70,12 @@ float(): float
 ```
 
 Uniform float in the half-open range [0.0, 1.0).
+
+Same value from the same engine state as PHP 8.3's
+`getFloat(0.0, 1.0, IntervalBoundary::ClosedOpen)`, which computes
+`1.0 - k * 2**-53` with `k` drawn uniformly from `[1, 2**53]` by the
+range `getInt()` uses. Written out so that PHP 8.2 draws the sequence
+recorded seeds and corpora replay.
 
 ### bytes()
 

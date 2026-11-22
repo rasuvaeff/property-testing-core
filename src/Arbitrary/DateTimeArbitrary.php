@@ -24,9 +24,9 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  */
 final readonly class DateTimeArbitrary implements ArbitraryInterface
 {
-    private const int DEFAULT_MAX_TIMESTAMP = 4_102_444_800; // 2100-01-01T00:00:00Z
+    private const DEFAULT_MAX_TIMESTAMP = 4_102_444_800; // 2100-01-01T00:00:00Z
 
-    private const int MICROSECONDS = 1_000_000;
+    private const MICROSECONDS = 1_000_000;
 
     private IntArbitrary $microseconds;
 

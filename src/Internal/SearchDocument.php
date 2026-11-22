@@ -19,7 +19,7 @@ use Rasuvaeff\PropertyTesting\Runner\TargetDirection;
  */
 final class SearchDocument
 {
-    public const int FORMAT_VERSION = 1;
+    public const FORMAT_VERSION = 1;
 
     private function __construct() {}
 

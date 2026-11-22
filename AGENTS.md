@@ -145,6 +145,18 @@ make release-check
 - `Random` uses an object-scoped `\Random\Randomizer` (MT19937), NOT the
   global `mt_srand`/`mt_rand` — same seed, same sequence, regardless of
   intervening random calls.
+- **PHP 8.2 is the floor, kept for parity with `testo/testo`** (#205). That
+  makes this package an exception to the monorepo's PHP 8.3 style rules: no
+  typed class constants (`private const X`, not `private const int X`), no
+  `new readonly class`, no 8.3+ built-ins (`json_validate()`, `mb_str_pad()`,
+  `Randomizer::getFloat()`…). `rector.php` uses the `php82` set and
+  `.php-cs-fixer.php` `@PHP82Migration` for this reason — do not "restore" them
+  from `templates/`. `Random::float()` reproduces `getFloat(0.0, 1.0,
+  ClosedOpen)` bit for bit with `getInt()`; `RandomTest` checks it against the
+  native call on 8.3+. Changing that formula shifts every float generator —
+  golden rule 3 applies. The PHP 8.2 CI job is the only place psalm sees an
+  8.3-only call, since psalm checks built-ins against the PHP it runs on.
+  `#[\Override]` stays: 8.2 ignores an unknown attribute.
 - **A shrink candidate is accepted on failure identity, not on failure.**
   `FailureIdentity` (built once per descent, compared against the ORIGINAL
   failure and never against the last accepted one) is the exception class plus
@@ -236,7 +248,7 @@ make release-check
   The job asserts the path install took effect (`composer show` prints a
   `path :` line) precisely so it cannot silently pass against the released
   core from Packagist. Its path-repository `versions` override follows the
-  current core release (`1.5.0`); both adapters require `^1.2`, so it is
+  current core release (`1.6.0`); both adapters require `^1.2`, so it is
   accepted without touching them. When core moves to a version
   they do not accept, this job is *supposed* to fail until the adapters are
   updated — do not paper over it by widening the override. Keeping it in step
@@ -263,7 +275,7 @@ make release-check
         set -e
         cleanup() { composer config --unset repositories.core; rm -f composer.lock; }
         trap cleanup EXIT
-        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"1.5.0\"}}}"
+        composer config repositories.core "{\"type\":\"path\",\"url\":\"../property-testing-core\",\"options\":{\"versions\":{\"rasuvaeff/property-testing-core\":\"1.6.0\"}}}"
         composer update
         composer test
     ' || failed="$failed $adapter"

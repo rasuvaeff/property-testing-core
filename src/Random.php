@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Rasuvaeff\PropertyTesting;
 
 use Random\Engine\Mt19937;
-use Random\IntervalBoundary;
 use Random\Randomizer;
 use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
 
@@ -27,6 +26,10 @@ use Rasuvaeff\PropertyTesting\Runner\EdgeCases;
  */
 final readonly class Random
 {
+    private const UNIT_STEPS = 9_007_199_254_740_992;
+
+    private const STEP = 1.1102230246251565E-16;
+
     private Randomizer $randomizer;
 
     /**
@@ -67,10 +70,18 @@ final readonly class Random
 
     /**
      * Uniform float in the half-open range [0.0, 1.0).
+     *
+     * Same value from the same engine state as PHP 8.3's
+     * `getFloat(0.0, 1.0, IntervalBoundary::ClosedOpen)`, which computes
+     * `1.0 - k * 2**-53` with `k` drawn uniformly from `[1, 2**53]` by the
+     * range `getInt()` uses. Written out so that PHP 8.2 draws the sequence
+     * recorded seeds and corpora replay.
      */
     public function float(): float
     {
-        return $this->randomizer->getFloat(0.0, 1.0, IntervalBoundary::ClosedOpen);
+        $steps = 1 + $this->randomizer->getInt(0, self::UNIT_STEPS - 1);
+
+        return 1.0 - (float) $steps * self::STEP;
     }
 
     /**

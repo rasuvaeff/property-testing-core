@@ -34,7 +34,7 @@ final class CorpusFactory
      * a typo (`Rediss://`, `resis://`) or the wrong backend — never a
      * directory.
      */
-    private const string SCHEME_PATTERN = '#^([a-zA-Z][a-zA-Z0-9+.\-]*)://#';
+    private const SCHEME_PATTERN = '#^([a-zA-Z][a-zA-Z0-9+.\-]*)://#';
 
     /**
      * One corpus per distinct DSN. Resolving happens once per property, so

@@ -41,9 +41,9 @@ function truncateDisplayName(string $name, int $limit): string
  */
 final class RealisticNames
 {
-    private const array FIRST = ['Émilie', 'Zoë', 'Andrés', 'Björn', 'Agnès', 'Ruslan'];
-    private const array LAST = ['Dubois-Lévesque', 'Ångström', 'Müller', 'Sørensen'];
-    private const array SUFFIX = ['', ' Jr.', ' III', ' PhD'];
+    private const FIRST = ['Émilie', 'Zoë', 'Andrés', 'Björn', 'Agnès', 'Ruslan'];
+    private const LAST = ['Dubois-Lévesque', 'Ångström', 'Müller', 'Sørensen'];
+    private const SUFFIX = ['', ' Jr.', ' III', ' PhD'];
 
     public static function name(int $seed): string
     {

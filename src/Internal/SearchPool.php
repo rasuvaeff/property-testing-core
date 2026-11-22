@@ -16,7 +16,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  */
 final class SearchPool
 {
-    public const int CAPACITY = 8;
+    public const CAPACITY = 8;
 
     /**
      * @var array<string, TargetDirection>

@@ -23,7 +23,7 @@ namespace Rasuvaeff\PropertyTesting\Runner;
 final class EnvironmentOverrides
 {
     /** @var array<string, Phase> */
-    private const array PHASES_BY_NAME = [
+    private const PHASES_BY_NAME = [
         'examples' => Phase::Examples,
         'corpus' => Phase::Corpus,
         'random' => Phase::Random,
@@ -35,7 +35,7 @@ final class EnvironmentOverrides
      * comparison. `''` never reaches this list: an empty variable means the
      * override was not given at all.
      */
-    private const array FALSE_WORDS = ['0', 'false', 'off', 'no'];
+    private const FALSE_WORDS = ['0', 'false', 'off', 'no'];
 
     private function __construct()
     {

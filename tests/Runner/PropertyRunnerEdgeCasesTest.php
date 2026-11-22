@@ -27,7 +27,7 @@ use Testo\Test;
 #[Covers(PhaseCounters::class)]
 final class PropertyRunnerEdgeCasesTest
 {
-    private const array EDGES = [0, 1, -1, -1_000_000, 1_000_000];
+    private const EDGES = [0, 1, -1, -1_000_000, 1_000_000];
 
     public function byDefaultTheRunnerGeneratesEdgeValues(): void
     {

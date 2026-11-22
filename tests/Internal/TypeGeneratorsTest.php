@@ -28,7 +28,7 @@ use Testo\Test;
 #[Covers(ParameterGenerators::class)]
 final class TypeGeneratorsTest
 {
-    private const int DRAWS = 1000;
+    private const DRAWS = 1000;
 
     #[DataProvider('refinedIntegers')]
     public function aRefinedIntegerSpansExactlyItsDomain(string $type, int $min, int $max): void

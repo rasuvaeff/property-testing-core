@@ -27,9 +27,9 @@ namespace Rasuvaeff\PropertyTesting\Internal;
 final class DocblockTypes
 {
     /** Least to most specific: a later tag overwrites an earlier one for the same parameter. */
-    private const array PARAM_TAGS = ['param', 'phpstan-param', 'psalm-param'];
+    private const PARAM_TAGS = ['param', 'phpstan-param', 'psalm-param'];
 
-    private const array VAR_TAGS = ['var', 'phpstan-var', 'psalm-var'];
+    private const VAR_TAGS = ['var', 'phpstan-var', 'psalm-var'];
 
     private function __construct()
     {

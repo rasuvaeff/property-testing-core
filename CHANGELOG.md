@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0 — 2026-11-22
+
+- **Changed:** PHP 8.2 is supported: the `php` constraint is widened to
+  `8.2 - 8.6`, the same lower bound as `testo/testo` (#205). `Random::float()`
+  no longer calls `Randomizer::getFloat()` (PHP 8.3+); it computes the same
+  value from the same engine state, so seeds, the determinism vectors and
+  recorded corpora replay unchanged, and `SEQUENCE_EPOCH` stays. CI runs PHP
+  8.2, and `Prefer lowest` runs on it.
+
 ## 1.5.1 — 2026-11-21
 
 - **Changed:** PHP 8.6 is supported: the `php` constraint is widened to

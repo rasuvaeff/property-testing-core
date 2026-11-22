@@ -21,7 +21,7 @@ final class Descent
      * shrinkable that throws usually throws the same way on every node it is
      * asked about; past a handful the list stops telling anything new.
      */
-    public const int MAX_ERRORS = 10;
+    public const MAX_ERRORS = 10;
 
     public int $steps = 0;
 

@@ -40,7 +40,7 @@ final readonly class CommandSequenceArbitrary implements Swarmable
      * How many command generators to try per step before giving up and ending
      * the sequence (guards against a state in which no command applies).
      */
-    private const int MAX_PICK_ATTEMPTS = 20;
+    private const MAX_PICK_ATTEMPTS = 20;
 
     /**
      * @var non-empty-list<ArbitraryInterface<Command>>

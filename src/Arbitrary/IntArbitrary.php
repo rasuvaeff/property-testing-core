@@ -29,7 +29,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
  */
 final readonly class IntArbitrary implements Enumerable
 {
-    private const int BIAS_DENOMINATOR = 5;
+    private const BIAS_DENOMINATOR = 5;
 
     public function __construct(
         private int $min = PHP_INT_MIN,

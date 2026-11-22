@@ -10960,7 +10960,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 53
+                "startLine": 56
             },
             {
                 "name": "int",
@@ -10990,7 +10990,7 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 63
+                "startLine": 66
             },
             {
                 "name": "float",
@@ -10998,14 +10998,14 @@
                 "params": [],
                 "returnType": "float",
                 "summary": "Uniform float in the half-open range [0.0, 1.0).",
-                "description": "",
+                "description": "Same value from the same engine state as PHP 8.3's\n`getFloat(0.0, 1.0, IntervalBoundary::ClosedOpen)`, which computes\n`1.0 - k * 2**-53` with `k` drawn uniformly from `[1, 2**53]` by the\nrange `getInt()` uses. Written out so that PHP 8.2 draws the sequence\nrecorded seeds and corpora replay.",
                 "throws": [],
                 "throwsInBody": false,
                 "inheritedFrom": null,
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 71
+                "startLine": 80
             },
             {
                 "name": "bytes",
@@ -11028,12 +11028,12 @@
                 "see": [],
                 "deprecated": null,
                 "attributes": [],
-                "startLine": 79
+                "startLine": 90
             }
         ],
         "constants": [],
         "enumCases": [],
-        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Random.php#L28",
+        "sourceUrl": "https://github.com/rasuvaeff/property-testing-core/blob/master/src/Random.php#L27",
         "implementedBy": []
     },
     {

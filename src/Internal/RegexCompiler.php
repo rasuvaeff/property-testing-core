@@ -35,7 +35,7 @@ final class RegexCompiler
      * realistic pattern, low enough that the fixed-size array it builds cannot
      * exhaust memory.
      */
-    private const int MAX_BOUNDED_REPEAT = 10_000;
+    private const MAX_BOUNDED_REPEAT = 10_000;
 
     /**
      * Hard ceiling on the longest string a whole pattern can generate. The
@@ -43,20 +43,20 @@ final class RegexCompiler
      * multiply (`(a{10000}){10000}` is 10^8 characters), and so does a
      * `maxRepeat` above the bound, so the product is what memory sees.
      */
-    private const int MAX_GENERATED_LENGTH = 10_000;
+    private const MAX_GENERATED_LENGTH = 10_000;
 
     /**
      * Common PCRE delimiters, minus the bracket pairs: `[`, `(` and `{` open
      * real constructs, so a pattern starting with one says nothing about
      * delimiting.
      */
-    private const string DELIMITERS = '/#~%!@';
+    private const DELIMITERS = '/#~%!@';
 
     /** Pattern modifiers PCRE allows after the closing delimiter. */
-    private const string MODIFIERS = 'imsxuADSUXJn';
+    private const MODIFIERS = 'imsxuADSUXJn';
 
     /** The class names PCRE accepts inside `[: :]`. */
-    private const array POSIX_CLASSES = ['alnum', 'alpha', 'ascii', 'blank', 'cntrl', 'digit', 'graph', 'lower', 'print', 'punct', 'space', 'upper', 'word', 'xdigit'];
+    private const POSIX_CLASSES = ['alnum', 'alpha', 'ascii', 'blank', 'cntrl', 'digit', 'graph', 'lower', 'print', 'punct', 'space', 'upper', 'word', 'xdigit'];
 
     /** @var list<string> */
     private array $chars;

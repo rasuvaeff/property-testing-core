@@ -36,7 +36,7 @@ use Testo\Test;
 #[CoversNothing]
 final class RedisIntegrationTest
 {
-    private const string ID = 'Integration::redis';
+    private const ID = 'Integration::redis';
 
     public function aCounterexampleSurvivesARoundTripThroughRedis(): void
     {

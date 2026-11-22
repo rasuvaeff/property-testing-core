@@ -22,7 +22,7 @@ use Testo\Test;
 #[Covers(CorpusDocument::class)]
 final class FilesystemCorpusTest
 {
-    private const string ID = 'X::y';
+    private const ID = 'X::y';
 
     private string $dir = '';
 

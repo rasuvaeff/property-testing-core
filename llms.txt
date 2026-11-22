@@ -1,6 +1,6 @@
 # rasuvaeff/property-testing-core
 
-Framework-agnostic property-based testing engine for PHP 8.3+: generators with
+Framework-agnostic property-based testing engine for PHP 8.2+: generators with
 integrated shrinking, a structured property runner, a regression corpus,
 lifecycle events, and stateful/model-based testing. No test-framework
 dependency. Adapters: `rasuvaeff/property-testing-testo` (Testo `#[Property]`),
@@ -15,7 +15,7 @@ with the frozen `rasuvaeff/property-testing` 2.x (same namespace).
 composer require --dev rasuvaeff/property-testing-core
 ```
 
-Runtime deps: PHP `8.3 - 8.6`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
+Runtime deps: PHP `8.2 - 8.6`, `ext-mbstring`, `ext-random`, `ext-tokenizer`.
 
 ## Rules
 
@@ -511,9 +511,9 @@ Gen::draw(ArbitraryInterface $arbitrary): mixed  // recorded on the replay tape,
 used inside counterexample messages; adapters reuse it for verbose output.
 
 `PropertyId::unstableWarning(string $id): ?string` — the warning text for an id
-derived from a closure (`Suite::{closure}` on PHP 8.3, `Suite::{closure:file:line}`
+derived from a closure (`Suite::{closure}` on PHP 8.2–8.3, `Suite::{closure:file:line}`
 from 8.4), or null for a stable id. Such an id breaks the regression corpus
-silently: on 8.3 every closure of a class shares one key, from 8.4 the key moves
+silently: before 8.4 every closure of a class shares one key, from 8.4 the key moves
 when a line is inserted above. The engine returns the sentence and never prints
 it — the adapter does, through the channel it already warns on.
 

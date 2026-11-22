@@ -40,7 +40,7 @@ final readonly class Environment
      *
      * @var list<non-empty-string>
      */
-    public const array VARIABLES = [
+    public const VARIABLES = [
         'PROPERTY_SEED',
         'PROPERTY_PATH',
         'PROPERTY_RUNS',

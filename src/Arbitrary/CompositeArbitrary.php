@@ -43,7 +43,7 @@ use Rasuvaeff\PropertyTesting\Shrinkable;
 final readonly class CompositeArbitrary implements ArbitraryInterface
 {
     /** Accepted-step bound of one descent through the composite's tape. */
-    private const int MAX_DEPTH = 1000;
+    private const MAX_DEPTH = 1000;
 
     /**
      * @param Closure(Draw): T $body Builds one value from the draws it takes through the seam.

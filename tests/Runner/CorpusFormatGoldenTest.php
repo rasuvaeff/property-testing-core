@@ -34,7 +34,7 @@ use Testo\Test;
 #[Covers(CorpusDocument::class)]
 final class CorpusFormatGoldenTest
 {
-    private const string FIXTURES = __DIR__ . '/../fixtures/corpus';
+    private const FIXTURES = __DIR__ . '/../fixtures/corpus';
 
     private string $dir = '';
 

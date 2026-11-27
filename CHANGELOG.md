@@ -3,6 +3,7 @@
 ## 1.6.1 — 2026-11-27
 
 - Docs: the agent skill lists all 21 `#[Property]` parameters (it said fifteen and omitted `throws`, `exhaustive`, `exhaustiveBudget`, `flakyReplays`, `searchRuns`, `failOn`) and links the cookbook on the docs site, since `docs/` is not shipped in `vendor/`.
+- Psalm 7.22: the `Gen::subset()` non-list source guard moved into a helper typed `array<array-key, mixed>`, so Psalm no longer reports it as unreachable against `@param list<TValue>` (no behaviour change).
 
 ## 1.6.0 — 2026-11-22
 

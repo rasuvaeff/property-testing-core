@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.1 — 2026-11-27
+
+- Docs: the agent skill lists all 21 `#[Property]` parameters (it said fifteen and omitted `throws`, `exhaustive`, `exhaustiveBudget`, `flakyReplays`, `searchRuns`, `failOn`) and links the cookbook on the docs site, since `docs/` is not shipped in `vendor/`.
+
 ## 1.6.0 — 2026-11-22
 
 - **Changed:** PHP 8.2 is supported: the `php` constraint is widened to

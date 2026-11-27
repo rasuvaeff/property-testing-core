@@ -104,13 +104,15 @@ final class MyClassTest
 }
 ```
 
-The Testo attribute takes all fifteen: `runs` (≥1, default 100), `seed`
+The Testo attribute takes all of them: `runs` (≥1, default 100), `seed`
 (reproducible), `maxShrinks` (0 = off), `maxDiscards`, `timeoutMs` (per-run
 deadline), `budgetMs` (whole random phase), `shrink` (`ShrinkMode::Off` reports
 the counterexample as generated), `shrinkBudgetMs` (wall-clock budget of the
 descent, implies `ShrinkMode::Bounded`), `phases`, `derandomize`, `path`,
 `generators` / `examples` (override the default method names), `auto` (derive
-from the signature, below), `edgeCases` (boundary bias, below). The PHPUnit
+from the signature, below), `edgeCases` (boundary bias, below), `throws` (expected exception class),
+`exhaustive`/`exhaustiveBudget`, `flakyReplays` (default 2), `searchRuns`
+(default 0), `failOn`. The PHPUnit
 adapter's fluent chain has one method per knob.
 
 **`auto: true`: the generators method can be omitted** when the
@@ -443,6 +445,7 @@ an outcome) is the same regardless of adapter.
   (every generator, every result class, every event).
 - `vendor/rasuvaeff/property-testing-core/README.md` — narrative documentation
   with rendered examples.
-- `vendor/rasuvaeff/property-testing-core/docs/src/cookbook/` — real bugs
-  reconstructed and pinned to seeds; `make docs-cookbook` (in the package
+- https://rasuvaeff.github.io/property-testing-core/cookbook/ (not shipped in
+  `vendor/`: `docs/` is export-ignored) — real bugs reconstructed and pinned to
+  seeds; `make docs-cookbook` (in the package
   checkout, not the consumer) re-runs them and diffs stdout against the page.

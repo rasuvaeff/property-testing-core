@@ -42,10 +42,7 @@ final readonly class SubsetArbitrary implements ArbitraryInterface
         private int $minSize = 0,
         ?int $maxSize = null,
     ) {
-        if (!array_is_list($values)) {
-            throw new \InvalidArgumentException('Subset source must be a list');
-        }
-
+        $this->assertList($values);
         $this->assertDistinct($values);
 
         $count = count($values);
@@ -143,6 +140,20 @@ final readonly class SubsetArbitrary implements ArbitraryInterface
                 }
             }
         });
+    }
+
+    /**
+     * The documented type already demands a list; the check stays for callers
+     * outside static analysis, whose keyed array would otherwise be read by
+     * position and silently draw from the wrong elements.
+     *
+     * @param array<array-key, mixed> $values
+     */
+    private function assertList(array $values): void
+    {
+        if (!array_is_list($values)) {
+            throw new \InvalidArgumentException('Subset source must be a list');
+        }
     }
 
     /**
